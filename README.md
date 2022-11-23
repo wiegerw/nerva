@@ -19,6 +19,7 @@ do not seem to work.
 Nerva uses the following third-party libraries.
 
 * doctest (https://github.com/onqtam/doctest, already included in the repository)
+* fmt (https://github.com/fmtlib/fmt, already included in the repository)
 * Eigen (https://eigen.tuxfamily.org/)
 * pybind11 (https://github.com/pybind/pybind11)
 * Intel MKL (https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-download.html)
