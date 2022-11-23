@@ -1,0 +1,173 @@
+// Copyright: Wieger Wesselink 2022
+//
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt)
+//
+/// \file nerva/neural_networks/multilayer_perceptron.h
+/// \brief add your file description here.
+
+#ifndef NERVA_NEURAL_NETWORKS_MULTILAYER_PERCEPTRON_H
+#define NERVA_NEURAL_NETWORKS_MULTILAYER_PERCEPTRON_H
+
+#include "nerva/neural_networks/check_gradients.h"
+#include "nerva/neural_networks/dropout_layers.h"
+#include "nerva/neural_networks/eigen.h"
+#include "nerva/neural_networks/layers.h"
+#include "nerva/neural_networks/loss_functions.h"
+#include "nerva/neural_networks/weights.h"
+#include "nerva/utilities/stopwatch.h"
+#include <functional>
+#include <memory>
+
+namespace nerva {
+
+struct multilayer_perceptron
+{
+  std::vector<std::shared_ptr<neural_network_layer>> layers;
+
+  void feedforward(eigen::matrix& result)
+  {
+    for (std::size_t i = 0; i < layers.size() - 1; i++)
+    {
+      layers[i]->feedforward(layers[i+1]->X);
+    }
+    layers.back()->feedforward(result);
+  }
+
+  void feedforward(const eigen::matrix& X, eigen::matrix& result)
+  {
+#ifdef NERVA_TIMING
+    utilities::stopwatch watch;
+#endif
+    layers.front()->X = X;
+    feedforward(result);
+#ifdef NERVA_TIMING
+    auto seconds = watch.seconds(); std::cout << "feedforward " << seconds << std::endl;
+#endif
+  }
+
+  void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY)
+  {
+#ifdef NERVA_TIMING
+    utilities::stopwatch watch;
+#endif
+    layers.back()->backpropagate(Y, DY);
+    for (int i = layers.size() - 2; i >= 0; i--)
+    {
+      layers[i]->backpropagate(layers[i + 1]->X, layers[i + 1]->DX);
+    }
+#ifdef NERVA_TIMING
+    auto seconds = watch.seconds(); std::cout << "backpropagate " << seconds << std::endl;
+#endif
+  }
+
+  void renew_dropout_mask(std::mt19937& rng)
+  {
+    for (auto& layer: layers)
+    {
+      auto dlayer = dynamic_cast<dropout_layer<eigen::matrix>*>(layer.get());
+      if (dlayer)
+      {
+        dlayer->renew(rng);
+      }
+    }
+  }
+
+  void optimize(scalar eta)
+  {
+    for (auto& layer: layers)
+    {
+      layer->optimize(eta);
+    }
+  }
+
+  void check_gradients(const std::shared_ptr<loss_function>& loss, const eigen::matrix& T, scalar h = 0.01)
+  {
+    long K = T.rows();
+    long N = T.cols();
+    eigen::matrix Y(K, N);
+
+    auto f = [&]()
+    {
+      feedforward(Y);
+      return loss->value(Y, T);
+    };
+
+    for (std::size_t i = 0; i < layers.size(); i++)
+    {
+      // check dense linear layers
+      auto layer = dynamic_cast<dense_linear_layer*>(layers[i].get());
+      if (layer)
+      {
+        check_gradient("Db" + std::to_string(i+1), f, layer->b, layer->Db, h);
+        check_gradient("DW" + std::to_string(i+1), f, layer->W, layer->DW, h);
+      }
+
+      // check sparse mkl linear layers
+      auto slayer = dynamic_cast<sparse_linear_layer*>(layers[i].get());
+      if (slayer)
+      {
+        check_gradient("Db" + std::to_string(i+1), f, slayer->b, slayer->Db, h);
+        check_gradient("DW" + std::to_string(i+1), f, slayer->W, slayer->DW, h);
+      }
+    }
+  }
+
+  void info(const std::string& name) const
+  {
+    std::cout << "==================================\n";
+    std::cout << " MLP " << name << "\n";
+    std::cout << "==================================\n";
+    for (unsigned int i = 0; i < layers.size(); i++)
+    {
+      layers[i]->info(i + 1);
+    }
+  }
+};
+
+inline
+void import_weights(multilayer_perceptron& M, const std::string& dir)
+{
+  std::cout << "importing weights from directory " << dir << std::endl;
+  int index = 1;
+  for (auto& layer: M.layers)
+  {
+    if (auto dlayer = dynamic_cast<linear_layer<eigen::matrix>*>(layer.get()))
+    {
+      load_matrix(dir + "/w" + std::to_string(index) + ".txt", dlayer->W);
+      eigen::load_vector(dir + "/b" + std::to_string(index) + ".txt", dlayer->b);
+    }
+    else if (auto slayer = dynamic_cast<linear_layer<mkl::sparse_matrix_csr<scalar>>*>(layer.get()))
+    {
+      load_matrix(dir + "/w" + std::to_string(index) + ".txt", slayer->W);
+      eigen::load_vector(dir + "/b" + std::to_string(index) + ".txt", slayer->b);
+    }
+    index++;
+  }
+}
+
+inline
+void export_weights(const multilayer_perceptron& M, const std::string& dir)
+{
+  std::cout << "exporting weights to directory " << dir << std::endl;
+  int index = 1;
+  for (auto& layer: M.layers)
+  {
+    if (auto dlayer = dynamic_cast<linear_layer<eigen::matrix>*>(layer.get()))
+    {
+      save_matrix(dir + "/w" + std::to_string(index) + ".txt", dlayer->W);
+      eigen::save_vector(dir + "/b" + std::to_string(index) + ".txt", dlayer->b);
+    }
+    else if (auto slayer = dynamic_cast<linear_layer<mkl::sparse_matrix_csr<scalar>>*>(layer.get()))
+    {
+      save_matrix(dir + "/w" + std::to_string(index) + ".txt", slayer->W);
+      eigen::save_vector(dir + "/b" + std::to_string(index) + ".txt", slayer->b);
+    }
+    index++;
+  }
+}
+
+} // namespace nerva
+
+#endif // NERVA_NEURAL_NETWORKS_MULTILAYER_PERCEPTRON_H

@@ -1,0 +1,8 @@
+import testing ;
+  
+project nerva/tests
+   : requirements
+       <library>/nerva//nervalib
+   ;
+
+test-suite data : [ test_all r ] ;
