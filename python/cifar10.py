@@ -14,7 +14,7 @@ from nerva.learning_rate import ConstantScheduler
 from nerva.loss import SoftmaxCrossEntropyLoss
 from nerva.optimizers import GradientDescent
 from nerva.training import minibatch_gradient_descent, minibatch_gradient_descent_python, SGDOptions
-from nerva.utilities import RandomNumberGenerator
+from nerva.utilities import RandomNumberGenerator, set_num_threads
 from nerva.weights import Xavier
 
 
@@ -110,4 +110,5 @@ def main():
 
 
 if __name__ == '__main__':
+    # set_num_threads(4)
     main()
