@@ -4,9 +4,9 @@ python bindings. Currently only multilayer perceptrons are supported with
 dense or sparse layers. An example can be found in `python/cifar10.py`.
 
 ## Requirements
-A C++17 compiler.
+A C++17 compiler and an Intel processor (due to the dependency on Intel MKL).
 
-Compilation has been tested successfully with g++-11.3. Note that **the MKL library
+Compilation has been tested successfully with g++-11.3 and Visual Studio 2019. Note that **the MKL library
 must be linked statically**. It turned out that shared linking causes wrong results
 in one of the MKL sparse matrix multiplication routines.
 
@@ -31,8 +31,10 @@ The following build systems are supported
 
 ### Ubuntu build
 It is expected that the location of the Intel MKL library is set
-in the environment variable `MKLROOT`. The path to the Eigen include
-files is currently hard coded as `/usr/include/eigen3`.
+in the environment variable `MKLROOT`, and the location of the Eigen
+library is set in the environment variable `EIGENROOT`. If the latter
+variable is not set, the Eigen include files are assumed to be in
+`/usr/include/eigen3`.
 The following packages need to be installed:
 ```
 libeigen3-dev
@@ -45,4 +47,13 @@ pip3 install . --user
 ```
 
 ### Windows build
-The Windows build has not been tested yet.
+The Windows build is still experimental. It is expected that the location of the
+oneAPI library is set in the environment variable `ONEAPI_ROOT`, and the
+location of the Eigen library is set in the environment variable `EIGENROOT`.
+Note that the default installation of Intel MKL will set `ONEAPI_ROOT` automatically.
+On Windows the file `libiomp5md.dll` must be installed. It can be found
+in `%ONEAPI_ROOT%\compiler\latest\windows\redist\intel64_win\compiler\libiomp5md.dll`.
+The easiest way to install it is to copy it manually to the directory `C:\Windows\System32`.
+The performance doesn't seem optimal yet. Setting a compiler flag like `/arch:AVX2`
+may improve the performance, but there seems to be no standard way to choose the
+right combination of flags.
