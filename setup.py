@@ -9,7 +9,7 @@ __version__ = "0.12"
 define_macros = [('VERSION_INFO', __version__)]
 include_dirs = ['include']
 extra_compile_args = ['-DFMT_HEADER_ONLY']
-extra_link_args = [] if sys.platform.startswith("win") else ['-ltbb']
+extra_link_args = []
 
 # set up Eigen
 EIGENROOT = os.getenv('EIGENROOT')
