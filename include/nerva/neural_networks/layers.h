@@ -96,7 +96,7 @@ struct linear_layer: public neural_network_layer
   {
     if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
     {
-      mkl::assign_matrix_product_batch(DW, DY, X.transpose(), std::max(4L, DY.rows() / 10));
+      mkl::assign_matrix_product_batch(DW, DY, X.transpose(), std::max(4L, static_cast<long>(DY.rows() / 10)));
       Db = DY.rowwise().sum();
       mkl::assign_matrix_product(DX, W, DY, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
@@ -183,7 +183,7 @@ struct sigmoid_layer : public linear_layer<Matrix>
     if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
     {
       DZ = DY.cwiseProduct(eigen::x_times_one_minus_x(Y));
-      mkl::assign_matrix_product_batch(DW, DZ, X.transpose(), std::max(4L, DZ.rows() / 10));
+      mkl::assign_matrix_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
       Db = DZ.rowwise().sum();
       mkl::assign_matrix_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
@@ -246,7 +246,7 @@ struct activation_layer : public linear_layer<Matrix>
     if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
     {
       DZ = DY.cwiseProduct(act.prime(Z));
-      mkl::assign_matrix_product_batch(DW, DZ, X.transpose(), std::max(4L, DZ.rows() / 10));
+      mkl::assign_matrix_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
       Db = DZ.rowwise().sum();
       mkl::assign_matrix_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
@@ -378,7 +378,7 @@ struct softmax_layer : public linear_layer<Matrix>
     {
       auto K = Y.rows();
       DZ = Y.cwiseProduct(DY - (Y.transpose() * DY).diagonal().transpose().colwise().replicate(K));
-      mkl::assign_matrix_product_batch(DW, DZ, X.transpose(), std::max(4L, DZ.rows() / 10));
+      mkl::assign_matrix_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
       Db = DZ.rowwise().sum();
       mkl::assign_matrix_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }

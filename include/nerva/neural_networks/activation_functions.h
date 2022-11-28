@@ -18,13 +18,13 @@ namespace nerva {
 
 struct sigmoid
 {
-  constexpr scalar operator()(scalar x) const
+  scalar operator()(scalar x) const
   {
     return scalar(1.0) / (scalar(1.0) + std::exp(-x));
   }
 
   template <typename Matrix>
-  constexpr auto operator()(const Matrix& x) const
+  auto operator()(const Matrix& x) const
   {
     return x.unaryExpr(*this);
   }
@@ -32,14 +32,14 @@ struct sigmoid
 
 struct sigmoid_prime
 {
-  constexpr scalar operator()(scalar x) const
+  scalar operator()(scalar x) const
   {
     scalar f_x = sigmoid()(x);
     return f_x * (scalar(1.0) - f_x);
   }
 
   template <typename Matrix>
-  constexpr auto operator()(const Matrix& x) const
+  auto operator()(const Matrix& x) const
   {
     return x.unaryExpr(*this);
   }
@@ -48,13 +48,13 @@ struct sigmoid_prime
 struct sigmoid_activation
 {
   template <typename Matrix>
-  constexpr auto operator()(const Matrix& X) const
+  auto operator()(const Matrix& X) const
   {
     return sigmoid()(X);
   }
 
   template <typename Matrix>
-  constexpr auto prime(const Matrix& X) const
+  auto prime(const Matrix& X) const
   {
     return sigmoid_prime()(X);
   }
@@ -62,13 +62,13 @@ struct sigmoid_activation
 
 struct relu
 {
-  constexpr scalar operator()(scalar x) const
+  scalar operator()(scalar x) const
   {
     return std::max(scalar(0.0), x);
   }
 
   template <typename Matrix>
-  constexpr auto operator()(const Matrix& x) const
+  auto operator()(const Matrix& x) const
   {
     return x.unaryExpr(*this);
   }
@@ -76,13 +76,13 @@ struct relu
 
 struct relu_prime
 {
-  constexpr scalar operator()(scalar x) const
+  scalar operator()(scalar x) const
   {
     return (x < 0) ? scalar(0.0) : scalar(1.0);
   }
 
   template <typename Matrix>
-  constexpr auto operator()(const Matrix& x) const
+  auto operator()(const Matrix& x) const
   {
     return x.unaryExpr(*this);
   }
@@ -91,13 +91,13 @@ struct relu_prime
 struct relu_activation
 {
   template <typename Matrix>
-  constexpr auto operator()(const Matrix& X) const
+  auto operator()(const Matrix& X) const
   {
     return relu()(X);
   }
 
   template <typename Matrix>
-  constexpr auto prime(const Matrix& X) const
+  auto prime(const Matrix& X) const
   {
     return relu_prime()(X);
   }
@@ -111,13 +111,13 @@ struct leaky_relu
     : alpha(alpha_)
   {}
 
-  constexpr scalar operator()(scalar x) const
+  scalar operator()(scalar x) const
   {
     return std::max(alpha*x, x);
   }
 
   template <typename Matrix>
-  constexpr auto operator()(const Matrix& x) const
+  auto operator()(const Matrix& x) const
   {
     return x.unaryExpr(*this);
   }
@@ -131,13 +131,13 @@ struct leaky_relu_prime
       : alpha(alpha_)
   {}
 
-  constexpr scalar operator()(scalar x) const
+  scalar operator()(scalar x) const
   {
     return (x < 0) ? alpha : scalar(1.0);
   }
 
   template <typename Matrix>
-  constexpr auto operator()(const Matrix& x) const
+  auto operator()(const Matrix& x) const
   {
     return x.unaryExpr(*this);
   }
@@ -152,13 +152,13 @@ struct leaky_relu_activation
   {}
 
   template <typename Matrix>
-  constexpr auto operator()(const Matrix& X) const
+  auto operator()(const Matrix& X) const
   {
     return leaky_relu(alpha)(X);
   }
 
   template <typename Matrix>
-  constexpr auto prime(const Matrix& X) const
+  auto prime(const Matrix& X) const
   {
     return leaky_relu_prime(alpha)(X);
   }
@@ -172,13 +172,13 @@ struct all_relu
       : alpha(alpha_)
   {}
 
-  constexpr scalar operator()(scalar x) const
+  scalar operator()(scalar x) const
   {
     return x < scalar(0) ? alpha * x : x;
   }
 
   template <typename Matrix>
-  constexpr auto operator()(const Matrix& x) const
+  auto operator()(const Matrix& x) const
   {
     return x.unaryExpr(*this);
   }
@@ -192,13 +192,13 @@ struct all_relu_prime
       : alpha(alpha_)
   {}
 
-  constexpr scalar operator()(scalar x) const
+  scalar operator()(scalar x) const
   {
     return x < scalar(0) ? alpha : scalar(1);
   }
 
   template <typename Matrix>
-  constexpr auto operator()(const Matrix& x) const
+  auto operator()(const Matrix& x) const
   {
     return x.unaryExpr(*this);
   }
@@ -214,13 +214,13 @@ struct all_relu_activation
   {}
 
   template <typename Matrix>
-  constexpr auto operator()(const Matrix& X) const
+  auto operator()(const Matrix& X) const
   {
     return all_relu(alpha)(X);
   }
 
   template <typename Matrix>
-  constexpr auto prime(const Matrix& X) const
+  auto prime(const Matrix& X) const
   {
     return all_relu_prime(alpha)(X);
   }
@@ -228,13 +228,13 @@ struct all_relu_activation
 
 struct hyperbolic_tangent
 {
-  constexpr scalar operator()(scalar x) const
+  scalar operator()(scalar x) const
   {
     return std::tanh(x);
   }
 
   template <typename Matrix>
-  constexpr auto operator()(const Matrix& x) const
+  auto operator()(const Matrix& x) const
   {
     return x.unaryExpr(*this);
   }
@@ -243,14 +243,14 @@ struct hyperbolic_tangent
 struct hyperbolic_tangent_prime
 {
   // https://stackoverflow.com/questions/24511540/how-to-calculate-the-derivative-of-fnet-tanhnet-in-c
-  constexpr scalar operator()(scalar x) const
+  scalar operator()(scalar x) const
   {
     scalar tanh_x = hyperbolic_tangent()(x);
     return scalar(1.0) - tanh_x * tanh_x;
   }
 
   template <typename Matrix>
-  constexpr auto operator()(const Matrix& x) const
+  auto operator()(const Matrix& x) const
   {
     return x.unaryExpr(*this);
   }
@@ -259,13 +259,13 @@ struct hyperbolic_tangent_prime
 struct hyperbolic_tangent_activation
 {
   template <typename Matrix>
-  constexpr auto operator()(const Matrix& X) const
+  auto operator()(const Matrix& X) const
   {
     return hyperbolic_tangent()(X);
   }
 
   template <typename Matrix>
-  constexpr auto prime(const Matrix& X) const
+  auto prime(const Matrix& X) const
   {
     return hyperbolic_tangent_prime()(X);
   }
@@ -315,13 +315,13 @@ struct softmax_prime
 struct softmax_activation
 {
   template <typename Matrix>
-  constexpr auto operator()(const Matrix& X) const
+  auto operator()(const Matrix& X) const
   {
     return softmax()(X);
   }
 
   template <typename Matrix>
-  constexpr auto prime(const Matrix& X) const
+  auto prime(const Matrix& X) const
   {
     return softmax_prime()(X);
   }
