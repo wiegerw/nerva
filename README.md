@@ -41,7 +41,7 @@ libeigen3-dev
 pybind11-dev
 python3-pybind11
 ```
-The python package can for example be installed using
+The nerva package can for example be installed using
 ```
 pip3 install . --user
 ```
@@ -55,5 +55,12 @@ On Windows the file `libiomp5md.dll` must be installed. It can be found
 in `%ONEAPI_ROOT%\compiler\latest\windows\redist\intel64_win\compiler\libiomp5md.dll`.
 The easiest way to install it is to copy it manually to the directory `C:\Windows\System32`.
 The performance doesn't seem optimal yet. Setting a compiler flag like `/arch:AVX2`
-may improve the performance, but there seems to be no standard way to choose the
-right combination of flags.
+may improve the performance, but there seems to be no standard way to automatically
+choose the right combination of flags.
+The nerva package can for example be installed using
+```
+pip3 install .
+```
+Installing it with the flag `--user` should also work, but then it seems
+necessary to add the local python install directory to the Windows PATH
+manually.
