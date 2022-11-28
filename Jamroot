@@ -3,31 +3,6 @@ import os ;
 
 local MKLROOT = [ os.environ MKLROOT ] ;
 
-# Define a feature for using the Intel MKL library
-feature.feature mkl : off on : composite propagated ;
-
-feature.compose <mkl>off :
-    <linkflags>-lgomp
-    <linkflags>-pthread
-  ;
-
-feature.compose <mkl>on :
-    <cxxflags>-march=native
-    <define>EIGEN_USE_MKL_ALL
-    <cxxflags>-DMKL_ILP64
-    <cxxflags>-m64
-    <include>$(MKLROOT)/include
-    <linkflags>-L$(MKLROOT)/lib/intel64
-    <linkflags>-Wl,--no-as-needed
-    <linkflags>-lmkl_intel_ilp64
-    <linkflags>-lmkl_intel_thread
-    <linkflags>-lmkl_core
-    <linkflags>-liomp5
-    <linkflags>-lpthread
-    <linkflags>-lm
-    <linkflags>-ldl
-  ;
-
 # Define a feature for the number type
 feature.feature scalar : float double : composite optional propagated ;
 feature.compose <scalar>double : <define>NERVA_USE_DOUBLE ;
@@ -38,15 +13,24 @@ project nerva
        <include>/usr/include/eigen3
        <define>FMT_HEADER_ONLY
 
+       <define>EIGEN_USE_MKL_ALL
+       <include>$(MKLROOT)/include
+       <cxxflags>-std=c++17
+       <linkflags>-L$(MKLROOT)/lib/intel64
+       <linkflags>"-Wl,--start-group -lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -Wl,--end-group"
+       <linkflags>-liomp5
+       <linkflags>-lpthread
+       <linkflags>-lm
+       <linkflags>-ldl
+
        <toolset>clang-5:<cxxflags>"-std=c++1z" <warnings>all
-
        <toolset>clang:<cxxflags>"-std=c++17" <warnings>all
-       <toolset>clang:<linkflags>-ltbb
-       <toolset>clang:<linkflags>-lgomp
        <toolset>clang:<cxxflags>-fopenmp=libomp
+       <toolset>clang:<cxxflags>-DMKL_LP64
 
-       <toolset>gcc:<cxxflags>-std=c++17
-       <toolset>gcc:<linkflags>-ltbb
+       <toolset>gcc:<cxxflags>-march=native
+       <toolset>gcc:<cxxflags>-m64
+       <toolset>gcc:<cxxflags>-DMKL_ILP64
    ;
 
 lib nervalib
