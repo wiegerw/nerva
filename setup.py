@@ -75,5 +75,6 @@ setup(
     long_description="",
     ext_modules=ext_modules,
     zip_safe=False,
+    package_dir = {'': 'python'},
     packages=['nerva']
 )

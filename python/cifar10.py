@@ -75,7 +75,7 @@ def create_sparse_model(sparsity: float):
     return model
 
 
-# Uses a data generator to generate batches. This turns out to be extremely slow.
+# Uses a data generator to generate batches.
 # The parameter dataset is only used for computing statistics.
 def minibatch_gradient_descent1(M, dataset, datagen, loss, learning_rate, epochs, batch_size, statistics=True):
     N = dataset.Xtrain.shape[1]  # the number of examples
@@ -90,7 +90,6 @@ def minibatch_gradient_descent1(M, dataset, datagen, loss, learning_rate, epochs
 
         eta = learning_rate(epoch)  # update the learning rate at the start of each epoch
 
-        # TODO: this loop is excessively slow
         for index, (Xbatch, Tbatch) in enumerate(datagen):
             if index == K:
                 break
@@ -148,8 +147,7 @@ def train_sparse_model(dataset):
     print('')
 
 
-# Use on the fly data augmentation. Note that this is extremely slow.
-# It is not yet understood why.
+# Use on the fly data augmentation. Note that data augmentation is very expensive.
 def train_dense_model_with_augmentation(x_train, x_test, y_train, y_test):
     rng = RandomNumberGenerator(1234567)
     loss = SoftmaxCrossEntropyLoss()
