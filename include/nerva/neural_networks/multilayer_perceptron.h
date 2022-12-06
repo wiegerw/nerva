@@ -84,7 +84,7 @@ struct multilayer_perceptron
     }
   }
 
-  void regrow(scalar zeta, weight_initialization w, std::mt19937& rng)
+  void regrow(scalar zeta, weight_initialization w, std::mt19937& rng, bool check=false)
   {
     for (auto& layer: layers)
     {
@@ -92,7 +92,7 @@ struct multilayer_perceptron
       if (slayer)
       {
         long k = std::lround(zeta * slayer->W.values.size());
-        nerva::regrow(slayer->W, w, k, rng);
+        nerva::regrow(slayer->W, w, k, rng, check);
       }
     }
   }

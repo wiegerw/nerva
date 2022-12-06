@@ -169,6 +169,65 @@ void regrow(mkl::sparse_matrix_csr<Scalar>& W, Function f, long k, std::mt19937&
   W = mkl::to_csr(W1);
 }
 
+inline
+void check_pruning(const eigen::matrix& W0, const eigen::matrix& W1, scalar threshold)
+{
+  long m = W0.rows();
+  long n = W0.cols();
+
+  long count = 0;
+  for (long i = 0; i < m; i++)
+  {
+    for (long j = 0; j < n; j++)
+    {
+      if (W0(i, j) != W1(i, j))
+      {
+        count++;
+        if (std::fabs(W0(i, j)) > threshold)
+        {
+          throw std::runtime_error("check_pruning: W[" + std::to_string(i) + "," + std::to_string(j) + "] was modified unjustly.");
+        }
+        if (W1(i, j) != scalar(0))
+        {
+          throw std::runtime_error("check_pruning: W[" + std::to_string(i) + "," + std::to_string(j) + "] was assigned a non-zero value.");
+        }
+      }
+    }
+  }
+  std::cout << count << " weights were pruned" << std::endl;
+}
+
+inline
+void check_growing(const eigen::matrix& W0, const eigen::matrix& W1)
+{
+  long m = W0.rows();
+  long n = W0.cols();
+
+  long grow_count = 0;
+  for (long i = 0; i < m; i++)
+  {
+    for (long j = 0; j < n; j++)
+    {
+      if (W0(i, j) != W1(i, j))
+      {
+        if (W0(i, j) == scalar(0) && W1(i, j) == 0)
+        {
+          // skip
+        }
+        else if (W0(i, j) == scalar(0) && W1(i, j) != 0)
+        {
+          grow_count++;
+        }
+        else
+        {
+          throw std::runtime_error("check_growing: W[" + std::to_string(i) + "," + std::to_string(j) + "] was modified unexpectedly.");
+        }
+      }
+    }
+  }
+  std::cout << grow_count << " weights were regrown" << std::endl;
+}
+
 /// Prunes and grows the \a k smallest elements of the matrix \a W.
 /// \tparam Scalar A number type
 /// \param W A matrix
@@ -176,28 +235,39 @@ void regrow(mkl::sparse_matrix_csr<Scalar>& W, Function f, long k, std::mt19937&
 /// \param k The number of zero entries in \a A that will get a new value
 /// \param rng A random number generator
 template <typename Scalar = scalar>
-void regrow(mkl::sparse_matrix_csr<Scalar>& W, weight_initialization w, long k, std::mt19937& rng)
+void regrow(mkl::sparse_matrix_csr<Scalar>& W, weight_initialization w, long k, std::mt19937& rng, bool check=false)
 {
   auto W1 = mkl::to_eigen(W);
+
+  scalar threshold = find_k_smallest_value(W1, k);
+  prune(W1, threshold);
+
+  eigen::matrix Wpruned;
+  if (check)
+  {
+    auto W0 = mkl::to_eigen(W);
+    Wpruned = W1;
+    check_pruning(W0, Wpruned, threshold);
+  }
 
   switch(w)
   {
     case weight_initialization::he:
     {
       he_weight_initializer init(rng, W.cols());
-      regrow(W1, init, k, rng);
+      grow(W1, init, k, rng);
       break;
     }
     case weight_initialization::xavier:
     {
       xavier_weight_initializer init(rng, W.cols());
-      regrow(W1, init, k, rng);
+      grow(W1, init, k, rng);
       break;
     }
     case weight_initialization::xavier_normalized:
     {
       xavier_normalized_weight_initializer init(rng, W.rows(), W.cols());
-      regrow(W1, init, k, rng);
+      grow(W1, init, k, rng);
       break;
     }
     case weight_initialization::uniform:
@@ -206,15 +276,21 @@ void regrow(mkl::sparse_matrix_csr<Scalar>& W, weight_initialization w, long k, 
     case weight_initialization::tensorflow:
     {
       uniform_weight_initializer init(rng);
-      regrow(W1, init, k, rng);
+      grow(W1, init, k, rng);
       break;
     }
     case weight_initialization::zero:
     {
       zero_weight_initializer init(rng);
-      regrow(W1, init, k, rng);
+      grow(W1, init, k, rng);
       break;
     }
+  }
+
+  if (check)
+  {
+    auto W0 = mkl::to_eigen(W);
+    check_growing(Wpruned, W1);
   }
   W = mkl::to_csr(W1);
 }

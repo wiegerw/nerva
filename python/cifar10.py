@@ -184,7 +184,7 @@ def train_dense_model_with_augmentation(x_train, x_test, y_train, y_test):
     print('')
 
 
-def minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Weights.Zero, rng=RandomNumberGenerator(1234567)):
+def minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Weights.Zero, rng=RandomNumberGenerator(1234567), check_regrow=False):
     N = dataset.Xtrain.shape[1]  # the number of examples
     I = list(range(N))
     K = N // batch_size  # the number of batches
@@ -194,7 +194,8 @@ def minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate, epoc
 
     for epoch in range(epochs):
         if epoch > 0:
-            M.regrow(zeta, regrow_weights, rng)
+            print('regrow')
+            M.regrow(zeta, regrow_weights, rng, check_regrow)
 
         watch.reset()
         if shuffle:
@@ -228,7 +229,7 @@ def train_sparse_model_with_regrow(dataset):
     sparsity = 0.5
     model = create_sparse_model(sparsity)
     M = model.compile(input_size, batch_size, rng)
-    minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate_scheduler, epochs=10, batch_size=100, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Weights.Zero, rng=rng)
+    minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=100, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Weights.Xavier, rng=rng, check_regrow=False)
     print('')
 
 
