@@ -339,6 +339,7 @@ PYBIND11_MODULE(nervalib, m)
     .value("Xavier", weight_initialization::xavier, "Xavier")
     .value("XavierNormalized", weight_initialization::xavier_normalized, "XavierNormalized")
     .value("Uniform", weight_initialization::uniform, "Uniform")
+    .value("Zero", weight_initialization::zero, "Zero")
     ;
 
   m.def("initialize_weights", initialize_weights<eigen::matrix>);

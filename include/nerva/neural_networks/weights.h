@@ -146,6 +146,25 @@ struct he_weight_initializer: public weight_initializer
   }
 };
 
+struct zero_weight_initializer: public weight_initializer
+{
+  explicit zero_weight_initializer(std::mt19937& rng)
+    : weight_initializer(rng)
+  {}
+
+  scalar operator()() const
+  {
+    return scalar(0);
+  }
+
+  template <typename Matrix>
+  void initialize(Matrix& W, eigen::vector& b) const
+  {
+    initialize_matrix(W, *this);
+    b = eigen::vector::NullaryExpr(b.size(), *this);
+  }
+};
+
 enum class weight_initialization
 {
   default_,
@@ -154,7 +173,8 @@ enum class weight_initialization
   xavier_normalized,
   uniform,
   pytorch,
-  tensorflow
+  tensorflow,
+  zero
 };
 
 inline
@@ -169,6 +189,7 @@ std::ostream& operator<<(std::ostream& out, weight_initialization x)
     case weight_initialization::uniform: out << "uniform"; break;
     case weight_initialization::pytorch: out << "pytorch"; break;
     case weight_initialization::tensorflow: out << "tensorflow"; break;
+    case weight_initialization::zero: out << "zero"; break;
   }
   return out;
 }
@@ -204,6 +225,10 @@ weight_initialization parse_weight_initialization(const std::string& text)
   {
     return weight_initialization::tensorflow;
   }
+  else if (text == "zero")
+  {
+    return weight_initialization::zero;
+  }
   throw std::runtime_error("Error: could not parse weight initialization '" + text + "'");
 }
 
@@ -233,6 +258,11 @@ void initialize_weights(weight_initialization w, Matrix& W, eigen::vector& b, st
     case weight_initialization::tensorflow:  // TODO: implement this
     {
       uniform_weight_initializer(rng).initialize(W, b);
+      break;
+    }
+    case weight_initialization::zero:
+    {
+      zero_weight_initializer(rng).initialize(W, b);
       break;
     }
   }
