@@ -182,14 +182,13 @@ void check_pruning(const eigen::matrix& W0, const eigen::matrix& W1, scalar thre
     {
       if (W0(i, j) != W1(i, j))
       {
-        count++;
-        if (std::fabs(W0(i, j)) > threshold)
+        if (W0(i, j) != scalar(0) && std::fabs(W0(i, j)) <= threshold && W1(i, j) == scalar(0))
         {
-          throw std::runtime_error("check_pruning: W[" + std::to_string(i) + "," + std::to_string(j) + "] was modified unjustly.");
+          count++;
         }
-        if (W1(i, j) != scalar(0))
+        else
         {
-          throw std::runtime_error("check_pruning: W[" + std::to_string(i) + "," + std::to_string(j) + "] was assigned a non-zero value.");
+          throw std::runtime_error("check_pruning: W[" + std::to_string(i) + "," + std::to_string(j) + "] was modified unexpectedly.");
         }
       }
     }
@@ -210,11 +209,7 @@ void check_growing(const eigen::matrix& W0, const eigen::matrix& W1)
     {
       if (W0(i, j) != W1(i, j))
       {
-        if (W0(i, j) == scalar(0) && W1(i, j) == 0)
-        {
-          // skip
-        }
-        else if (W0(i, j) == scalar(0) && W1(i, j) != 0)
+        if (W0(i, j) == scalar(0) && W1(i, j) != 0)
         {
           grow_count++;
         }
