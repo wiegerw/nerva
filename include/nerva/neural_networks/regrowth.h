@@ -209,6 +209,12 @@ void regrow(mkl::sparse_matrix_csr<Scalar>& W, weight_initialization w, long k, 
       regrow(W1, init, k, rng);
       break;
     }
+    case weight_initialization::zero:
+    {
+      zero_weight_initializer init(rng);
+      regrow(W1, init, k, rng);
+      break;
+    }
   }
   W = mkl::to_csr(W1);
 }
