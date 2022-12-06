@@ -70,8 +70,8 @@ double compute_accuracy_batch(MultilayerPerceptron& M, const EigenMatrix& Xtest,
   for (long k = 0; k < K; k++)
   {
     auto batch = Eigen::seqN(k * Q, Q);
-    auto Xbatch = Xtest(Eigen::placeholders::all, batch);
-    auto Tbatch = Ttest(Eigen::placeholders::all, batch);
+    auto Xbatch = Xtest(Eigen::all, batch);
+    auto Tbatch = Ttest(Eigen::all, batch);
     M.feedforward(Xbatch, Ybatch);
     for (long i = 0; i < Q; i++)
     {
@@ -116,8 +116,8 @@ double compute_loss_batch(MultilayerPerceptron& M, const std::shared_ptr<loss_fu
   for (long k = 0; k < K; k++)
   {
     auto batch = Eigen::seqN(k * Q, Q);
-    auto Xbatch = X(Eigen::placeholders::all, batch);
-    auto Tbatch = T(Eigen::placeholders::all, batch);
+    auto Xbatch = X(Eigen::all, batch);
+    auto Tbatch = T(Eigen::all, batch);
     M.feedforward(Xbatch, Ybatch);
     total_loss += loss->value(Ybatch, Tbatch);
   }
@@ -327,8 +327,8 @@ std::pair<double, double> minibatch_gradient_descent(
     for (long k = 0; k < K; k++)
     {
       eigen::eigen_slice batch(I.begin() + k * options.batch_size, options.batch_size);
-      auto X = data.Xtrain(Eigen::placeholders::all, batch);
-      auto T = data.Ttrain(Eigen::placeholders::all, batch);
+      auto X = data.Xtrain(Eigen::all, batch);
+      auto T = data.Ttrain(Eigen::all, batch);
       M.feedforward(X, Y);
       if (options.debug)
       {

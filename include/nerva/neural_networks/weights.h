@@ -17,85 +17,132 @@
 
 namespace nerva {
 
-struct initialize_weights_naive
+struct weight_initializer
+{
+  std::mt19937& rng;
+
+  explicit weight_initializer(std::mt19937& rng_)
+   : rng(rng_)
+  {}
+};
+
+struct naive_weight_initializer: public weight_initializer
 {
   scalar low;
   scalar high;
 
-  explicit initialize_weights_naive(scalar low_ = 0.0, scalar high_ = 1.0)
-    : low(low_), high(high_)
+  explicit naive_weight_initializer(std::mt19937& rng, scalar low_ = 0.0, scalar high_ = 1.0)
+    : weight_initializer(rng), low(low_), high(high_)
   {}
 
-  template <typename Matrix, typename RandomNumberGenerator>
-  void operator()(Matrix& W, eigen::vector& b, RandomNumberGenerator rng) const
+  scalar operator()() const
   {
     std::uniform_real_distribution<scalar> dist(low, high);
-    auto f = [&dist, &rng]() { return dist(rng); };
-    initialize_matrix(W, f);
-    b = eigen::vector::NullaryExpr(b.size(), dist(rng));
+    return dist(rng);
+  }
+
+  template <typename Matrix>
+  void initialize(Matrix& W, eigen::vector& b) const
+  {
+    initialize_matrix(W, *this);
+    b = eigen::vector::NullaryExpr(b.size(), *this);
   }
 };
 
-struct initialize_weights_uniform
+struct uniform_weight_initializer: public weight_initializer
 {
   scalar low;
   scalar high;
 
-  explicit initialize_weights_uniform(scalar low_ = -1.0, scalar high_ = 1.0)
-      : low(low_), high(high_)
+  explicit uniform_weight_initializer(std::mt19937& rng, scalar low_ = -1.0, scalar high_ = 1.0)
+  : weight_initializer(rng), low(low_), high(high_)
   {}
 
-  template <typename Matrix, typename RandomNumberGenerator>
-  void operator()(Matrix& W, eigen::vector& b, RandomNumberGenerator rng) const
+  scalar operator()() const
   {
     std::uniform_real_distribution<scalar> dist(low, high);
-    auto f = [&dist, &rng]() { return dist(rng); };
-    initialize_matrix(W, f);
+    return dist(rng);
+  }
+
+  template <typename Matrix>
+  void initialize(Matrix& W, eigen::vector& b) const
+  {
+    initialize_matrix(W, *this);
     b = eigen::vector::Zero(b.size());
   }
 };
 
-struct initialize_weights_xavier
+struct xavier_weight_initializer: public weight_initializer
 {
-  template <typename Matrix, typename RandomNumberGenerator>
-  void operator()(Matrix& W, eigen::vector& b, RandomNumberGenerator rng) const
+  scalar x;
+
+  xavier_weight_initializer(std::mt19937& rng, long columns)
+   : weight_initializer(rng)
   {
-    auto n = W.cols(); // # inputs
-    scalar x = scalar(1.0) / std::sqrt(scalar(n));
+    x = scalar(1.0) / std::sqrt(scalar(columns));
+  }
+
+  scalar operator()() const
+  {
     std::uniform_real_distribution<scalar> dist(-x, x);
-    auto f = [&dist, &rng]() { return dist(rng); };
-    initialize_matrix(W, f);
+    return dist(rng);
+  }
+
+  template <typename Matrix>
+  void initialize(Matrix& W, eigen::vector& b) const
+  {
+    initialize_matrix(W, *this);
     b = eigen::vector::Zero(b.size());
   }
 };
 
-struct initialize_weights_normalized_xavier
+struct xavier_normalized_weight_initializer: public weight_initializer
 {
-  template <typename Matrix, typename RandomNumberGenerator>
-  void operator()(Matrix& W, eigen::vector& b, RandomNumberGenerator rng) const
+  scalar x;
+
+  xavier_normalized_weight_initializer(std::mt19937& rng, long rows, long columns)
+   : weight_initializer(rng)
   {
-    auto m = W.rows(); // # outputs
-    auto n = W.cols(); // # inputs
-    scalar x = std::sqrt(scalar(6.0)) / std::sqrt(scalar(m + n));
+    x = std::sqrt(scalar(6.0)) / std::sqrt(scalar(rows + columns));
+  }
+
+  scalar operator()() const
+  {
     std::uniform_real_distribution<scalar> dist(-x, x);
-    auto f = [&dist, &rng]() { return dist(rng); };
-    initialize_matrix(W, f);
+    return dist(rng);
+  }
+
+  template <typename Matrix>
+  void initialize(Matrix& W, eigen::vector& b) const
+  {
+    initialize_matrix(W, *this);
     b = eigen::vector::Zero(b.size());
   }
 };
 
-struct initialize_weights_he
+struct he_weight_initializer: public weight_initializer
 {
-  template <typename Matrix, typename RandomNumberGenerator>
-  void operator()(Matrix& W, eigen::vector& b, RandomNumberGenerator rng) const
+  scalar mean;
+  scalar std;
+
+  he_weight_initializer(std::mt19937& rng, long columns)
+   : weight_initializer(rng)
   {
-    auto n = W.cols(); // # inputs
-    scalar mean = 0.0;
-    scalar std = std::sqrt(scalar(2.0) / scalar(n));
+    mean = scalar(0);
+    std = std::sqrt(scalar(2) / scalar(columns));
+  }
+
+  scalar operator()() const
+  {
     std::normal_distribution<scalar> dist(mean, std);
-    auto f = [&dist, &rng]() { return dist(rng); };
-    initialize_matrix(W, f);
-    b = eigen::vector::NullaryExpr(b.size(), [&dist, &rng]() { return dist(rng); });
+    return dist(rng);
+  }
+
+  template <typename Matrix>
+  void initialize(Matrix& W, eigen::vector& b) const
+  {
+    initialize_matrix(W, *this);
+    b = eigen::vector::NullaryExpr(b.size(), *this);
   }
 };
 
@@ -160,36 +207,32 @@ weight_initialization parse_weight_initialization(const std::string& text)
   throw std::runtime_error("Error: could not parse weight initialization '" + text + "'");
 }
 
-template <typename Matrix, typename RandomNumberGenerator>
-void initialize_weights(weight_initialization w, Matrix& W, eigen::vector& b, RandomNumberGenerator rng)
+template <typename Matrix>
+void initialize_weights(weight_initialization w, Matrix& W, eigen::vector& b, std::mt19937& rng)
 {
   switch(w)
   {
     case weight_initialization::he:
     {
-      initialize_weights_he init;
-      init(W, b, rng);
+      he_weight_initializer(rng, W.cols()).initialize(W, b);
       break;
     }
     case weight_initialization::xavier:
     {
-      initialize_weights_xavier init;
-      init(W, b, rng);
+      xavier_weight_initializer(rng, W.cols()).initialize(W, b);
       break;
     }
     case weight_initialization::xavier_normalized:
     {
-      initialize_weights_normalized_xavier init;
-      init(W, b, rng);
+      xavier_normalized_weight_initializer(rng, W.rows(), W.cols()).initialize(W, b);
       break;
     }
     case weight_initialization::uniform:
-    case weight_initialization::default_:
-    case weight_initialization::pytorch:
-    case weight_initialization::tensorflow:
+    case weight_initialization::default_:  // TODO: implement this
+    case weight_initialization::pytorch:  // TODO: implement this
+    case weight_initialization::tensorflow:  // TODO: implement this
     {
-      initialize_weights_uniform init;
-      init(W, b, rng);
+      uniform_weight_initializer(rng).initialize(W, b);
       break;
     }
   }

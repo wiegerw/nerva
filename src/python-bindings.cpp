@@ -12,11 +12,13 @@
 #include "nerva/neural_networks/dropout_layers.h"
 #include "nerva/neural_networks/learning_rate_schedulers.h"
 #include "nerva/neural_networks/multilayer_perceptron.h"
+#include "nerva/neural_networks/regrowth.h"
 #include "nerva/neural_networks/training.h"
 #include "nerva/neural_networks/weights.h"
 #include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <cmath>
 #include <sstream>
 
 namespace py = pybind11;
@@ -237,6 +239,11 @@ PYBIND11_MODULE(nervalib, m)
     .def("optimize", &sparse_linear_layer::optimize)
     .def("initialize_weights", [](sparse_linear_layer& layer, weight_initialization w, std::mt19937& rng) { initialize_weights(w, layer.W, layer.b, rng); })
     .def("set_optimizer", [](sparse_linear_layer& layer, const std::string& text) { set_optimizer(layer, text); })
+    .def("regrow", [](sparse_linear_layer& layer, weight_initialization w, scalar zeta, std::mt19937& rng)
+        {
+          long k = std::lround(zeta * layer.W.values.size());
+          regrow(layer.W, w, k, rng);
+        })
     ;
 
   py::class_<sparse_hyperbolic_tangent_layer, sparse_linear_layer, std::shared_ptr<hyperbolic_tangent_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_hyperbolic_tangent_layer")
@@ -317,6 +324,7 @@ PYBIND11_MODULE(nervalib, m)
     .def("backpropagate", &multilayer_perceptron::backpropagate)
     .def("renew_dropout_mask", &multilayer_perceptron::renew_dropout_mask)
     .def("optimize", &multilayer_perceptron::optimize)
+    .def("regrow", &multilayer_perceptron::regrow)
     .def("append_layer", [](multilayer_perceptron& M, const std::shared_ptr<neural_network_layer>& layer) { M.layers.push_back(layer); })
     .def("info", &multilayer_perceptron::info)
     ;
@@ -333,7 +341,7 @@ PYBIND11_MODULE(nervalib, m)
     .value("Uniform", weight_initialization::uniform, "Uniform")
     ;
 
-  m.def("initialize_weights", initialize_weights<eigen::matrix, std::mt19937>);
+  m.def("initialize_weights", initialize_weights<eigen::matrix>);
   m.def("import_weights", import_weights);
   m.def("export_weights", export_weights);
 

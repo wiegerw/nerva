@@ -4,6 +4,7 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
+import random
 import numpy as np
 from keras.datasets import cifar10
 from keras.preprocessing.image import ImageDataGenerator
@@ -16,7 +17,7 @@ from nerva.loss import SoftmaxCrossEntropyLoss
 from nerva.optimizers import GradientDescent
 from nerva.training import minibatch_gradient_descent, minibatch_gradient_descent_python, SGDOptions, compute_accuracy, compute_statistics
 from nerva.utilities import RandomNumberGenerator, set_num_threads, StopWatch
-from nerva.weights import Xavier
+from nerva.weights import Weights
 
 
 def read_cifar10():
@@ -59,25 +60,25 @@ def make_sgd_options():
 def create_dense_model():
     model = Sequential()
     model.add(BatchNormalization())
-    model.add(Dense(128, activation=AllReLU(-0.5), optimizer=GradientDescent(), weight_initializer=Xavier()))
+    model.add(Dense(128, activation=AllReLU(-0.5), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
     model.add(Dropout(0.3))
-    model.add(Dense(64, activation=AllReLU(0.5), optimizer=GradientDescent(), weight_initializer=Xavier()))
+    model.add(Dense(64, activation=AllReLU(0.5), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
     model.add(Dropout(0.3))
-    model.add(Dense(10, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+    model.add(Dense(10, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
     return model
 
 
 def create_sparse_model(sparsity: float):
     model = Sequential()
-    model.add(Sparse(128, sparsity, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
-    model.add(Sparse(64, sparsity, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
-    model.add(Sparse(10, sparsity, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+    model.add(Sparse(128, sparsity, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
+    model.add(Sparse(64, sparsity, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
+    model.add(Sparse(10, sparsity, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
     return model
 
 
 # Uses a data generator to generate batches.
 # The parameter dataset is only used for computing statistics.
-def minibatch_gradient_descent1(M, dataset, datagen, loss, learning_rate, epochs, batch_size, statistics=True):
+def minibatch_gradient_descent_with_augmentation(M, dataset, datagen, loss, learning_rate, epochs, batch_size, statistics=True):
     N = dataset.Xtrain.shape[1]  # the number of examples
     K = N // batch_size  # the number of batches
 
@@ -179,7 +180,55 @@ def train_dense_model_with_augmentation(x_train, x_test, y_train, y_test):
     input_size = 3072
     batch_size = 100
     M = model.compile(input_size, batch_size, rng)
-    minibatch_gradient_descent1(M, dataset, datagen, loss, learning_rate_scheduler, epochs=10, batch_size=100, statistics=True)
+    minibatch_gradient_descent_with_augmentation(M, dataset, datagen, loss, learning_rate_scheduler, epochs=10, batch_size=100, statistics=True)
+    print('')
+
+
+def minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, weight_initializer=Weights.Xavier, rng=RandomNumberGenerator(1234567)):
+    N = dataset.Xtrain.shape[1]  # the number of examples
+    I = list(range(N))
+    K = N // batch_size  # the number of batches
+    compute_statistics(M, loss, dataset, batch_size, -1, statistics, 0.0)
+    total_time = 0.0
+    watch = StopWatch()
+
+    for epoch in range(epochs):
+        if epoch > 0:
+            M.regrow(zeta, weight_initializer, rng)
+
+        watch.reset()
+        if shuffle:
+            random.shuffle(I)
+
+        eta = learning_rate(epoch)  # update the learning rate at the start of each epoch
+
+        for k in range(K):
+            batch = I[k * batch_size: (k + 1) * batch_size]
+            X = dataset.Xtrain[:, batch]
+            T = dataset.Ttrain[:, batch]
+            Y = M.feedforward(X)
+            dY = loss.gradient(Y, T) / batch_size  # pytorch uses this division
+            M.backpropagate(Y, dY)
+            M.optimize(eta)
+
+        seconds = watch.seconds()
+        compute_statistics(M, loss, dataset, batch_size, epoch, statistics, seconds)
+        total_time += seconds
+
+    print(f'Accuracy of the network on the {dataset.Xtest.shape[1]} test examples: {(100.0 * compute_accuracy(M, dataset.Xtest, dataset.Ttest, batch_size)):.2f}%')
+    print(f'Total training time for the {epochs} epochs: {total_time:4.2f}s')
+
+
+def train_sparse_model_with_regrow(dataset):
+    rng = RandomNumberGenerator(1234567)
+    loss = SoftmaxCrossEntropyLoss()
+    learning_rate_scheduler = ConstantScheduler(0.01)
+    input_size = 3072
+    batch_size = 100
+    sparsity = 0.5
+    model = create_sparse_model(sparsity)
+    M = model.compile(input_size, batch_size, rng)
+    minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate_scheduler, epochs=10, batch_size=100, shuffle=True, statistics=True, zeta=0.1, weight_initializer=Weights.Xavier, rng=rng)
     print('')
 
 
@@ -193,4 +242,5 @@ if __name__ == '__main__':
     train_dense_model(dataset)
     train_dense_model_cpp(dataset)
     train_sparse_model(dataset)
+    train_sparse_model_with_regrow(dataset)
     train_dense_model_with_augmentation(x_train, x_test, y_train, y_test)

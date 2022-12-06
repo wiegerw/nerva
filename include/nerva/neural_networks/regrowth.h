@@ -152,24 +152,66 @@ void regrow(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>&
   grow(A, f, k, rng);
 }
 
-/// Prunes and grows the \a k smallest elements of the matrix \a A.
+/// Prunes and grows the \a k smallest elements of the matrix \a W.
 ///
 /// N.B. This implementation is not very efficient!
 /// \tparam Function
 /// \tparam Scalar A number type
-/// \param A A matrix
+/// \param W A matrix
 /// \param f A function that generates new values
 /// \param k The number of zero entries in \a A that will get a new value
 /// \param rng A random number generator
 template <typename Function, typename Scalar = scalar>
-void regrow(mkl::sparse_matrix_csr<Scalar>& A, Function f, long k, std::mt19937& rng)
+void regrow(mkl::sparse_matrix_csr<Scalar>& W, Function f, long k, std::mt19937& rng)
 {
-  auto A1 = mkl::to_eigen(A);
-  regrow(A1, f, k, rng);
-  A = mkl::to_csr(A1);
+  auto W1 = mkl::to_eigen(W);
+  regrow(W1, f, k, rng);
+  W = mkl::to_csr(W1);
 }
 
-// mkl::sparse_matrix_csr<Scalar>& A
+/// Prunes and grows the \a k smallest elements of the matrix \a W.
+/// \tparam Scalar A number type
+/// \param W A matrix
+/// \param w A weight initialization
+/// \param k The number of zero entries in \a A that will get a new value
+/// \param rng A random number generator
+template <typename Scalar = scalar>
+void regrow(mkl::sparse_matrix_csr<Scalar>& W, weight_initialization w, long k, std::mt19937& rng)
+{
+  auto W1 = mkl::to_eigen(W);
+
+  switch(w)
+  {
+    case weight_initialization::he:
+    {
+      he_weight_initializer init(rng, W.cols());
+      regrow(W1, init, k, rng);
+      break;
+    }
+    case weight_initialization::xavier:
+    {
+      xavier_weight_initializer init(rng, W.cols());
+      regrow(W1, init, k, rng);
+      break;
+    }
+    case weight_initialization::xavier_normalized:
+    {
+      xavier_normalized_weight_initializer init(rng, W.rows(), W.cols());
+      regrow(W1, init, k, rng);
+      break;
+    }
+    case weight_initialization::uniform:
+    case weight_initialization::default_:
+    case weight_initialization::pytorch:
+    case weight_initialization::tensorflow:
+    {
+      uniform_weight_initializer init(rng);
+      regrow(W1, init, k, rng);
+      break;
+    }
+  }
+  W = mkl::to_csr(W1);
+}
 
 } // namespace nerva
 
