@@ -49,12 +49,13 @@ scalar find_k_smallest_value(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::
   return *kth_element;
 }
 
-/// Sets all non-zero entries `i,j` in \a A with `A[i,j] <= threshold` to zero
+/// Sets all non-zero entries `i,j` in \a A with `A[i,j] <= threshold` to `new_value`
 /// \param A A matrix
 /// \param threshold A threshold value
+/// \param new_value
 /// \return The number of entries that were set to zero
 template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
-long prune(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A, scalar threshold)
+long prune(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A, scalar threshold, scalar new_value = 0)
 {
   long N = A.rows() * A.cols();
   scalar* data = A.data();
@@ -73,7 +74,7 @@ long prune(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& 
     }
     if (std::fabs(data[i]) <= threshold)
     {
-      data[i] = scalar(0);
+      data[i] = new_value;
       count++;
     }
   }
@@ -174,6 +175,7 @@ void check_pruning(const eigen::matrix& W0, const eigen::matrix& W1, scalar thre
 {
   long m = W0.rows();
   long n = W0.cols();
+  long non_zero_count = (W0.array() > 0).count();
 
   long count = 0;
   for (long i = 0; i < m; i++)
@@ -182,7 +184,7 @@ void check_pruning(const eigen::matrix& W0, const eigen::matrix& W1, scalar thre
     {
       if (W0(i, j) != W1(i, j))
       {
-        if (W0(i, j) != scalar(0) && std::fabs(W0(i, j)) <= threshold && W1(i, j) == scalar(0))
+        if (W0(i, j) != 0 && std::fabs(W0(i, j)) <= threshold && W1(i, j) == 0)
         {
           count++;
         }
@@ -193,11 +195,14 @@ void check_pruning(const eigen::matrix& W0, const eigen::matrix& W1, scalar thre
       }
     }
   }
-  std::cout << count << " weights were pruned" << std::endl;
+  std::cout << count << '/' << non_zero_count << " weights were pruned" << std::endl;
 }
 
+// W0: initial matrix
+// W1: after pruning
+// W2: after growing
 inline
-void check_growing(const eigen::matrix& W0, const eigen::matrix& W1)
+void check_growing(const eigen::matrix& W0, const eigen::matrix& W1, const eigen::matrix& W2)
 {
   long m = W0.rows();
   long n = W0.cols();
@@ -207,9 +212,9 @@ void check_growing(const eigen::matrix& W0, const eigen::matrix& W1)
   {
     for (long j = 0; j < n; j++)
     {
-      if (W0(i, j) != W1(i, j))
+      if (W1(i, j) != W2(i, j))
       {
-        if (W0(i, j) == scalar(0) && W1(i, j) != 0)
+        if (W1(i, j) == 0 && W2(i, j) != 0)
         {
           grow_count++;
         }
@@ -217,6 +222,11 @@ void check_growing(const eigen::matrix& W0, const eigen::matrix& W1)
         {
           throw std::runtime_error("check_growing: W[" + std::to_string(i) + "," + std::to_string(j) + "] was modified unexpectedly.");
         }
+      }
+      // check if the pruned weights are not regrown
+      if ((W0(i, j) != W2(i, j)) && W0(i, j) != 0 && W2(i, j) != 0)
+      {
+        throw std::runtime_error("check_growing: W[" + std::to_string(i) + "," + std::to_string(j) + "] was modified unexpectedly.");
       }
     }
   }
@@ -235,13 +245,14 @@ void regrow(mkl::sparse_matrix_csr<Scalar>& W, weight_initialization w, long k, 
   auto W1 = mkl::to_eigen(W);
 
   scalar threshold = find_k_smallest_value(W1, k);
-  prune(W1, threshold);
+  scalar new_value = std::numeric_limits<scalar>::max();
+  prune(W1, threshold, new_value);
 
   eigen::matrix Wpruned;
   if (check)
   {
     auto W0 = mkl::to_eigen(W);
-    Wpruned = W1;
+    Wpruned = W1.unaryExpr([new_value](scalar x) { return x == new_value ? 0 : x; });
     check_pruning(W0, Wpruned, threshold);
   }
 
@@ -282,10 +293,13 @@ void regrow(mkl::sparse_matrix_csr<Scalar>& W, weight_initialization w, long k, 
     }
   }
 
+  // replace new_value by 0
+  W1 = W1.unaryExpr([new_value](scalar x) { return x == new_value ? 0 : x; });
+
   if (check)
   {
     auto W0 = mkl::to_eigen(W);
-    check_growing(Wpruned, W1);
+    check_growing(W0, Wpruned, W1);
   }
   W = mkl::to_csr(W1);
 }
