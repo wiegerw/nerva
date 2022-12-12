@@ -30,42 +30,54 @@ The following build systems are supported
 * B2 (https://www.bfgroup.xyz/b2/)
 
 ### Ubuntu build
-It is expected that the location of the Intel MKL library is set
-in the environment variable `MKLROOT`, and the location of the Eigen
-library is set in the environment variable `EIGENROOT`. If the latter
-variable is not set, the Eigen include files are assumed to be in
-`/usr/include/eigen3`.
+The Ubuntu build has been tested for both Ubuntu Focal and Ubuntu Jammy. There are docker
+files available in the `docker` subdirectory that contain the exact instructions that
+were used for the build.
+
 The following packages need to be installed:
 ```
 libeigen3-dev
+libmkl-dev
 pybind11-dev
 python3-pybind11
 ```
 The nerva package can for example be installed using
 ```
-pip3 install . --user
+pip3 install .
 ```
 
-It may be useful to set the following variables in `.bashrc`: 
+It's also possible to install the Eigen and MKL libraries manually.
+In that case the location of the Intel MKL library must be set
+in the environment variable `MKLROOT`, and the location of the Eigen
+library must be set in the environment variable `EIGENROOT`. Also
+the `LD_LIBRARY_PATH` must be extended, for example by
+setting the following variables in `.bashrc`: 
 ```
-export MKLROOT=/opt/intel/oneapi/mkl/2022.2.0
+export MKLROOT=/opt/intel/oneapi/mkl/2022.2.1
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${MKLROOT}/lib/intel64
+export EIGENROOT=/path/to/eigen-3.4.0
+```
+
+The number of cores that is used can be controlled using environment variables:
+```
 export MKL_NUM_THREADS=4
 export OMP_NUM_THREADS=4
 ```
 
 ### Windows build
-The Windows build is still experimental. It is expected that the location of the
-oneAPI library is set in the environment variable `ONEAPI_ROOT`, and the
-location of the Eigen library is set in the environment variable `EIGENROOT`.
+The Windows build is still experimental. 
+
+The location of the oneAPI library must be set in the environment variable `ONEAPI_ROOT`,
+and the location of the Eigen library must be set in the environment variable `EIGENROOT`.
 Note that the default installation of Intel MKL will set `ONEAPI_ROOT` automatically.
-On Windows the file `libiomp5md.dll` must be installed. It can be found
+Also the file `libiomp5md.dll` must be installed. It can be found
 in `%ONEAPI_ROOT%\compiler\latest\windows\redist\intel64_win\compiler\libiomp5md.dll`.
 The easiest way to install it is to copy it manually to the directory `C:\Windows\System32`.
-The performance doesn't seem optimal yet. Setting a compiler flag like `/arch:AVX2`
-may improve the performance, but there seems to be no standard way to automatically
-choose the right combination of flags.
-The nerva package can for example be installed using
+
+To get optimal performance, it may be needed to add compiler flags like `/arch:AVX2`
+manually to the `extra_compile_args` list in the file `setup.py`. Unfortunately on Windows
+there seems to be no standard way to automatically select the correct flags. The nerva package can
+for example be installed using
 ```
 pip3 install .
 ```
