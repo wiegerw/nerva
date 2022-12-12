@@ -41,13 +41,21 @@ if sys.platform.startswith("win"):
 else:
     MKLROOT = os.getenv('MKLROOT')
     if not MKLROOT:
-        raise RuntimeError('environment variable MKLROOT is not set')
-    include_dirs += [f'{MKLROOT}/include']
+        if os.path.exists('/usr/include/mkl'):
+            MKL_INCLUDE_DIR = '/usr/include/mkl'
+            MKL_LIB_DIR = '/usr/lib/x86_64-linux-gnu'
+        else:
+            raise RuntimeError('environment variable MKLROOT is not set, and MKL is not found in the default location')
+    else:
+        MKL_INCLUDE_DIR = f'{MKLROOT}/include'
+        MKL_LIB_DIR = f'{MKLROOT}/lib/intel64'
+
+    include_dirs += [MKL_INCLUDE_DIR]
     extra_compile_args += ['-march=native', '-DMKL_ILP64', '-m64']
     extra_link_args += ['-Wl,--start-group',
-                        f'{MKLROOT}/lib/intel64/libmkl_intel_ilp64.a',
-                        f'{MKLROOT}/lib/intel64/libmkl_intel_thread.a',
-                        f'{MKLROOT}/lib/intel64/libmkl_core.a',
+                        f'{MKL_LIB_DIR}/libmkl_intel_ilp64.a',
+                        f'{MKL_LIB_DIR}/libmkl_intel_thread.a',
+                        f'{MKL_LIB_DIR}/libmkl_core.a',
                         '-Wl,--end-group',
                         '-liomp5',
                         '-lpthread',
