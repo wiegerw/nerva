@@ -46,6 +46,14 @@ The nerva package can for example be installed using
 pip3 install . --user
 ```
 
+It may be useful to set the following variables in `.bashrc`: 
+```
+export MKLROOT=/opt/intel/oneapi/mkl/2022.2.0
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${MKLROOT}/lib/intel64
+export MKL_NUM_THREADS=4
+export OMP_NUM_THREADS=4
+```
+
 ### Windows build
 The Windows build is still experimental. It is expected that the location of the
 oneAPI library is set in the environment variable `ONEAPI_ROOT`, and the
