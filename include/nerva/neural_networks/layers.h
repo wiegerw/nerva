@@ -42,7 +42,7 @@ struct neural_network_layer
 
   virtual void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) = 0;
 
-  virtual std::string name() const = 0;
+  [[nodiscard]] virtual std::string name() const = 0;
 
   virtual void info(unsigned int layer_index) const
   {}
@@ -67,12 +67,12 @@ struct linear_layer: public neural_network_layer
    : super(D, Q), W(K, D), b(K), DW(K, D), Db(K)
   {}
 
-  std::size_t input_size() const
+  [[nodiscard]] std::size_t input_size() const
   {
     return W.cols();
   }
 
-  std::size_t output_size() const
+  [[nodiscard]] std::size_t output_size() const
   {
     return W.rows();
   }
@@ -113,7 +113,7 @@ struct linear_layer: public neural_network_layer
     optimizer->update(eta);
   }
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "linear layer";
   }
@@ -196,7 +196,7 @@ struct sigmoid_layer : public linear_layer<Matrix>
     }
   }
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "sigmoid layer";
   }
@@ -259,7 +259,7 @@ struct activation_layer : public linear_layer<Matrix>
     }
   }
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "activation layer";
   }
@@ -274,7 +274,7 @@ struct hyperbolic_tangent_layer : public activation_layer<Matrix, hyperbolic_tan
    : super(hyperbolic_tangent_activation(), D, K, Q)
   {}
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "hyperbolic_tangent layer";
   }
@@ -292,7 +292,7 @@ struct relu_layer : public activation_layer<Matrix, relu_activation>
       : super(relu_activation(), D, K, Q)
   {}
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "relu layer";
   }
@@ -310,7 +310,7 @@ struct leaky_relu_layer : public activation_layer<Matrix, leaky_relu_activation>
       : super(leaky_relu_activation(alpha), D, K, Q)
   {}
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "leaky relu layer";
   }
@@ -328,7 +328,7 @@ struct all_relu_layer : public activation_layer<Matrix, all_relu_activation>
       : super(all_relu_activation(alpha), D, K, Q)
   {}
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "all relu layer";
   }
@@ -392,7 +392,7 @@ struct softmax_layer : public linear_layer<Matrix>
     }
   }
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "softmax layer";
   }

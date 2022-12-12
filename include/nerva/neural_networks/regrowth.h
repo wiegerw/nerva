@@ -13,68 +13,113 @@
 #include "nerva/neural_networks/mkl_matrix.h"
 #include "nerva/neural_networks/weights.h"
 #include <algorithm>
+#include <memory>
 #include <random>
 #include <vector>
 
 namespace nerva {
 
-/// Returns the absolute value of the k-th smallest non-zero entry in the matrix \a A
-/// \param A A matrix
-/// \param k A positive number
-/// \return The k-th smallest entry
-template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
-scalar find_k_smallest_value(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A, long k)
+struct accept_zero
+{
+  template <typename T>
+  bool operator()(T x) const
+  {
+    return x == 0;
+  }
+};
+
+struct accept_nonzero
+{
+  template <typename T>
+  bool operator()(T x) const
+  {
+    return x != 0;
+  }
+};
+
+struct accept_negative
+{
+  template <typename T>
+  bool operator()(T x) const
+  {
+    return x < 0;
+  }
+};
+
+struct accept_positive
+{
+  template <typename T>
+  bool operator()(T x) const
+  {
+    return x > 0;
+  }
+};
+
+struct compare_less_absolute
+{
+  template <typename T>
+  bool operator()(T x, T y) const
+  {
+    return std::fabs(x) < std::fabs(y);
+  }
+};
+
+/// Generic version of `std::nth_element` applied to the elements of an Eigen matrix.
+/// \param A a matrix
+/// \param n the index of the position (1, 2, ...)
+/// \param accept a predicate function; only values \a x for which `accept(x) = true` are considered
+/// \param comp comparison function object
+/// \return The value of the n-th element
+template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout, typename Accept=accept_nonzero, typename Compare = std::less<Scalar>>
+scalar nth_element(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A, long k, Accept accept = Accept(), Compare comp = Compare())
 {
   assert(k > 0);
   long N = A.rows() * A.cols();
   const scalar* data = A.data();
 
-  auto is_zero = [&data](long i)
-  {
-    return *(data + i) == scalar(0);
-  };
-
   // copy the non-zero entries of A
   std::vector<scalar> values;
   for (long i = 0; i < N; i++)
   {
-    if (!is_zero(i))
+    auto value = data[i];
+    if (accept(value))
     {
-      values.push_back(std::fabs(data[i]));
+      values.push_back(value);
     }
   }
 
   auto kth_element = values.begin() + k - 1;
-  std::nth_element(values.begin(), kth_element, values.end());
+  std::nth_element(values.begin(), kth_element, values.end(), comp);
   return *kth_element;
 }
 
-/// Sets all non-zero entries `i,j` in \a A with `A[i,j] <= threshold` to `new_value`
+/// Returns the absolute value of the k-th smallest entry in the matrix \a A
 /// \param A A matrix
-/// \param threshold A threshold value
-/// \param new_value
-/// \return The number of entries that were set to zero
+/// \param k A positive number
+/// \return The k-th smallest entry
 template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
-long prune(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A, scalar threshold, scalar new_value = 0)
+scalar find_k_smallest_absolute_value(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A, long k)
+{
+  return nth_element(A, k, accept_nonzero(), compare_less_absolute());
+}
+
+/// Overwrites entries `A[i,j]` that satisfy the predicate \a accept with another value
+/// \param A A matrix
+/// \param accept A predicate that determines if an element is pruned
+/// \param value The value that is assigned to pruned elements
+/// \return The number of entries that were pruned
+template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout, typename Accept>
+long prune(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A, Accept accept, scalar value = 0)
 {
   long N = A.rows() * A.cols();
   scalar* data = A.data();
 
-  auto is_zero = [&data](long i)
-  {
-    return *(data + i) == scalar(0);
-  };
-
   long count = 0;
   for (long i = 0; i < N; i++)
   {
-    if (is_zero(i))
+    if (accept(data[i]))
     {
-      continue;
-    }
-    if (std::fabs(data[i]) <= threshold)
-    {
-      data[i] = new_value;
+      data[i] = value;
       count++;
     }
   }
@@ -85,11 +130,11 @@ long prune(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& 
 /// \tparam Function A function type
 /// \param A A matrix
 /// \param f A function that generates new values
-/// \param k The number of zero entries in \a A that will get a new value
+/// \param count The number of zero entries in \a A that will get a new value
 /// \param rng A random number generator
-
-template <typename Function, typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
-void grow(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A, Function f, long k, std::mt19937& rng)
+/// \param accept A predicate that determines if an element may get a new value
+template <typename Function, typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout, typename Accept=accept_zero>
+void grow(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A, long k, Function f, std::mt19937& rng, Accept accept=Accept())
 {
   long N = A.rows() * A.cols();
   scalar* data = A.data();
@@ -98,28 +143,25 @@ void grow(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A
   std::vector<scalar*> selection;
   selection.reserve(k);
 
-  auto is_zero = [&data](long i)
-  {
-    return *(data + i) == scalar(0);
-  };
-
   long i = 0;
   for (; i < N; i++)
   {
-    if (!is_zero(i))
+    if (!accept(*(data + i)))
     {
       continue;
     }
     selection.push_back(data + i);
-    if (selection.size() == k)
+    if (static_cast<long>(selection.size()) == k)
     {
       break;
     }
   }
 
+  i += 1; // position i has already been handled
+
   for (; i < N; i++)
   {
-    if (!is_zero(i))
+    if (!accept(*(data + i)))
     {
       continue;
     }
@@ -138,170 +180,104 @@ void grow(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A
   }
 }
 
-/// Prunes and grows the \a k smallest elements of the matrix \a A
-/// \tparam Function A function type
-/// \tparam Scalar A number type
-/// \param A A matrix
-/// \param f A function that generates new values
-/// \param k The number of zero entries in \a A that will get a new value
-/// \param rng A random number generator
-template <typename Function, typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
-void regrow(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A, Function f, long k, std::mt19937& rng)
+template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout, typename Function>
+void regrow_threshold(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& W, long k, Function f, std::mt19937& rng)
 {
-  scalar threshold = find_k_smallest_value(A, k);
-  prune(A, threshold);
-  grow(A, f, k, rng);
+  scalar threshold = nth_element(W, k, accept_nonzero(), compare_less_absolute());
+  scalar max_scalar = std::numeric_limits<scalar>::max();
+  auto accept = [threshold](scalar x) { return x != 0 && std::fabs(x) <= threshold; };
+
+  // prune elements by giving them the value max_scalar
+  long count = prune(W, accept, max_scalar);
+
+  // grow elements that are equal to zero
+  grow(W, count, f, rng, accept_zero());
+
+  // replace max_scalar by 0
+  W = W.unaryExpr([max_scalar](scalar x) { return x == max_scalar ? 0 : x; });
 }
 
-/// Prunes and grows the \a k smallest elements of the matrix \a W.
-///
-/// N.B. This implementation is not very efficient!
-/// \tparam Function
-/// \tparam Scalar A number type
-/// \param W A matrix
-/// \param f A function that generates new values
-/// \param k The number of zero entries in \a A that will get a new value
+/// Prunes and regrows a given fraction of the smallest elements (in absolute value) of the matrix \a W.
+/// \param W A sparse matrix
+/// \param zeta The fraction of entries in \a W that will get a new value
 /// \param rng A random number generator
-template <typename Function, typename Scalar = scalar>
-void regrow(mkl::sparse_matrix_csr<Scalar>& W, Function f, long k, std::mt19937& rng)
+template <typename Scalar = scalar, typename Function>
+void regrow_threshold(mkl::sparse_matrix_csr<Scalar>& W, scalar zeta, Function f, std::mt19937& rng)
 {
   auto W1 = mkl::to_eigen(W);
-  regrow(W1, f, k, rng);
+  long nonzero_count = (W1.array() != 0).count();
+  long k = std::lround(zeta * static_cast<scalar>(nonzero_count));
+  regrow_threshold(W1, k, f, rng);
   W = mkl::to_csr(W1);
 }
 
-inline
-void check_pruning(const eigen::matrix& W0, const eigen::matrix& W1, scalar threshold)
+template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout, typename Function>
+void regrow_interval(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& W, long k_negative, long k_positive, Function f, std::mt19937& rng)
 {
-  long m = W0.rows();
-  long n = W0.cols();
-  long non_zero_count = (W0.array() > 0).count();
-
-  long count = 0;
-  for (long i = 0; i < m; i++)
+  scalar negative_threshold = nth_element(W, k_negative, accept_negative(), std::greater<>());
+  scalar positive_threshold = nth_element(W, k_positive, accept_positive());
+  scalar max_scalar = std::numeric_limits<scalar>::max();
+  auto accept = [negative_threshold, positive_threshold](scalar x)
   {
-    for (long j = 0; j < n; j++)
-    {
-      if (W0(i, j) != W1(i, j))
-      {
-        if (W0(i, j) != 0 && std::fabs(W0(i, j)) <= threshold && W1(i, j) == 0)
-        {
-          count++;
-        }
-        else
-        {
-          throw std::runtime_error("check_pruning: W[" + std::to_string(i) + "," + std::to_string(j) + "] was modified unexpectedly.");
-        }
-      }
-    }
-  }
-  std::cout << count << '/' << non_zero_count << " weights were pruned" << std::endl;
+    return (negative_threshold <= x && x < 0) || (0 < x && x <= positive_threshold);
+  };
+
+  // prune elements by giving them the value max_scalar
+  long count = prune(W, accept, max_scalar);
+
+  // grow elements that are equal to zero
+  grow(W, count, f, rng, accept_zero());
+
+  // replace max_scalar by 0
+  W = W.unaryExpr([max_scalar](scalar x) { return x == max_scalar ? 0 : x; });
 }
 
-// W0: initial matrix
-// W1: after pruning
-// W2: after growing
-inline
-void check_growing(const eigen::matrix& W0, const eigen::matrix& W1, const eigen::matrix& W2)
-{
-  long m = W0.rows();
-  long n = W0.cols();
-
-  long grow_count = 0;
-  for (long i = 0; i < m; i++)
-  {
-    for (long j = 0; j < n; j++)
-    {
-      if (W1(i, j) != W2(i, j))
-      {
-        if (W1(i, j) == 0 && W2(i, j) != 0)
-        {
-          grow_count++;
-        }
-        else
-        {
-          throw std::runtime_error("check_growing: W[" + std::to_string(i) + "," + std::to_string(j) + "] was modified unexpectedly.");
-        }
-      }
-      // check if the pruned weights are not regrown
-      if ((W0(i, j) != W2(i, j)) && W0(i, j) != 0 && W2(i, j) != 0)
-      {
-        throw std::runtime_error("check_growing: W[" + std::to_string(i) + "," + std::to_string(j) + "] was modified unexpectedly.");
-      }
-    }
-  }
-  std::cout << grow_count << " weights were regrown" << std::endl;
-}
-
-/// Prunes and grows the \a k smallest elements of the matrix \a W.
-/// \tparam Scalar A number type
-/// \param W A matrix
-/// \param w A weight initialization
-/// \param k The number of zero entries in \a A that will get a new value
+/// Prunes and regrows a given fraction of the smallest elements of matrix \a W.
+/// Positive and negative entries are pruned independently.
+/// \param W A sparse matrix
+/// \param zeta The fraction of positive and negative entries in \a W that will get a new value
 /// \param rng A random number generator
-template <typename Scalar = scalar>
-void regrow(mkl::sparse_matrix_csr<Scalar>& W, weight_initialization w, long k, std::mt19937& rng, bool check=false)
+template <typename Scalar = scalar, typename Function>
+void regrow_interval(mkl::sparse_matrix_csr<Scalar>& W, scalar zeta, Function f, std::mt19937& rng)
 {
   auto W1 = mkl::to_eigen(W);
+  long negative_count = (W1.array() < 0).count();
+  long positive_count = (W1.array() > 0).count();
+  long k_negative = std::lround(zeta * static_cast<scalar>(negative_count));
+  long k_positive = std::lround(zeta * static_cast<scalar>(positive_count));
+  regrow_interval(W1, k_negative, k_positive, f, rng);
+  W = mkl::to_csr(W1);
+}
 
-  scalar threshold = find_k_smallest_value(W1, k);
-  scalar new_value = std::numeric_limits<scalar>::max();
-  prune(W1, threshold, new_value);
-
-  eigen::matrix Wpruned;
-  if (check)
-  {
-    auto W0 = mkl::to_eigen(W);
-    Wpruned = W1.unaryExpr([new_value](scalar x) { return x == new_value ? 0 : x; });
-    check_pruning(W0, Wpruned, threshold);
-  }
-
+template <typename Matrix, typename Action>
+void apply_weight_initializer(Matrix& W, weight_initialization w, std::mt19937& rng, Action apply)
+{
   switch(w)
   {
-    case weight_initialization::he:
-    {
-      he_weight_initializer init(rng, W.cols());
-      grow(W1, init, k, rng);
-      break;
-    }
-    case weight_initialization::xavier:
-    {
-      xavier_weight_initializer init(rng, W.cols());
-      grow(W1, init, k, rng);
-      break;
-    }
-    case weight_initialization::xavier_normalized:
-    {
-      xavier_normalized_weight_initializer init(rng, W.rows(), W.cols());
-      grow(W1, init, k, rng);
-      break;
-    }
-    case weight_initialization::uniform:
-    case weight_initialization::default_:
-    case weight_initialization::pytorch:
-    case weight_initialization::tensorflow:
-    {
-      uniform_weight_initializer init(rng);
-      grow(W1, init, k, rng);
-      break;
-    }
-    case weight_initialization::zero:
-    {
-      zero_weight_initializer init(rng);
-      grow(W1, init, k, rng);
-      break;
-    }
+    case weight_initialization::he: apply(he_weight_initializer(rng, W.cols())); return;
+    case weight_initialization::xavier: apply(xavier_weight_initializer(rng, W.cols())); return;
+    case weight_initialization::xavier_normalized: apply(xavier_normalized_weight_initializer(rng, W.rows(), W.cols())); return;
+    case weight_initialization::zero: apply(zero_weight_initializer(rng)); return;
+    default: apply(uniform_weight_initializer(rng)); return;
   }
+}
 
-  // replace new_value by 0
-  W1 = W1.unaryExpr([new_value](scalar x) { return x == new_value ? 0 : x; });
-
-  if (check)
+/// Prunes and regrows a given fraction of the smallest elements of matrix \a W.
+/// Positive and negative entries are pruned independently.
+/// \param W A sparse matrix
+/// \param zeta The fraction of positive and negative entries in \a W that will get a new value
+/// \param rng A random number generator
+template <typename Scalar = scalar>
+void regrow(mkl::sparse_matrix_csr<Scalar>& W, scalar zeta, weight_initialization w, bool separate_positive_negative, std::mt19937& rng)
+{
+  if (separate_positive_negative)
   {
-    auto W0 = mkl::to_eigen(W);
-    check_growing(W0, Wpruned, W1);
+    apply_weight_initializer(W, w, rng, [&W, zeta, &rng](auto f) { regrow_interval(W, zeta, f, rng); });
   }
-  W = mkl::to_csr(W1);
+  else
+  {
+    apply_weight_initializer(W, w, rng, [&W, zeta, &rng](auto f) { regrow_threshold(W, zeta, f, rng); });
+  }
 }
 
 } // namespace nerva

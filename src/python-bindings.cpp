@@ -239,10 +239,9 @@ PYBIND11_MODULE(nervalib, m)
     .def("optimize", &sparse_linear_layer::optimize)
     .def("initialize_weights", [](sparse_linear_layer& layer, weight_initialization w, std::mt19937& rng) { initialize_weights(w, layer.W, layer.b, rng); })
     .def("set_optimizer", [](sparse_linear_layer& layer, const std::string& text) { set_optimizer(layer, text); })
-    .def("regrow", [](sparse_linear_layer& layer, weight_initialization w, scalar zeta, std::mt19937& rng)
+    .def("regrow", [](sparse_linear_layer& layer, scalar zeta, bool separate_positive_negative, weight_initialization w, std::mt19937& rng)
         {
-          long k = std::lround(zeta * layer.W.values.size());
-          regrow(layer.W, w, k, rng);
+          regrow(layer.W, zeta, w, separate_positive_negative, rng);
         })
     ;
 

@@ -10,6 +10,7 @@
 #ifndef NERVA_NEURAL_NETWORKS_MKL_EIGEN_H
 #define NERVA_NEURAL_NETWORKS_MKL_EIGEN_H
 
+#include <omp.h>
 #include "fmt/format.h"
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/neural_networks/mkl_matrix.h"

@@ -12,11 +12,50 @@
 #include "doctest/doctest.h"
 #include "nerva/neural_networks/mkl_matrix.h"
 #include "nerva/neural_networks/regrowth.h"
+#include <algorithm>
 
 using namespace nerva;
 
+TEST_CASE("test_nth_element")
+{
+  std::vector<int> v;
+  std::vector<int>::iterator w;
+
+  v = {-2, -4, -1, -2, -5};
+  w = v.begin() + 1;
+  std::nth_element(v.begin(), w, v.end(), std::greater<>());
+  CHECK_EQ(-2, *w);
+
+  v = {-2, -4, -1, -2, -5};
+  w = v.begin() + 2;
+  std::nth_element(v.begin(), w, v.end(), std::greater<>());
+  CHECK_EQ(-2, *w);
+
+  v = {-2, -4, -1, -2, -5};
+  w = v.begin() + 3;
+  std::nth_element(v.begin(), w, v.end(), std::greater<>());
+  CHECK_EQ(-4, *w);
+
+  v = {1, 5, 8, 4, 3, 6, 7, 4};
+  w = v.begin() + 2;
+  std::nth_element(v.begin(), w, v.end());
+  CHECK_EQ(4, *w);
+
+  v = {1, 5, 8, 4, 3, 6, 7, 4};
+  w = v.begin() + 3;
+  std::nth_element(v.begin(), w, v.end());
+  CHECK_EQ(4, *w);
+
+  v = {1, 5, 8, 4, 3, 6, 7, 4};
+  w = v.begin() + 4;
+  std::nth_element(v.begin(), w, v.end());
+  CHECK_EQ(5, *w);
+}
+
 TEST_CASE("test1")
 {
+  std::cout << "--- test1 ---\n";
+
   const eigen::matrix A {
     {1, -1, 0, -2, 0},
     {-2, 5, 0, 0, 0},
@@ -39,17 +78,18 @@ TEST_CASE("test1")
   long k = 5;
   std::mt19937 rng{std::random_device{}()};
 
-  auto threshold = find_k_smallest_value(A, k);
+  auto threshold = find_k_smallest_absolute_value(A, k);
   CHECK_EQ(3, threshold);
 
   auto A_pruned = A;
-  long prune_count = prune(A_pruned, threshold);
+  auto accept = [threshold](scalar x) { return x != 0 && std::fabs(x) <= threshold; };
+  long prune_count = prune(A_pruned, accept);
   eigen::print_matrix("A_pruned", A_pruned);
   CHECK_EQ(A_pruned_expected, A_pruned);
   CHECK_EQ(5, prune_count);
 
   auto A_grow = A_pruned;
-  grow(A_grow, f, prune_count, rng);
+  grow(A_grow, prune_count, f, rng);
   eigen::print_matrix("A_grow", A_grow);
 
   long m = A.rows();
@@ -70,7 +110,53 @@ TEST_CASE("test1")
   CHECK_EQ((A_grow.array() == 0).count(), (A.array() == 0).count());
 
   auto B = A;
-  regrow(B, f, k, rng);
+  regrow_threshold(B, k, f, rng);
+  eigen::print_matrix("B", B);
+  CHECK_EQ((B.array() == 10).count(), prune_count);
+  CHECK_EQ((B.array() == 0).count(), (A.array() == 0).count());
+}
+
+TEST_CASE("test2")
+{
+  std::cout << "--- test2 ---\n";
+
+  const eigen::matrix A {
+    { 1, -1, 0, -2,  0},
+    {-2,  5, 0,  0,  0},
+    { 0,  0, 4,  6,  4},
+    {-4,  0, 3,  7,  0},
+    { 0,  8, 0,  0, -5}
+  };
+
+  eigen::matrix A_pruned_expected {
+    {0, 0, 0, 0, 0},
+    {0, 5, 0, 0, 0},
+    {0, 0, 0, 6, 0},
+    {-4, 0, 0, 7, 0},
+    {0, 8, 0, 0, -5}
+  };
+
+  eigen::print_matrix("A", A);
+
+  auto A_pruned = A;
+  float negative_threshold = -2;
+  float positive_threshold = 4;
+  auto accept = [negative_threshold, positive_threshold](scalar x)
+  {
+    return (negative_threshold <= x && x < 0) || (0 < x && x <= positive_threshold);
+  };
+  long prune_count = prune(A_pruned, accept);
+  eigen::print_matrix("A_pruned_expected", A_pruned_expected);
+  CHECK_EQ(A_pruned_expected, A_pruned);
+  CHECK_EQ(7, prune_count);
+
+  auto B = A;
+  long k_negative = 3;
+  long k_positive = 4;
+  auto f = []() { return scalar(10); };
+  std::mt19937 rng{std::random_device{}()};
+  regrow_interval(B, k_negative, k_positive, f, rng);
+  eigen::print_matrix("B", B);
   CHECK_EQ((B.array() == 10).count(), prune_count);
   CHECK_EQ((B.array() == 0).count(), (A.array() == 0).count());
 }

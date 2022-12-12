@@ -24,6 +24,9 @@ struct weight_initializer
   explicit weight_initializer(std::mt19937& rng_)
    : rng(rng_)
   {}
+
+  virtual scalar operator()() const = 0;
+  virtual ~weight_initializer() = default;
 };
 
 struct naive_weight_initializer: public weight_initializer
@@ -35,7 +38,7 @@ struct naive_weight_initializer: public weight_initializer
     : weight_initializer(rng), low(low_), high(high_)
   {}
 
-  scalar operator()() const
+  scalar operator()() const override
   {
     std::uniform_real_distribution<scalar> dist(low, high);
     return dist(rng);
@@ -58,7 +61,7 @@ struct uniform_weight_initializer: public weight_initializer
   : weight_initializer(rng), low(low_), high(high_)
   {}
 
-  scalar operator()() const
+  scalar operator()() const override
   {
     std::uniform_real_distribution<scalar> dist(low, high);
     return dist(rng);
@@ -82,7 +85,7 @@ struct xavier_weight_initializer: public weight_initializer
     x = scalar(1.0) / std::sqrt(scalar(columns));
   }
 
-  scalar operator()() const
+  scalar operator()() const override
   {
     std::uniform_real_distribution<scalar> dist(-x, x);
     return dist(rng);
@@ -106,7 +109,7 @@ struct xavier_normalized_weight_initializer: public weight_initializer
     x = std::sqrt(scalar(6.0)) / std::sqrt(scalar(rows + columns));
   }
 
-  scalar operator()() const
+  scalar operator()() const override
   {
     std::uniform_real_distribution<scalar> dist(-x, x);
     return dist(rng);
@@ -132,7 +135,7 @@ struct he_weight_initializer: public weight_initializer
     std = std::sqrt(scalar(2) / scalar(columns));
   }
 
-  scalar operator()() const
+  scalar operator()() const override
   {
     std::normal_distribution<scalar> dist(mean, std);
     return dist(rng);
@@ -152,7 +155,7 @@ struct zero_weight_initializer: public weight_initializer
     : weight_initializer(rng)
   {}
 
-  scalar operator()() const
+  scalar operator()() const override
   {
     return scalar(0);
   }
