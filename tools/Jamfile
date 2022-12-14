@@ -1,0 +1,13 @@
+project nerva_tools
+   : requirements
+       <library>/nerva//nervalib
+   ;
+
+exe mlpd : mlp.cpp : <scalar>double ;
+exe mlpf : mlp.cpp : <scalar>float ;
+
+install dist
+  :
+    mlpf
+    mlpd
+  ;

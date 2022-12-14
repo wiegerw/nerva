@@ -21,6 +21,7 @@ Nerva uses the following third-party libraries.
 
 * doctest (https://github.com/onqtam/doctest, already included in the repository)
 * fmt (https://github.com/fmtlib/fmt, already included in the repository)
+* lyra (https://github.com/bfgroup/Lyra, already included in the repository)
 * Eigen (https://eigen.tuxfamily.org/)
 * pybind11 (https://github.com/pybind/pybind11)
 * Intel MKL (https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-download.html)
@@ -100,3 +101,68 @@ cmake ..
 make -j4
 ctest
 ```
+
+### Number type
+By default the nerva code uses 32 bit floats as the number type. It is possible to change this by
+defining the symbol `NERVA_USE_DOUBLE`, in which case 64 bit doubles are used. The test
+`tests/gradient_test.cpp` usually fails when the number type float is used, due to a lack of precision.
+
+### The tool mlp
+In the folder `tools` a command line program called `mlp` can be found that demonstrates the capabilities
+of the nerva library. For example the following command can be used to train a neural network on a
+simple dataset that is generated on the fly.
+```
+mlp --architecture=RRL --loss=squared-error --weights=xxx --hidden=64,64 --epochs=100 \
+    --dataset=chessboard --learning-rate="constant(0.01)" --size=20000 --batch-size=10 \ 
+    --normalize --threads=4 --no-shuffle --seed=1885661379 -v --algorithm=sgd
+```
+The output looks like this:
+```
+loading dataset chessboard
+number of examples: 20000
+number of features: 2
+number of outputs: 2
+epochs = 100
+batch size = 1
+shuffle = false
+statistics = true
+debug = false
+algorithm = sgd
+dataset = chessboard
+dataset size = 20000
+normalize data = true
+learning rate scheduler = constant(0.01)
+loss function = squared-error
+architecture = RRL
+sizes = [2, 64, 64, 2]
+weights initialization = xxx
+optimizer = gradient-descent
+dropout = 0
+sparsity = 0
+seed = 1885661379
+precision = 4
+threads = 4
+number type = float
+
+epoch   0  loss:  0.5503  train accuracy:  0.4965  test accuracy:  0.4883  time:  0.0000s
+epoch   1  loss:  0.2500  train accuracy:  0.5020  test accuracy:  0.5080  time:  0.0704s
+epoch   2  loss:  0.2499  train accuracy:  0.5020  test accuracy:  0.5080  time:  0.0688s
+epoch   3  loss:  0.2498  train accuracy:  0.5114  test accuracy:  0.5178  time:  0.0692s
+epoch   4  loss:  0.2496  train accuracy:  0.5147  test accuracy:  0.5198  time:  0.0683s
+epoch   5  loss:  0.2495  train accuracy:  0.5120  test accuracy:  0.5150  time:  0.0684s
+epoch   6  loss:  0.2493  train accuracy:  0.5080  test accuracy:  0.5115  time:  0.0688s
+epoch   7  loss:  0.2491  train accuracy:  0.5060  test accuracy:  0.5102  time:  0.0686s
+epoch   8  loss:  0.2487  train accuracy:  0.5071  test accuracy:  0.5110  time:  0.0685s
+epoch   9  loss:  0.2483  train accuracy:  0.5080  test accuracy:  0.5108  time:  0.0686s
+epoch  10  loss:  0.2479  train accuracy:  0.5081  test accuracy:  0.5112  time:  0.0686s
+```
+
+### TBB library
+When using CMake in combination with MKL on linux, the Intel TBB library seems to be a requirement.
+It is unknown what causes this dependency. The B2 build doesn't require TBB.
+
+### Performance
+There is currently something wrong with the performance of the CMake build. The mlp program
+runs about 30 times slower than expected, which indicates that the MKL library is not
+actually being used. The B2 build doesn't have this problem, and the performance of the
+python interface is also as expected.

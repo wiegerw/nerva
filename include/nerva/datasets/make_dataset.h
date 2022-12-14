@@ -26,8 +26,8 @@ std::pair<eigen::matrix, eigen::matrix> make_dataset_chessboard(long n, RandomNu
   {
     scalar x = random_real(scalar(0.0), scalar(1.0), rng);
     scalar y = random_real(scalar(0.0), scalar(1.0), rng);
-    int col = std::floor(x / N);
-    int row = std::floor(y / N);
+    int col = std::floor(x * N);
+    int row = std::floor(y * N);
     bool is_dark = (row + col) % 2 == 0;
     X(0, i) = x;
     X(1, i) = y;

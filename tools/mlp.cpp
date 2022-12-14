@@ -1,0 +1,314 @@
+// Copyright: Wieger Wesselink 2022
+//
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt)
+//
+/// \file nerva/examples/multilayer_perceptron.cpp
+/// \brief add your file description here.
+
+#include "nerva/neural_networks/multilayer_perceptron.h"
+#include "omp.h"
+#include "nerva/datasets/dataset.h"
+#include "nerva/datasets/make_dataset.h"
+#include "nerva/neural_networks/layers.h"
+#include "nerva/neural_networks/learning_rate_schedulers.h"
+#include "nerva/neural_networks/loss_functions.h"
+#include "nerva/neural_networks/sgd_options.h"
+#include "nerva/neural_networks/parse_layer.h"
+#include "nerva/neural_networks/training.h"
+#include "nerva/neural_networks/weights.h"
+#include "nerva/utilities/command_line_tool.h"
+#include "nerva/utilities/parse_numbers.h"
+#include "nerva/utilities/string_utility.h"
+#include <algorithm>
+#include <iostream>
+#include <random>
+#include <type_traits>
+
+#ifdef NERVA_ENABLE_PROFILING
+#include <valgrind/callgrind.h>
+#endif
+
+using namespace nerva;
+
+inline
+weight_initialization parse_weight_char(char c)
+{
+  if (c == 'd')
+  {
+    return weight_initialization::default_;
+  }
+  else if (c == 'h')
+  {
+    return weight_initialization::he;
+  }
+  else if (c == 'x')
+  {
+    return weight_initialization::xavier;
+  }
+  else if (c == 'X')
+  {
+    return weight_initialization::xavier_normalized;
+  }
+  else if (c == 'u')
+  {
+    return weight_initialization::uniform;
+  }
+  else if (c == 'p')
+  {
+    return weight_initialization::pytorch;
+  }
+  else if (c == 't')
+  {
+    return weight_initialization::tensorflow;
+  }
+  throw std::runtime_error(std::string("Error: could not parse weight char '") + c + "'");
+}
+
+template <typename RandomNumberGenerator>
+void set_weights(multilayer_perceptron& M, std::string weights_initialization, const std::string& architecture, RandomNumberGenerator rng)
+{
+  // use default weights if the weights initialization was unspecified
+  if (weights_initialization.empty())
+  {
+    auto B_count = std::count(architecture.begin(), architecture.end(), 'B');
+    std::size_t count = M.layers.size() - B_count;
+    weights_initialization = std::string(count, 'd');
+  }
+
+  unsigned int index = 0;
+  for (auto& layer: M.layers)
+  {
+    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
+    {
+      initialize_weights(parse_weight_char(weights_initialization[index++]), dlayer->W, dlayer->b, rng);
+    }
+    else if (auto mlayer = dynamic_cast<linear_layer<mkl::sparse_matrix_csr<scalar>>*>(layer.get()))
+    {
+      initialize_weights(parse_weight_char(weights_initialization[index++]), mlayer->W, mlayer->b, rng);
+    }
+ }
+}
+
+inline
+std::vector<std::size_t> parse_numbers(const std::string& text)
+{
+  std::vector<std::size_t> result;
+  for (const std::string& word: utilities::regex_split(text, ","))
+  {
+    result.push_back(parse_natural_number(word));
+  }
+  return result;
+}
+
+// D is the input size of the neural network
+// K is the output size of the neural network
+inline
+std::vector<std::size_t> compute_sizes(std::size_t D, std::size_t K, const std::vector<std::size_t>& hidden_layer_sizes, const std::string& architecture)
+{
+  auto B_count = std::count(architecture.begin(), architecture.end(), 'B');
+  if (hidden_layer_sizes.size() != architecture.size() - B_count - 1)
+  {
+    throw std::runtime_error("The number of hidden layer sizes does not match with the given architecture.");
+  }
+
+  std::vector<std::size_t> sizes = { D };
+  int index = 0;
+  for (char ch: architecture.substr(0, architecture.size() - 1))
+  {
+    if (ch == 'B')
+    {
+      sizes.push_back(sizes.back());
+    }
+    else
+    {
+      sizes.push_back(hidden_layer_sizes[index++]);
+    }
+  }
+  sizes.push_back(K);
+
+  return sizes;
+}
+
+inline
+void check_options(const mlp_options& options, const std::vector<std::size_t>& hidden_layer_sizes)
+{
+  if (options.architecture.empty())
+  {
+    throw std::runtime_error("There should be at least one layer.");
+  }
+  
+  if (options.architecture.back() == 'B')
+  {
+    throw std::runtime_error("The last layer should not be a batch normalization layer.");
+  }
+
+  auto B_count = std::count(options.architecture.begin(), options.architecture.end(), 'B');
+  if (hidden_layer_sizes.size() != options.architecture.size() - B_count - 1)
+  {
+    throw std::runtime_error("The number of hidden layer sizes does not match with the given architecture.");
+  }
+
+  if (!options.weights_initialization.empty())
+  {
+    if (options.weights_initialization.size() != options.architecture.size() - B_count)
+    {
+      throw std::runtime_error("The weight initialization does not match with the given architecture.");
+    }
+  }
+}
+
+class tool: public command_line_tool
+{
+  protected:
+    mlp_options options;
+    std::string datadir;
+    std::string import_weights_dir;
+    std::string export_weights_dir;
+    std::string hidden_layer_sizes_text;
+    bool no_shuffle = false;
+    bool no_statistics = false;
+    bool info = false;
+
+    void add_options(lyra::cli& cli) override
+    {
+      cli |= lyra::opt(options.algorithm, "value")["--algorithm"]("The algorithm (sgd, minibatch, minibatch_sgd)");
+      cli |= lyra::opt(options.dataset, "value")["--dataset"]("The dataset (chessboard, spirals, square, sincos)");
+      cli |= lyra::opt(options.dataset_size, "value")["--size"]("The size of the dataset (default: 1000)");
+      cli |= lyra::opt(options.normalize_data)["--normalize"]("Normalize the data");
+      cli |= lyra::opt(options.epochs, "value")["--epochs"]("The number of epochs (default: 100)");
+      cli |= lyra::opt(options.batch_size, "value")["--batch-size"]("The batch size of the training algorithm");
+      cli |= lyra::opt(options.learning_rate_scheduler, "value")["--learning-rate"]("The learning rate scheduler (default: constant(0.0001))");
+      cli |= lyra::opt(options.weights_initialization, "value")["--weights"]("The weight initialization (default, he, uniform, xavier, normalized_xavier, uniform)");
+      cli |= lyra::opt(options.loss_function, "value")["--loss"]("The loss function (squared-error, cross-entropy, logistic-cross-entropy)");
+      cli |= lyra::opt(options.architecture, "value")["--architecture"]("The architecture of the multilayer perceptron e.g. RRL,\nwhere R=ReLU, S=Sigmoid, L=Linear, B=Batchnorm, Z=Softmax");
+      cli |= lyra::opt(hidden_layer_sizes_text, "value")["--hidden"]("A comma separated list of the hidden layer sizes");
+      cli |= lyra::opt(options.dropout, "value")["--dropout"]("The dropout rate for the weights of the layers");
+      cli |= lyra::opt(options.sparsity, "value")["--sparsity"]("The sparsity rate of the sparse layers");
+      cli |= lyra::opt(options.optimizer, "value")["--optimizer"]("The optimizer (gradient-descent, momentum(<mu>), nesterov(<mu>))");
+      cli |= lyra::opt(options.seed, "value")["--seed"]("A seed value for the random generator.");
+      cli |= lyra::opt(no_shuffle)["--no-shuffle"]("Do not shuffle the dataset during training.");
+      cli |= lyra::opt(no_statistics)["--no-statistics"]("Do not compute statistics during training.");
+      cli |= lyra::opt(options.threads, "value")["--threads"]("The number of threads used by Eigen.");
+      cli |= lyra::opt(datadir, "value")["--import-dataset"]("A directory containing the files xtrain.txt etc.");
+      cli |= lyra::opt(import_weights_dir, "value")["--import-weights"]("A directory containing the files w1.txt etc.");
+      cli |= lyra::opt(export_weights_dir, "value")["--export-weights"]("A directory where the weights are saved in the filese w1.txt etc.");
+      cli |= lyra::opt(options.debug)["--debug"]("Show debug output");
+      cli |= lyra::opt(options.precision, "value")["--precision"]("The precision that is used for printing.");
+      cli |= lyra::opt(options.check_gradients)["--check"]("Check the computed gradients");
+      cli |= lyra::opt(options.check_gradients_step, "value")["--gradient-step"]("The step size for approximating the gradient");
+      cli |= lyra::opt(info)["--info"]("print some info about the multilayer_perceptron's");
+    }
+
+    std::string description() const override
+    {
+      return "Multilayer perceptron test";
+    }
+
+    bool run() override
+    {
+      if (no_shuffle)
+      {
+        options.shuffle = false;
+      }
+      if (no_statistics)
+      {
+        options.statistics = false;
+      }
+      std::vector<std::size_t> hidden_layer_sizes = parse_numbers(hidden_layer_sizes_text);
+      check_options(options, hidden_layer_sizes);
+
+      std::mt19937 rng{options.seed};
+      NERVA_LOG(log::verbose) << "loading dataset " << options.dataset << std::endl;
+      datasets::dataset data = datadir.empty() ? datasets::make_dataset(options.dataset, options.dataset_size, rng) : datasets::load_dataset(datadir);
+      std::size_t D = data.Xtrain.rows(); // the number of features
+      std::size_t K = data.Ttrain.rows(); // the number of outputs
+      NERVA_LOG(log::verbose) << "number of examples: " << data.Xtrain.cols() << std::endl;
+      NERVA_LOG(log::verbose) << "number of features: " << D << std::endl;
+      NERVA_LOG(log::verbose) << "number of outputs: " << K << std::endl;
+
+      options.sizes = compute_sizes(D, K, hidden_layer_sizes, options.architecture);
+      options.info();
+
+      std::cout << "number type = " << (std::is_same<scalar, double>::value ? "double" : "float") << "\n\n";
+
+      if (options.threads >= 1 && options.threads <= 8)
+      {
+        omp_set_num_threads(options.threads);
+      }
+
+      // construct the multilayer perceptron M
+      multilayer_perceptron M;
+      for (std::size_t i = 0; i < options.architecture.size(); i++)
+      {
+        M.layers.push_back(parse_layer(options.architecture[i], options.sizes[i], options.sizes[i+1], options, rng));
+
+        if (auto layer = dynamic_cast<dense_linear_layer*>(M.layers.back().get()))
+        {
+          set_optimizer(*layer, options.optimizer);
+        }
+        else if (auto mlayer = dynamic_cast<linear_layer<mkl::sparse_matrix_csr<scalar>>*>(M.layers.back().get()))
+        {
+          set_optimizer(*mlayer, options.optimizer);
+        }
+      }
+
+      std::shared_ptr<loss_function> loss = parse_loss_function(options.loss_function);
+      std::shared_ptr<learning_rate_scheduler> learning_rate = parse_learning_rate_scheduler(options.learning_rate_scheduler);
+
+      if (import_weights_dir.empty())
+      {
+        set_weights(M, options.weights_initialization, options.architecture, rng);
+      }
+      else
+      {
+        import_weights(M, import_weights_dir);
+      }
+
+      if (!export_weights_dir.empty())
+      {
+        export_weights(M, export_weights_dir);
+      }
+
+      if (info)
+      {
+        data.info();
+        M.info("before training");
+      }
+
+#ifdef NERVA_ENABLE_PROFILING
+      CALLGRIND_START_INSTRUMENTATION;
+#endif
+
+      if (options.algorithm == "sgd")
+      {
+        stochastic_gradient_descent(M, loss, data, options, learning_rate, rng);
+      }
+      else if (options.algorithm == "minibatch")
+      {
+        minibatch_gradient_descent(M, loss, data, options, learning_rate, rng);
+      }
+      else
+      {
+        throw std::runtime_error("Unknown algorithm '" + options.algorithm + "'");
+      }
+
+#ifdef NERVA_ENABLE_PROFILING
+      CALLGRIND_STOP_INSTRUMENTATION;
+      CALLGRIND_DUMP_STATS;
+#endif
+
+      if (info)
+      {
+        M.info("after training");
+      }
+
+      return true;
+    }
+};
+
+int main(int argc, const char** argv)
+{
+  return tool().execute(argc, argv);
+}

@@ -10,6 +10,7 @@
 #ifndef NERVA_NEURAL_NETWORKS_PARSE_LAYER_H
 #define NERVA_NEURAL_NETWORKS_PARSE_LAYER_H
 
+#include "nerva/neural_networks/layers.h"
 #include "nerva/neural_networks/batch_normalization_layer.h"
 #include "nerva/neural_networks/dropout_layers.h"
 #include "nerva/neural_networks/sgd_options.h"
