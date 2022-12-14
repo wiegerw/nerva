@@ -6,14 +6,15 @@ dense or sparse layers. An example can be found in `python/cifar10.py`.
 ## Requirements
 A C++17 compiler and an Intel processor (due to the dependency on Intel MKL).
 
-Compilation has been tested successfully with g++-11.3 and Visual Studio 2019. Note that **the MKL library
-must be linked statically**. It turned out that shared linking causes wrong results
-in one of the MKL sparse matrix multiplication routines.
+Compilation has been tested successfully with g++-11.3, g++-12.1 and Visual Studio 2019.
 
-Compilation with
-clang-14 was tried, but unfortunately the compiler + linker flags mentioned
+Compilation with clang-14 was tried, but unfortunately the compiler + linker flags mentioned
 on the web page https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html
 do not seem to work.
+
+Note that **possibly the MKL library must be linked statically**. At least in some of the
+experiments we did it turned out that shared linking caused wrong results in one of the MKL
+sparse matrix multiplication routines.
 
 ## Dependencies
 Nerva uses the following third-party libraries.
@@ -24,12 +25,10 @@ Nerva uses the following third-party libraries.
 * pybind11 (https://github.com/pybind/pybind11)
 * Intel MKL (https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-download.html)
 
-## Build
-The following build systems are supported
-* CMake 3.16+
-* B2 (https://www.bfgroup.xyz/b2/)
+## Python build
+This section explains how to install the nerva python module on Ubuntu and on Windows.
 
-### Ubuntu build
+### Ubuntu
 The Ubuntu build has been tested for both Ubuntu Focal and Ubuntu Jammy. There are docker
 files available in the `docker` subdirectory that contain the exact instructions that
 were used for the build.
@@ -40,8 +39,10 @@ libeigen3-dev
 libmkl-dev
 pybind11-dev
 python3-pybind11
+build-essential   # meta-packages that are necessary for compiling software
+python3-pip       # for installing python packages using pip
 ```
-The nerva package can for example be installed using
+The nerva package can then be installed using
 ```
 pip3 install .
 ```
@@ -64,7 +65,7 @@ export MKL_NUM_THREADS=4
 export OMP_NUM_THREADS=4
 ```
 
-### Windows build
+### Windows
 The Windows build is still experimental. 
 
 The location of the oneAPI library must be set in the environment variable `ONEAPI_ROOT`,
@@ -77,10 +78,25 @@ The easiest way to install it is to copy it manually to the directory `C:\Window
 To get optimal performance, it may be needed to add compiler flags like `/arch:AVX2`
 manually to the `extra_compile_args` list in the file `setup.py`. Unfortunately on Windows
 there seems to be no standard way to automatically select the correct flags. The nerva package can
-for example be installed using
+then be installed using
 ```
 pip3 install .
 ```
 Installing it with the flag `--user` should also work, but then it seems
 necessary to add the local python install directory to the Windows PATH
 manually.
+
+## C++ build
+The following build systems are supported
+* CMake 3.16+
+* B2 (https://www.bfgroup.xyz/b2/)
+
+Using CMake, the nerva c++ library can be built in the standard way. For example compiling
+the nerva library on Ubuntu and running the tests can be done like this:
+```
+mkdir build
+cd build
+cmake ..
+make -j4
+ctest
+```
