@@ -102,8 +102,19 @@ make -j4
 ctest
 ```
 
+### Intel MKL + CMake
+N.B. The CMake support for the MKL library seems broken. There is no CMake support
+available if the MKL library is installed using the package manager. Recent standalone versions
+provide CMake support, but there are several problems with it. First of all, the Intel TBB
+library seems to be a requirement, which should not be the case. Second, the CMake
+configuration doesn't set the proper flags for the g++ and clang compilers.
+To fix this, the flags `-DMKL_ILP64 -m64 -march=native` are added manually. Third, the
+performance of the executables is about 30 times slower than expected, which indicates that the
+MKL library is not actually being used. The B2 build doesn't have this problem, and the performance
+of the python interface is also as expected.
+
 ### Number type
-By default the nerva code uses 32 bit floats as the number type. It is possible to change this by
+By default, the nerva code uses 32-bit floats as the number type. It is possible to change this by
 defining the symbol `NERVA_USE_DOUBLE`, in which case 64 bit doubles are used. The test
 `tests/gradient_test.cpp` usually fails when the number type float is used, due to a lack of precision.
 
@@ -156,13 +167,3 @@ epoch   8  loss:  0.2487  train accuracy:  0.5071  test accuracy:  0.5110  time:
 epoch   9  loss:  0.2483  train accuracy:  0.5080  test accuracy:  0.5108  time:  0.0686s
 epoch  10  loss:  0.2479  train accuracy:  0.5081  test accuracy:  0.5112  time:  0.0686s
 ```
-
-### TBB library
-When using CMake in combination with MKL on linux, the Intel TBB library seems to be a requirement.
-It is unknown what causes this dependency. The B2 build doesn't require TBB.
-
-### Performance
-There is currently something wrong with the performance of the CMake build. The mlp program
-runs about 30 times slower than expected, which indicates that the MKL library is not
-actually being used. The B2 build doesn't have this problem, and the performance of the
-python interface is also as expected.
