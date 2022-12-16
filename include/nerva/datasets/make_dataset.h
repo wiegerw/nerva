@@ -84,6 +84,13 @@ dataset make_dataset(const std::string& name, std::size_t n, RandomNumberGenerat
     std::tie(result.Xtrain, result.Ttrain) = make_dataset_mini(n_train, rng);
     std::tie(result.Xtest, result.Ttest) = make_dataset_mini(n_test, rng);
   }
+  else if (name == "cifar10")
+  {
+    cifar10reader reader;
+    reader.read("../data/cifar-10-batches-bin");
+    reader.normalize_data();
+    std::tie(result.Xtrain, result.Ttrain, result.Xtest, result.Ttest) = reader.data();
+  }
   else
   {
     throw std::runtime_error("Error: unknown dataset " + name);

@@ -12,10 +12,6 @@ Compilation with clang-14 was tried, but unfortunately the compiler + linker fla
 on the web page https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html
 do not seem to work.
 
-Note that **possibly the MKL library must be linked statically**. At least in some of the
-experiments we did it turned out that shared linking caused wrong results in one of the MKL
-sparse matrix multiplication routines.
-
 ## Dependencies
 Nerva uses the following third-party libraries.
 
@@ -165,3 +161,6 @@ epoch   8  loss:  0.2487  train accuracy:  0.5071  test accuracy:  0.5110  time:
 epoch   9  loss:  0.2483  train accuracy:  0.5080  test accuracy:  0.5108  time:  0.0686s
 epoch  10  loss:  0.2479  train accuracy:  0.5081  test accuracy:  0.5112  time:  0.0686s
 ```
+
+Using `--dataset=cifar10` the `CIFAR10` dataset can be loaded. However, it will not be loaded
+automatically. Instead, the location of the data is hardcoded as `../data/cifar-10-batches-bin`.
