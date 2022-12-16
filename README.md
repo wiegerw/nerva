@@ -97,21 +97,19 @@ the nerva library on Ubuntu and running the tests can be done like this:
 ```
 mkdir build
 cd build
-cmake ..
+cmake .. -DCMAKE_BUILD_TYPE=RELEASE
 make -j4
 ctest
 ```
 
 ### Intel MKL + CMake
 N.B. The CMake support for the MKL library seems broken. There is no CMake support
-available if the MKL library is installed using the package manager. Recent standalone versions
-provide CMake support, but there are several problems with it. First of all, the Intel TBB
-library seems to be a requirement, which should not be the case. Second, the CMake
-configuration doesn't set the proper flags for the g++ and clang compilers.
-To fix this, the flags `-DMKL_ILP64 -m64 -march=native` are added manually. Third, the
-performance of the executables is about 30 times slower than expected, which indicates that the
-MKL library is not actually being used. The B2 build doesn't have this problem, and the performance
-of the python interface is also as expected.
+available if the MKL library is installed using the package manager. Recent
+versions provide CMake support, but there are some problems with it. First of all,
+the Intel TBB library seems to be a requirement, which should not be the case.
+Second, the CMake configuration doesn't set the proper flags for the g++ and
+clang compilers. To fix this, the flags `-DMKL_ILP64 -m64 -march=native` are added
+manually.
 
 ### Number type
 By default, the nerva code uses 32-bit floats as the number type. It is possible to change this by
