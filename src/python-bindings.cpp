@@ -339,11 +339,19 @@ PYBIND11_MODULE(nervalib, m)
     .value("XavierNormalized", weight_initialization::xavier_normalized, "XavierNormalized")
     .value("Uniform", weight_initialization::uniform, "Uniform")
     .value("Zero", weight_initialization::zero, "Zero")
+    .value("Ten", weight_initialization::ten, "Ten")  // used for testing
     ;
 
   m.def("initialize_weights", initialize_weights<eigen::matrix>);
   m.def("import_weights", import_weights);
   m.def("export_weights", export_weights);
+  m.def("regrow", [](eigen::matrix_ref<scalar> W, scalar zeta, weight_initialization w, std::mt19937& rng)
+        {
+          auto f = create_weight_initializer(W, w, rng);
+          long nonzero_count = (W.array() != 0).count();
+          long k = std::lround(zeta * static_cast<scalar>(nonzero_count));
+          regrow_threshold(W, k, f, rng);
+        });
 
   /////////////////////////////////////////////////////////////////////////
   //                       training

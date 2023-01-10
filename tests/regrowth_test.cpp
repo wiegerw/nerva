@@ -74,9 +74,9 @@ TEST_CASE("test1")
 
   eigen::print_matrix("A", A);
 
-  auto f = []() { return scalar(10); };
-  long k = 5;
   std::mt19937 rng{std::random_device{}()};
+  auto f = std::make_shared<ten_weight_initializer>(rng);
+  long k = 5;
 
   auto threshold = find_k_smallest_absolute_value(A, k);
   CHECK_EQ(3, threshold);
@@ -153,8 +153,8 @@ TEST_CASE("test2")
   auto B = A;
   long k_negative = 3;
   long k_positive = 4;
-  auto f = []() { return scalar(10); };
   std::mt19937 rng{std::random_device{}()};
+  auto f = std::make_shared<ten_weight_initializer>(rng);
   regrow_interval(B, k_negative, k_positive, f, rng);
   eigen::print_matrix("B", B);
   CHECK_EQ((B.array() == 10).count(), prune_count);
