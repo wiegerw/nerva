@@ -68,7 +68,7 @@ The Windows build is still experimental.
 The location of the oneAPI library must be set in the environment variable `ONEAPI_ROOT`,
 and the location of the Eigen library must be set in the environment variable `EIGENROOT`.
 Note that the default installation of Intel MKL will set `ONEAPI_ROOT` automatically.
-Also the file `libiomp5md.dll` must be installed. It can be found
+Also, the file `libiomp5md.dll` must be installed. It can be found
 in `%ONEAPI_ROOT%\compiler\latest\windows\redist\intel64_win\compiler\libiomp5md.dll`.
 The easiest way to install it is to copy it manually to the directory `C:\Windows\System32`.
 
