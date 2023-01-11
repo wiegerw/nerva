@@ -186,7 +186,8 @@ void grow(EigenMatrix& A, long k, const std::shared_ptr<weight_initializer>& f, 
 
   if (selection.size() != static_cast<std::size_t>(k))
   {
-    throw std::runtime_error("could not find " + std::to_string(k) + " elements in function grow");
+    auto count = std::count_if(data, data + N, accept);
+    throw std::runtime_error("could not find " + std::to_string(k) + " positions in function grow; #available positions = " + std::to_string(count));
   }
 
   i += 1; // position i has already been handled
@@ -229,7 +230,7 @@ void regrow_threshold(EigenMatrix& W, long k, const std::shared_ptr<weight_initi
   // check_accept_count(W, prune_count, accept_value(max_scalar));
 
   // grow elements that are equal to zero
-  grow(W, prune_count, f, rng, accept_value(max_scalar));
+  grow(W, prune_count, f, rng, accept_zero());
 
   // replace max_scalar by 0
   W = W.unaryExpr([max_scalar](scalar x) { return x == max_scalar ? 0 : x; });
@@ -264,7 +265,7 @@ void regrow_interval(EigenMatrix& W, long k_negative, long k_positive, const std
   long count = prune(W, accept, max_scalar);
 
   // grow elements that are equal to zero
-  grow(W, count, f, rng, accept_value(max_scalar));
+  grow(W, count, f, rng, accept_zero());
 
   // replace max_scalar by 0
   W = W.unaryExpr([max_scalar](Scalar x) { return x == max_scalar ? 0 : x; });
