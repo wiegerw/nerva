@@ -79,6 +79,7 @@ TEST_CASE("test_to_numpy")
 {
   py::scoped_interpreter guard{};  // Initialize the interpreter
   auto np = py::module::import("numpy");
+  auto io = py::module::import("io");
 
   Eigen::MatrixXd A {
     {1, 2, 3, 4},
@@ -102,6 +103,7 @@ TEST_CASE("test_to_numpy")
   py::array_t<double> C = load_numpy_array("A1.npy");
   CHECK(compare_numpy_arrays(A1, C));
 
+  // Save multiple Numpy arrays to a file in .npz format
   py::dict data;
   data["A1"] = A1;
   data["B1"] = B1;
@@ -112,4 +114,16 @@ TEST_CASE("test_to_numpy")
   auto B2 = data1["B1"].cast<py::array_t<double>>();
   CHECK(compare_numpy_arrays(A1, A2));
   CHECK(compare_numpy_arrays(B1, B2));
+
+  // Save multiple Numpy arrays to a file in .npy format
+  py::object file = io.attr("open")("A2B2.npy", "wb");
+  np.attr("save")(file, A2);
+  np.attr("save")(file, B2);
+  file.attr("close")();
+
+  py::object file1 = io.attr("open")("A2B2.npy", "rb");
+  auto A3 = np.attr("load")(file1).cast<py::array_t<double>>();
+  auto B3 = np.attr("load")(file1).cast<py::array_t<double>>();
+  CHECK(compare_numpy_arrays(A1, A3));
+  CHECK(compare_numpy_arrays(B1, B3));
 }
