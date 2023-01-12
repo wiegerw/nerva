@@ -78,21 +78,38 @@ void print_numpy_array(const py::array_t<Scalar>& x)
 TEST_CASE("test_to_numpy")
 {
   py::scoped_interpreter guard{};  // Initialize the interpreter
-  py::module numpy = py::module::import("numpy");
+  auto np = py::module::import("numpy");
 
   Eigen::MatrixXd A {
     {1, 2, 3, 4},
     {5, 6, 7, 8}
   };
+  py::array_t<double> A1 = to_numpy(A);
+  print_numpy_array(A1);
 
-  py::array_t<double> B = to_numpy(A);
-  print_numpy_array(B);
+  Eigen::MatrixXd B {
+    {1, 0, 3, 0},
+    {0, 6, 7, 8}
+  };
+  py::array_t<double> B1 = to_numpy(B);
 
-  auto D = from_numpy(B);
+
+  auto D = from_numpy(A1);
   CHECK(A == D);
 
-  save_numpy_array("B.npy", B);
+  save_numpy_array("A1.npy", A1);
 
-  py::array_t<double> C = load_numpy_array("B.npy");
-  CHECK(compare_numpy_arrays(B, C));
+  py::array_t<double> C = load_numpy_array("A1.npy");
+  CHECK(compare_numpy_arrays(A1, C));
+
+  py::dict data;
+  data["A1"] = A1;
+  data["B1"] = B1;
+  np.attr("savez")("A1B1.npz", **data);
+
+  py::dict data1 = np.attr("load")("A1B1.npz");
+  auto A2 = data1["A1"].cast<py::array_t<double>>();
+  auto B2 = data1["B1"].cast<py::array_t<double>>();
+  CHECK(compare_numpy_arrays(A1, A2));
+  CHECK(compare_numpy_arrays(B1, B2));
 }
