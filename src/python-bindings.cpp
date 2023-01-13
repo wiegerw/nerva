@@ -326,6 +326,8 @@ PYBIND11_MODULE(nervalib, m)
     .def("regrow", &multilayer_perceptron::regrow)
     .def("append_layer", [](multilayer_perceptron& M, const std::shared_ptr<neural_network_layer>& layer) { M.layers.push_back(layer); })
     .def("info", &multilayer_perceptron::info)
+    .def("export_weights", [](const multilayer_perceptron& M, const std::string& filename) { export_weights_to_numpy(M, filename); })
+    .def("import_weights", [](multilayer_perceptron& M, const std::string& filename) { import_weights_from_numpy(M, filename); })
     ;
 
   /////////////////////////////////////////////////////////////////////////

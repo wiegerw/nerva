@@ -11,6 +11,7 @@ project nerva
    : requirements
        <include>include
        <include>/usr/include/eigen3
+       <include>/usr/include/python3.10  # TODO: find a better way for this
        <define>FMT_HEADER_ONLY
 
        <define>EIGEN_USE_MKL_ALL
