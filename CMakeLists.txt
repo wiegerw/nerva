@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 #set(MKL_LINK static)
 
-find_package(Python3 COMPONENTS Interpreter Development)
+find_package(Python3 COMPONENTS Interpreter Development NumPy)
 find_package(pybind11 REQUIRED)
 find_package (Eigen3 REQUIRED NO_MODULE)
 find_package(MKL CONFIG REQUIRED)
@@ -14,6 +14,7 @@ if (UNIX)
     find_package(TBB)
 endif()
 
+include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(include)
 
 add_compile_definitions(FMT_HEADER_ONLY EIGEN_USE_MKL_ALL)
