@@ -18,6 +18,12 @@ from nerva.optimizers import GradientDescent
 from nerva.training import minibatch_gradient_descent, minibatch_gradient_descent_python, SGDOptions, compute_accuracy, compute_statistics
 from nerva.utilities import RandomNumberGenerator, set_num_threads, StopWatch
 from nerva.weights import Weights
+import regrow
+
+
+class GlobalSettings:
+    # Determines whether regrow is done using C++ or using python functions
+    regrow_using_python = False
 
 
 def read_cifar10():
@@ -194,8 +200,10 @@ def minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate, epoc
 
     for epoch in range(epochs):
         if epoch > 0:
-            print('regrow')
-            M.regrow(zeta, regrow_weights, True, rng)
+            if GlobalSettings.regrow_using_python:
+                regrow.regrow_weights(M, zeta)
+            else:
+                M.regrow(zeta, regrow_weights, True, rng)
 
         watch.reset()
         if shuffle:
@@ -244,4 +252,6 @@ if __name__ == '__main__':
     train_dense_model_cpp(dataset)
     train_sparse_model(dataset)
     train_dense_model_with_augmentation(x_train, x_test, y_train, y_test)
+    train_sparse_model_with_regrow(dataset)
+    GlobalSettings.regrow_using_python = True
     train_sparse_model_with_regrow(dataset)

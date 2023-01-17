@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # This code is from https://github.com/Shiweiliuiiiiiii/SET-MLP-ONE-MILLION-NEURONS/blob/master/set_mlp_sparse_data_structures.py
 
 import numpy as np
@@ -78,7 +80,8 @@ def weights_evolution_II(w: csr_matrix, zeta: float, gen = lambda: np.random.ran
     rowsW = wcoo.row
     colsW = wcoo.col
 
-    # print("Number of non zeros in W and PD matrix before evolution in layer",i,[np.size(valsW), np.size(valsPD)])
+    # print(f"Number of non zeros in W matrix before evolution = {np.size(valsW)} / {rows * columns}")
+
     values = np.sort(w.data)
     firstZeroPos = find_first_pos(values, 0)
     lastZeroPos = find_last_pos(values, 0)
@@ -86,7 +89,7 @@ def weights_evolution_II(w: csr_matrix, zeta: float, gen = lambda: np.random.ran
     largestNegative = values[int((1 - zeta) * firstZeroPos)]
     smallestPositive = values[int(min(values.shape[0] - 1, lastZeroPos + zeta * (values.shape[0] - lastZeroPos)))]
 
-    # remove the weights (W) closest to zero and modify PD as well
+    # remove the weights (W) closest to zero
     valsWNew = valsW[(valsW > smallestPositive) | (valsW < largestNegative)]
     rowsWNew = rowsW[(valsW > smallestPositive) | (valsW < largestNegative)]
     colsWNew = colsW[(valsW > smallestPositive) | (valsW < largestNegative)]
@@ -123,6 +126,6 @@ def weights_evolution_II(w: csr_matrix, zeta: float, gen = lambda: np.random.ran
     if (valsWNew.shape[0] != rowsWNew.shape[0]):
         print("not good")
 
-    return coo_matrix((valsWNew, (rowsWNew, colsWNew)), (rows, columns)).tocsr()
+    # print(f"Number of non zeros in W matrix after evolution  = {w.data.shape[0]} / {rows * columns}")
 
-    # print("Number of non zeros in W and PD matrix after evolution in layer",i,[(w.data.shape[0]), (self.pdw[i].data.shape[0])])
+    return coo_matrix((valsWNew, (rowsWNew, colsWNew)), (rows, columns)).tocsr()

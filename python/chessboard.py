@@ -16,6 +16,7 @@ from nerva.optimizers import GradientDescent
 from nerva.training import minibatch_gradient_descent, minibatch_gradient_descent_python, SGDOptions, compute_accuracy, compute_statistics
 from nerva.utilities import RandomNumberGenerator, set_num_threads, StopWatch
 from nerva.weights import Weights
+from regrow import regrow_weights
 
 
 def make_dataset_chessboard(n: int):
@@ -50,7 +51,7 @@ def create_model(sparsity: float):
     return model
 
 
-def minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Weights.Xavier, rng=RandomNumberGenerator(1234567)):
+def minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, weights_initializer=Weights.Xavier, rng=RandomNumberGenerator(1234567)):
     N = dataset.Xtrain.shape[1]  # the number of examples
     I = list(range(N))
     K = N // batch_size  # the number of batches
@@ -60,8 +61,7 @@ def minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate, epoc
 
     for epoch in range(epochs):
         if epoch > 0:
-            print('regrow')
-            M.regrow(zeta, regrow_weights, True, rng)
+            regrow_weights(M, zeta)
 
         watch.reset()
         if shuffle:
@@ -96,7 +96,7 @@ def train_sparse_model_with_regrow(dataset, sparsity):
     batch_size = 100
     model = create_model(sparsity)
     M = model.compile(input_size, batch_size, rng)
-    minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=batch_size, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Weights.Xavier, rng=rng)
+    minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=batch_size, shuffle=True, statistics=True, zeta=0.1, weights_initializer=Weights.Xavier, rng=rng)
     print('')
 
 
