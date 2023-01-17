@@ -19,6 +19,7 @@
 #include "nerva/neural_networks/loss_functions.h"
 #include "nerva/neural_networks/regrowth.h"
 #include "nerva/neural_networks/weights.h"
+#include "nerva/utilities/logger.h"
 #include "nerva/utilities/stopwatch.h"
 #include <cmath>
 #include <functional>
@@ -191,7 +192,7 @@ inline
 void export_weights_to_numpy(const multilayer_perceptron& M, const std::string& filename)
 {
   namespace py = pybind11;
-  std::cout << "exporting weights in '.npy' format to file " << filename << std::endl;
+  NERVA_LOG(log::verbose) << "exporting weights in '.npy' format to file " << filename << std::endl;
 
   auto np = py::module::import("numpy");
   auto io = py::module::import("io");
@@ -202,12 +203,12 @@ void export_weights_to_numpy(const multilayer_perceptron& M, const std::string& 
     if (auto dlayer = dynamic_cast<linear_layer<eigen::matrix>*>(layer.get()))
     {
       np.attr("save")(file, eigen::to_numpy(dlayer->W));
-      np.attr("save")(file, eigen::to_numpy(dlayer->b));
+      // np.attr("save")(file, eigen::to_numpy(dlayer->b));
     }
     else if (auto slayer = dynamic_cast<linear_layer<mkl::sparse_matrix_csr<scalar>>*>(layer.get()))
     {
       np.attr("save")(file, eigen::to_numpy(mkl::to_eigen(slayer->W)));
-      np.attr("save")(file, eigen::to_numpy(slayer->b));
+      // np.attr("save")(file, eigen::to_numpy(slayer->b));
     }
   }
 
@@ -220,7 +221,7 @@ inline
 void import_weights_from_numpy(multilayer_perceptron& M, const std::string& filename)
 {
   namespace py = pybind11;
-  std::cout << "importing weights in '.npy' format from file " << filename << std::endl;
+  NERVA_LOG(log::verbose) << "importing weights in '.npy' format from file " << filename << std::endl;
 
   auto np = py::module::import("numpy");
   auto io = py::module::import("io");
@@ -231,12 +232,12 @@ void import_weights_from_numpy(multilayer_perceptron& M, const std::string& file
     if (auto dlayer = dynamic_cast<linear_layer<eigen::matrix>*>(layer.get()))
     {
       dlayer->W = eigen::from_numpy(np.attr("load")(file).cast<py::array_t<scalar>>());
-      dlayer->b = eigen::from_numpy(np.attr("load")(file).cast<py::array_t<scalar>>());
+      // dlayer->b = eigen::from_numpy(np.attr("load")(file).cast<py::array_t<scalar>>());
     }
     else if (auto slayer = dynamic_cast<linear_layer<mkl::sparse_matrix_csr<scalar>>*>(layer.get()))
     {
       slayer->W = mkl::to_csr(eigen::from_numpy(np.attr("load")(file).cast<py::array_t<scalar>>()));
-      slayer->b = eigen::from_numpy(np.attr("load")(file).cast<py::array_t<scalar>>());
+      // slayer->b = eigen::from_numpy(np.attr("load")(file).cast<py::array_t<scalar>>());
     }
   }
 
