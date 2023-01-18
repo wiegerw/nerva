@@ -328,6 +328,8 @@ PYBIND11_MODULE(nervalib, m)
     .def("info", &multilayer_perceptron::info)
     .def("export_weights", [](const multilayer_perceptron& M, const std::string& filename) { export_weights_to_numpy(M, filename); })
     .def("import_weights", [](multilayer_perceptron& M, const std::string& filename) { import_weights_from_numpy(M, filename); })
+    .def("export_bias", [](const multilayer_perceptron& M, const std::string& filename) { export_bias_to_numpy(M, filename); })
+    .def("import_bias", [](multilayer_perceptron& M, const std::string& filename) { import_bias_from_numpy(M, filename); })
     ;
 
   /////////////////////////////////////////////////////////////////////////
