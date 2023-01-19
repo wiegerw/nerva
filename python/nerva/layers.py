@@ -187,6 +187,7 @@ class AffineTransform(Layer):
 class Sequential(object):
     def __init__(self, layers: Optional[Union[List[Layer], Tuple[Layer]]]=None):
         self.layers = []
+        self.compiled_model = None
         if layers:
             for layer in layers:
                 self.add(layer)
@@ -235,7 +236,7 @@ class Sequential(object):
                 layer.input_size = input_size
                 cpp_layer = layer.compile(batch_size)
                 M.append_layer(cpp_layer)
-        return M
+        self.compiled_model = M
 
     def regrow(self, weight_initializer: Weights, zeta: float, rng: RandomNumberGenerator):
         """Prunes and regrows the weights of the sparse layers
@@ -247,3 +248,12 @@ class Sequential(object):
         for layer in self.layers:
             if isinstance(layer, Sparse):
                 layer.regrow(weight_initializer, zeta, rng)
+
+    def feedforward(self, X):
+        return self.compiled_model.feedforward(X)
+
+    def backpropagate(self, Y, dY):
+        return self.compiled_model.backpropagate(Y, dY)
+
+    def optimize(self, eta):
+        self.compiled_model.optimize(eta)

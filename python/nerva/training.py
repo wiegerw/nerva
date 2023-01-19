@@ -7,7 +7,8 @@ from nervalib import compute_statistics, compute_accuracy, minibatch_gradient_de
 from nerva.utilities import StopWatch
 
 
-def minibatch_gradient_descent_python(M, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True):
+def minibatch_gradient_descent_python(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True):
+    M = model.compiled_model
     N = dataset.Xtrain.shape[1]  # the number of examples
     I = list(range(N))
     K = N // batch_size  # the number of batches
@@ -26,10 +27,10 @@ def minibatch_gradient_descent_python(M, dataset, loss, learning_rate, epochs, b
             batch = I[k * batch_size: (k + 1) * batch_size]
             X = dataset.Xtrain[:, batch]
             T = dataset.Ttrain[:, batch]
-            Y = M.feedforward(X)
+            Y = model.feedforward(X)
             dY = loss.gradient(Y, T) / batch_size  # pytorch uses this division
-            M.backpropagate(Y, dY)
-            M.optimize(eta)
+            model.backpropagate(Y, dY)
+            model.optimize(eta)
 
         seconds = watch.seconds()
         compute_statistics(M, loss, dataset, batch_size, epoch, statistics, seconds)

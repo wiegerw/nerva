@@ -84,9 +84,10 @@ def create_sparse_model(sparsity: float):
 
 # Uses a data generator to generate batches.
 # The parameter dataset is only used for computing statistics.
-def minibatch_gradient_descent_with_augmentation(M, dataset, datagen, loss, learning_rate, epochs, batch_size, statistics=True):
+def minibatch_gradient_descent_with_augmentation(model, dataset, datagen, loss, learning_rate, epochs, batch_size, statistics=True):
     N = dataset.Xtrain.shape[1]  # the number of examples
     K = N // batch_size  # the number of batches
+    M = model.compiled_model
 
     compute_statistics(M, loss, dataset, batch_size, -1, statistics, 0.0)
     total_time = 0.0
@@ -102,10 +103,10 @@ def minibatch_gradient_descent_with_augmentation(M, dataset, datagen, loss, lear
                 break
             X = flatten(Xbatch).T
             T = Tbatch.T
-            Y = M.feedforward(X)
+            Y = model.feedforward(X)
             dY = loss.gradient(Y, T) / batch_size  # pytorch uses this division
-            M.backpropagate(Y, dY)
-            M.optimize(eta)
+            model.backpropagate(Y, dY)
+            model.optimize(eta)
 
         seconds = watch.seconds()
         compute_statistics(M, loss, dataset, batch_size, epoch, statistics, seconds)
@@ -122,8 +123,8 @@ def train_dense_model(dataset):
     input_size = 3072
     batch_size = 100
     model = create_dense_model()
-    M = model.compile(input_size, batch_size, rng)
-    minibatch_gradient_descent_python(M, dataset, loss, learning_rate_scheduler, epochs=10, batch_size=100, shuffle=True, statistics=True)
+    model.compile(input_size, batch_size, rng)
+    minibatch_gradient_descent_python(model, dataset, loss, learning_rate_scheduler, epochs=10, batch_size=100, shuffle=True, statistics=True)
     print('')
 
 
@@ -135,7 +136,8 @@ def train_dense_model_cpp(dataset):
     input_size = 3072
     batch_size = 100
     model = create_dense_model()
-    M = model.compile(input_size, batch_size, rng)
+    model.compile(input_size, batch_size, rng)
+    M = model.compiled_model
     options = make_sgd_options()
     minibatch_gradient_descent(M, loss, dataset, options, learning_rate_scheduler, rng)
     print('')
@@ -149,8 +151,8 @@ def train_sparse_model(dataset):
     batch_size = 100
     sparsity = 0.5
     model = create_sparse_model(sparsity)
-    M = model.compile(input_size, batch_size, rng)
-    minibatch_gradient_descent_python(M, dataset, loss, learning_rate_scheduler, epochs=10, batch_size=100, shuffle=True, statistics=True)
+    model.compile(input_size, batch_size, rng)
+    minibatch_gradient_descent_python(model, dataset, loss, learning_rate_scheduler, epochs=10, batch_size=100, shuffle=True, statistics=True)
     print('')
 
 
@@ -185,12 +187,13 @@ def train_dense_model_with_augmentation(x_train, x_test, y_train, y_test):
     model = create_dense_model()
     input_size = 3072
     batch_size = 100
-    M = model.compile(input_size, batch_size, rng)
-    minibatch_gradient_descent_with_augmentation(M, dataset, datagen, loss, learning_rate_scheduler, epochs=10, batch_size=100, statistics=True)
+    model.compile(input_size, batch_size, rng)
+    minibatch_gradient_descent_with_augmentation(model, dataset, datagen, loss, learning_rate_scheduler, epochs=10, batch_size=100, statistics=True)
     print('')
 
 
-def minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Weights.Zero, rng=RandomNumberGenerator(1234567)):
+def minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Weights.Zero, rng=RandomNumberGenerator(1234567)):
+    M = model.compiled_model
     N = dataset.Xtrain.shape[1]  # the number of examples
     I = list(range(N))
     K = N // batch_size  # the number of batches
@@ -215,10 +218,10 @@ def minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate, epoc
             batch = I[k * batch_size: (k + 1) * batch_size]
             X = dataset.Xtrain[:, batch]
             T = dataset.Ttrain[:, batch]
-            Y = M.feedforward(X)
+            Y = model.feedforward(X)
             dY = loss.gradient(Y, T) / batch_size  # pytorch uses this division
-            M.backpropagate(Y, dY)
-            M.optimize(eta)
+            model.backpropagate(Y, dY)
+            model.optimize(eta)
 
         seconds = watch.seconds()
         compute_statistics(M, loss, dataset, batch_size, epoch, statistics, seconds)
@@ -236,8 +239,8 @@ def train_sparse_model_with_regrow(dataset):
     batch_size = 100
     sparsity = 0.5
     model = create_sparse_model(sparsity)
-    M = model.compile(input_size, batch_size, rng)
-    minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=100, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Weights.Xavier, rng=rng)
+    model.compile(input_size, batch_size, rng)
+    minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=100, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Weights.Xavier, rng=rng)
     print('')
 
 
