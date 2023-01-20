@@ -1,3 +1,6 @@
+# This code is originally from https://github.com/VITA-Group/Random_Pruning
+# There is no license information available
+
 from __future__ import print_function
 import torch
 import torch.nn as nn

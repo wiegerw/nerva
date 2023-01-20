@@ -1,3 +1,6 @@
+# This code is originally from https://github.com/VITA-Group/Random_Pruning
+# There is no license information available
+
 from __future__ import print_function
 
 import os
@@ -13,11 +16,9 @@ import torch.optim as optim
 import torch.backends.cudnn as cudnn
 import numpy as np
 import sparselearning
-# from models import cifar_resnet, initializers, vgg
 from sparselearning.core import Masking, CosineDecay
 from sparselearning.models import MLP_CIFAR10
-from sparselearning.utils import get_mnist_dataloaders, get_cifar10_dataloaders, get_cifar100_dataloaders, \
-    plot_class_feature_histograms
+from sparselearning.utils import get_mnist_dataloaders, get_cifar10_dataloaders, get_cifar100_dataloaders
 
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -174,15 +175,7 @@ def main():
     setup_logger(args)
     print_and_log(args)
 
-    if args.fp16:
-        try:
-            from apex.fp16_utils import FP16_Optimizer
-        except:
-            print('WARNING: apex not installed, ignoring --fp16 option')
-            args.fp16 = False
-
-    use_cuda = not args.no_cuda and torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
+    device = torch.device("cpu")
 
     print_and_log('\n\n')
     print_and_log('='*80)

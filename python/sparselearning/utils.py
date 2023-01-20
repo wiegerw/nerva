@@ -1,3 +1,6 @@
+# This code is originally from https://github.com/VITA-Group/Random_Pruning
+# There is no license information available
+
 import os
 import numpy as np
 import torch

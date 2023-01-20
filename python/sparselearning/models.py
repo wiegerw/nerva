@@ -1,3 +1,6 @@
+# This code is originally from https://github.com/VITA-Group/Random_Pruning
+# There is no license information available
+
 import math
 import time
 import numpy as np

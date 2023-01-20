@@ -1,3 +1,6 @@
+# This code is originally from https://github.com/VITA-Group/Random_Pruning
+# There is no license information available
+
 import torch
 import torch.autograd as autograd
 import torch.nn as nn
