@@ -105,25 +105,25 @@ def train(model, device, train_loader, optimizer, epoch, batch_size, log_interva
         'Training summary' , train_loss/batch_idx, correct, n, 100. * correct / float(n)))
 
 
-def train_model(args, model, mask, train_loader, valid_loader, lr_scheduler, optimizer, device, epochs, output_folder):
+def train_model(model, mask, train_loader, valid_loader, lr_scheduler, optimizer, device, epochs, batch_size, log_interval, output_folder):
     best_accuracy = 0.0
     validation_accuracy = 0.0
 
     for epoch in range(1, epochs + 1):
         t0 = time.time()
-        train(model, device, train_loader, optimizer, epoch, args.batch_size, args.log_interval, mask)
+        train(model, device, train_loader, optimizer, epoch, batch_size, log_interval, mask)
         lr_scheduler.step()
-        if args.valid_split > 0.0:
-            validation_accuracy = evaluate(model, device, valid_loader)
 
-        if validation_accuracy > best_accuracy:
-            print('Saving model')
-            best_accuracy = validation_accuracy
-            save_checkpoint({
-                'epoch': epoch + 1,
-                'state_dict': model.state_dict(),
-                'optimizer': optimizer.state_dict(),
-            }, filename=os.path.join(output_folder, 'model_final.pth'))
+        if valid_loader:
+            validation_accuracy = evaluate(model, device, valid_loader)
+            if validation_accuracy > best_accuracy:
+                print('Saving model')
+                best_accuracy = validation_accuracy
+                save_checkpoint({
+                    'epoch': epoch + 1,
+                    'state_dict': model.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                }, filename=os.path.join(output_folder, 'model_final.pth'))
 
         print_and_log('Current learning rate: {0}. Time taken for epoch: {1:.2f} seconds.\n'.format(
             optimizer.param_groups[0]['lr'], time.time() - t0))
@@ -266,7 +266,7 @@ def main():
         if not os.path.exists(output_folder): os.makedirs(output_folder)
 
         epochs = args.epochs * args.multiplier
-        train_model(args, model, mask, train_loader, valid_loader, lr_scheduler, optimizer, device, epochs, output_folder)
+        train_model(model, mask, train_loader, valid_loader, lr_scheduler, optimizer, device, epochs, args.batch_size, args.log_interval, output_folder)
 
         print('Testing model')
         model.load_state_dict(torch.load(os.path.join(output_folder, 'model_final.pth'))['state_dict'])
