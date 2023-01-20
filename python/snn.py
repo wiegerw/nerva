@@ -68,11 +68,12 @@ def print_and_log(msg):
     logger.info(msg)
 
 # gradient_norm = []
-def train(args, model, device, train_loader, optimizer, epoch, mask=None):
+def train(model, device, train_loader, optimizer, epoch, batch_size, log_interval, mask=None):
     model.train()
     train_loss = 0
     correct = 0
     n = 0
+
     # global gradient_norm
     for batch_idx, (data, target) in enumerate(train_loader):
 
@@ -89,21 +90,46 @@ def train(args, model, device, train_loader, optimizer, epoch, mask=None):
 
         loss.backward()
 
-        if mask is not None: mask.step()
-        else: optimizer.step()
+        if mask is not None:
+            mask.step()
+        else:
+            optimizer.step()
 
-
-        if batch_idx % args.log_interval == 0:
+        if batch_idx % log_interval == 0:
             print_and_log('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f} Accuracy: {}/{} ({:.3f}% '.format(
-                epoch, batch_idx * len(data), len(train_loader)*args.batch_size,
+                epoch, batch_idx * len(data), len(train_loader) * batch_size,
                 100. * batch_idx / len(train_loader), loss.item(), correct, n, 100. * correct / float(n)))
-
 
     # training summary
     print_and_log('\n{}: Average loss: {:.4f}, Accuracy: {}/{} ({:.3f}%)\n'.format(
         'Training summary' , train_loss/batch_idx, correct, n, 100. * correct / float(n)))
 
-def evaluate(args, model, device, test_loader, is_test_set=False):
+
+def train_model(args, model, mask, train_loader, valid_loader, lr_scheduler, optimizer, device, epochs, output_folder):
+    best_accuracy = 0.0
+    validation_accuracy = 0.0
+
+    for epoch in range(1, epochs + 1):
+        t0 = time.time()
+        train(model, device, train_loader, optimizer, epoch, args.batch_size, args.log_interval, mask)
+        lr_scheduler.step()
+        if args.valid_split > 0.0:
+            validation_accuracy = evaluate(model, device, valid_loader)
+
+        if validation_accuracy > best_accuracy:
+            print('Saving model')
+            best_accuracy = validation_accuracy
+            save_checkpoint({
+                'epoch': epoch + 1,
+                'state_dict': model.state_dict(),
+                'optimizer': optimizer.state_dict(),
+            }, filename=os.path.join(output_folder, 'model_final.pth'))
+
+        print_and_log('Current learning rate: {0}. Time taken for epoch: {1:.2f} seconds.\n'.format(
+            optimizer.param_groups[0]['lr'], time.time() - t0))
+
+
+def evaluate(model, device, test_loader, is_test_set=False):
     model.eval()
     test_loss = 0
     correct = 0
@@ -234,37 +260,17 @@ def main():
         print_and_log('Redistribution mode: {0}'.format(args.redistribution))
         print_and_log('=' * 60)
 
-        best_accuracy = 0.0
-        validation_accuracy = 0.0
+        # create output folder
+        output_path = './save/' + str(args.model) + '/' + str(args.data) + '/' + str(args.sparse_init) + '/' + str(args.seed)
+        output_folder = os.path.join(output_path, f'sparsity{1 - args.density}' if args.sparse else 'dense')
+        if not os.path.exists(output_folder): os.makedirs(output_folder)
 
-        # create output file
-        save_path = './save/' + str(args.model) + '/' + str(args.data) + '/' + str(args.sparse_init) + '/' + str(args.seed)
-        if args.sparse: save_subfolder = os.path.join(save_path, 'sparsity' + str(1 - args.density))
-        else: save_subfolder = os.path.join(save_path, 'dense')
-        if not os.path.exists(save_subfolder): os.makedirs(save_subfolder)
-
-
-        for epoch in range(1, args.epochs * args.multiplier + 1):
-            t0 = time.time()
-            train(args, model, device, train_loader, optimizer, epoch, mask)
-            lr_scheduler.step()
-            if args.valid_split > 0.0:
-                validation_accuracy = evaluate(args, model, device, valid_loader)
-
-            if validation_accuracy > best_accuracy:
-                print('Saving model')
-                best_accuracy = validation_accuracy
-                save_checkpoint({
-                    'epoch': epoch + 1,
-                    'state_dict': model.state_dict(),
-                    'optimizer': optimizer.state_dict(),
-                }, filename=os.path.join(save_subfolder, 'model_final.pth'))
-
-            print_and_log('Current learning rate: {0}. Time taken for epoch: {1:.2f} seconds.\n'.format(optimizer.param_groups[0]['lr'], time.time() - t0))
+        epochs = args.epochs * args.multiplier
+        train_model(args, model, mask, train_loader, valid_loader, lr_scheduler, optimizer, device, epochs, output_folder)
 
         print('Testing model')
-        model.load_state_dict(torch.load(os.path.join(save_subfolder, 'model_final.pth'))['state_dict'])
-        evaluate(args, model, device, test_loader, is_test_set=True)
+        model.load_state_dict(torch.load(os.path.join(output_folder, 'model_final.pth'))['state_dict'])
+        evaluate(model, device, test_loader, is_test_set=True)
         print_and_log("\nIteration end: {0}/{1}\n".format(i+1, args.iters))
 
 
