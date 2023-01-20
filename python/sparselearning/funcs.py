@@ -3,9 +3,11 @@
 
 import torch
 import math
+
 '''
                 REDISTRIBUTION
 '''
+
 
 def momentum_redistribution(masking, name, weight, mask):
     """Calculates momentum redistribution statistics.
@@ -39,23 +41,28 @@ def momentum_redistribution(masking, name, weight, mask):
     mean_magnitude = torch.abs(grad[mask.bool()]).mean().item()
     return mean_magnitude
 
+
 def magnitude_redistribution(masking, name, weight, mask):
     mean_magnitude = torch.abs(weight)[mask.bool()].mean().item()
     return mean_magnitude
 
+
 def nonzero_redistribution(masking, name, weight, mask):
-    nonzero = (weight !=0.0).sum().item()
+    nonzero = (weight != 0.0).sum().item()
     return nonzero
+
 
 def no_redistribution(masking, name, weight, mask):
     num_params = masking.baseline_nonzero
     n = weight.numel()
-    return n/float(num_params)
+    return n / float(num_params)
 
 
 '''
                 PRUNE
 '''
+
+
 def magnitude_prune(masking, mask, weight, name):
     """Prunes the weights with smallest magnitude.
 
@@ -107,7 +114,7 @@ def magnitude_prune(masking, mask, weight, name):
         Total number of parameters removed in pruning:
             masking.total_removed = 0
     """
-    num_remove = math.ceil(masking.name2prune_rate[name]*masking.name2nonzeros[name])
+    num_remove = math.ceil(masking.name2prune_rate[name] * masking.name2nonzeros[name])
     num_zeros = masking.name2zeros[name]
     k = math.ceil(num_zeros + num_remove)
     if num_remove == 0.0: return weight.data != 0.0
@@ -116,15 +123,16 @@ def magnitude_prune(masking, mask, weight, name):
     mask.data.view(-1)[idx[:k]] = 0.0
     return mask
 
+
 def global_magnitude_prune(masking):
     prune_rate = 0.0
     for name in masking.name2prune_rate:
         if name in masking.masks:
             prune_rate = masking.name2prune_rate[name]
-    tokill = math.ceil(prune_rate*masking.baseline_nonzero)
+    tokill = math.ceil(prune_rate * masking.baseline_nonzero)
     total_removed = 0
     prev_removed = 0
-    while total_removed < tokill*(1.0-masking.tolerance) or (total_removed > tokill*(1.0+masking.tolerance)):
+    while total_removed < tokill * (1.0 - masking.tolerance) or (total_removed > tokill * (1.0 + masking.tolerance)):
         total_removed = 0
         for module in masking.modules:
             for name, weight in module.named_parameters():
@@ -134,11 +142,11 @@ def global_magnitude_prune(masking):
 
         if prev_removed == total_removed: break
         prev_removed = total_removed
-        if total_removed > tokill*(1.0+masking.tolerance):
-            masking.prune_threshold *= 1.0-masking.increment
+        if total_removed > tokill * (1.0 + masking.tolerance):
+            masking.prune_threshold *= 1.0 - masking.increment
             masking.increment *= 0.99
-        elif total_removed < tokill*(1.0-masking.tolerance):
-            masking.prune_threshold *= 1.0+masking.increment
+        elif total_removed < tokill * (1.0 - masking.tolerance):
+            masking.prune_threshold *= 1.0 + masking.increment
             masking.increment *= 0.99
 
     for module in masking.modules:
@@ -150,11 +158,11 @@ def global_magnitude_prune(masking):
 
 
 def magnitude_and_negativity_prune(masking, mask, weight, name):
-    num_remove = math.ceil(masking.name2prune_rate[name]*masking.name2nonzeros[name])
+    num_remove = math.ceil(masking.name2prune_rate[name] * masking.name2nonzeros[name])
     if num_remove == 0.0: return weight.data != 0.0
 
     num_zeros = masking.name2zeros[name]
-    k = math.ceil(num_zeros + (num_remove/2.0))
+    k = math.ceil(num_zeros + (num_remove / 2.0))
 
     # remove all weights which absolute value is smaller than threshold
     x, idx = torch.sort(torch.abs(weight.data.view(-1)))
@@ -162,20 +170,23 @@ def magnitude_and_negativity_prune(masking, mask, weight, name):
 
     # remove the most negative weights
     x, idx = torch.sort(weight.data.view(-1))
-    mask.data.view(-1)[idx[:math.ceil(num_remove/2.0)]] = 0.0
+    mask.data.view(-1)[idx[:math.ceil(num_remove / 2.0)]] = 0.0
 
     return mask
+
 
 '''
                 GROWTH
 '''
 
+
 def random_growth(masking, name, new_mask, total_regrowth, weight):
-    n = (new_mask==0).sum().item()
+    n = (new_mask == 0).sum().item()
     if n == 0: return new_mask
-    expeced_growth_probability = (total_regrowth/n)
+    expeced_growth_probability = (total_regrowth / n)
     new_weights = torch.rand(new_mask.shape).cuda() < expeced_growth_probability
     return new_mask.bool() | new_weights
+
 
 def momentum_growth(masking, name, new_mask, total_regrowth, weight):
     """Grows weights in places where the momentum is largest.
@@ -243,29 +254,32 @@ def momentum_growth(masking, name, new_mask, total_regrowth, weight):
     """
     grad = masking.get_momentum_for_weight(weight)
     if grad.dtype == torch.float16:
-        grad = grad*(new_mask==0).half()
+        grad = grad * (new_mask == 0).half()
     else:
-        grad = grad*(new_mask==0).float()
+        grad = grad * (new_mask == 0).float()
     y, idx = torch.sort(torch.abs(grad).flatten(), descending=True)
     new_mask.data.view(-1)[idx[:total_regrowth]] = 1.0
 
     return new_mask
 
+
 def momentum_neuron_growth(masking, name, new_mask, total_regrowth, weight):
     grad = masking.get_momentum_for_weight(weight)
 
     M = torch.abs(grad)
-    if len(M.shape) == 2: sum_dim = [1]
-    elif len(M.shape) == 4: sum_dim = [1, 2, 3]
+    if len(M.shape) == 2:
+        sum_dim = [1]
+    elif len(M.shape) == 4:
+        sum_dim = [1, 2, 3]
 
     v = M.mean(sum_dim).data
     v /= v.sum()
 
-    slots_per_neuron = (new_mask==0).sum(sum_dim)
+    slots_per_neuron = (new_mask == 0).sum(sum_dim)
 
-    M = M*(new_mask==0).float()
-    for i, fraction  in enumerate(v):
-        neuron_regrowth = math.floor(fraction.item()*total_regrowth)
+    M = M * (new_mask == 0).float()
+    for i, fraction in enumerate(v):
+        neuron_regrowth = math.floor(fraction.item() * total_regrowth)
         available = slots_per_neuron[i].item()
 
         y, idx = torch.sort(M[i].flatten())
@@ -284,7 +298,7 @@ def global_momentum_growth(masking, total_regrowth):
     togrow = total_regrowth
     total_grown = 0
     last_grown = 0
-    while total_grown < togrow*(1.0-masking.tolerance) or (total_grown > togrow*(1.0+masking.tolerance)):
+    while total_grown < togrow * (1.0 - masking.tolerance) or (total_grown > togrow * (1.0 + masking.tolerance)):
         total_grown = 0
         total_possible = 0
         for module in masking.modules:
@@ -293,21 +307,20 @@ def global_momentum_growth(masking, total_regrowth):
 
                 new_mask = masking.masks[name]
                 grad = masking.get_momentum_for_weight(weight)
-                grad = grad*(new_mask==0).float()
-                possible = (grad !=0.0).sum().item()
+                grad = grad * (new_mask == 0).float()
+                possible = (grad != 0.0).sum().item()
                 total_possible += possible
                 grown = (torch.abs(grad.data) > masking.growth_threshold).sum().item()
                 total_grown += grown
         if total_grown == last_grown: break
         last_grown = total_grown
 
-
-        if total_grown > togrow*(1.0+masking.tolerance):
+        if total_grown > togrow * (1.0 + masking.tolerance):
             masking.growth_threshold *= 1.02
-            #masking.growth_increment *= 0.95
-        elif total_grown < togrow*(1.0-masking.tolerance):
+            # masking.growth_increment *= 0.95
+        elif total_grown < togrow * (1.0 - masking.tolerance):
             masking.growth_threshold *= 0.98
-            #masking.growth_increment *= 0.95
+            # masking.growth_increment *= 0.95
 
     total_new_nonzeros = 0
     for module in masking.modules:
@@ -316,12 +329,10 @@ def global_momentum_growth(masking, total_regrowth):
 
             new_mask = masking.masks[name]
             grad = masking.get_momentum_for_weight(weight)
-            grad = grad*(new_mask==0).float()
+            grad = grad * (new_mask == 0).float()
             masking.masks[name][:] = (new_mask.bool() | (torch.abs(grad.data) > masking.growth_threshold)).float()
             total_new_nonzeros += new_mask.sum().item()
     return total_new_nonzeros
-
-
 
 
 prune_funcs = {}

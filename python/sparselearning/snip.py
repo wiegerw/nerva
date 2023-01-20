@@ -11,16 +11,15 @@ import types
 
 
 def snip_forward_conv2d(self, x):
-        return F.conv2d(x, self.weight * self.weight_mask, self.bias,
-                        self.stride, self.padding, self.dilation, self.groups)
+    return F.conv2d(x, self.weight * self.weight_mask, self.bias,
+                    self.stride, self.padding, self.dilation, self.groups)
 
 
 def snip_forward_linear(self, x):
-        return F.linear(x, self.weight * self.weight_mask, self.bias)
+    return F.linear(x, self.weight * self.weight_mask, self.bias)
 
 
 def SNIP(net, keep_ratio, train_dataloader, device):
-
     # Grab a single batch from the training dataset
     inputs, targets = next(iter(train_dataloader))
     inputs = inputs.to(device)
@@ -68,11 +67,12 @@ def SNIP(net, keep_ratio, train_dataloader, device):
     layer_wise_sparsities = []
     for g in grads_abs:
         mask = ((g / norm_factor) >= acceptable_score).float()
-        sparsity = float((mask==0).sum().item() / mask.numel())
+        sparsity = float((mask == 0).sum().item() / mask.numel())
         layer_wise_sparsities.append(sparsity)
     print(f'layer-wise sparsity is {layer_wise_sparsities}')
 
     return layer_wise_sparsities
+
 
 def SNIP_training(net, keep_ratio, train_dataloader, device, masks, death_rate):
     # TODO: shuffle?
@@ -122,7 +122,7 @@ def SNIP_training(net, keep_ratio, train_dataloader, device, masks, death_rate):
             num_zero = (masks_copy[index] == 0).sum().item()
 
             # calculate score
-            scores = torch.abs(layer.weight.grad * layer.weight * masks_copy[index]) # weight * grad
+            scores = torch.abs(layer.weight.grad * layer.weight * masks_copy[index])  # weight * grad
             norm_factor = torch.sum(scores)
             scores.div_(norm_factor)
 
@@ -147,7 +147,7 @@ def GraSP_fetch_data(dataloader, num_classes, samples_per_class):
     while True:
         inputs, targets = next(dataloader_iter)
         for idx in range(inputs.shape[0]):
-            x, y = inputs[idx:idx+1], targets[idx:idx+1]
+            x, y = inputs[idx:idx + 1], targets[idx:idx + 1]
             category = y.item()
             if len(datas[category]) == samples_per_class:
                 mark[category] = True
@@ -204,21 +204,21 @@ def GraSP(net, ratio, train_dataloader, device, num_classes=10, samples_per_clas
         N = inputs.shape[0]
         din = copy.deepcopy(inputs)
         dtarget = copy.deepcopy(targets)
-        inputs_one.append(din[:N//2])
-        targets_one.append(dtarget[:N//2])
+        inputs_one.append(din[:N // 2])
+        targets_one.append(dtarget[:N // 2])
         inputs_one.append(din[N // 2:])
         targets_one.append(dtarget[N // 2:])
         inputs = inputs.to(device)
         targets = targets.to(device)
 
-        outputs = net.forward(inputs[:N//2])/T
+        outputs = net.forward(inputs[:N // 2]) / T
         if print_once:
             # import pdb; pdb.set_trace()
             x = F.softmax(outputs)
             print(x)
             print(x.max(), x.min())
             print_once = False
-        loss = F.cross_entropy(outputs, targets[:N//2])
+        loss = F.cross_entropy(outputs, targets[:N // 2])
         # ===== debug ================
         grad_w_p = autograd.grad(loss, weights)
         if grad_w is None:
@@ -227,7 +227,7 @@ def GraSP(net, ratio, train_dataloader, device, num_classes=10, samples_per_clas
             for idx in range(len(grad_w)):
                 grad_w[idx] += grad_w_p[idx]
 
-        outputs = net.forward(inputs[N // 2:])/T
+        outputs = net.forward(inputs[N // 2:]) / T
         loss = F.cross_entropy(outputs, targets[N // 2:])
         grad_w_p = autograd.grad(loss, weights, create_graph=False)
         if grad_w is None:
@@ -245,7 +245,7 @@ def GraSP(net, ratio, train_dataloader, device, num_classes=10, samples_per_clas
         targets = targets_one.pop(0).to(device)
         ret_inputs.append(inputs)
         ret_targets.append(targets)
-        outputs = net.forward(inputs)/T
+        outputs = net.forward(inputs) / T
         loss = F.cross_entropy(outputs, targets)
         # ===== debug ==============
 
@@ -270,7 +270,7 @@ def GraSP(net, ratio, train_dataloader, device, num_classes=10, samples_per_clas
     print("** norm factor:", norm_factor)
     all_scores.div_(norm_factor)
 
-    num_params_to_rm = int(len(all_scores) * (1-keep_ratio))
+    num_params_to_rm = int(len(all_scores) * (1 - keep_ratio))
     threshold, _ = torch.topk(all_scores, num_params_to_rm, sorted=True)
     # import pdb; pdb.set_trace()
     acceptable_score = threshold[-1]
@@ -286,8 +286,8 @@ def GraSP(net, ratio, train_dataloader, device, num_classes=10, samples_per_clas
 
     return layer_wise_sparsities
 
-def synflow(net, keep_ratio, train_dataloader, device):
 
+def synflow(net, keep_ratio, train_dataloader, device):
     @torch.no_grad()
     def linearize(model):
         # model.double()

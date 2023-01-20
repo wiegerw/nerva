@@ -9,17 +9,24 @@ from sparselearning.snip import SNIP, GraSP
 import numpy as np
 import math
 
+
 def add_sparse_args(parser):
     parser.add_argument('--sparse', action='store_true', help='Enable sparse mode.')
     parser.add_argument('--fix', action='store_true', help='Fix sparse connectivity during training.')
     parser.add_argument('--sparse_init', type=str, default='ERK', help='sparse initialization')
-    parser.add_argument('--growth', type=str, default='random', help='Growth mode. Choose from: momentum, random, random_unfired, and gradient.')
-    parser.add_argument('--death', type=str, default='magnitude', help='Death mode / pruning mode. Choose from: magnitude, SET, threshold.')
-    parser.add_argument('--redistribution', type=str, default='none', help='Redistribution mode. Choose from: momentum, magnitude, nonzeros, or none.')
-    parser.add_argument('--death-rate', type=float, default=0.50, help='The pruning rate / death rate used for dynamic sparse training (not used in this paper).')
+    parser.add_argument('--growth', type=str, default='random',
+                        help='Growth mode. Choose from: momentum, random, random_unfired, and gradient.')
+    parser.add_argument('--death', type=str, default='magnitude',
+                        help='Death mode / pruning mode. Choose from: magnitude, SET, threshold.')
+    parser.add_argument('--redistribution', type=str, default='none',
+                        help='Redistribution mode. Choose from: momentum, magnitude, nonzeros, or none.')
+    parser.add_argument('--death-rate', type=float, default=0.50,
+                        help='The pruning rate / death rate used for dynamic sparse training (not used in this paper).')
     parser.add_argument('--density', type=float, default=0.05, help='The density of the overall sparse network.')
-    parser.add_argument('--update_frequency', type=int, default=100, metavar='N', help='how many iterations to train between parameter exploration')
-    parser.add_argument('--decay-schedule', type=str, default='cosine', help='The decay schedule for the pruning rate. Default: cosine. Choose from: cosine, linear.')
+    parser.add_argument('--update_frequency', type=int, default=100, metavar='N',
+                        help='how many iterations to train between parameter exploration')
+    parser.add_argument('--decay-schedule', type=str, default='cosine',
+                        help='The decay schedule for the pruning rate. Default: cosine. Choose from: cosine, linear.')
 
 
 class CosineDecay(object):
@@ -45,13 +52,15 @@ class LinearDecay(object):
 
     def get_dr(self, death_rate):
         if self.steps > 0 and self.steps % self.frequency == 0:
-            return death_rate*self.factor
+            return death_rate * self.factor
         else:
             return death_rate
 
 
 class Masking(object):
-    def __init__(self, optimizer, death_rate=0.3, growth_death_ratio=1.0, death_rate_decay=None, death_mode='magnitude', growth_mode='momentum', redistribution_mode='momentum', threshold=0.001, args=False, train_loader=False):
+    def __init__(self, optimizer, death_rate=0.3, growth_death_ratio=1.0, death_rate_decay=None, death_mode='magnitude',
+                 growth_mode='momentum', redistribution_mode='momentum', threshold=0.001, args=False,
+                 train_loader=False):
         growth_modes = ['random', 'momentum', 'momentum_neuron', 'gradient']
         if growth_mode not in growth_modes:
             print('Growth mode: {0} not supported!'.format(growth_mode))
@@ -79,8 +88,10 @@ class Masking(object):
         self.steps = 0
 
         # if fix, then we do not explore the sparse connectivity
-        if self.args.fix: self.prune_every_k_steps = None
-        else: self.prune_every_k_steps = self.args.update_frequency
+        if self.args.fix:
+            self.prune_every_k_steps = None
+        else:
+            self.prune_every_k_steps = self.args.update_frequency
 
     def init(self, mode='ERK', density=0.05, erk_power_scale=1.0):
         self.density = density
@@ -109,14 +120,14 @@ class Masking(object):
             layer_wise_sparsities = SNIP(self.module, self.density, self.train_loader, self.device)
             # re-sample mask positions
             for sparsity_, name in zip(layer_wise_sparsities, self.masks):
-                self.masks[name][:] = (torch.rand(self.masks[name].shape) < (1-sparsity_)).float().data
+                self.masks[name][:] = (torch.rand(self.masks[name].shape) < (1 - sparsity_)).float().data
 
         elif mode == 'GraSP':
             print('initialize by GraSP')
             layer_wise_sparsities = GraSP(self.module, self.density, self.train_loader, self.device)
             # re-sample mask positions
             for sparsity_, name in zip(layer_wise_sparsities, self.masks):
-                self.masks[name][:] = (torch.rand(self.masks[name].shape) < (1-sparsity_)).float().data
+                self.masks[name][:] = (torch.rand(self.masks[name].shape) < (1 - sparsity_)).float().data
 
 
         elif mode == 'uniform_plus':
@@ -154,7 +165,7 @@ class Masking(object):
                 for name, weight in module.named_parameters():
                     if name not in self.masks: continue
                     self.masks[name][:] = (torch.rand(weight.shape) < self.density).float().data
-                    self.baseline_nonzero += weight.numel()*density
+                    self.baseline_nonzero += weight.numel() * density
 
         elif mode == 'ER':
             print('initialize by ER')
@@ -275,7 +286,7 @@ class Masking(object):
         for module in self.modules:
             for name, weight in module.named_parameters():
                 if name in self.masks:
-                    print(name, 'density:',(weight!=0).sum().item()/weight.numel())
+                    print(name, 'density:', (weight != 0).sum().item() / weight.numel())
                     total_size += weight.numel()
                     sparse_size += (weight != 0).sum().int().item()
         print('Total Model parameters:', total_size)
@@ -283,7 +294,6 @@ class Masking(object):
 
         # self.fired_masks = copy.deepcopy(self.masks) # used to calculate ITOP reta (https://github.com/Shiweiliuiiiiiii/In-Time-Over-Parameterization)
         # self.print_nonzero_counts()
-
 
     def step(self):
         self.optimizer.step()
@@ -297,7 +307,6 @@ class Masking(object):
                 self.truncate_weights()
                 _, _ = self.fired_masks_update()
                 self.print_nonzero_counts()
-
 
     def add_module(self, module, density, sparse_init='ER'):
         self.modules.append(module)
@@ -313,7 +322,6 @@ class Masking(object):
         print('Removing 1D batch norms...')
         self.remove_type(nn.BatchNorm1d)
         self.init(mode=sparse_init, density=density)
-
 
     def remove_weight(self, name):
         if name in self.masks:
@@ -331,9 +339,8 @@ class Masking(object):
         removed = set()
         for name in list(self.masks.keys()):
             if partial_name in name:
-
                 print('Removing {0} of size {1} with {2} parameters...'.format(name, self.masks[name].shape,
-                                                                                   np.prod(self.masks[name].shape)))
+                                                                               np.prod(self.masks[name].shape)))
                 removed.add(name)
                 self.masks.pop(name)
 
@@ -357,7 +364,7 @@ class Masking(object):
         for module in self.modules:
             for name, tensor in module.named_parameters():
                 if name in self.masks:
-                    tensor.data = tensor.data*self.masks[name]
+                    tensor.data = tensor.data * self.masks[name]
 
     def truncate_weights(self):
 
@@ -380,7 +387,6 @@ class Masking(object):
 
                 self.num_remove[name] = int(self.name2nonzeros[name] - new_mask.sum().item())
                 self.masks[name][:] = new_mask
-
 
         for module in self.modules:
             for name, weight in module.named_parameters():
@@ -408,7 +414,6 @@ class Masking(object):
 
         self.apply_mask()
 
-
     '''
                     DEATH
     '''
@@ -428,8 +433,7 @@ class Masking(object):
         return mask
 
     def magnitude_death(self, mask, weight, name):
-
-        num_remove = math.ceil(self.death_rate*self.name2nonzeros[name])
+        num_remove = math.ceil(self.death_rate * self.name2nonzeros[name])
         if num_remove == 0.0: return weight.data != 0.0
         num_zeros = self.name2zeros[name]
 
@@ -437,36 +441,33 @@ class Masking(object):
         n = idx.shape[0]
 
         k = math.ceil(num_zeros + num_remove)
-        threshold = x[k-1].item()
+        threshold = x[k - 1].item()
 
         return (torch.abs(weight.data) > threshold)
 
-
     def magnitude_and_negativity_death(self, mask, weight, name):
-        num_remove = math.ceil(self.death_rate*self.name2nonzeros[name])
+        num_remove = math.ceil(self.death_rate * self.name2nonzeros[name])
         num_zeros = self.name2zeros[name]
 
         # find magnitude threshold
         # remove all weights which absolute value is smaller than threshold
         x, idx = torch.sort(weight[weight > 0.0].data.view(-1))
-        k = math.ceil(num_remove/2.0)
+        k = math.ceil(num_remove / 2.0)
         if k >= x.shape[0]:
             k = x.shape[0]
 
-        threshold_magnitude = x[k-1].item()
+        threshold_magnitude = x[k - 1].item()
 
         # find negativity threshold
         # remove all weights which are smaller than threshold
         x, idx = torch.sort(weight[weight < 0.0].view(-1))
-        k = math.ceil(num_remove/2.0)
+        k = math.ceil(num_remove / 2.0)
         if k >= x.shape[0]:
             k = x.shape[0]
-        threshold_negativity = x[k-1].item()
-
+        threshold_negativity = x[k - 1].item()
 
         pos_mask = (weight.data > threshold_magnitude) & (weight.data > 0.0)
         neg_mask = (weight.data < threshold_negativity) & (weight.data < 0.0)
-
 
         new_mask = pos_mask | neg_mask
         return new_mask
@@ -479,7 +480,7 @@ class Masking(object):
         total_regrowth = self.num_remove[name]
         n = (new_mask == 0).sum().item()
         if n == 0: return new_mask
-        num_nonfired_weights = (self.fired_masks[name]==0).sum().item()
+        num_nonfired_weights = (self.fired_masks[name] == 0).sum().item()
 
         if total_regrowth <= num_nonfired_weights:
             idx = (self.fired_masks[name].flatten() == 0).nonzero()
@@ -488,28 +489,28 @@ class Masking(object):
             # idx = torch.nonzero(self.fired_masks[name].flatten())
             new_mask.data.view(-1)[idx[indices]] = 1.0
         else:
-            new_mask[self.fired_masks[name]==0] = 1.0
+            new_mask[self.fired_masks[name] == 0] = 1.0
             n = (new_mask == 0).sum().item()
-            expeced_growth_probability = ((total_regrowth-num_nonfired_weights) / n)
+            expeced_growth_probability = ((total_regrowth - num_nonfired_weights) / n)
             new_weights = torch.rand(new_mask.shape) < expeced_growth_probability
             new_mask = new_mask.byte() | new_weights
         return new_mask
 
     def random_growth(self, name, new_mask, weight):
         total_regrowth = self.num_remove[name]
-        n = (new_mask==0).sum().item()
+        n = (new_mask == 0).sum().item()
         if n == 0: return new_mask
-        expeced_growth_probability = (total_regrowth/n)
+        expeced_growth_probability = (total_regrowth / n)
         new_weights = torch.rand(new_mask.shape) < expeced_growth_probability
         new_mask_ = new_mask.byte() | new_weights
-        if (new_mask_!=0).sum().item() == 0:
+        if (new_mask_ != 0).sum().item() == 0:
             new_mask_ = new_mask
         return new_mask_
 
     def momentum_growth(self, name, new_mask, weight):
         total_regrowth = self.num_remove[name]
         grad = self.get_momentum_for_weight(weight)
-        grad = grad*(new_mask==0).float()
+        grad = grad * (new_mask == 0).float()
         y, idx = torch.sort(torch.abs(grad).flatten(), descending=True)
         new_mask.data.view(-1)[idx[:total_regrowth]] = 1.0
 
@@ -518,31 +519,31 @@ class Masking(object):
     def gradient_growth(self, name, new_mask, weight):
         total_regrowth = self.num_remove[name]
         grad = self.get_gradient_for_weights(weight)
-        grad = grad*(new_mask==0).float()
+        grad = grad * (new_mask == 0).float()
 
         y, idx = torch.sort(torch.abs(grad).flatten(), descending=True)
         new_mask.data.view(-1)[idx[:total_regrowth]] = 1.0
 
         return new_mask
 
-
-
     def momentum_neuron_growth(self, name, new_mask, weight):
         total_regrowth = self.num_remove[name]
         grad = self.get_momentum_for_weight(weight)
 
         M = torch.abs(grad)
-        if len(M.shape) == 2: sum_dim = [1]
-        elif len(M.shape) == 4: sum_dim = [1, 2, 3]
+        if len(M.shape) == 2:
+            sum_dim = [1]
+        elif len(M.shape) == 4:
+            sum_dim = [1, 2, 3]
 
         v = M.mean(sum_dim).data
         v /= v.sum()
 
-        slots_per_neuron = (new_mask==0).sum(sum_dim)
+        slots_per_neuron = (new_mask == 0).sum(sum_dim)
 
-        M = M*(new_mask==0).float()
-        for i, fraction  in enumerate(v):
-            neuron_regrowth = math.floor(fraction.item()*total_regrowth)
+        M = M * (new_mask == 0).float()
+        for i, fraction in enumerate(v):
+            neuron_regrowth = math.floor(fraction.item() * total_regrowth)
             available = slots_per_neuron[i].item()
 
             y, idx = torch.sort(M[i].flatten())
@@ -558,11 +559,12 @@ class Masking(object):
     '''
                 UTILITY
     '''
+
     def get_momentum_for_weight(self, weight):
         if 'exp_avg' in self.optimizer.state[weight]:
             adam_m1 = self.optimizer.state[weight]['exp_avg']
             adam_m2 = self.optimizer.state[weight]['exp_avg_sq']
-            grad = adam_m1/(torch.sqrt(adam_m2) + 1e-08)
+            grad = adam_m1 / (torch.sqrt(adam_m2) + 1e-08)
         elif 'momentum_buffer' in self.optimizer.state[weight]:
             grad = self.optimizer.state[weight]['momentum_buffer']
         return grad
@@ -577,9 +579,9 @@ class Masking(object):
                 if name not in self.masks: continue
                 mask = self.masks[name]
                 num_nonzeros = (mask != 0).sum().item()
-                val = '{0}: {1}->{2}, density: {3:.3f}'.format(name, self.name2nonzeros[name], num_nonzeros, num_nonzeros/float(mask.numel()))
+                val = '{0}: {1}->{2}, density: {3:.3f}'.format(name, self.name2nonzeros[name], num_nonzeros,
+                                                               num_nonzeros / float(mask.numel()))
                 print(val)
-
 
         for module in self.modules:
             for name, tensor in module.named_parameters():
@@ -597,8 +599,9 @@ class Masking(object):
                 self.fired_masks[name] = self.masks[name].data.byte() | self.fired_masks[name].data.byte()
                 ntotal_fired_weights += float(self.fired_masks[name].sum().item())
                 ntotal_weights += float(self.fired_masks[name].numel())
-                layer_fired_weights[name] = float(self.fired_masks[name].sum().item())/float(self.fired_masks[name].numel())
+                layer_fired_weights[name] = float(self.fired_masks[name].sum().item()) / float(
+                    self.fired_masks[name].numel())
                 print('Layerwise percentage of the fired weights of', name, 'is:', layer_fired_weights[name])
-        total_fired_weights = ntotal_fired_weights/ntotal_weights
+        total_fired_weights = ntotal_fired_weights / ntotal_weights
         print('The percentage of the total fired weights is:', total_fired_weights)
         return layer_fired_weights, total_fired_weights
