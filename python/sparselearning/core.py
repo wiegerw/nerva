@@ -58,10 +58,16 @@ class LinearDecay(object):
 
 
 class Masking(object):
-    def __init__(self, optimizer, prune_rate=0.3, growth_prune_ratio=1.0, prune_rate_decay=None, prune_mode='magnitude',
-                 growth_mode='momentum', redistribution_mode='momentum',
+    def __init__(self,
+                 optimizer: torch.optim.Optimizer,
+                 prune_rate=0.3,
+                 growth_prune_ratio=1.0,
+                 prune_rate_decay=None,
+                 prune_mode='magnitude',
+                 growth_mode='momentum',
+                 redistribution_mode='momentum',
                  train_loader=False,
-                 prune_interval=0,  # if zero, then we do not explore the sparse connectivity
+                 prune_interval=0,  # if 0, then we do not explore the sparse connectivity
                  ):
         growth_modes = ['random', 'momentum', 'momentum_neuron', 'gradient']
         if growth_mode not in growth_modes:
@@ -87,7 +93,7 @@ class Masking(object):
         self.name2nonzeros = {}
         self.prune_rate = prune_rate
         self.steps = 0
-        self.prune_every_k_steps = prune_interval if prune_interval else None
+        self.prune_interval = prune_interval
 
     def init(self, mode='ERK', density=0.05, erk_power_scale=1.0):
         self.density = density
@@ -298,11 +304,10 @@ class Masking(object):
         self.prune_rate = self.prune_rate_decay.get_dr()
         self.steps += 1
 
-        if self.prune_every_k_steps is not None:
-            if self.steps % self.prune_every_k_steps == 0:
-                self.truncate_weights()
-                _, _ = self.fired_masks_update()
-                self.print_nonzero_counts()
+        if self.prune_interval and self.steps % self.prune_interval == 0:
+            self.truncate_weights()
+            _, _ = self.fired_masks_update()
+            self.print_nonzero_counts()
 
     def add_module(self, module, density, sparse_init='ER'):
         self.modules.append(module)
