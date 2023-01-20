@@ -74,14 +74,14 @@ def SNIP(net, keep_ratio, train_dataloader, device):
     return layer_wise_sparsities
 
 
-def SNIP_training(net, keep_ratio, train_dataloader, device, masks, death_rate):
+def SNIP_training(net, keep_ratio, train_dataloader, device, masks, prune_rate):
     # TODO: shuffle?
 
     # Grab a single batch from the training dataset
     inputs, targets = next(iter(train_dataloader))
     inputs = inputs.to(device)
     targets = targets.to(device)
-    print('Pruning rate:', death_rate)
+    print('Pruning rate:', prune_rate)
     # Let's create a fresh copy of the network so that we're not worried about
     # affecting the actual training-phase
     net = copy.deepcopy(net)
@@ -127,7 +127,7 @@ def SNIP_training(net, keep_ratio, train_dataloader, device, masks, death_rate):
             scores.div_(norm_factor)
 
             x, idx = torch.sort(scores.data.view(-1))
-            num_remove = math.ceil(death_rate * num_nonzero)
+            num_remove = math.ceil(prune_rate * num_nonzero)
             k = math.ceil(num_zero + num_remove)
             if num_remove == 0.0: return masks_copy[index] != 0.0
 
