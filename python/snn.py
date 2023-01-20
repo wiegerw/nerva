@@ -219,9 +219,10 @@ def main():
 
         mask = None
         if args.sparse:
+            prune_interval = args.update_frequency if not args.fix else 0
             decay = CosineDecay(args.prune_rate, len(train_loader)*(args.epochs*args.multiplier))
             mask = Masking(optimizer, prune_rate=args.prune_rate, prune_mode=args.prune, prune_rate_decay=decay, growth_mode=args.growth,
-                           redistribution_mode=args.redistribution, args=args,train_loader=train_loader)
+                           redistribution_mode=args.redistribution,train_loader=train_loader, prune_interval=prune_interval)
             mask.add_module(model, sparse_init=args.sparse_init, density=args.density)
 
         best_acc = 0.0

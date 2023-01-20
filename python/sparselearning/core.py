@@ -59,15 +59,16 @@ class LinearDecay(object):
 
 class Masking(object):
     def __init__(self, optimizer, prune_rate=0.3, growth_prune_ratio=1.0, prune_rate_decay=None, prune_mode='magnitude',
-                 growth_mode='momentum', redistribution_mode='momentum', threshold=0.001, args=False,
-                 train_loader=False):
+                 growth_mode='momentum', redistribution_mode='momentum',
+                 train_loader=False,
+                 prune_interval=0,  # if zero, then we do not explore the sparse connectivity
+                 ):
         growth_modes = ['random', 'momentum', 'momentum_neuron', 'gradient']
         if growth_mode not in growth_modes:
             print('Growth mode: {0} not supported!'.format(growth_mode))
             print('Supported modes are:', str(growth_modes))
 
         self.train_loader = train_loader
-        self.args = args
         self.device = torch.device("cuda")
         self.growth_mode = growth_mode
         self.prune_mode = prune_mode
@@ -86,12 +87,7 @@ class Masking(object):
         self.name2nonzeros = {}
         self.prune_rate = prune_rate
         self.steps = 0
-
-        # if fix, then we do not explore the sparse connectivity
-        if self.args.fix:
-            self.prune_every_k_steps = None
-        else:
-            self.prune_every_k_steps = self.args.update_frequency
+        self.prune_every_k_steps = prune_interval if prune_interval else None
 
     def init(self, mode='ERK', density=0.05, erk_power_scale=1.0):
         self.density = density
