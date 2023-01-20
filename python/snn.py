@@ -74,7 +74,6 @@ def train(args, model, device, train_loader, optimizer, epoch, mask=None):
     for batch_idx, (data, target) in enumerate(train_loader):
 
         data, target = data.to(device), target.to(device)
-        if args.fp16: data = data.half()
         optimizer.zero_grad()
         output = model(data)
 
@@ -85,10 +84,7 @@ def train(args, model, device, train_loader, optimizer, epoch, mask=None):
         correct += pred.eq(target.view_as(pred)).sum().item()
         n += target.shape[0]
 
-        if args.fp16:
-            optimizer.backward(loss)
-        else:
-            loss.backward()
+        loss.backward()
 
         if mask is not None: mask.step()
         else: optimizer.step()
@@ -113,7 +109,6 @@ def evaluate(args, model, device, test_loader, is_test_set=False):
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
-            if args.fp16: data = data.half()
             model.t = target
             output = model(data)
             test_loss += F.nll_loss(output, target, reduction='sum').item() # sum up batch loss
@@ -133,31 +128,21 @@ def main():
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
 
-    parser.add_argument('--batch-size', type=int, default=128, metavar='N',
-                        help='input batch size for training (default: 100)')
-    parser.add_argument('--test-batch-size', type=int, default=100, metavar='N',
-                        help='input batch size for testing (default: 100)')
-    parser.add_argument('--multiplier', type=int, default=1, metavar='N',
-                        help='extend training time by multiplier times')
-    parser.add_argument('--epochs', type=int, default=160, metavar='N',
-                        help='number of epochs to train (default: 100)')
-    parser.add_argument('--lr', type=float, default=0.1, metavar='LR',
-                        help='learning rate (default: 0.1)')
-    parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
-                        help='SGD momentum (default: 0.9)')
-    parser.add_argument('--no-cuda', action='store_true', default=False,
-                        help='disables CUDA training')
+    parser.add_argument('--batch-size', type=int, default=128, metavar='N', help='input batch size for training (default: 100)')
+    parser.add_argument('--test-batch-size', type=int, default=100, metavar='N', help='input batch size for testing (default: 100)')
+    parser.add_argument('--multiplier', type=int, default=1, metavar='N', help='extend training time by multiplier times')
+    parser.add_argument('--epochs', type=int, default=160, metavar='N', help='number of epochs to train (default: 100)')
+    parser.add_argument('--lr', type=float, default=0.1, metavar='LR', help='learning rate (default: 0.1)')
+    parser.add_argument('--momentum', type=float, default=0.9, metavar='M', help='SGD momentum (default: 0.9)')
+    parser.add_argument('--no-cuda', action='store_true', default=False, help='disables CUDA training')
     parser.add_argument('--seed', type=int, default=17, metavar='S', help='random seed (default: 17)')
-    parser.add_argument('--log-interval', type=int, default=100, metavar='N',
-                        help='how many batches to wait before logging training status')
+    parser.add_argument('--log-interval', type=int, default=100, metavar='N', help='how many batches to wait before logging training status')
     parser.add_argument('--optimizer', type=str, default='sgd', help='The optimizer to use. Default: sgd. Options: sgd, adam.')
     randomhash = ''.join(str(time.time()).split('.'))
-    parser.add_argument('--save', type=str, default=randomhash + '.pt',
-                        help='path to save the final model')
+    parser.add_argument('--save', type=str, default=randomhash + '.pt', help='path to save the final model')
     parser.add_argument('--data', type=str, default='mnist')
     parser.add_argument('--decay_frequency', type=int, default=25000)
     parser.add_argument('--l1', type=float, default=0.0)
-    parser.add_argument('--fp16', action='store_true', help='Run in fp16 mode.')
     parser.add_argument('--valid_split', type=float, default=0.1)
     parser.add_argument('--resume', type=str)
     parser.add_argument('--start-epoch', type=int, default=1)
