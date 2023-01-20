@@ -10,7 +10,7 @@ import logging
 import hashlib
 import copy
 import random
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -101,8 +101,7 @@ def train(args, model, device, train_loader, optimizer, epoch, mask=None):
 
     # training summary
     print_and_log('\n{}: Average loss: {:.4f}, Accuracy: {}/{} ({:.3f}%)\n'.format(
-        'Training summary' ,
-        train_loss/batch_idx, correct, n, 100. * correct / float(n)))
+        'Training summary' , train_loss/batch_idx, correct, n, 100. * correct / float(n)))
 
 def evaluate(args, model, device, test_loader, is_test_set=False):
     model.eval()
@@ -133,6 +132,16 @@ def load_model(name: str, device) -> torch.nn.Module:
     raise RuntimeError(f'Unknown model {name}')
 
 
+def make_loaders(args, dataset: str, validation_split, max_threads) -> Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
+    if dataset == 'mnist':
+        return get_mnist_dataloaders(args, validation_split=validation_split)
+    elif dataset == 'cifar10':
+        return get_cifar10_dataloaders(args, validation_split=validation_split, max_threads=max_threads)
+    elif dataset == 'cifar100':
+        return get_cifar100_dataloaders(args, validation_split=validation_split, max_threads=max_threads)
+    raise RuntimeError(f'Unknown dataset {dataset}')
+
+
 def make_optimizer(name, model: nn.Module, lr: float, momentum: float, weight_decay: float, nesterov: bool) -> torch.optim.Optimizer:
     if name == 'sgd':
         return optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay, nesterov=nesterov)
@@ -141,10 +150,26 @@ def make_optimizer(name, model: nn.Module, lr: float, momentum: float, weight_de
     raise RuntimeError(f'Unknown optimizer: {name}')
 
 
+def make_mask(args,
+              model: torch.nn.Module,
+              optimizer: torch.optim.Optimizer,
+              train_loader
+             ) -> Optional[Masking]:
+    mask = None
+    if args.sparse:
+        prune_interval = args.update_frequency if not args.fix else 0
+        decay = CosineDecay(args.prune_rate, len(train_loader) * (args.epochs * args.multiplier))
+        mask = Masking(optimizer, prune_rate=args.prune_rate, prune_mode=args.prune, prune_rate_decay=decay,
+                       growth_mode=args.growth,
+                       redistribution_mode=args.redistribution, train_loader=train_loader,
+                       prune_interval=prune_interval)
+        mask.add_module(model, sparse_init=args.sparse_init, density=args.density)
+    return mask
+
+
 def main():
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
-
     parser.add_argument('--batch-size', type=int, default=128, metavar='N', help='input batch size for training (default: 100)')
     parser.add_argument('--test-batch-size', type=int, default=100, metavar='N', help='input batch size for testing (default: 100)')
     parser.add_argument('--multiplier', type=int, default=1, metavar='N', help='extend training time by multiplier times')
@@ -170,7 +195,6 @@ def main():
     parser.add_argument('--bench', action='store_true', help='Enables the benchmarking of layers and estimates sparse speedups')
     parser.add_argument('--max-threads', type=int, default=10, help='How many threads to use for data loading.')
     parser.add_argument('--scaled', action='store_true', help='scale the initialization by 1/density')
-    # ITOP settings
     sparselearning.core.add_sparse_args(parser)
 
     args = parser.parse_args()
@@ -195,37 +219,23 @@ def main():
     for i in range(args.iters):
         print_and_log("\nIteration start: {0}/{1}\n".format(i+1, args.iters))
 
-        if args.data == 'mnist':
-            train_loader, valid_loader, test_loader = get_mnist_dataloaders(args, validation_split=args.valid_split)
-        elif args.data == 'cifar10':
-            train_loader, valid_loader, test_loader = get_cifar10_dataloaders(args, args.valid_split, max_threads=args.max_threads)
-        elif args.data == 'cifar100':
-            train_loader, valid_loader, test_loader = get_cifar100_dataloaders(args, args.valid_split, max_threads=args.max_threads)
-
+        train_loader, valid_loader, test_loader = make_loaders(args, args.data, args.valid_split, args.max_threads)
         model = load_model(args.model, device)
         optimizer = make_optimizer(args.optimizer, model, args.lr, args.momentum, args.l2, nesterov=True)
         lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[int(args.epochs / 2) * args.multiplier, int(args.epochs * 3 / 4) * args.multiplier], last_epoch=-1)
+        mask = make_mask(args, model, optimizer, train_loader)
 
         print_and_log(model)
         print_and_log('=' * 60)
         print_and_log(args.model)
-        print_and_log('=' * 60)
-
         print_and_log('=' * 60)
         print_and_log('Prune mode: {0}'.format(args.prune))
         print_and_log('Growth mode: {0}'.format(args.growth))
         print_and_log('Redistribution mode: {0}'.format(args.redistribution))
         print_and_log('=' * 60)
 
-        mask = None
-        if args.sparse:
-            prune_interval = args.update_frequency if not args.fix else 0
-            decay = CosineDecay(args.prune_rate, len(train_loader)*(args.epochs*args.multiplier))
-            mask = Masking(optimizer, prune_rate=args.prune_rate, prune_mode=args.prune, prune_rate_decay=decay, growth_mode=args.growth,
-                           redistribution_mode=args.redistribution,train_loader=train_loader, prune_interval=prune_interval)
-            mask.add_module(model, sparse_init=args.sparse_init, density=args.density)
-
-        best_acc = 0.0
+        best_accuracy = 0.0
+        validation_accuracy = 0.0
 
         # create output file
         save_path = './save/' + str(args.model) + '/' + str(args.data) + '/' + str(args.sparse_init) + '/' + str(args.seed)
@@ -234,17 +244,16 @@ def main():
         if not os.path.exists(save_subfolder): os.makedirs(save_subfolder)
 
 
-        for epoch in range(1, args.epochs*args.multiplier + 1):
-
+        for epoch in range(1, args.epochs * args.multiplier + 1):
             t0 = time.time()
             train(args, model, device, train_loader, optimizer, epoch, mask)
             lr_scheduler.step()
             if args.valid_split > 0.0:
-                val_acc = evaluate(args, model, device, valid_loader)
+                validation_accuracy = evaluate(args, model, device, valid_loader)
 
-            if val_acc > best_acc:
+            if validation_accuracy > best_accuracy:
                 print('Saving model')
-                best_acc = val_acc
+                best_accuracy = validation_accuracy
                 save_checkpoint({
                     'epoch': epoch + 1,
                     'state_dict': model.state_dict(),
@@ -252,6 +261,7 @@ def main():
                 }, filename=os.path.join(save_subfolder, 'model_final.pth'))
 
             print_and_log('Current learning rate: {0}. Time taken for epoch: {1:.2f} seconds.\n'.format(optimizer.param_groups[0]['lr'], time.time() - t0))
+
         print('Testing model')
         model.load_state_dict(torch.load(os.path.join(save_subfolder, 'model_final.pth'))['state_dict'])
         evaluate(args, model, device, test_loader, is_test_set=True)
