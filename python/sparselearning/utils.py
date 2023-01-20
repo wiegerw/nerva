@@ -30,7 +30,7 @@ class DatasetSplitter(torch.utils.data.Dataset):
         return self.parent_dataset[index + self.split_start]
 
 
-def get_cifar100_dataloaders(args, validation_split=0.0, max_threads=10):
+def get_cifar100_dataloaders(batch_size, test_batch_size, validation_split=0.0, max_threads=10):
     """Creates augmented train, validation, and test data loaders."""
     cifar_mean = (0.5070751592371323, 0.48654887331495095, 0.4409178433670343)
     cifar_std = (0.2673342858792401, 0.2564384629170883, 0.27615047132568404)
@@ -49,15 +49,15 @@ def get_cifar100_dataloaders(args, validation_split=0.0, max_threads=10):
     ])
 
     trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform_train)
-    train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
+    train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
 
     testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
-    test_loader = torch.utils.data.DataLoader(testset, batch_size=args.test_batch_size, shuffle=False, num_workers=2)
+    test_loader = torch.utils.data.DataLoader(testset, batch_size=test_batch_size, shuffle=False, num_workers=2)
 
     return train_loader, test_loader, test_loader
 
 
-def get_cifar10_dataloaders(args, validation_split=0.0, max_threads=10):
+def get_cifar10_dataloaders(batch_size, test_batch_size, validation_split=0.0, max_threads=10):
     """Creates augmented train, validation, and test data loaders."""
 
     normalize = transforms.Normalize((0.4914, 0.4822, 0.4465),
@@ -97,18 +97,18 @@ def get_cifar10_dataloaders(args, validation_split=0.0, max_threads=10):
         val_dataset = DatasetSplitter(full_dataset, split_start=split)
         train_loader = torch.utils.data.DataLoader(
             train_dataset,
-            args.batch_size,
+            batch_size,
             num_workers=train_threads,
             pin_memory=True, shuffle=True)
         valid_loader = torch.utils.data.DataLoader(
             val_dataset,
-            args.test_batch_size,
+            test_batch_size,
             num_workers=val_threads,
             pin_memory=True)
     else:
         train_loader = torch.utils.data.DataLoader(
             full_dataset,
-            args.batch_size,
+            batch_size,
             num_workers=8,
             pin_memory=True, shuffle=True)
 
@@ -116,7 +116,7 @@ def get_cifar10_dataloaders(args, validation_split=0.0, max_threads=10):
 
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
-        args.test_batch_size,
+        test_batch_size,
         shuffle=False,
         num_workers=1,
         pin_memory=True)
@@ -159,7 +159,7 @@ def get_tinyimagenet_dataloaders(args, validation_split=0.0):
     return train_loader, val_loader
 
 
-def get_mnist_dataloaders(args, validation_split=0.0):
+def get_mnist_dataloaders(batch_size, test_batch_size, validation_split=0.0):
     """Creates augmented train, validation, and test data loaders."""
     normalize = transforms.Normalize((0.1307,), (0.3081,))
     transform = transform = transforms.Compose([transforms.ToTensor(), normalize])
@@ -178,18 +178,18 @@ def get_mnist_dataloaders(args, validation_split=0.0):
         val_dataset = DatasetSplitter(full_dataset, split_start=split)
         train_loader = torch.utils.data.DataLoader(
             train_dataset,
-            args.batch_size,
+            batch_size,
             num_workers=8,
             pin_memory=True, shuffle=True)
         valid_loader = torch.utils.data.DataLoader(
             val_dataset,
-            args.test_batch_size,
+            test_batch_size,
             num_workers=2,
             pin_memory=True)
     else:
         train_loader = torch.utils.data.DataLoader(
             full_dataset,
-            args.batch_size,
+            batch_size,
             num_workers=8,
             pin_memory=True, shuffle=True)
 
@@ -197,7 +197,7 @@ def get_mnist_dataloaders(args, validation_split=0.0):
 
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
-        args.test_batch_size,
+        test_batch_size,
         shuffle=False,
         num_workers=1,
         pin_memory=True)

@@ -160,11 +160,11 @@ def load_model(name: str, device) -> torch.nn.Module:
 
 def make_loaders(args, dataset: str, validation_split, max_threads) -> Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
     if dataset == 'mnist':
-        return get_mnist_dataloaders(args, validation_split=validation_split)
+        return get_mnist_dataloaders(args.batch_size, args.test_batch_size, validation_split=validation_split)
     elif dataset == 'cifar10':
-        return get_cifar10_dataloaders(args, validation_split=validation_split, max_threads=max_threads)
+        return get_cifar10_dataloaders(args.batch_size, args.test_batch_size, validation_split=validation_split, max_threads=max_threads)
     elif dataset == 'cifar100':
-        return get_cifar100_dataloaders(args, validation_split=validation_split, max_threads=max_threads)
+        return get_cifar100_dataloaders(args.batch_size, args.test_batch_size, validation_split=validation_split, max_threads=max_threads)
     raise RuntimeError(f'Unknown dataset {dataset}')
 
 
