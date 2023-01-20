@@ -10,7 +10,10 @@ import logging
 import hashlib
 import copy
 import random
+from typing import Optional
+
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
@@ -124,6 +127,20 @@ def evaluate(args, model, device, test_loader, is_test_set=False):
     return correct / float(n)
 
 
+def load_model(name: str, device) -> torch.nn.Module:
+    if name == 'mlp_cifar10':
+        return MLP_CIFAR10().to(device)
+    raise RuntimeError(f'Unknown model {name}')
+
+
+def make_optimizer(name, model: nn.Module, lr: float, momentum: float, weight_decay: float, nesterov: bool) -> torch.optim.Optimizer:
+    if name == 'sgd':
+        return optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay, nesterov=nesterov)
+    elif name == 'adam':
+        return optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    raise RuntimeError(f'Unknown optimizer: {name}')
+
+
 def main():
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
@@ -182,18 +199,12 @@ def main():
             train_loader, valid_loader, test_loader = get_mnist_dataloaders(args, validation_split=args.valid_split)
         elif args.data == 'cifar10':
             train_loader, valid_loader, test_loader = get_cifar10_dataloaders(args, args.valid_split, max_threads=args.max_threads)
-            output = 10
         elif args.data == 'cifar100':
             train_loader, valid_loader, test_loader = get_cifar100_dataloaders(args, args.valid_split, max_threads=args.max_threads)
-            output = 100
 
-        if args.scaled:
-            init_type = 'scaled_kaiming_normal'
-        else:
-            init_type = 'kaiming_normal'
-
-        if args.model == 'mlp_cifar10':
-            model = MLP_CIFAR10().to(device)
+        model = load_model(args.model, device)
+        optimizer = make_optimizer(args.optimizer, model, args.lr, args.momentum, args.l2, nesterov=True)
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[int(args.epochs / 2) * args.multiplier, int(args.epochs * 3 / 4) * args.multiplier], last_epoch=-1)
 
         print_and_log(model)
         print_and_log('=' * 60)
@@ -205,18 +216,6 @@ def main():
         print_and_log('Growth mode: {0}'.format(args.growth))
         print_and_log('Redistribution mode: {0}'.format(args.redistribution))
         print_and_log('=' * 60)
-
-
-        optimizer = None
-        if args.optimizer == 'sgd':
-            optimizer = optim.SGD(model.parameters(),lr=args.lr,momentum=args.momentum,weight_decay=args.l2, nesterov=True)
-        elif args.optimizer == 'adam':
-            optimizer = optim.Adam(model.parameters(),lr=args.lr,weight_decay=args.l2)
-        else:
-            print('Unknown optimizer: {0}'.format(args.optimizer))
-            raise Exception('Unknown optimizer.')
-
-        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[int(args.epochs / 2) * args.multiplier, int(args.epochs * 3 / 4) * args.multiplier], last_epoch=-1)
 
         mask = None
         if args.sparse:
