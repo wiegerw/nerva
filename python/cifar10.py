@@ -10,7 +10,7 @@ from keras.datasets import cifar10
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils import np_utils
 from nerva.activation import ReLU, NoActivation, AllReLU
-from nerva.dataset import DataSetView
+from nerva.dataset import DataSet
 from nerva.layers import Sequential, Dense, Dropout, Sparse, BatchNormalization
 from nerva.learning_rate import ConstantScheduler
 from nerva.loss import SoftmaxCrossEntropyLoss
@@ -47,10 +47,6 @@ def read_cifar10():
 def flatten(X: np.array):
     shape = X.shape
     return X.reshape(shape[0], -1)
-
-
-def make_dataset(x_train, y_train, x_test, y_test) -> DataSetView:
-    return DataSetView(x_train.T, y_train.T, x_test.T, y_test.T)  # N.B. the data sets must be transposed!
 
 
 def make_sgd_options():
@@ -182,7 +178,7 @@ def train_dense_model_with_augmentation(x_train, x_test, y_train, y_test):
     x_train = flatten(x_train)
     x_test = flatten(x_test)
 
-    dataset = make_dataset(x_train, y_train, x_test, y_test)
+    dataset = DataSet(x_train, y_train, x_test, y_test)
 
     model = create_dense_model()
     input_size = 3072
@@ -249,7 +245,7 @@ if __name__ == '__main__':
     x_train, x_test, y_train, y_test = read_cifar10()
     x_train_flattened = flatten(x_train)
     x_test_flattened = flatten(x_test)
-    dataset = make_dataset(x_train_flattened, y_train, x_test_flattened, y_test)
+    dataset = DataSet(x_train_flattened, y_train, x_test_flattened, y_test)
 
     train_dense_model(dataset)
     train_dense_model_cpp(dataset)
