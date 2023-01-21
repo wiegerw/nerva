@@ -245,7 +245,7 @@ def main():
         if not os.path.exists(output_folder): os.makedirs(output_folder)
 
         epochs = args.epochs * args.multiplier
-        loss_fn = nn.NLLLoss()
+        loss_fn = nn.CrossEntropyLoss()
         train_model(model, mask, loss_fn, train_loader, lr_scheduler, optimizer, device, epochs, args.batch_size, args.log_interval, output_folder)
 
         print('Testing model')
