@@ -67,7 +67,7 @@ def print_and_log(msg):
     print(msg)
     logger.info(msg)
 
-def train_model(model, mask, train_loader, lr_scheduler, optimizer, device, epochs, batch_size, log_interval, output_folder):
+def train_model(model, mask, loss_fn, train_loader, lr_scheduler, optimizer, device, epochs, batch_size, log_interval, output_folder):
     model.train()  # Set model in training mode
 
     for epoch in range(1, epochs + 1):
@@ -82,7 +82,7 @@ def train_model(model, mask, train_loader, lr_scheduler, optimizer, device, epoc
             optimizer.zero_grad()
             output = model(data)
 
-            loss = F.nll_loss(output, target)
+            loss = loss_fn(output, target)
 
             train_loss += loss.item()
             pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
@@ -108,7 +108,7 @@ def train_model(model, mask, train_loader, lr_scheduler, optimizer, device, epoc
         print_and_log('Current learning rate: {0}. Time taken for epoch: {1:.2f} seconds.\n'.format(optimizer.param_groups[0]['lr'], time.time() - t0))
 
 
-def evaluate(model, device, test_loader, is_test_set=False):
+def evaluate(model, loss_fn, device, test_loader, is_test_set=False):
     model.eval()
     test_loss = 0
     correct = 0
@@ -118,7 +118,7 @@ def evaluate(model, device, test_loader, is_test_set=False):
             data, target = data.to(device), target.to(device)
             model.t = target
             output = model(data)
-            test_loss += F.nll_loss(output, target, reduction='sum').item() # sum up batch loss
+            test_loss += loss_fn(output, target, reduction='sum').item() # sum up batch loss
             pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
             n += target.shape[0]
@@ -245,11 +245,12 @@ def main():
         if not os.path.exists(output_folder): os.makedirs(output_folder)
 
         epochs = args.epochs * args.multiplier
-        train_model(model, mask, train_loader, lr_scheduler, optimizer, device, epochs, args.batch_size, args.log_interval, output_folder)
+        loss_fn = nn.NLLLoss()
+        train_model(model, mask, loss_fn, train_loader, lr_scheduler, optimizer, device, epochs, args.batch_size, args.log_interval, output_folder)
 
         print('Testing model')
         model.load_state_dict(torch.load(os.path.join(output_folder, 'model_final.pth'))['state_dict'])
-        evaluate(model, device, test_loader, is_test_set=True)
+        evaluate(model, loss_fn, device, test_loader, is_test_set=True)
         print_and_log("\nIteration end: {0}/{1}\n".format(i+1, args.iters))
 
 
