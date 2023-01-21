@@ -67,66 +67,45 @@ def print_and_log(msg):
     print(msg)
     logger.info(msg)
 
-# gradient_norm = []
-def train(model, device, train_loader, optimizer, epoch, batch_size, log_interval, mask=None):
-    model.train()
-    train_loss = 0
-    correct = 0
-    n = 0
-
-    # global gradient_norm
-    for batch_idx, (data, target) in enumerate(train_loader):
-
-        data, target = data.to(device), target.to(device)
-        optimizer.zero_grad()
-        output = model(data)
-
-        loss = F.nll_loss(output, target)
-
-        train_loss += loss.item()
-        pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
-        correct += pred.eq(target.view_as(pred)).sum().item()
-        n += target.shape[0]
-
-        loss.backward()
-
-        if mask is not None:
-            mask.step()
-        else:
-            optimizer.step()
-
-        if batch_idx % log_interval == 0:
-            print_and_log('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f} Accuracy: {}/{} ({:.3f}% '.format(
-                epoch, batch_idx * len(data), len(train_loader) * batch_size,
-                100. * batch_idx / len(train_loader), loss.item(), correct, n, 100. * correct / float(n)))
-
-    # training summary
-    print_and_log('\n{}: Average loss: {:.4f}, Accuracy: {}/{} ({:.3f}%)\n'.format(
-        'Training summary' , train_loss/batch_idx, correct, n, 100. * correct / float(n)))
-
-
-def train_model(model, mask, train_loader, valid_loader, lr_scheduler, optimizer, device, epochs, batch_size, log_interval, output_folder):
-    best_accuracy = 0.0
-    validation_accuracy = 0.0
+def train_model(model, mask, train_loader, lr_scheduler, optimizer, device, epochs, batch_size, log_interval, output_folder):
+    model.train()  # Set model in training mode
 
     for epoch in range(1, epochs + 1):
         t0 = time.time()
-        train(model, device, train_loader, optimizer, epoch, batch_size, log_interval, mask)
+        train_loss = 0
+        correct = 0
+        n = 0
+
+        # global gradient_norm
+        for batch_idx, (data, target) in enumerate(train_loader):
+            data, target = data.to(device), target.to(device)
+            optimizer.zero_grad()
+            output = model(data)
+
+            loss = F.nll_loss(output, target)
+
+            train_loss += loss.item()
+            pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
+            correct += pred.eq(target.view_as(pred)).sum().item()
+            n += target.shape[0]
+
+            loss.backward()
+
+            if mask is not None:
+                mask.step()
+            else:
+                optimizer.step()
+
+            if batch_idx % log_interval == 0:
+                print_and_log('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f} Accuracy: {}/{} ({:.3f}% '.format(
+                    epoch, batch_idx * len(data), len(train_loader) * batch_size,
+                           100. * batch_idx / len(train_loader), loss.item(), correct, n, 100. * correct / float(n)))
+
+        # training summary
+        print_and_log('\n{}: Average loss: {:.4f}, Accuracy: {}/{} ({:.3f}%)\n'.format(
+            'Training summary', train_loss / batch_idx, correct, n, 100. * correct / float(n)))
         lr_scheduler.step()
-
-        if valid_loader:
-            validation_accuracy = evaluate(model, device, valid_loader)
-            if validation_accuracy > best_accuracy:
-                print('Saving model')
-                best_accuracy = validation_accuracy
-                save_checkpoint({
-                    'epoch': epoch + 1,
-                    'state_dict': model.state_dict(),
-                    'optimizer': optimizer.state_dict(),
-                }, filename=os.path.join(output_folder, 'model_final.pth'))
-
-        print_and_log('Current learning rate: {0}. Time taken for epoch: {1:.2f} seconds.\n'.format(
-            optimizer.param_groups[0]['lr'], time.time() - t0))
+        print_and_log('Current learning rate: {0}. Time taken for epoch: {1:.2f} seconds.\n'.format(optimizer.param_groups[0]['lr'], time.time() - t0))
 
 
 def evaluate(model, device, test_loader, is_test_set=False):
@@ -266,7 +245,7 @@ def main():
         if not os.path.exists(output_folder): os.makedirs(output_folder)
 
         epochs = args.epochs * args.multiplier
-        train_model(model, mask, train_loader, valid_loader, lr_scheduler, optimizer, device, epochs, args.batch_size, args.log_interval, output_folder)
+        train_model(model, mask, train_loader, lr_scheduler, optimizer, device, epochs, args.batch_size, args.log_interval, output_folder)
 
         print('Testing model')
         model.load_state_dict(torch.load(os.path.join(output_folder, 'model_final.pth'))['state_dict'])
