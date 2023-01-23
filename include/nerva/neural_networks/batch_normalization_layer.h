@@ -76,7 +76,7 @@ struct batch_normalization_layer: public neural_network_layer
     DX = Sigma_power_minus_half.rowwise().replicate(N).cwiseProduct((-diag_DZ_Zt.rowwise().replicate(N).cwiseProduct(Z) + DZ * (eigen::matrix::Identity(N, N) - eigen::matrix::Constant(N, N, scalar(1) / N))));
   }
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "batch normalization layer";
   }
@@ -127,7 +127,7 @@ struct simple_batch_normalization_layer: public neural_network_layer
     DX = Sigma_power_minus_half.rowwise().replicate(N).cwiseProduct(((-diag_DY_Yt).asDiagonal() * Y + DY * (N * eigen::matrix::Identity(N, N) - eigen::matrix::Constant(N, N, scalar(1)))));
   }
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "simple batch normalization layer";
   }
@@ -180,7 +180,7 @@ struct affine_layer: public neural_network_layer
     Dgamma = DY.cwiseProduct(X).rowwise().sum();
   }
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "affine layer";
   }

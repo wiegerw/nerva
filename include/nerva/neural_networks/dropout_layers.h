@@ -78,7 +78,7 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
     DX = W.cwiseProduct(R).transpose() * DY;
   }
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "linear dropout layer";
   }
@@ -133,7 +133,7 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
     DX = W.cwiseProduct(R).transpose() * DZ;
   }
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "sigmoid dropout layer";
   }
@@ -189,7 +189,7 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
     DX = W.cwiseProduct(R).transpose() * DZ;
   }
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "activation dropout layer";
   }
@@ -211,7 +211,7 @@ struct relu_dropout_layer: public activation_dropout_layer<Matrix, relu_activati
     return fmt::format("Dropout({})\n{}", p, super::to_string());
   }
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "relu dropout layer";
   }
@@ -230,7 +230,7 @@ struct all_relu_dropout_layer: public activation_dropout_layer<Matrix, all_relu_
    : super(all_relu_activation(alpha), D, K, Q, p)
   {}
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "all relu dropout layer";
   }
@@ -254,7 +254,7 @@ struct leaky_relu_dropout_layer: public activation_dropout_layer<Matrix, leaky_r
     return fmt::format("Dropout({})\n{}", p, super::to_string());
   }
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "leaky relu dropout layer";
   }
@@ -278,7 +278,7 @@ struct hyperbolic_tangent_dropout_layer: public activation_dropout_layer<Matrix,
     return fmt::format("Dropout({})\n{}", p, super::to_string());
   }
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "hyperbolic_tangent dropout layer";
   }
@@ -302,7 +302,7 @@ struct softmax_dropout_layer: public activation_dropout_layer<Matrix, softmax_ac
     return fmt::format("Dropout({})\n{}", p, super::to_string());
   }
 
-  std::string name() const override
+  [[nodiscard]] std::string name() const override
   {
     return "softmax dropout layer";
   }
