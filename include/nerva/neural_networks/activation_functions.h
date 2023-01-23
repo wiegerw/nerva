@@ -11,6 +11,7 @@
 #define NERVA_NEURAL_NETWORKS_ACTIVATION_FUNCTIONS_H
 
 #include "nerva/neural_networks/eigen.h"
+#include "fmt/format.h"
 #include <cmath>
 #include <ratio>
 
@@ -58,6 +59,11 @@ struct sigmoid_activation
   {
     return sigmoid_prime()(X);
   }
+
+  [[nodiscard]] std::string to_string() const
+  {
+    return "Sigmoid()";
+  }
 };
 
 struct relu
@@ -100,6 +106,11 @@ struct relu_activation
   auto prime(const Matrix& X) const
   {
     return relu_prime()(X);
+  }
+
+  [[nodiscard]] std::string to_string() const
+  {
+    return "ReLU()";
   }
 };
 
@@ -161,6 +172,11 @@ struct leaky_relu_activation
   auto prime(const Matrix& X) const
   {
     return leaky_relu_prime(alpha)(X);
+  }
+
+  [[nodiscard]] std::string to_string() const
+  {
+    return fmt::format("LeakyRelu({:7.5f})", alpha);
   }
 };
 
@@ -224,6 +240,11 @@ struct all_relu_activation
   {
     return all_relu_prime(alpha)(X);
   }
+
+  [[nodiscard]] std::string to_string() const
+  {
+    return fmt::format("AllRelu({:7.5f})", alpha);
+  }
 };
 
 struct hyperbolic_tangent
@@ -268,6 +289,11 @@ struct hyperbolic_tangent_activation
   auto prime(const Matrix& X) const
   {
     return hyperbolic_tangent_prime()(X);
+  }
+
+  [[nodiscard]] std::string to_string() const
+  {
+    return "HyperbolicTangent()";
   }
 };
 
@@ -324,6 +350,12 @@ struct softmax_activation
   auto prime(const Matrix& X) const
   {
     return softmax_prime()(X);
+  }
+
+
+  [[nodiscard]] std::string to_string() const
+  {
+    return "Softmax()";
   }
 };
 

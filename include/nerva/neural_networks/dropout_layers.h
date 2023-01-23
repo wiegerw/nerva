@@ -11,6 +11,7 @@
 #define NERVA_NEURAL_NETWORKS_DROPOUT_LAYERS_H
 
 #include "nerva/neural_networks/layers.h"
+#include "fmt/format.h"
 #include <random>
 
 namespace nerva {
@@ -44,11 +45,18 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
   using super::Db;
   using super::X;
   using super::DX;
+  using super::to_string;
+  using dropout_layer<Matrix>::p;
   using dropout_layer<Matrix>::R;
 
   linear_dropout_layer(std::size_t D, std::size_t K, std::size_t Q, scalar p)
    : super(D, K, Q), dropout_layer<Matrix>(D, K, p)
   {}
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("Dropout({})\n{}", p, super::to_string());
+  }
 
   void feedforward(eigen::matrix& result) override
   {
@@ -90,11 +98,18 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
   using super::DX;
   using super::Z;
   using super::DZ;
+  using super::to_string;
+  using dropout_layer<Matrix>::p;
   using dropout_layer<Matrix>::R;
 
   sigmoid_dropout_layer(std::size_t D, std::size_t K, std::size_t Q, scalar p)
       : super(D, K, Q), dropout_layer<Matrix>(D, K, p)
   {}
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("Dropout({})\n{}", p, super::to_string());
+  }
 
   void feedforward(eigen::matrix& result) override
   {
@@ -138,12 +153,19 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
   using super::DX;
   using super::Z;
   using super::DZ;
+  using super::to_string;
+  using dropout_layer<Matrix>::p;
   using dropout_layer<Matrix>::R;
   using super::act;
 
   activation_dropout_layer(ActivationFunction act, std::size_t D, std::size_t K, std::size_t Q, scalar p)
       : super(act, D, K, Q), dropout_layer<Matrix>(D, K, p)
   {}
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("Dropout({})\n{}", p, super::to_string());
+  }
 
   void feedforward(eigen::matrix& result) override
   {
@@ -177,10 +199,17 @@ template <typename Matrix>
 struct relu_dropout_layer: public activation_dropout_layer<Matrix, relu_activation>
 {
   using super = activation_dropout_layer<Matrix, relu_activation>;
+  using super::to_string;
+  using dropout_layer<Matrix>::p;
 
   relu_dropout_layer(std::size_t D, std::size_t K, std::size_t Q, scalar p)
    : super(relu_activation(), D, K, Q, p)
   {}
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("Dropout({})\n{}", p, super::to_string());
+  }
 
   std::string name() const override
   {
@@ -194,6 +223,8 @@ template <typename Matrix>
 struct all_relu_dropout_layer: public activation_dropout_layer<Matrix, all_relu_activation>
 {
   using super = activation_dropout_layer<Matrix, all_relu_activation>;
+  using super::to_string;
+  using dropout_layer<Matrix>::p;
 
   all_relu_dropout_layer(scalar alpha, std::size_t D, std::size_t K, std::size_t Q, scalar p)
    : super(all_relu_activation(alpha), D, K, Q, p)
@@ -211,10 +242,17 @@ template <typename Matrix>
 struct leaky_relu_dropout_layer: public activation_dropout_layer<Matrix, leaky_relu_activation>
 {
   using super = activation_dropout_layer<Matrix, leaky_relu_activation>;
+  using super::to_string;
+  using dropout_layer<Matrix>::p;
 
   leaky_relu_dropout_layer(scalar alpha, std::size_t D, std::size_t K, std::size_t Q, scalar p)
       : super(leaky_relu_activation(alpha), D, K, Q, p)
   {}
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("Dropout({})\n{}", p, super::to_string());
+  }
 
   std::string name() const override
   {
@@ -228,10 +266,17 @@ template <typename Matrix>
 struct hyperbolic_tangent_dropout_layer: public activation_dropout_layer<Matrix, hyperbolic_tangent_activation>
 {
   using super = activation_dropout_layer<Matrix, hyperbolic_tangent_activation>;
+  using super::to_string;
+  using dropout_layer<Matrix>::p;
 
   hyperbolic_tangent_dropout_layer(std::size_t D, std::size_t K, std::size_t Q, scalar p)
       : super(hyperbolic_tangent_activation(), D, K, Q, p)
   {}
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("Dropout({})\n{}", p, super::to_string());
+  }
 
   std::string name() const override
   {
@@ -245,10 +290,17 @@ template <typename Matrix>
 struct softmax_dropout_layer: public activation_dropout_layer<Matrix, softmax_activation>
 {
   using super = activation_dropout_layer<Matrix, softmax_activation>;
+  using super::to_string;
+  using dropout_layer<Matrix>::p;
 
   softmax_dropout_layer(std::size_t D, std::size_t K, std::size_t Q, scalar p)
       : super(softmax_activation(), D, K, Q, p)
   {}
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("Dropout({})\n{}", p, super::to_string());
+  }
 
   std::string name() const override
   {

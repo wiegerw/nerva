@@ -21,16 +21,27 @@
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
 #include "nerva/utilities/stopwatch.h"
+#include <pybind11/embed.h>
 #include <cmath>
 #include <functional>
 #include <memory>
-#include <pybind11/embed.h>
+#include <sstream>
 
 namespace nerva {
 
 struct multilayer_perceptron
 {
   std::vector<std::shared_ptr<neural_network_layer>> layers;
+
+  [[nodiscard]] std::string to_string() const
+  {
+    std::ostringstream out;
+    for (const auto& layer: layers)
+    {
+      out << layer->to_string() << '\n';
+    }
+    return out.str();
+  }
 
   void feedforward(eigen::matrix& result)
   {

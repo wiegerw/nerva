@@ -16,6 +16,7 @@
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
 #include "nerva/utilities/string_utility.h"
+#include "fmt/format.h"
 #include <iostream>
 #include <random>
 #include <type_traits>
@@ -35,6 +36,8 @@ struct neural_network_layer
   explicit neural_network_layer(std::size_t D, std::size_t Q = 1)
    : X(D, Q), DX(D, Q)
   {}
+
+  [[nodiscard]] virtual std::string to_string() const = 0;
 
   virtual void optimize(scalar eta) = 0;
 
@@ -56,6 +59,7 @@ struct linear_layer: public neural_network_layer
   using super = neural_network_layer;
   using super::X;
   using super::DX;
+  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
 
   Matrix W;
   eigen::vector b;
@@ -77,9 +81,21 @@ struct linear_layer: public neural_network_layer
     return W.rows();
   }
 
+  [[nodiscard]] std::string to_string() const override
+  {
+    if constexpr (IsSparse)
+    {
+      return fmt::format("Sparse({}, optimizer={}, activation=NoActivation())", output_size(), optimizer->to_string());
+    }
+    else
+    {
+      return fmt::format("Dense({}, optimizer={}, activation=NoActivation())", output_size(), optimizer->to_string());
+    }
+  }
+
   void feedforward(eigen::matrix& result) override
   {
-    if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+    if constexpr (IsSparse)
     {
       auto Q = X.cols();
       mkl::assign_matrix_product(result, W, X);
@@ -94,7 +110,7 @@ struct linear_layer: public neural_network_layer
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
-    if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+    if constexpr (IsSparse)
     {
       mkl::assign_matrix_product_batch(DW, DY, X.transpose(), std::max(4L, static_cast<long>(DY.rows() / 10)));
       Db = DY.rowwise().sum();
@@ -153,6 +169,9 @@ struct sigmoid_layer : public linear_layer<Matrix>
   using super::Db;
   using super::X;
   using super::DX;
+  using super::optimizer;
+  using super::output_size;
+  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
 
   eigen::matrix Z;
   eigen::matrix DZ;
@@ -161,9 +180,21 @@ struct sigmoid_layer : public linear_layer<Matrix>
       : super(D, K, Q), Z(K, Q), DZ(K, Q)
   {}
 
+  [[nodiscard]] std::string to_string() const override
+  {
+    if constexpr (IsSparse)
+    {
+      return fmt::format("Sparse({}, optimizer={}, activation=Sigmoid())", output_size(), optimizer->to_string());
+    }
+    else
+    {
+      return fmt::format("Dense({}, optimizer={}, activation=Sigmoid())", output_size(), optimizer->to_string());
+    }
+  }
+
   void feedforward(eigen::matrix& result) override
   {
-    if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+    if constexpr (IsSparse)
     {
       auto Q = X.cols();
       mkl::assign_matrix_product(Z, W, X);
@@ -180,7 +211,7 @@ struct sigmoid_layer : public linear_layer<Matrix>
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
-    if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+    if constexpr (IsSparse)
     {
       DZ = DY.cwiseProduct(eigen::x_times_one_minus_x(Y));
       mkl::assign_matrix_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
@@ -215,6 +246,9 @@ struct activation_layer : public linear_layer<Matrix>
   using super::Db;
   using super::X;
   using super::DX;
+  using super::optimizer;
+  using super::output_size;
+  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
 
   ActivationFunction act;
   eigen::matrix Z;
@@ -224,9 +258,21 @@ struct activation_layer : public linear_layer<Matrix>
    : super(D, K, Q), act(act_), Z(K, Q), DZ(K, Q)
   {}
 
+  [[nodiscard]] std::string to_string() const override
+  {
+    if constexpr (IsSparse)
+    {
+      return fmt::format("Sparse({}, optimizer={}, activation={})", output_size(), optimizer->to_string(), act.to_string());
+    }
+    else
+    {
+      return fmt::format("Dense({}, optimizer={}, activation={})", output_size(), optimizer->to_string(), act.to_string());
+    }
+  }
+
   void feedforward(eigen::matrix& result) override
   {
-    if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+    if constexpr (IsSparse)
     {
       auto Q = X.cols();
       mkl::assign_matrix_product(Z, W, X);
@@ -243,7 +289,7 @@ struct activation_layer : public linear_layer<Matrix>
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
-    if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+    if constexpr (IsSparse)
     {
       DZ = DY.cwiseProduct(act.prime(Z));
       mkl::assign_matrix_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
@@ -347,6 +393,7 @@ struct softmax_layer : public linear_layer<Matrix>
   using super::Db;
   using super::X;
   using super::DX;
+  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
 
   eigen::matrix Z;
   eigen::matrix DZ;
@@ -357,7 +404,7 @@ struct softmax_layer : public linear_layer<Matrix>
 
   void feedforward(eigen::matrix& result) override
   {
-    if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+    if constexpr (IsSparse)
     {
       auto Q = X.cols();
       mkl::assign_matrix_product(Z, W, X);
@@ -374,7 +421,7 @@ struct softmax_layer : public linear_layer<Matrix>
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
-    if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+    if constexpr (IsSparse)
     {
       auto K = Y.rows();
       DZ = Y.cwiseProduct(DY - (Y.transpose() * DY).diagonal().transpose().colwise().replicate(K));

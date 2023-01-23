@@ -40,6 +40,11 @@ struct batch_normalization_layer: public neural_network_layer
     gamma.array() = 1;
   }
 
+  [[nodiscard]] std::string to_string() const override
+  {
+    return "BatchNormalization()";
+  }
+
   void optimize(scalar eta) override
   {
     // TODO use an optimizer as in linear_layer?
@@ -96,6 +101,11 @@ struct simple_batch_normalization_layer: public neural_network_layer
     : super(D, N), R(D, N), Sigma(D, 1)
   {}
 
+  [[nodiscard]] std::string to_string() const override
+  {
+    return "SimpleBatchNormalization()";
+  }
+
   void optimize(scalar eta) override
   {}
 
@@ -142,6 +152,11 @@ struct affine_layer: public neural_network_layer
   {
     beta.array() = 0;
     gamma.array() = 1;
+  }
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return "Affine()";
   }
 
   void optimize(scalar eta) override

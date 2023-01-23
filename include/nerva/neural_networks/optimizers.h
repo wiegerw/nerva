@@ -14,12 +14,15 @@
 #include "nerva/neural_networks/matrix.h"
 #include "nerva/neural_networks/mkl_matrix.h"
 #include "nerva/utilities/parse_numbers.h"
+#include "fmt/format.h"
 
 namespace nerva {
 
 struct layer_optimizer
 {
   virtual void update(scalar eta) = 0;
+
+  [[nodiscard]] virtual std::string to_string() const = 0;
 
   virtual ~layer_optimizer() = default;
 };
@@ -35,6 +38,11 @@ struct gradient_descent_optimizer: public layer_optimizer
   gradient_descent_optimizer(Matrix& W_, Matrix& DW_, eigen::vector& b_, eigen::vector& Db_)
     : W(W_), DW(DW_), b(b_), Db(Db_)
   {}
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return "GradientDescent()";
+  }
 
   void update(scalar eta) override
   {
@@ -78,6 +86,11 @@ struct momentum_optimizer: public gradient_descent_optimizer<Matrix>
       initialize_matrix(delta_W, scalar(0));
     }
     delta_b.array() = scalar(0);
+  }
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("Momentum({:7.5f})", mu);
   }
 
   void update(scalar eta) override
@@ -133,6 +146,11 @@ struct nesterov_optimizer: public gradient_descent_optimizer<Matrix>
     }
     delta_b.array() = scalar(0);
     delta_b_prev.array() = scalar(0);
+  }
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("Nesterov({:7.5f})", mu);
   }
 
   void update(scalar eta) override

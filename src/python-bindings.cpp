@@ -318,6 +318,7 @@ PYBIND11_MODULE(nervalib, m)
 
   py::class_<multilayer_perceptron, std::shared_ptr<multilayer_perceptron>>(m, "MLP")
     .def(py::init<>(), py::return_value_policy::copy)
+    .def("__str__", [](const multilayer_perceptron& M) { return M.to_string(); })
     .def_readwrite("layers", &multilayer_perceptron::layers)
     .def("feedforward", [](multilayer_perceptron& M, const eigen::matrix& X) { eigen::matrix Y; M.feedforward(X, Y); return Y; })
     .def("backpropagate", &multilayer_perceptron::backpropagate)
