@@ -20,9 +20,9 @@ namespace nerva {
 
 struct loss_function
 {
-  virtual scalar value(const eigen::matrix& Y, const eigen::matrix& T) const = 0;
+  [[nodiscard]] virtual scalar value(const eigen::matrix& Y, const eigen::matrix& T) const = 0;
 
-  virtual eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const = 0;
+  [[nodiscard]] virtual eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const = 0;
 
   virtual ~loss_function() = default;
 };
@@ -53,12 +53,12 @@ struct squared_error_loss: public loss_function
     return Y - T;
   }
 
-  scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
+  [[nodiscard]] scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
     return ((Y - T).colwise().squaredNorm() / scalar(2)).sum();
   }
 
-  eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
+  [[nodiscard]] eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
     return Y - T;
   }
@@ -94,13 +94,13 @@ struct cross_entropy_loss: public loss_function
     return -T.cwiseProduct(one_div_Y);
   }
 
-  scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
+  [[nodiscard]] scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
     auto log_Y = Y.unaryExpr([](scalar x) { return std::log(x); });
     return (-T.cwiseProduct(log_Y).colwise().sum()).sum();
   }
 
-  eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
+  [[nodiscard]] eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
     auto one_div_Y = Y.unaryExpr([](scalar x) { return scalar(1.0) / x; });
     return -T.cwiseProduct(one_div_Y);
@@ -136,13 +136,13 @@ struct softmax_cross_entropy_loss: public loss_function
     return softmax()(Y) - T;
   }
 
-  scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
+  [[nodiscard]] scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
     eigen::matrix log_softmax_Y = softmax().log(Y);
     return (-T.cwiseProduct(log_softmax_Y).colwise().sum()).sum();
   }
 
-  eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
+  [[nodiscard]] eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
     return softmax()(Y) - T;
   }
@@ -178,13 +178,13 @@ struct logistic_cross_entropy_loss: public loss_function
     return -T.cwiseProduct(one_minus_sigmoid_Y);
   }
 
-  scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
+  [[nodiscard]] scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
     auto log_sigmoid_Y = Y.unaryExpr([](scalar x) { return std::log(sigmoid()(x)); });
     return (-T.cwiseProduct(log_sigmoid_Y).colwise().sum()).sum();
   }
 
-  eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
+  [[nodiscard]] eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
     auto one_minus_sigmoid_Y = Y.unaryExpr([](scalar x) { return scalar(1.0) - sigmoid()(x); });
     return -T.cwiseProduct(one_minus_sigmoid_Y);
