@@ -11,6 +11,9 @@ class GradientDescent(Optimizer):
     def compile(self):
         return 'gradient-descent'
 
+    def __str__(self):
+        return 'GradientDescent()'
+
 
 class Momentum(Optimizer):
     def __init__(self, momentum: float):
@@ -19,6 +22,9 @@ class Momentum(Optimizer):
     def compile(self):
         return f'momentum({self.momentum})'
 
+    def __str__(self):
+        return f'Momentum({self.momentum})'
+
 
 class Nesterov(Optimizer):
     def __init__(self, momentum: float):
@@ -26,3 +32,6 @@ class Nesterov(Optimizer):
 
     def compile(self):
         return f'nesterov({self.momentum})'
+
+    def __str__(self):
+        return f'Nesterov({self.momentum})'

@@ -7,30 +7,41 @@ class Activation(object):
 
 
 class NoActivation(Activation):
-    pass
+    def __str__(self):
+        return 'NoActivation()'
 
 
 class ReLU(Activation):
-    pass
+    def __str__(self):
+        return 'ReLU()'
 
 
 class Sigmoid(Activation):
-    pass
+    def __str__(self):
+        return 'Sigmoid()'
 
 
 class Softmax(Activation):
-    pass
+    def __str__(self):
+        return 'Softmax()'
 
 
 class LeakyReLU(Activation):
     def __init__(self, alpha: float):
         self.alpha = alpha
 
+    def __str__(self):
+        return f'LeakyReLU({self.alpha})'
+
 
 class AllReLU(Activation):
     def __init__(self, alpha: float):
         self.alpha = alpha
 
+    def __str__(self):
+        return f'AllReLU({self.alpha})'
+
 
 class HyperbolicTangent(Activation):
-    pass
+    def __str__(self):
+        return 'HyperbolicTangent()'

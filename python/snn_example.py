@@ -15,7 +15,7 @@ from nerva.learning_rate import ConstantScheduler
 from nerva.loss import SoftmaxCrossEntropyLoss
 from nerva.optimizers import GradientDescent, Momentum
 from nerva.utilities import RandomNumberGenerator
-from nerva.weights import Weights
+from nerva.weights import Xavier
 
 
 def read_cifar10():
@@ -74,11 +74,11 @@ def snn_example():
 
     model = Sequential()
     model.add(BatchNormalization())
-    model.add(Sparse(1000, sparsity, ReLU(), GradientDescent(), Weights.Xavier))
-    model.add(Dense(128, ReLU(), Momentum(0.9), Weights.Xavier))
-    model.add(Dense(64, ReLU(), GradientDescent(), Weights.Xavier))
+    model.add(Sparse(1000, sparsity, ReLU(), GradientDescent(), Xavier()))
+    model.add(Dense(128, ReLU(), Momentum(0.9), Xavier()))
+    model.add(Dense(64, ReLU(), GradientDescent(), Xavier()))
     model.add(Dropout(0.3))
-    model.add(Dense(10, NoActivation(), GradientDescent(), Weights.Xavier))
+    model.add(Dense(10, NoActivation(), GradientDescent(), Xavier()))
 
     model.compile(input_size=3072, batch_size=100, rng=rng)
     stochastic_gradient_descent(model, dataset, loss, learning_rate_scheduler,

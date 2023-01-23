@@ -17,7 +17,7 @@ from nerva.loss import SoftmaxCrossEntropyLoss
 from nerva.optimizers import GradientDescent
 from nerva.training import minibatch_gradient_descent, minibatch_gradient_descent_python, SGDOptions, compute_accuracy, compute_statistics
 from nerva.utilities import RandomNumberGenerator, set_num_threads, StopWatch
-from nerva.weights import Weights
+from nerva.weights import WeightInitializer, Xavier, Zero
 import regrow
 
 
@@ -62,19 +62,19 @@ def make_sgd_options():
 def create_dense_model():
     model = Sequential()
     model.add(BatchNormalization())
-    model.add(Dense(128, activation=AllReLU(-0.5), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
+    model.add(Dense(128, activation=AllReLU(-0.5), optimizer=GradientDescent(), weight_initializer=Xavier()))
     model.add(Dropout(0.3))
-    model.add(Dense(64, activation=AllReLU(0.5), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
+    model.add(Dense(64, activation=AllReLU(0.5), optimizer=GradientDescent(), weight_initializer=Xavier()))
     model.add(Dropout(0.3))
-    model.add(Dense(10, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
+    model.add(Dense(10, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))
     return model
 
 
 def create_sparse_model(sparsity: float):
     model = Sequential()
-    model.add(Sparse(128, sparsity, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
-    model.add(Sparse(64, sparsity, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
-    model.add(Sparse(10, sparsity, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
+    model.add(Sparse(128, sparsity, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+    model.add(Sparse(64, sparsity, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+    model.add(Sparse(10, sparsity, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))
     return model
 
 
@@ -188,7 +188,7 @@ def train_dense_model_with_augmentation(x_train, x_test, y_train, y_test):
     print('')
 
 
-def minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Weights.Zero, rng=RandomNumberGenerator(1234567)):
+def minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, regrow_weights: WeightInitializer=Zero(), rng=RandomNumberGenerator(1234567)):
     M = model.compiled_model
     N = dataset.Xtrain.shape[1]  # the number of examples
     I = list(range(N))
@@ -236,7 +236,7 @@ def train_sparse_model_with_regrow(dataset):
     sparsity = 0.5
     model = create_sparse_model(sparsity)
     model.compile(input_size, batch_size, rng)
-    minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=100, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Weights.Xavier, rng=rng)
+    minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=100, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Xavier(), rng=rng)
     print('')
 
 

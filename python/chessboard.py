@@ -8,14 +8,14 @@ import math
 import random
 import numpy as np
 from nerva.activation import ReLU, NoActivation, AllReLU
-from nerva.dataset import DataSetView
+from nerva.dataset import DataSet
 from nerva.layers import Sequential, Dense, Dropout, Sparse, BatchNormalization
 from nerva.learning_rate import ConstantScheduler
 from nerva.loss import SoftmaxCrossEntropyLoss, SquaredErrorLoss
 from nerva.optimizers import GradientDescent
 from nerva.training import minibatch_gradient_descent, minibatch_gradient_descent_python, SGDOptions, compute_accuracy, compute_statistics
 from nerva.utilities import RandomNumberGenerator, set_num_threads, StopWatch
-from nerva.weights import Weights
+from nerva.weights import Xavier
 from regrow import regrow_weights
 
 
@@ -41,17 +41,18 @@ def make_dataset_chessboard(n: int):
 def create_model(sparsity: float):
     model = Sequential()
     if sparsity == 0:
-        model.add(Dense(64, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
-        model.add(Dense(16, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
-        model.add(Dense(2, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
+        model.add(Dense(64, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+        model.add(Dense(16, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+        model.add(Dense(2, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))
     else:
-        model.add(Sparse(32, sparsity, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
-        model.add(Sparse(8, sparsity, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
-        model.add(Sparse(2, sparsity, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Weights.Xavier))
+        model.add(Sparse(32, sparsity, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+        model.add(Sparse(8, sparsity, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+        model.add(Sparse(2, sparsity, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))
     return model
 
 
-def minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, weights_initializer=Weights.Xavier, rng=RandomNumberGenerator(1234567)):
+def minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, weights_initializer=Xavier(), rng=RandomNumberGenerator(1234567)):
+    M = model.compiled_model
     N = dataset.Xtrain.shape[1]  # the number of examples
     I = list(range(N))
     K = N // batch_size  # the number of batches
@@ -95,8 +96,8 @@ def train_sparse_model_with_regrow(dataset, sparsity):
     input_size = 2
     batch_size = 100
     model = create_model(sparsity)
-    M = model.compile(input_size, batch_size, rng)
-    minibatch_gradient_descent_with_regrow(M, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=batch_size, shuffle=True, statistics=True, zeta=0.1, weights_initializer=Weights.Xavier, rng=rng)
+    model.compile(input_size, batch_size, rng)
+    minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=batch_size, shuffle=True, statistics=True, zeta=0.1, weights_initializer=Xavier(), rng=rng)
     print('')
 
 
@@ -118,6 +119,6 @@ if __name__ == '__main__':
     Xtest, Ttest = make_dataset_chessboard(n // 5)
     # plot_dataset(Xtrain, Ttrain)
     # plot_dataset(Xtest, Ttest)
-    dataset = DataSetView(Xtrain, Ttrain, Xtest, Ttest)
+    dataset = DataSet(Xtrain.T, Ttrain.T, Xtest.T, Ttest.T)
     sparsity = 0.2
     train_sparse_model_with_regrow(dataset, sparsity)

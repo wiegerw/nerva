@@ -6,7 +6,7 @@ from typing import Optional, List, Union, Tuple
 from nerva.activation import Activation, NoActivation, ReLU, AllReLU, Softmax, Sigmoid, HyperbolicTangent, LeakyReLU
 from nerva.optimizers import Optimizer, GradientDescent
 from nerva.utilities import RandomNumberGenerator
-from nerva.weights import Weights
+from nerva.weights import WeightInitializer, Xavier
 import nervalib
 
 
@@ -19,7 +19,7 @@ class Dense(Layer):
                  units: int,
                  activation: Activation=NoActivation(),
                  optimizer: Optimizer=GradientDescent(),
-                 weight_initializer: Weights=Weights.Xavier
+                 weight_initializer: WeightInitializer=Xavier()
                 ):
         """
         A dense layer.
@@ -39,6 +39,9 @@ class Dense(Layer):
         self.optimizer = optimizer
         self.weight_initializer = weight_initializer
         self.input_size = -1
+
+    def __str__(self):
+        return f'Dense(units={self.units}, activation={self.activation}, optimizer={self.optimizer}, weight_initializer={self.weight_initializer})'
 
     def compile(self, rng: RandomNumberGenerator, batch_size: int, dropout_rate: float=0.0):
         """
@@ -84,13 +87,13 @@ class Dense(Layer):
         if not layer:
             raise RuntimeError('Unsupported layer type')
 
-        layer.initialize_weights(self.weight_initializer, rng)
+        layer.initialize_weights(self.weight_initializer.compile(), rng)
 
         return layer
 
 
 class Sparse(Layer):
-    def __init__(self, units: int, sparsity: float, activation: Activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Weights.Xavier):
+    def __init__(self, units: int, sparsity: float, activation: Activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()):
         """
         A sparse layer.
 
@@ -111,6 +114,9 @@ class Sparse(Layer):
         self.weight_initializer = weight_initializer
         self.input_size = -1
         self._layer = None
+
+    def __str__(self):
+        return f'Sparse(units={self.units}, sparsity={self.sparsity}, activation={self.activation}, optimizer={self.optimizer}, weight_initializer={self.weight_initializer})'
 
     def compile(self, rng: RandomNumberGenerator, batch_size: int, dropout_rate: float=0.0):
         """
@@ -139,11 +145,11 @@ class Sparse(Layer):
         if not layer:
             raise RuntimeError('Unsupported layer type')
 
-        layer.initialize_weights(self.weight_initializer, rng)
+        layer.initialize_weights(self.weight_initializer.compile(), rng)
         self._layer = layer
         return layer
 
-    def regrow(self, weight_initializer: Weights, zeta: float, rng: RandomNumberGenerator):
+    def regrow(self, weight_initializer: WeightInitializer, zeta: float, rng: RandomNumberGenerator):
         """Prunes and regrows the weights
 
         :param weight_initializer: A weight initializer
@@ -151,12 +157,15 @@ class Sparse(Layer):
         :param rng: A random number generator
         """
         assert self._layer
-        nervalib.regrow_sparse_layer(self._layer, weight_initializer, zeta, rng)
+        nervalib.regrow_sparse_layer(self._layer, weight_initializer.compile(), zeta, rng)
 
 
 class Dropout(Layer):
     def __init__(self, rate: float):
         self.rate = rate
+
+    def __str__(self):
+        return f'Dropout({self.rate})'
 
 
 class BatchNormalization(Layer):
@@ -166,6 +175,9 @@ class BatchNormalization(Layer):
     def compile(self, batch_size: int):
         return nervalib.batch_normalization_layer(self.input_size, batch_size)
 
+    def __str__(self):
+        return 'BatchNormalization()'
+
 
 class SimpleBatchNormalization(Layer):
     def __init__(self):
@@ -173,6 +185,9 @@ class SimpleBatchNormalization(Layer):
 
     def compile(self, batch_size: int):
         return nervalib.simple_batch_normalization_layer(self.input_size, batch_size)
+
+    def __str__(self):
+        return 'SimpleBatchNormalization()'
 
 
 class AffineTransform(Layer):
@@ -182,6 +197,8 @@ class AffineTransform(Layer):
     def compile(self, batch_size: int):
         return nervalib.affine_layer(self.input_size, batch_size)
 
+    def __str__(self):
+        return 'AffineTransform()'
 
 # neural networks
 class Sequential(object):
@@ -230,7 +247,7 @@ class Sequential(object):
                     dropout_rate = self.layers[i+1].rate
                 cpp_layer = layer.compile(rng, batch_size, dropout_rate)
                 cpp_layer.set_optimizer(layer.optimizer.compile())
-                cpp_layer.initialize_weights(layer.weight_initializer, rng)
+                cpp_layer.initialize_weights(layer.weight_initializer.compile(), rng)
                 M.append_layer(cpp_layer)
             elif isinstance(layer, (BatchNormalization, SimpleBatchNormalization, AffineTransform)):
                 layer.input_size = input_size
@@ -238,7 +255,7 @@ class Sequential(object):
                 M.append_layer(cpp_layer)
         self.compiled_model = M
 
-    def regrow(self, weight_initializer: Weights, zeta: float, rng: RandomNumberGenerator):
+    def regrow(self, weight_initializer: WeightInitializer, zeta: float, rng: RandomNumberGenerator):
         """Prunes and regrows the weights of the sparse layers
 
         :param weight_initializer: A weight initializer
@@ -247,7 +264,7 @@ class Sequential(object):
         """
         for layer in self.layers:
             if isinstance(layer, Sparse):
-                layer.regrow(weight_initializer, zeta, rng)
+                layer.regrow(weight_initializer.compile(), zeta, rng)
 
     def feedforward(self, X):
         return self.compiled_model.feedforward(X)
@@ -257,3 +274,7 @@ class Sequential(object):
 
     def optimize(self, eta):
         self.compiled_model.optimize(eta)
+
+    def __str__(self):
+        layers = '.\n'.join([str(layer) for layer in self.layers])
+        return f'Sequential(\n{layers}\n)'
