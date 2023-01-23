@@ -69,8 +69,7 @@ def train_model(model, mask, loss_fn, train_loader, lr_scheduler, optimizer, dev
                            100. * batch_idx / len(train_loader), loss.item(), correct, n, 100. * correct / float(n)))
 
         # training summary
-        log('\n{}: Average loss: {:.4f}, Accuracy: {}/{} ({:.3f}%)\n'.format(
-            'Training summary', train_loss / batch_idx, correct, n, 100. * correct / float(n)))
+        log('\n{}: Average loss: {:.4f}, Accuracy: {}/{} ({:.3f}%)\n'.format('Training summary', train_loss / batch_idx, correct, n, 100. * correct / float(n)))
         lr_scheduler.step()
         log('Current learning rate: {0}. Time taken for epoch: {1:.2f} seconds.\n'.format(optimizer.param_groups[0]['lr'], time.time() - t0))
 
