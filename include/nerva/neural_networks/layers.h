@@ -139,7 +139,7 @@ struct linear_layer: public neural_network_layer
     std::string i = std::to_string(layer_index);
     std::cout << "---" << name() << " ---" << std::endl;
     print_numpy_matrix("W" + i, W);
-    if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+    if constexpr (IsSparse)
     {
       print_numpy_matrix("stencil", mkl::stencil(W));
     }
@@ -287,7 +287,7 @@ struct activation_layer : public linear_layer<Matrix>
     }
   }
 
-  void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
+  void backpropagate(const eigen::matrix& /* Y */, const eigen::matrix& DY) override
   {
     if constexpr (IsSparse)
     {

@@ -18,7 +18,9 @@ namespace nerva {
 template <typename Matrix, typename Function>
 void initialize_matrix(Matrix& A, Function f)
 {
-  if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+
+  if constexpr (IsSparse)
   {
     mkl::initialize_matrix(A, f);
   }
@@ -32,7 +34,9 @@ void initialize_matrix(Matrix& A, Function f)
 template <typename Matrix>
 void print_cpp_matrix(const std::string& name, const Matrix& A)
 {
-  if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+
+  if constexpr (IsSparse)
   {
     eigen::print_cpp_matrix(name, mkl::to_eigen<scalar>(A));
   }
@@ -46,7 +50,9 @@ void print_cpp_matrix(const std::string& name, const Matrix& A)
 template <typename Matrix>
 void print_numpy_matrix(const std::string& name, const Matrix& A)
 {
-  if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+
+  if constexpr (IsSparse)
   {
     eigen::print_numpy_matrix(name, mkl::to_eigen<scalar>(A));
   }
@@ -59,7 +65,9 @@ void print_numpy_matrix(const std::string& name, const Matrix& A)
 template <typename Matrix>
 void load_matrix(const std::string& filename, Matrix& A)
 {
-  if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+
+  if constexpr (IsSparse)
   {
     mkl::load_matrix(filename, A);
   }
@@ -72,7 +80,9 @@ void load_matrix(const std::string& filename, Matrix& A)
 template <typename Matrix>
 void save_matrix(const std::string& filename, const Matrix& A)
 {
-  if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+
+  if constexpr (IsSparse)
   {
     mkl::save_matrix(filename, A);
   }
