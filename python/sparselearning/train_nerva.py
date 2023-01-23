@@ -40,7 +40,7 @@ def make_model(name: str, sparsity, optimizer: Optimizer) -> Sequential:
     raise RuntimeError(f'Unknown model {name}')
 
 
-def flatten(X: torch.Tensor):
+def flatten_torch(X: torch.Tensor):
     shape = X.shape
     return X.reshape(shape[0], -1)
 
@@ -56,7 +56,7 @@ def train_model(model, loss_fn, train_loader, lr_scheduler, device, epochs, batc
 
         # global gradient_norm
         for batch_idx, (data, target) in enumerate(train_loader):
-            X = flatten(data.to(device)).T  # torch.Tensor
+            X = flatten_torch(data.to(device)).T  # torch.Tensor
             T = F.one_hot(target.to(device) % 10).T  # torch.Tensor
             Y = torch.Tensor(model.feedforward(X))
             # print('X', X.shape, X)
@@ -66,7 +66,6 @@ def train_model(model, loss_fn, train_loader, lr_scheduler, device, epochs, batc
 
             train_loss += loss
             pred = Y.argmax(dim=0, keepdim=True)  # get the index of the max log-probability
-            correct += pred.eq(target.view_as(pred)).sum().item()
             correct += pred.eq(target.view_as(pred)).sum().item()
             n += target.shape[0]
 
@@ -109,6 +108,88 @@ def train_and_test(i, args, device, train_loader, test_loader, log: Logger):
     epochs = args.epochs * args.multiplier
     loss_fn = SoftmaxCrossEntropyLoss()
     train_model(model, loss_fn, train_loader, lr_scheduler, device, epochs, args.batch_size, args.log_interval, log)
+    # print('Testing model')
+    # model.load_state_dict(torch.load(os.path.join(output_folder, 'model_final.pth'))['state_dict'])
+    # evaluate(model, loss_fn, device, test_loader, is_test_set=True)
+    # log("\nIteration end: {0}/{1}\n".format(i + 1, args.iters))
+
+
+# TODO: find an efficient implementation for this
+def correct_predictions(Y, T):
+    # https://stackoverflow.com/questions/74501160/error-using-np-argmax-when-applying-keepdims
+    # unfortunately the suggested solutions do not work
+    a = Y.argmax(axis=0)
+
+    total_correct = 0
+    for i, value in enumerate(a):
+        if T[value, i] == 1:
+            total_correct += 1
+
+    return total_correct
+
+
+def train_model2(model, loss_fn, dataset, lr_scheduler, device, epochs, batch_size, log_interval, log):
+    def log_results(n, N, k, K, correct):
+        log(f'Train Epoch: {epoch} [{n}/{N} ({float(100 * k / K):.0f}%)]\tLoss: {train_loss / n:.6f} Accuracy: {correct}/{n} ({100. * correct / float(n):.3f}%)')
+
+    for epoch in range(1, epochs + 1):
+        t0 = time.time()
+
+        N = dataset.Xtrain.shape[1]  # the number of examples
+        I = list(range(N))
+        K = N // batch_size  # the number of batches
+        # if shuffle: random.shuffle(I)
+
+        train_loss = 0
+        correct = 0
+        n = 0
+
+        eta = lr_scheduler(epoch)  # update the learning rate at the start of each epoch
+        for k in range(K):
+            n += batch_size
+            batch = I[k * batch_size: (k + 1) * batch_size]
+            X = dataset.Xtrain[:, batch]
+            T = dataset.Ttrain[:, batch]
+            Y = model.feedforward(X)
+            correct += correct_predictions(Y, T)
+            loss = loss_fn.value(Y, T) / batch_size
+            train_loss += loss
+            dY = loss_fn.gradient(Y, T) / batch_size
+            model.backpropagate(Y, dY)
+            model.optimize(eta)
+
+            if k % log_interval == log_interval - 1:
+                #log(f'Train Epoch: {epoch} [{n * batch_size}/{N} ({100. * n / K:.0f}%)]\tLoss: {train_loss / n:.6f} Accuracy: {correct}/{n * batch_size} ({100. * correct / float(n * batch_size):.3f}%)')
+                log_results(n, N, k+1, K, correct)
+        #log(f'Train Epoch: {epoch} [{N}/{N} (100%)]\tLoss: {train_loss / K:.6f} Accuracy: {correct}/{N} ({100. * correct / float(N):.3f}%)')
+        #log_results(n, N, K, K, correct)
+
+        log(f'Current learning rate: {eta:.4f}. Time taken for epoch: {time.time() - t0:.2f} seconds.\n')
+
+
+def train_and_test2(i, args, device, Xtrain, Ttrain, Xtest, Ttest, log: Logger):
+    dataset = DataSet(Xtrain, Ttrain, Xtest, Ttest)
+    rng = RandomNumberGenerator(123)
+    sparsity = 1.0 - args.density
+    optimizer = make_optimizer(args.momentum, nesterov=True)
+    model = make_model(args.model, sparsity, optimizer)
+    model.compile(3072, args.batch_size, rng)
+    lr_scheduler = ConstantScheduler(args.lr)
+    log(str(model))
+    log('=' * 60)
+    log(args.model)
+    log('=' * 60)
+    log('Prune mode: {0}'.format(args.prune))
+    log('Growth mode: {0}'.format(args.growth))
+    log('Redistribution mode: {0}'.format(args.redistribution))
+    log('=' * 60)
+    # create output folder
+    output_path = './save/' + str(args.model) + '/' + str(args.data) + '/' + str(args.sparse_init) + '/' + str(args.seed)
+    output_folder = os.path.join(output_path, f'sparsity{1 - args.density}' if args.sparse else 'dense')
+    if not os.path.exists(output_folder): os.makedirs(output_folder)
+    epochs = args.epochs * args.multiplier
+    loss_fn = SoftmaxCrossEntropyLoss()
+    train_model2(model, loss_fn, dataset, lr_scheduler, device, epochs, args.batch_size, args.log_interval, log)
     # print('Testing model')
     # model.load_state_dict(torch.load(os.path.join(output_folder, 'model_final.pth'))['state_dict'])
     # evaluate(model, loss_fn, device, test_loader, is_test_set=True)

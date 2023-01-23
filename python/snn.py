@@ -14,12 +14,17 @@ from typing import Tuple
 
 import torch
 import torch.backends.cudnn as cudnn
+import torchvision
 import numpy as np
 import sparselearning
 from sparselearning.core import Masking
 from sparselearning.utils import get_mnist_dataloaders, get_cifar10_dataloaders, get_cifar100_dataloaders
 from sparselearning import train_nerva, train_pytorch
 from sparselearning.logger import DefaultLogger
+
+from keras.datasets import cifar10
+from keras.utils import np_utils
+from nerva.dataset import DataSet
 
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -29,6 +34,63 @@ cudnn.deterministic = True
 if not os.path.exists('./models'): os.mkdir('./models')
 if not os.path.exists('./logs'): os.mkdir('./logs')
 logger = None
+
+
+def normalize_cifar_data(X: np.array, mean=None, std=None):
+    if not mean:
+        mean = X.mean(axis=(0, 1, 2))
+    if not std:
+        std = X.std(axis=(0, 1, 2))
+    return (X  - mean) / std
+
+
+def flatten_numpy(X: np.array):
+    shape = X.shape
+    return X.reshape(shape[0], -1)
+
+
+def flatten_torch(X: torch.Tensor):
+    shape = X.shape
+    return X.reshape(shape[0], -1)
+
+
+def load_cifar10(datadir = "./data"):
+    if not os.path.exists(datadir):
+        os.makedirs(datadir)
+
+    trainset = torchvision.datasets.CIFAR10(root=datadir, train=True, download=True)
+    testset = torchvision.datasets.CIFAR10(root=datadir, train=False, download=True)
+
+    Xtrain = normalize_cifar_data(trainset.data / 255, mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+    Xtrain = flatten_numpy(Xtrain)
+    Xtrain = torch.Tensor(Xtrain)
+    Ttrain = torch.LongTensor(trainset.targets)
+
+    Xtest = normalize_cifar_data(testset.data / 255, mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+    Xtest = flatten_numpy(Xtest)
+    Xtest = torch.Tensor(Xtest)
+    Ttest = torch.LongTensor(testset.targets)
+
+    return Xtrain, Ttrain, Xtest, Ttest
+
+
+def read_cifar10():
+    num_classes = 10
+
+    (x_train, y_train), (x_test, y_test) = cifar10.load_data()
+    y_train = np_utils.to_categorical(y_train, num_classes)
+    y_test = np_utils.to_categorical(y_test, num_classes)
+    x_train = x_train.astype('float32')
+    x_test = x_test.astype('float32')
+
+    # normalize data
+    xTrainMean = np.mean(x_train, axis=0)
+    xTtrainStd = np.std(x_train, axis=0)
+    x_train = (x_train - xTrainMean) / xTtrainStd
+    x_test = (x_test - xTrainMean) / xTtrainStd
+
+    return x_train, x_test, y_train, y_test
+
 
 def save_checkpoint(state, filename='checkpoint.pth.tar'):
     print("SAVING")
@@ -95,12 +157,36 @@ def main():
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
 
+    datadir = './_dataset'
+
     for i in range(args.iters):
         print_and_log("\nIteration start: {0}/{1}\n".format(i + 1, args.iters))
-        train_loader, valid_loader, test_loader = make_loaders(args, args.data, args.valid_split, args.max_threads)
+
+        # Xtrain, Ttrain, Xtest, Ttest = load_cifar10(datadir)
+
+        # Ttrain = flatten_torch(torch.nn.functional.one_hot(Ttrain, num_classes = 10)).float()
+        # Ttest = flatten_torch(torch.nn.functional.one_hot(Ttest, num_classes = 10)).float()
+        # print('dtype', Xtrain.dtype)
+        # print('dtype', Ttrain.dtype)
+        # dataset = DataSet(Xtrain.T, Ttrain.T, Xtest.T, Ttest.T)
+
+        # train_loader, valid_loader, test_loader = make_loaders(args, args.data, args.valid_split, args.max_threads)
+        # if args.nerva:
+        #     train_nerva.train_and_test(i, args, device, train_loader, test_loader, print_and_log)
+        # else:
+        #     train_pytorch.train_and_test(i, args, device, train_loader, test_loader, print_and_log)
+
         if args.nerva:
-            train_nerva.train_and_test(i, args, device, train_loader, test_loader, print_and_log)
+            Xtrain, Xtest, Ttrain, Ttest = read_cifar10()
+            Xtrain = flatten_numpy(Xtrain)
+            Xtest = flatten_numpy(Xtest)
+            # print('Xtrain', Xtrain.shape)
+            # print('Xtest', Xtest.shape)
+            # print('Ttrain', Ttrain.shape)
+            # print('Ttest', Ttest.shape)
+            train_nerva.train_and_test2(i, args, device, Xtrain, Ttrain, Xtest, Ttest, print_and_log)
         else:
+            train_loader, valid_loader, test_loader = make_loaders(args, args.data, args.valid_split, args.max_threads)
             train_pytorch.train_and_test(i, args, device, train_loader, test_loader, print_and_log)
 
 
