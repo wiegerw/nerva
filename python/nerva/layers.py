@@ -213,7 +213,7 @@ class Sequential(object):
                 if not isinstance(layers[i-1], Dense):
                     raise RuntimeError(f'Dropout layer {i} is not preceded by a Dense layer')
 
-    def compile(self, input_size: int, batch_size: int, rng: RandomNumberGenerator) -> nervalib.MLP:
+    def compile(self, input_size: int, batch_size: int, rng: RandomNumberGenerator) -> None:
         self._check_layers()
 
         M = nervalib.MLP()

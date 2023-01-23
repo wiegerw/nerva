@@ -10,18 +10,16 @@ import logging
 import hashlib
 import copy
 import random
-from typing import Optional, Tuple
+from typing import Tuple
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 import torch.backends.cudnn as cudnn
 import numpy as np
 import sparselearning
-from sparselearning.core import Masking, CosineDecay
-from sparselearning.models import MLP_CIFAR10
+from sparselearning.core import Masking
 from sparselearning.utils import get_mnist_dataloaders, get_cifar10_dataloaders, get_cifar100_dataloaders
+from sparselearning import train_nerva, train_pytorch
+from sparselearning.logger import DefaultLogger
 
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -67,6 +65,7 @@ def print_and_log(msg):
     print(msg)
     logger.info(msg)
 
+<<<<<<< HEAD
 def train_model(model, mask, loss_fn, train_loader, lr_scheduler, optimizer, device, epochs, batch_size, log_interval, output_folder):
     model.train()  # Set model in training mode
 
@@ -136,6 +135,8 @@ def load_model(name: str, device) -> torch.nn.Module:
         return MLP_CIFAR10().to(device)
     raise RuntimeError(f'Unknown model {name}')
 
+=======
+>>>>>>> 5418887 (Made some preparations for training using Nerva in SNN experiment)
 
 def make_loaders(args, dataset: str, validation_split, max_threads) -> Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
     if dataset == 'mnist':
@@ -145,31 +146,6 @@ def make_loaders(args, dataset: str, validation_split, max_threads) -> Tuple[tor
     elif dataset == 'cifar100':
         return get_cifar100_dataloaders(args.batch_size, args.test_batch_size, validation_split=validation_split, max_threads=max_threads)
     raise RuntimeError(f'Unknown dataset {dataset}')
-
-
-def make_optimizer(name, model: nn.Module, lr: float, momentum: float, weight_decay: float, nesterov: bool) -> torch.optim.Optimizer:
-    if name == 'sgd':
-        return optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay, nesterov=nesterov)
-    elif name == 'adam':
-        return optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    raise RuntimeError(f'Unknown optimizer: {name}')
-
-
-def make_mask(args,
-              model: torch.nn.Module,
-              optimizer: torch.optim.Optimizer,
-              train_loader
-             ) -> Optional[Masking]:
-    mask = None
-    if args.sparse:
-        prune_interval = args.update_frequency if not args.fix else 0
-        decay = CosineDecay(args.prune_rate, len(train_loader) * (args.epochs * args.multiplier))
-        mask = Masking(optimizer, prune_rate=args.prune_rate, prune_mode=args.prune, prune_rate_decay=decay,
-                       growth_mode=args.growth,
-                       redistribution_mode=args.redistribution, train_loader=train_loader,
-                       prune_interval=prune_interval)
-        mask.add_module(model, sparse_init=args.sparse_init, density=args.density)
-    return mask
 
 
 def main():
@@ -200,13 +176,15 @@ def main():
     parser.add_argument('--bench', action='store_true', help='Enables the benchmarking of layers and estimates sparse speedups')
     parser.add_argument('--max-threads', type=int, default=10, help='How many threads to use for data loading.')
     parser.add_argument('--scaled', action='store_true', help='scale the initialization by 1/density')
+    parser.add_argument('--nerva', action='store_true', help='use the Nerva library')
     sparselearning.core.add_sparse_args(parser)
 
     args = parser.parse_args()
-    setup_logger(args)
-    print_and_log(args)
+    print_and_log = DefaultLogger(args)
+    print_and_log(str(args))
 
-    device = torch.device("cpu")
+    use_cuda = not args.no_cuda and torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
 
     print_and_log('\n\n')
     print_and_log('='*80)
@@ -220,38 +198,13 @@ def main():
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
 
-
     for i in range(args.iters):
-        print_and_log("\nIteration start: {0}/{1}\n".format(i+1, args.iters))
-
+        print_and_log("\nIteration start: {0}/{1}\n".format(i + 1, args.iters))
         train_loader, valid_loader, test_loader = make_loaders(args, args.data, args.valid_split, args.max_threads)
-        model = load_model(args.model, device)
-        optimizer = make_optimizer(args.optimizer, model, args.lr, args.momentum, args.l2, nesterov=True)
-        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[int(args.epochs / 2) * args.multiplier, int(args.epochs * 3 / 4) * args.multiplier], last_epoch=-1)
-        mask = make_mask(args, model, optimizer, train_loader)
-
-        print_and_log(model)
-        print_and_log('=' * 60)
-        print_and_log(args.model)
-        print_and_log('=' * 60)
-        print_and_log('Prune mode: {0}'.format(args.prune))
-        print_and_log('Growth mode: {0}'.format(args.growth))
-        print_and_log('Redistribution mode: {0}'.format(args.redistribution))
-        print_and_log('=' * 60)
-
-        # create output folder
-        output_path = './save/' + str(args.model) + '/' + str(args.data) + '/' + str(args.sparse_init) + '/' + str(args.seed)
-        output_folder = os.path.join(output_path, f'sparsity{1 - args.density}' if args.sparse else 'dense')
-        if not os.path.exists(output_folder): os.makedirs(output_folder)
-
-        epochs = args.epochs * args.multiplier
-        loss_fn = nn.CrossEntropyLoss()
-        train_model(model, mask, loss_fn, train_loader, lr_scheduler, optimizer, device, epochs, args.batch_size, args.log_interval, output_folder)
-
-        print('Testing model')
-        model.load_state_dict(torch.load(os.path.join(output_folder, 'model_final.pth'))['state_dict'])
-        evaluate(model, loss_fn, device, test_loader, is_test_set=True)
-        print_and_log("\nIteration end: {0}/{1}\n".format(i+1, args.iters))
+        if args.nerva:
+            train_nerva.train_and_test(i, args, device, train_loader, test_loader, print_and_log)
+        else:
+            train_pytorch.train_and_test(i, args, device, train_loader, test_loader, print_and_log)
 
 
 if __name__ == '__main__':

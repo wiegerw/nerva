@@ -227,7 +227,8 @@ def main():
     setup_logger(args)
     print_and_log(args)
 
-    device = torch.device("cpu")
+    use_cuda = not args.no_cuda and torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
 
     print_and_log('\n\n')
     print_and_log('='*80)
