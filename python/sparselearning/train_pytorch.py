@@ -10,9 +10,10 @@ from torch import nn as nn, optim as optim
 from sparselearning.core import Masking, CosineDecay
 from sparselearning.logger import Logger
 from sparselearning.models import MLP_CIFAR10
+from sparselearning.train_nerva import log_training_results, log_test_results
 
 
-def evaluate(model, loss_fn, device, test_loader, name: str, log: Logger):
+def test_model(model, loss_fn, device, test_loader, log: Logger):
     model.eval()
     test_loss = 0
     correct = 0
@@ -23,19 +24,19 @@ def evaluate(model, loss_fn, device, test_loader, name: str, log: Logger):
             model.t = target
             output = model(data)
             # test_loss += loss_fn(output, target, reduction='sum').item() # sum up batch loss
-            test_loss += loss_fn(output, target).item() # sum up batch loss
+            test_loss += loss_fn(output, target).item()
             pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
             n += target.shape[0]
 
     test_loss /= float(n)
 
-    log('\n{}: Average loss: {:.4f}, Accuracy: {}/{} ({:.3f}%)\n'.format(name,
-        test_loss, correct, n, 100. * correct / float(n)))
+    N = len(test_loader.dataset)
+    log_test_results(log, n, correct, test_loss * N)
     return correct / float(n)
 
 
-def train_model(model, mask, loss_fn, train_loader, lr_scheduler, optimizer, device, epochs, batch_size, log_interval, log):
+def train_model(model, mask, loss_fn, train_loader, test_loader, lr_scheduler, optimizer, device, epochs, batch_size, log_interval, log):
     model.train()  # Set model in training mode
 
     for epoch in range(1, epochs + 1):
@@ -49,9 +50,7 @@ def train_model(model, mask, loss_fn, train_loader, lr_scheduler, optimizer, dev
             data, target = data.to(device), target.to(device)
             optimizer.zero_grad()
             output = model(data)
-
             loss = loss_fn(output, target)
-
             train_loss += loss.item()
             pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
@@ -64,15 +63,16 @@ def train_model(model, mask, loss_fn, train_loader, lr_scheduler, optimizer, dev
             else:
                 optimizer.step()
 
-            if batch_idx % log_interval == 0:
-                log('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f} Accuracy: {}/{} ({:.3f}% '.format(
-                    epoch, batch_idx * len(data), len(train_loader) * batch_size,
-                           100. * batch_idx / len(train_loader), loss.item(), correct, n, 100. * correct / float(n)))
+            k = batch_idx + 1
+            K = len(train_loader)
+            N = len(train_loader.dataset)
+            if k != 0 and k % log_interval == 0:
+                log_training_results(log, epoch, n, N, k, K, correct, train_loss * batch_size)
 
-        # training summary
-        log('\n{}: Average loss: {:.4f}, Accuracy: {}/{} ({:.3f}%)\n'.format('Training summary', train_loss / batch_idx, correct, n, 100. * correct / float(n)))
+        log(f'Current learning rate: {optimizer.param_groups[0]["lr"]:.4f}. Time taken for epoch: {time.time() - t0:.2f} seconds.')
+        test_model(model, loss_fn, device, test_loader, log)
+
         lr_scheduler.step()
-        log('Current learning rate: {0}. Time taken for epoch: {1:.2f} seconds.\n'.format(optimizer.param_groups[0]['lr'], time.time() - t0))
 
 
 def make_model(name: str, device) -> torch.nn.Module:
@@ -128,8 +128,6 @@ def train_and_test(i, args, device, train_loader, test_loader, log):
     if not os.path.exists(output_folder): os.makedirs(output_folder)
     epochs = args.epochs * args.multiplier
     loss_fn = nn.CrossEntropyLoss()
-    train_model(model, mask, loss_fn, train_loader, lr_scheduler, optimizer, device, epochs, args.batch_size, args.log_interval, log)
-    print('Testing model')
+    train_model(model, mask, loss_fn, train_loader, test_loader, lr_scheduler, optimizer, device, epochs, args.batch_size, args.log_interval, log)
     model.load_state_dict(torch.load(os.path.join(output_folder, 'model_final.pth'))['state_dict'])
-    evaluate(model, loss_fn, device, test_loader, 'Test evaluation', log)
     log("\nIteration end: {0}/{1}\n".format(i + 1, args.iters))

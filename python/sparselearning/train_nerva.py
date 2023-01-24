@@ -1,20 +1,13 @@
 import os
-import sys
 import time
 from typing import List, Tuple
-import numpy as np
-import torch
-import torch.nn.functional as F
 from sparselearning.logger import Logger
-from sparselearning.train_pytorch import evaluate
-from nerva.activation import ReLU, NoActivation, AllReLU
+from nerva.activation import ReLU, NoActivation
 from nerva.dataset import DataSet
-from nerva.layers import Sequential, Dense, Dropout, Sparse, BatchNormalization
+from nerva.layers import Sequential, Dense, Sparse
 from nerva.learning_rate import MultiStepLRScheduler
 from nerva.loss import SoftmaxCrossEntropyLoss
 from nerva.optimizers import Optimizer, GradientDescent, Momentum, Nesterov
-from nerva.training import minibatch_gradient_descent, minibatch_gradient_descent_python, SGDOptions, compute_accuracy, compute_statistics
-from nerva.utilities import set_num_threads, StopWatch
 from nerva.weights import Xavier
 
 
@@ -110,7 +103,11 @@ def correct_predictions(Y, T):
     return total_correct
 
 
-def evaluate_model(model, loss_fn, dataset, batch_size, log: Logger):
+def log_test_results(log, n, correct, test_loss):
+    log(f'Test evaluation: Loss: {test_loss / n:.6f}, Accuracy: {correct}/{n} ({100. * correct / float(n):.3f}%)\n')
+
+
+def test_model(model, loss_fn, dataset, batch_size, log: Logger):
     test_loss = 0
     correct = 0
     n = 0
@@ -128,14 +125,15 @@ def evaluate_model(model, loss_fn, dataset, batch_size, log: Logger):
         correct += correct_predictions(Y, T)
         test_loss += loss_fn.value(Y, T)
 
-    log(f'Test evaluation: Loss: {test_loss / n:.6f}, Accuracy: {correct}/{n} ({100. * correct / float(n):.3f}%)\n')
+    log_test_results(log, n, correct, test_loss)
     return correct / float(n)
 
 
-def train_model(model, loss_fn, dataset, lr_scheduler, device, epochs, batch_size, log_interval, log):
-    def log_results(n, N, k, K, correct, train_loss):
-        log(f'Train Epoch: {epoch} [{n}/{N} ({float(100 * k / K):.0f}%)]\tLoss: {train_loss / n:.6f} Accuracy: {correct}/{n} ({100. * correct / float(n):.3f}%)')
+def log_training_results(log, epoch, n, N, k, K, correct, train_loss):
+    log(f'Train Epoch: {epoch} [{n}/{N} ({float(100 * k / K):.0f}%)]\tLoss: {train_loss / n:.6f} Accuracy: {correct}/{n} ({100. * correct / float(n):.3f}%)')
 
+
+def train_model(model, loss_fn, dataset, lr_scheduler, device, epochs, batch_size, log_interval, log):
     for epoch in range(1, epochs + 1):
         t0 = time.time()
 
@@ -162,10 +160,10 @@ def train_model(model, loss_fn, dataset, lr_scheduler, device, epochs, batch_siz
             model.optimize(eta)
 
             if k != 0 and k % log_interval == 0:
-                log_results(n, N, k, K, correct, train_loss)
+                log_training_results(log, epoch, n, N, k, K, correct, train_loss)
 
         log(f'Current learning rate: {eta:.4f}. Time taken for epoch: {time.time() - t0:.2f} seconds.')
-        evaluate_model(model, loss_fn, dataset, batch_size, log)
+        test_model(model, loss_fn, dataset, batch_size, log)
 
 
 def train_and_test(i, args, device, Xtrain, Ttrain, Xtest, Ttest, log: Logger):
@@ -192,4 +190,3 @@ def train_and_test(i, args, device, Xtrain, Ttrain, Xtest, Ttest, log: Logger):
     epochs = args.epochs * args.multiplier
     loss_fn = SoftmaxCrossEntropyLoss()
     train_model(model, loss_fn, dataset, lr_scheduler, device, epochs, args.batch_size, args.log_interval, log)
-    evaluate_model(model, loss_fn, dataset, args.batch_size, log)
