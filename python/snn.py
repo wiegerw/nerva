@@ -190,7 +190,11 @@ def main():
             train_nerva.train_and_test(i, args, device, Xtrain, Ttrain, Xtest, Ttest, print_and_log)
         elif args.both:
             train_loader, valid_loader, test_loader = make_loaders(args, args.data, args.valid_split, args.max_threads)
-            train_both.train_and_test(i, args, device, train_loader, test_loader, print_and_log)
+            Xtrain, Xtest, Ttrain, Ttest = read_cifar10()
+            Xtrain = flatten_numpy(Xtrain)
+            Xtest = flatten_numpy(Xtest)
+            dataset = nerva.dataset.DataSet(Xtrain, Ttrain, Xtest, Ttest)
+            train_both.train_and_test(i, args, device, train_loader, test_loader, dataset, print_and_log)
         else:
             train_loader, valid_loader, test_loader = make_loaders(args, args.data, args.valid_split, args.max_threads)
             train_pytorch.train_and_test(i, args, device, train_loader, test_loader, print_and_log)

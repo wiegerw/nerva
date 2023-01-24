@@ -5,6 +5,7 @@ import torch.nn as nn
 from sparselearning import train_pytorch, train_nerva
 from sparselearning.train_nerva import log_model_parameters, log_test_results, log_training_results
 from sparselearning.logger import Logger
+import nerva.dataset
 import nerva.layers
 import nerva.learning_rate
 import nerva.loss
@@ -87,7 +88,7 @@ def train_model(model, mask, loss_fn, train_loader, test_loader, lr_scheduler, o
         lr_scheduler.step()
 
 
-def train_and_test(i, args, device, train_loader, test_loader, log):
+def train_and_test(i, args, device, train_loader, test_loader, dataset, log):
     log("\nIteration start: {0}/{1}\n".format(i + 1, args.iters))
 
     milestones = [int(args.epochs / 2) * args.multiplier, int(args.epochs * 3 / 4) * args.multiplier]
@@ -106,9 +107,10 @@ def train_and_test(i, args, device, train_loader, test_loader, log):
     loss_fn2 = nerva.loss.SoftmaxCrossEntropyLoss()
 
     copy_weights_and_biases(model1, model2)
+    log_model_parameters(log, model2, args)
+    epochs = args.epochs * args.multiplier
+    train_nerva.train_model(model2, loss_fn2, dataset, lr_scheduler2, device, epochs, args.batch_size, args.log_interval, log)
 
-    # log_model_parameters(log, model1, args)
-    # epochs = args.epochs * args.multiplier
     # loss_fn2 = nn.CrossEntropyLoss()
     # train_pytorch.train_model(model1, mask, loss_fn2, train_loader, test_loader, lr_scheduler1, optimizer1, device, epochs, args.batch_size, args.log_interval, log)
     # log("\nIteration end: {0}/{1}\n".format(i + 1, args.iters))

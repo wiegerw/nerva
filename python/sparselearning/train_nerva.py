@@ -182,6 +182,7 @@ def train_and_test(i, args, device, Xtrain, Ttrain, Xtest, Ttest, log: Logger):
     optimizer = make_optimizer(args.momentum, nesterov=True)
     model = make_model(args.model, sparsity, optimizer)
     model.compile(3072, args.batch_size)
+    # model.info()
     milestones = [int(args.epochs / 2) * args.multiplier, int(args.epochs * 3 / 4) * args.multiplier]
     print('milestones of the MultiStepLRScheduler:', milestones)
     lr_scheduler = MultiStepLRScheduler(args.lr, milestones, 0.1)

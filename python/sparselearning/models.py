@@ -46,15 +46,21 @@ class MLP_CIFAR10(nn.Module):
 
     def export_weights(self, filename: str):
         with open(filename, "wb") as f:
-            np.save(f, self.fc1.weight.data.numpy().T)
-            np.save(f, self.fc2.weight.data.numpy().T)
-            np.save(f, self.fc3.weight.data.numpy().T)
+            W1 = self.fc1.weight.detach().numpy()
+            W2 = self.fc2.weight.detach().numpy()
+            W3 = self.fc3.weight.detach().numpy()
+            np.save(f, np.asfortranarray(W1))
+            np.save(f, np.asfortranarray(W2))
+            np.save(f, np.asfortranarray(W3))
 
     def export_bias(self, filename: str):
         with open(filename, "wb") as f:
-            np.save(f, self.fc1.bias.data.numpy().T)
-            np.save(f, self.fc2.bias.data.numpy().T)
-            np.save(f, self.fc3.bias.data.numpy().T)
+            b1 = self.fc1.bias.detach().numpy()
+            b2 = self.fc2.bias.detach().numpy()
+            b3 = self.fc3.bias.detach().numpy()
+            np.save(f, np.asfortranarray(b1))
+            np.save(f, np.asfortranarray(b2))
+            np.save(f, np.asfortranarray(b3))
 
     def info(self):
         torch.set_printoptions(threshold=10)
