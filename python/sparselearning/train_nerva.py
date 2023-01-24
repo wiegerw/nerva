@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+from typing import List, Tuple
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -26,17 +27,72 @@ def make_optimizer(momentum=0.0, nesterov=True) -> Optimizer:
         return GradientDescent()
 
 
+def compute_sparse_layer_densities(density: float, layer_shapes: List[Tuple[int, int]], erk_power_scale: float = 1.0):
+    n = len(layer_shapes)  # the number of layers
+    total_params = sum(rows * columns for (rows, columns) in layer_shapes)
+
+    dense_layers = set()
+    while True:
+        divisor = 0
+        rhs = 0
+        raw_probabilities = [0.0] * n
+        for i, (rows, columns) in enumerate(layer_shapes):
+            n_param = rows * columns
+            n_zeros = n_param * (1 - density)
+            n_ones = n_param * density
+            if i in dense_layers:
+                rhs -= n_zeros
+            else:
+                rhs += n_ones
+                raw_probabilities[i] = ((rows + columns) / (rows * columns)) ** erk_power_scale
+                divisor += raw_probabilities[i] * n_param
+        epsilon = rhs / divisor
+        max_prob = max(raw_probabilities)
+        max_prob_one = max_prob * epsilon
+        if max_prob_one > 1:
+            for j, mask_raw_prob in enumerate(raw_probabilities):
+                if mask_raw_prob == max_prob:
+                    print(f"Sparsity of layer:{j} had to be set to 0.")
+                    dense_layers.add(j)
+        else:
+            break
+
+    # Compute the densities
+    densities = [0.0] * n
+    total_nonzero = 0.0
+    for i, (rows, columns) in enumerate(layer_shapes):
+        n_param = rows * columns
+        if i in dense_layers:
+            densities[i] = 1.0
+        else:
+            probability_one = epsilon * raw_probabilities[i]
+            densities[i] = probability_one
+        print(f"layer: {i}, shape: {(rows,columns)}, density: {densities[i]}")
+        total_nonzero += densities[i] * n_param
+    print(f"Overall sparsity {total_nonzero / total_params:.4f}")
+    return densities
+
+
 class MLP_CIFAR10(Sequential):
-    def __init__(self, sparsity, optimizer: Optimizer):
+    def __init__(self, density, optimizer: Optimizer):
         super().__init__()
-        self.add(Sparse(1024, sparsity, activation=ReLU(), optimizer=optimizer, weight_initializer=Xavier()))
-        self.add(Sparse(512, sparsity, activation=ReLU(), optimizer=optimizer, weight_initializer=Xavier()))
-        self.add(Sparse(10, sparsity, activation=NoActivation(), optimizer=optimizer, weight_initializer=Xavier()))
+        shapes = [(3072, 1024), (1024, 512), (512, 10)]
+
+        densities = compute_sparse_layer_densities(density, shapes)
+        sparsities = [1.0 - x for x in densities]
+        layer_sizes = [1024, 512, 10]
+        activations = [ReLU(), ReLU(), NoActivation()]
+
+        for (sparsity, size, activation) in zip(sparsities, layer_sizes, activations):
+            if sparsity == 0.0:
+                 self.add(Dense(size, activation=activation, optimizer=optimizer, weight_initializer=Xavier()))
+            else:
+                self.add(Sparse(size, sparsity, activation=activation, optimizer=optimizer, weight_initializer=Xavier()))
 
 
 def make_model(name: str, sparsity, optimizer: Optimizer) -> Sequential:
     if name == 'mlp_cifar10':
-        return MLP_CIFAR10(sparsity, optimizer)
+        return MLP_CIFAR10(1.0 - sparsity, optimizer)
     raise RuntimeError(f'Unknown model {name}')
 
 

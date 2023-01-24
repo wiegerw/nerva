@@ -186,14 +186,11 @@ class Masking(object):
                     n_param = np.prod(mask.shape)
                     n_zeros = n_param * (1 - self.density)
                     n_ones = n_param * self.density
-
                     if name in dense_layers:
                         rhs -= n_zeros
                     else:
                         rhs += n_ones
-                        raw_probabilities[name] = (
-                                                          np.sum(mask.shape[:2]) / np.prod(mask.shape[:2])
-                                                  ) ** erk_power_scale
+                        raw_probabilities[name] = (np.sum(mask.shape[:2]) / np.prod(mask.shape[:2])) ** erk_power_scale
                         divisor += raw_probabilities[name] * n_param
                 epsilon = rhs / divisor
                 max_prob = np.max(list(raw_probabilities.values()))
