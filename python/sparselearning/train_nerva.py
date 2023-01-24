@@ -110,6 +110,28 @@ def correct_predictions(Y, T):
     return total_correct
 
 
+def evaluate_model(model, loss_fn, dataset, batch_size, log: Logger):
+    test_loss = 0
+    correct = 0
+    n = 0
+
+    N = dataset.Xtest.shape[1]  # the number of examples
+    I = list(range(N))
+    K = N // batch_size  # the number of batches
+
+    for k in range(1, K + 1):
+        n += batch_size
+        batch = I[(k - 1) * batch_size: k * batch_size]
+        X = dataset.Xtest[:, batch]
+        T = dataset.Ttest[:, batch]
+        Y = model.feedforward(X)
+        correct += correct_predictions(Y, T)
+        test_loss += loss_fn.value(Y, T)
+
+    log(f'Test evaluation: Loss: {test_loss / n:.6f}, Accuracy: {correct}/{n} ({100. * correct / float(n):.3f}%)\n')
+    return correct / float(n)
+
+
 def train_model(model, loss_fn, dataset, lr_scheduler, device, epochs, batch_size, log_interval, log):
     def log_results(n, N, k, K, correct, train_loss):
         log(f'Train Epoch: {epoch} [{n}/{N} ({float(100 * k / K):.0f}%)]\tLoss: {train_loss / n:.6f} Accuracy: {correct}/{n} ({100. * correct / float(n):.3f}%)')
@@ -142,31 +164,8 @@ def train_model(model, loss_fn, dataset, lr_scheduler, device, epochs, batch_siz
             if k != 0 and k % log_interval == 0:
                 log_results(n, N, k, K, correct, train_loss)
 
-        log(f'Current learning rate: {eta:.4f}. Time taken for epoch: {time.time() - t0:.2f} seconds.\n')
-
-
-def evaluate_model(model, loss_fn, dataset, batch_size, log: Logger):
-    test_loss = 0
-    correct = 0
-    n = 0
-
-    N = dataset.Xtest.shape[1]  # the number of examples
-    I = list(range(N))
-    K = N // batch_size  # the number of batches
-
-    for k in range(1, K + 1):
-        n += batch_size
-        batch = I[(k - 1) * batch_size: k * batch_size]
-        X = dataset.Xtest[:, batch]
-        T = dataset.Ttest[:, batch]
-        Y = model.feedforward(X)
-        correct += correct_predictions(Y, T)
-        test_loss += loss_fn.value(Y, T)
-
-    test_loss /= float(n)
-
-    log(f'\nTest evaluation: Average loss: {test_loss:.4f}, Accuracy: {correct}/{n} ({100. * correct / float(n):.3f}%)\n')
-    return correct / float(n)
+        log(f'Current learning rate: {eta:.4f}. Time taken for epoch: {time.time() - t0:.2f} seconds.')
+        evaluate_model(model, loss_fn, dataset, batch_size, log)
 
 
 def train_and_test(i, args, device, Xtrain, Ttrain, Xtest, Ttest, log: Logger):
