@@ -271,8 +271,8 @@ class Sequential(object):
         self.compiled_model.optimize(eta)
 
     def __str__(self):
-        layers = '.\n'.join([str(layer) for layer in self.layers])
-        return f'Sequential(\n{layers}\n)'
+        layers = ',\n  '.join([str(layer) for layer in self.layers])
+        return f'Sequential(\n  {layers}\n)'
 
     def info(self):
         self.compiled_model.info('M')
