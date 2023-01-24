@@ -25,6 +25,7 @@ from sparselearning.logger import DefaultLogger
 from keras.datasets import cifar10
 from keras.utils import np_utils
 from nerva.dataset import DataSet
+import nerva.random
 
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -156,6 +157,7 @@ def main():
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
+    nerva.random.manual_seed(args.seed)
 
     datadir = './_dataset'
 
@@ -184,7 +186,7 @@ def main():
             # print('Xtest', Xtest.shape)
             # print('Ttrain', Ttrain.shape)
             # print('Ttest', Ttest.shape)
-            train_nerva.train_and_test2(i, args, device, Xtrain, Ttrain, Xtest, Ttest, print_and_log)
+            train_nerva.train_and_test(i, args, device, Xtrain, Ttrain, Xtest, Ttest, print_and_log)
         else:
             train_loader, valid_loader, test_loader = make_loaders(args, args.data, args.valid_split, args.max_threads)
             train_pytorch.train_and_test(i, args, device, train_loader, test_loader, print_and_log)

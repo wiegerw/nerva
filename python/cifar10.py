@@ -15,8 +15,9 @@ from nerva.layers import Sequential, Dense, Dropout, Sparse, BatchNormalization
 from nerva.learning_rate import ConstantScheduler
 from nerva.loss import SoftmaxCrossEntropyLoss
 from nerva.optimizers import GradientDescent
+from nerva.random import manual_seed
 from nerva.training import minibatch_gradient_descent, minibatch_gradient_descent_python, SGDOptions, compute_accuracy, compute_statistics
-from nerva.utilities import RandomNumberGenerator, set_num_threads, StopWatch
+from nerva.utilities import set_num_threads, StopWatch
 from nerva.weights import WeightInitializer, Xavier, Zero
 import regrow
 
@@ -113,48 +114,44 @@ def minibatch_gradient_descent_with_augmentation(model, dataset, datagen, loss, 
 
 
 def train_dense_model(dataset):
-    rng = RandomNumberGenerator(1234567)
     loss = SoftmaxCrossEntropyLoss()
     learning_rate_scheduler = ConstantScheduler(0.01)
     input_size = 3072
     batch_size = 100
     model = create_dense_model()
-    model.compile(input_size, batch_size, rng)
+    model.compile(input_size, batch_size)
     minibatch_gradient_descent_python(model, dataset, loss, learning_rate_scheduler, epochs=10, batch_size=100, shuffle=True, statistics=True)
     print('')
 
 
 # Use the c++ version of minibatch_gradient_descent, which is slightly faster
 def train_dense_model_cpp(dataset):
-    rng = RandomNumberGenerator(1234567)
     loss = SoftmaxCrossEntropyLoss()
     learning_rate_scheduler = ConstantScheduler(0.01)
     input_size = 3072
     batch_size = 100
     model = create_dense_model()
-    model.compile(input_size, batch_size, rng)
+    model.compile(input_size, batch_size)
     M = model.compiled_model
     options = make_sgd_options()
-    minibatch_gradient_descent(M, loss, dataset, options, learning_rate_scheduler, rng)
+    minibatch_gradient_descent(M, loss, dataset, options, learning_rate_scheduler)
     print('')
 
 
 def train_sparse_model(dataset):
-    rng = RandomNumberGenerator(1234567)
     loss = SoftmaxCrossEntropyLoss()
     learning_rate_scheduler = ConstantScheduler(0.01)
     input_size = 3072
     batch_size = 100
     sparsity = 0.5
     model = create_sparse_model(sparsity)
-    model.compile(input_size, batch_size, rng)
+    model.compile(input_size, batch_size)
     minibatch_gradient_descent_python(model, dataset, loss, learning_rate_scheduler, epochs=10, batch_size=100, shuffle=True, statistics=True)
     print('')
 
 
 # Use on the fly data augmentation. Note that data augmentation is very expensive.
 def train_dense_model_with_augmentation(x_train, x_test, y_train, y_test):
-    rng = RandomNumberGenerator(1234567)
     loss = SoftmaxCrossEntropyLoss()
     learning_rate_scheduler = ConstantScheduler(0.01)
 
@@ -183,12 +180,12 @@ def train_dense_model_with_augmentation(x_train, x_test, y_train, y_test):
     model = create_dense_model()
     input_size = 3072
     batch_size = 100
-    model.compile(input_size, batch_size, rng)
+    model.compile(input_size, batch_size)
     minibatch_gradient_descent_with_augmentation(model, dataset, datagen, loss, learning_rate_scheduler, epochs=10, batch_size=100, statistics=True)
     print('')
 
 
-def minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, regrow_weights: WeightInitializer=Zero(), rng=RandomNumberGenerator(1234567)):
+def minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, regrow_weights: WeightInitializer=Zero()):
     M = model.compiled_model
     N = dataset.Xtrain.shape[1]  # the number of examples
     I = list(range(N))
@@ -202,7 +199,7 @@ def minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate, 
             if GlobalSettings.regrow_using_python:
                 regrow.regrow_weights(M, zeta)
             else:
-                M.regrow(zeta, regrow_weights, True, rng)
+                M.regrow(zeta, regrow_weights, True)
 
         watch.reset()
         if shuffle:
@@ -228,20 +225,20 @@ def minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate, 
 
 
 def train_sparse_model_with_regrow(dataset):
-    rng = RandomNumberGenerator(1234567)
     loss = SoftmaxCrossEntropyLoss()
     learning_rate_scheduler = ConstantScheduler(0.01)
     input_size = 3072
     batch_size = 100
     sparsity = 0.5
     model = create_sparse_model(sparsity)
-    model.compile(input_size, batch_size, rng)
-    minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=100, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Xavier(), rng=rng)
+    model.compile(input_size, batch_size)
+    minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=100, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Xavier())
     print('')
 
 
 if __name__ == '__main__':
     # set_num_threads(4)
+    manual_seed(1234567)
     x_train, x_test, y_train, y_test = read_cifar10()
     x_train_flattened = flatten(x_train)
     x_test_flattened = flatten(x_test)

@@ -12,6 +12,7 @@
 #include "nerva/neural_networks/dropout_layers.h"
 #include "nerva/neural_networks/learning_rate_schedulers.h"
 #include "nerva/neural_networks/multilayer_perceptron.h"
+#include "nerva/neural_networks/random.h"
 #include "nerva/neural_networks/regrowth.h"
 #include "nerva/neural_networks/training.h"
 #include "nerva/neural_networks/weights.h"
@@ -160,7 +161,7 @@ PYBIND11_MODULE(nervalib, m)
     .def("feedforward", &dense_linear_layer::feedforward)
     .def("backpropagate", &dense_linear_layer::backpropagate)
     .def("optimize", &dense_linear_layer::optimize)
-    .def("initialize_weights", [](dense_linear_layer& layer, weight_initialization w, std::mt19937& rng) { initialize_weights(w, layer.W, layer.b, rng); })
+    .def("initialize_weights", [](dense_linear_layer& layer, weight_initialization w) { initialize_weights(w, layer.W, layer.b, nerva_rng); })
     .def("set_optimizer", [](dense_linear_layer& layer, const std::string& text) { set_optimizer(layer, text); })
     ;
 
@@ -191,7 +192,7 @@ PYBIND11_MODULE(nervalib, m)
   //--- dropout layers ---//
   py::class_<dense_linear_dropout_layer, dense_linear_layer, std::shared_ptr<dense_linear_dropout_layer>>(m, "linear_dropout_layer")
     .def(py::init<std::size_t, std::size_t, std::size_t, scalar>(), py::return_value_policy::copy)
-    .def("initialize_weights", [](dense_linear_dropout_layer& layer, weight_initialization w, std::mt19937& rng) { initialize_weights(w, layer.W, layer.b, rng); })
+    .def("initialize_weights", [](dense_linear_dropout_layer& layer, weight_initialization w) { initialize_weights(w, layer.W, layer.b, nerva_rng); })
     .def("set_optimizer", [](dense_linear_dropout_layer& layer, const std::string& text) { set_optimizer(layer, text); })
     ;
 
@@ -221,10 +222,10 @@ PYBIND11_MODULE(nervalib, m)
 
   //--- sparse layers ---//
   py::class_<sparse_linear_layer, neural_network_layer, std::shared_ptr<linear_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_linear_layer")
-    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity, std::mt19937& rng)
+    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity)
                   {
                     auto layer = std::make_shared<sparse_linear_layer>(D, K, batch_size);
-                    initialize_sparse_weights<scalar>(*layer, sparsity, rng);
+                    initialize_sparse_weights<scalar>(*layer, sparsity, nerva_rng);
                     return layer;
                   }))
     .def_readwrite("W", &sparse_linear_layer::W)
@@ -237,64 +238,64 @@ PYBIND11_MODULE(nervalib, m)
     .def("feedforward", &sparse_linear_layer::feedforward)
     .def("backpropagate", &sparse_linear_layer::backpropagate)
     .def("optimize", &sparse_linear_layer::optimize)
-    .def("initialize_weights", [](sparse_linear_layer& layer, weight_initialization w, std::mt19937& rng) { initialize_weights(w, layer.W, layer.b, rng); })
+    .def("initialize_weights", [](sparse_linear_layer& layer, weight_initialization w) { initialize_weights(w, layer.W, layer.b, nerva_rng); })
     .def("set_optimizer", [](sparse_linear_layer& layer, const std::string& text) { set_optimizer(layer, text); })
-    .def("regrow", [](sparse_linear_layer& layer, scalar zeta, bool separate_positive_negative, weight_initialization w, std::mt19937& rng)
+    .def("regrow", [](sparse_linear_layer& layer, scalar zeta, bool separate_positive_negative, weight_initialization w)
         {
-          regrow(layer.W, zeta, w, separate_positive_negative, rng);
+          regrow(layer.W, zeta, w, separate_positive_negative, nerva_rng);
         })
     ;
 
   py::class_<sparse_hyperbolic_tangent_layer, sparse_linear_layer, std::shared_ptr<hyperbolic_tangent_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_hyperbolic_tangent_layer")
-    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity, std::mt19937& rng)
+    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity)
                   {
                     auto layer = std::make_shared<sparse_hyperbolic_tangent_layer>(D, K, batch_size);
-                    initialize_sparse_weights<scalar>(*layer, sparsity, rng);
+                    initialize_sparse_weights<scalar>(*layer, sparsity, nerva_rng);
                     return layer;
                   }))
     ;
 
   py::class_<sparse_relu_layer, sparse_linear_layer, std::shared_ptr<relu_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_relu_layer")
-    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity, std::mt19937& rng)
+    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity)
                   {
                     auto layer = std::make_shared<sparse_relu_layer>(D, K, batch_size);
-                    initialize_sparse_weights<scalar>(*layer, sparsity, rng);
+                    initialize_sparse_weights<scalar>(*layer, sparsity, nerva_rng);
                     return layer;
                   }))
     ;
 
   py::class_<sparse_leaky_relu_layer, sparse_linear_layer, std::shared_ptr<leaky_relu_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_leaky_relu_layer")
-    .def(py::init([](scalar alpha, std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity, std::mt19937& rng)
+    .def(py::init([](scalar alpha, std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity)
                   {
                     auto layer = std::make_shared<sparse_leaky_relu_layer>(D, K, batch_size);
-                    initialize_sparse_weights<scalar>(*layer, sparsity, rng);
+                    initialize_sparse_weights<scalar>(*layer, sparsity, nerva_rng);
                     return layer;
                   }))
     ;
 
   py::class_<sparse_all_relu_layer, sparse_linear_layer, std::shared_ptr<all_relu_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_all_relu_layer")
-    .def(py::init([](scalar alpha, std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity, std::mt19937& rng)
+    .def(py::init([](scalar alpha, std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity)
                   {
                     auto layer = std::make_shared<sparse_all_relu_layer>(D, K, batch_size);
-                    initialize_sparse_weights<scalar>(*layer, sparsity, rng);
+                    initialize_sparse_weights<scalar>(*layer, sparsity, nerva_rng);
                     return layer;
                   }))
     ;
 
   py::class_<sigmoid_layer<mkl::sparse_matrix_csr<scalar>>, sparse_linear_layer, std::shared_ptr<sigmoid_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_sigmoid_layer")
-    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity, std::mt19937& rng)
+    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity)
                   {
                     auto layer = std::make_shared<sparse_sigmoid_layer>(D, K, batch_size);
-                    initialize_sparse_weights<scalar>(*layer, sparsity, rng);
+                    initialize_sparse_weights<scalar>(*layer, sparsity, nerva_rng);
                     return layer;
                   }))
     ;
 
   py::class_<softmax_layer<mkl::sparse_matrix_csr<scalar>>, sparse_linear_layer, std::shared_ptr<softmax_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_softmax_layer")
-    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity, std::mt19937& rng)
+    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity)
                   {
                     auto layer = std::make_shared<sparse_softmax_layer>(D, K, batch_size);
-                    initialize_sparse_weights<scalar>(*layer, sparsity, rng);
+                    initialize_sparse_weights<scalar>(*layer, sparsity, nerva_rng);
                     return layer;
                   }))
     ;
@@ -350,12 +351,12 @@ PYBIND11_MODULE(nervalib, m)
   m.def("initialize_weights", initialize_weights<eigen::matrix>);
   m.def("import_weights", import_weights);
   m.def("export_weights", export_weights);
-  m.def("regrow", [](eigen::matrix_ref<scalar> W, scalar zeta, weight_initialization w, std::mt19937& rng)
+  m.def("regrow", [](eigen::matrix_ref<scalar> W, scalar zeta, weight_initialization w)
         {
-          auto f = create_weight_initializer(W, w, rng);
+          auto f = create_weight_initializer(W, w, nerva_rng);
           long nonzero_count = (W.array() != 0).count();
           long k = std::lround(zeta * static_cast<scalar>(nonzero_count));
-          regrow_threshold(W, k, f, rng);
+          regrow_threshold(W, k, f, nerva_rng);
         });
 
   /////////////////////////////////////////////////////////////////////////
@@ -377,6 +378,12 @@ PYBIND11_MODULE(nervalib, m)
   m.def("compute_accuracy", compute_accuracy_batch<multilayer_perceptron, datasets::matrix_ref>);
   m.def("compute_statistics", compute_statistics_batch<multilayer_perceptron, datasets::dataset_view>);
   m.def("set_num_threads", mkl_set_num_threads);
+
+  /////////////////////////////////////////////////////////////////////////
+  //                       random
+  /////////////////////////////////////////////////////////////////////////
+
+  m.def("manual_seed", manual_seed);
 
   m.attr("__version__") = "0.12";
 }

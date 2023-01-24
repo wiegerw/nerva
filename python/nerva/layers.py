@@ -5,7 +5,6 @@
 from typing import Optional, List, Union, Tuple
 from nerva.activation import Activation, NoActivation, ReLU, AllReLU, Softmax, Sigmoid, HyperbolicTangent, LeakyReLU
 from nerva.optimizers import Optimizer, GradientDescent
-from nerva.utilities import RandomNumberGenerator
 from nerva.weights import WeightInitializer, Xavier
 import nervalib
 
@@ -43,11 +42,10 @@ class Dense(Layer):
     def __str__(self):
         return f'Dense(units={self.units}, activation={self.activation}, optimizer={self.optimizer}, weight_initializer={self.weight_initializer})'
 
-    def compile(self, rng: RandomNumberGenerator, batch_size: int, dropout_rate: float=0.0):
+    def compile(self, batch_size: int, dropout_rate: float=0.0):
         """
         Compiles the model into a C++ object
 
-        :param rng: a random number generator
         :param batch_size: the batch size
         :param dropout_rate: the dropout rate
         :return:
@@ -87,7 +85,7 @@ class Dense(Layer):
         if not layer:
             raise RuntimeError('Unsupported layer type')
 
-        layer.initialize_weights(self.weight_initializer.compile(), rng)
+        layer.initialize_weights(self.weight_initializer.compile())
 
         return layer
 
@@ -118,11 +116,10 @@ class Sparse(Layer):
     def __str__(self):
         return f'Sparse(units={self.units}, sparsity={self.sparsity}, activation={self.activation}, optimizer={self.optimizer}, weight_initializer={self.weight_initializer})'
 
-    def compile(self, rng: RandomNumberGenerator, batch_size: int, dropout_rate: float=0.0):
+    def compile(self, batch_size: int, dropout_rate: float=0.0):
         """
         Compiles the model into a C++ object
 
-        :param rng: a random number generator
         :param batch_size: the batch size
         :param dropout_rate: the dropout rate
         :return:
@@ -130,34 +127,33 @@ class Sparse(Layer):
         layer = None
         if dropout_rate == 0.0:
             if isinstance(self.activation, NoActivation):
-                layer = nervalib.sparse_linear_layer(self.input_size, self.units, batch_size, self.sparsity, rng)
+                layer = nervalib.sparse_linear_layer(self.input_size, self.units, batch_size, self.sparsity)
             elif isinstance(self.activation, ReLU):
-                layer = nervalib.sparse_relu_layer(self.input_size, self.units, batch_size, self.sparsity, rng)
+                layer = nervalib.sparse_relu_layer(self.input_size, self.units, batch_size, self.sparsity)
             elif isinstance(self.activation, Sigmoid):
-                layer = nervalib.sparse_sigmoid_layer(self.input_size, self.units, batch_size, self.sparsity, rng)
+                layer = nervalib.sparse_sigmoid_layer(self.input_size, self.units, batch_size, self.sparsity)
             elif isinstance(self.activation, Softmax):
-                layer = nervalib.sparse_softmax_layer(self.input_size, self.units, batch_size, self.sparsity, rng)
+                layer = nervalib.sparse_softmax_layer(self.input_size, self.units, batch_size, self.sparsity)
             elif isinstance(self.activation, AllReLU):
-                layer = nervalib.sparse_all_relu_layer(self.activation.alpha, self.input_size, self.units, batch_size, self.sparsity, rng)
+                layer = nervalib.sparse_all_relu_layer(self.activation.alpha, self.input_size, self.units, batch_size, self.sparsity)
             elif isinstance(self.activation, HyperbolicTangent):
-                layer = nervalib.sparse_hyperbolic_tangent_layer(self.input_size, self.units, batch_size, self.sparsity, rng)
+                layer = nervalib.sparse_hyperbolic_tangent_layer(self.input_size, self.units, batch_size, self.sparsity)
 
         if not layer:
             raise RuntimeError('Unsupported layer type')
 
-        layer.initialize_weights(self.weight_initializer.compile(), rng)
+        layer.initialize_weights(self.weight_initializer.compile())
         self._layer = layer
         return layer
 
-    def regrow(self, weight_initializer: WeightInitializer, zeta: float, rng: RandomNumberGenerator):
+    def regrow(self, weight_initializer: WeightInitializer, zeta: float):
         """Prunes and regrows the weights
 
         :param weight_initializer: A weight initializer
         :param zeta: The fraction of weights that is regrown
-        :param rng: A random number generator
         """
         assert self._layer
-        nervalib.regrow_sparse_layer(self._layer, weight_initializer.compile(), zeta, rng)
+        nervalib.regrow_sparse_layer(self._layer, weight_initializer.compile(), zeta)
 
 
 class Dropout(Layer):
@@ -230,7 +226,7 @@ class Sequential(object):
                 if not isinstance(layers[i-1], Dense):
                     raise RuntimeError(f'Dropout layer {i} is not preceded by a Dense layer')
 
-    def compile(self, input_size: int, batch_size: int, rng: RandomNumberGenerator) -> None:
+    def compile(self, input_size: int, batch_size: int) -> None:
         self._check_layers()
 
         M = nervalib.MLP()
@@ -245,9 +241,9 @@ class Sequential(object):
                 dropout_rate = 0.0
                 if i + 1 < n and isinstance(self.layers[i+1], Dropout):
                     dropout_rate = self.layers[i+1].rate
-                cpp_layer = layer.compile(rng, batch_size, dropout_rate)
+                cpp_layer = layer.compile(batch_size, dropout_rate)
                 cpp_layer.set_optimizer(layer.optimizer.compile())
-                cpp_layer.initialize_weights(layer.weight_initializer.compile(), rng)
+                cpp_layer.initialize_weights(layer.weight_initializer.compile())
                 M.append_layer(cpp_layer)
             elif isinstance(layer, (BatchNormalization, SimpleBatchNormalization, AffineTransform)):
                 layer.input_size = input_size
@@ -255,16 +251,15 @@ class Sequential(object):
                 M.append_layer(cpp_layer)
         self.compiled_model = M
 
-    def regrow(self, weight_initializer: WeightInitializer, zeta: float, rng: RandomNumberGenerator):
+    def regrow(self, weight_initializer: WeightInitializer, zeta: float):
         """Prunes and regrows the weights of the sparse layers
 
         :param weight_initializer: A weight initializer
         :param zeta: The fraction of weights that is regrown
-        :param rng: A random number generator
         """
         for layer in self.layers:
             if isinstance(layer, Sparse):
-                layer.regrow(weight_initializer.compile(), zeta, rng)
+                layer.regrow(weight_initializer.compile(), zeta)
 
     def feedforward(self, X):
         return self.compiled_model.feedforward(X)
