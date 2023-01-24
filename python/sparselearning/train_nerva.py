@@ -101,7 +101,6 @@ class MLP_CIFAR10(Sequential):
             else:
                 self.add(Sparse(size, sparsity, activation=activation, optimizer=optimizer, weight_initializer=Xavier()))
 
-
 def make_model(name: str, sparsity, optimizer: Optimizer) -> Sequential:
     if name == 'mlp_cifar10':
         return MLP_CIFAR10(1.0 - sparsity, optimizer)

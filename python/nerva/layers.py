@@ -276,3 +276,15 @@ class Sequential(object):
 
     def info(self):
         self.compiled_model.info('M')
+
+    def import_weights(self, filename: str):
+        self.compiled_model.import_weights(filename)
+
+    def export_weights(self, filename: str):
+        self.compiled_model.export_weights(filename)
+
+    def import_bias(self, filename: str):
+        self.compiled_model.import_bias(filename)
+
+    def export_bias(self, filename: str):
+        self.compiled_model.export_bias(filename)

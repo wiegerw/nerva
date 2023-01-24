@@ -19,7 +19,7 @@ import numpy as np
 import sparselearning
 from sparselearning.core import Masking
 from sparselearning.utils import get_mnist_dataloaders, get_cifar10_dataloaders, get_cifar100_dataloaders
-from sparselearning import train_nerva, train_pytorch
+from sparselearning import train_nerva, train_pytorch, train_both
 from sparselearning.logger import FileLogger
 
 from keras.datasets import cifar10
@@ -137,6 +137,7 @@ def main():
     parser.add_argument('--max-threads', type=int, default=10, help='How many threads to use for data loading.')
     parser.add_argument('--scaled', action='store_true', help='scale the initialization by 1/density')
     parser.add_argument('--nerva', action='store_true', help='use the Nerva library')
+    parser.add_argument('--both', action='store_true', help='compare the execution of the PyTorch and Nerva models')
     sparselearning.core.add_sparse_args(parser)
 
     args = parser.parse_args()
@@ -187,6 +188,9 @@ def main():
             # print('Ttrain', Ttrain.shape)
             # print('Ttest', Ttest.shape)
             train_nerva.train_and_test(i, args, device, Xtrain, Ttrain, Xtest, Ttest, print_and_log)
+        elif args.both:
+            train_loader, valid_loader, test_loader = make_loaders(args, args.data, args.valid_split, args.max_threads)
+            train_both.train_and_test(i, args, device, train_loader, test_loader, print_and_log)
         else:
             train_loader, valid_loader, test_loader = make_loaders(args, args.data, args.valid_split, args.max_threads)
             train_pytorch.train_and_test(i, args, device, train_loader, test_loader, print_and_log)

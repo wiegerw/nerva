@@ -43,3 +43,36 @@ class MLP_CIFAR10(nn.Module):
         x0 = F.relu(self.fc1(x.view(-1, 3 * 32 * 32)))
         x1 = F.relu(self.fc2(x0))
         return F.log_softmax(self.fc3(x1), dim=1)
+
+    def export_weights(self, filename: str):
+        with open(filename, "wb") as f:
+            np.save(f, self.fc1.weight.data.numpy().T)
+            np.save(f, self.fc2.weight.data.numpy().T)
+            np.save(f, self.fc3.weight.data.numpy().T)
+
+    def export_bias(self, filename: str):
+        with open(filename, "wb") as f:
+            np.save(f, self.fc1.bias.data.numpy().T)
+            np.save(f, self.fc2.bias.data.numpy().T)
+            np.save(f, self.fc3.bias.data.numpy().T)
+
+    def info(self):
+        torch.set_printoptions(threshold=10)
+        W1 = self.fc1.weight
+        W2 = self.fc2.weight
+        W3 = self.fc3.weight
+        b1 = self.fc1.bias
+        b2 = self.fc2.bias
+        b3 = self.fc3.bias
+        print(f'W1 = {W1.shape}')
+        print(W1)
+        print(f'b1 = {b1.shape}')
+        print(b1)
+        print(f'W2 = {W2.shape}')
+        print(W2)
+        print(f'b2 = {b2.shape}')
+        print(b2)
+        print(f'W3 = {W3.shape}')
+        print(W3)
+        print(f'b3 = {b3.shape}')
+        print(b3)
