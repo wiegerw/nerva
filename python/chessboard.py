@@ -13,8 +13,9 @@ from nerva.layers import Sequential, Dense, Dropout, Sparse, BatchNormalization
 from nerva.learning_rate import ConstantScheduler
 from nerva.loss import SoftmaxCrossEntropyLoss, SquaredErrorLoss
 from nerva.optimizers import GradientDescent
+from nerva.random import manual_seed
 from nerva.training import minibatch_gradient_descent, minibatch_gradient_descent_python, SGDOptions, compute_accuracy, compute_statistics
-from nerva.utilities import RandomNumberGenerator, set_num_threads, StopWatch
+from nerva.utilities import set_num_threads, StopWatch
 from nerva.weights import Xavier
 from regrow import regrow_weights
 
@@ -51,7 +52,7 @@ def create_model(sparsity: float):
     return model
 
 
-def minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, weights_initializer=Xavier(), rng=RandomNumberGenerator(1234567)):
+def minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, weights_initializer=Xavier()):
     M = model.compiled_model
     N = dataset.Xtrain.shape[1]  # the number of examples
     I = list(range(N))
@@ -90,14 +91,13 @@ def minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate, 
 def train_sparse_model_with_regrow(dataset, sparsity):
     seed = random.randint(0, 999999999)
     print('seed', seed)
-    rng = RandomNumberGenerator(seed)
     loss = SoftmaxCrossEntropyLoss()
     learning_rate_scheduler = ConstantScheduler(0.1)
     input_size = 2
     batch_size = 100
     model = create_model(sparsity)
-    model.compile(input_size, batch_size, rng)
-    minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=batch_size, shuffle=True, statistics=True, zeta=0.1, weights_initializer=Xavier(), rng=rng)
+    model.compile(input_size, batch_size)
+    minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=batch_size, shuffle=True, statistics=True, zeta=0.1, weights_initializer=Xavier())
     print('')
 
 
@@ -115,6 +115,7 @@ def plot_dataset(X, T):
 
 if __name__ == '__main__':
     n = 100000
+    manual_seed(317822)
     Xtrain, Ttrain = make_dataset_chessboard(n)
     Xtest, Ttest = make_dataset_chessboard(n // 5)
     # plot_dataset(Xtrain, Ttrain)

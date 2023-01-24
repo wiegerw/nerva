@@ -14,7 +14,7 @@ from nerva.layers import Sequential, Dense, Dropout, Sparse, BatchNormalization
 from nerva.learning_rate import ConstantScheduler
 from nerva.loss import SoftmaxCrossEntropyLoss
 from nerva.optimizers import GradientDescent, Momentum
-from nerva.utilities import RandomNumberGenerator
+from nerva.random import manual_seed
 from nerva.weights import Xavier
 
 
@@ -69,7 +69,7 @@ def snn_example():
     dataset = load_cifar10()
     loss = SoftmaxCrossEntropyLoss()
     learning_rate_scheduler = ConstantScheduler(0.01)
-    rng = RandomNumberGenerator(1234567)
+    manual_seed(1234567)
     sparsity = 0.5
 
     model = Sequential()
@@ -80,7 +80,7 @@ def snn_example():
     model.add(Dropout(0.3))
     model.add(Dense(10, NoActivation(), GradientDescent(), Xavier()))
 
-    model.compile(input_size=3072, batch_size=100, rng=rng)
+    model.compile(input_size=3072, batch_size=100)
     stochastic_gradient_descent(model, dataset, loss, learning_rate_scheduler,
                                 epochs=10, batch_size=100, shuffle=True)
 
