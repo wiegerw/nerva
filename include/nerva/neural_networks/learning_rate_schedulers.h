@@ -14,6 +14,7 @@
 #include <iostream>
 #include <memory>
 #include <regex>
+#include <utility>
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/utilities/string_utility.h"
 
@@ -70,6 +71,34 @@ struct step_based_scheduler: public learning_rate_scheduler
   scalar operator()(std::size_t i) override
   {
     return eta0 * std::pow(d, std::floor((1.0 + i) / r));
+  }
+};
+
+struct multi_step_lr_scheduler: public learning_rate_scheduler
+{
+  scalar eta0; // the initial value of the learning rate
+  std::vector<int> milestones; // an increasing list of epoch indices
+  scalar gamma; // the multiplicative factor of the decay
+
+  explicit multi_step_lr_scheduler(scalar eta, std::vector<int> milestones_, scalar gamma_)
+   : eta0(eta), milestones(std::move(milestones_)), gamma(gamma_)
+  {}
+
+  scalar operator()(std::size_t i) override
+  {
+    scalar eta = eta0;
+    for (int milestone: milestones)
+    {
+      if (i >= milestone)
+      {
+        eta *= gamma;
+      }
+      else
+      {
+        break;
+      }
+    }
+    return eta;
   }
 };
 

@@ -21,5 +21,9 @@ class StepBasedScheduler(nervalib.step_based_scheduler):
     pass
 
 
+class MultiStepLRScheduler(nervalib.multi_step_lr_scheduler):
+    pass
+
+
 class ExponentialScheduler(nervalib.exponential_scheduler):
     pass

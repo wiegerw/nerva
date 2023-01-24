@@ -10,7 +10,7 @@ from sparselearning.train_pytorch import evaluate
 from nerva.activation import ReLU, NoActivation, AllReLU
 from nerva.dataset import DataSet
 from nerva.layers import Sequential, Dense, Dropout, Sparse, BatchNormalization
-from nerva.learning_rate import ConstantScheduler
+from nerva.learning_rate import MultiStepLRScheduler
 from nerva.loss import SoftmaxCrossEntropyLoss
 from nerva.optimizers import Optimizer, GradientDescent, Momentum, Nesterov
 from nerva.training import minibatch_gradient_descent, minibatch_gradient_descent_python, SGDOptions, compute_accuracy, compute_statistics
@@ -175,7 +175,9 @@ def train_and_test(i, args, device, Xtrain, Ttrain, Xtest, Ttest, log: Logger):
     optimizer = make_optimizer(args.momentum, nesterov=True)
     model = make_model(args.model, sparsity, optimizer)
     model.compile(3072, args.batch_size)
-    lr_scheduler = ConstantScheduler(args.lr)
+    milestones = [int(args.epochs / 2) * args.multiplier, int(args.epochs * 3 / 4) * args.multiplier]
+    print('milestones of the MultiStepLRScheduler:', milestones)
+    lr_scheduler = MultiStepLRScheduler(args.lr, milestones, 0.1)
     log(str(model))
     log('=' * 60)
     log(args.model)
