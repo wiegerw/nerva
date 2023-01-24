@@ -11,6 +11,25 @@ from nerva.optimizers import Optimizer, GradientDescent, Momentum, Nesterov
 from nerva.weights import Xavier
 
 
+def log_test_results(log, n, correct, test_loss):
+    log(f'Test evaluation: Loss: {test_loss / n:.6f}, Accuracy: {correct}/{n} ({100. * correct / float(n):.3f}%)\n')
+
+
+def log_training_results(log, epoch, n, N, k, K, correct, train_loss):
+    log(f'Train Epoch: {epoch} [{n}/{N} ({float(100 * k / K):.0f}%)]\tLoss: {train_loss / n:.6f} Accuracy: {correct}/{n} ({100. * correct / float(n):.3f}%)')
+
+
+def log_model_parameters(log, model, args):
+    log(str(model))
+    log('=' * 60)
+    log(args.model)
+    log('=' * 60)
+    log('Prune mode: {0}'.format(args.prune))
+    log('Growth mode: {0}'.format(args.growth))
+    log('Redistribution mode: {0}'.format(args.redistribution))
+    log('=' * 60)
+
+
 def make_optimizer(momentum=0.0, nesterov=True) -> Optimizer:
     if nesterov:
         return Nesterov(momentum)
@@ -103,10 +122,6 @@ def correct_predictions(Y, T):
     return total_correct
 
 
-def log_test_results(log, n, correct, test_loss):
-    log(f'Test evaluation: Loss: {test_loss / n:.6f}, Accuracy: {correct}/{n} ({100. * correct / float(n):.3f}%)\n')
-
-
 def test_model(model, loss_fn, dataset, batch_size, log: Logger):
     test_loss = 0
     correct = 0
@@ -127,10 +142,6 @@ def test_model(model, loss_fn, dataset, batch_size, log: Logger):
 
     log_test_results(log, n, correct, test_loss)
     return correct / float(n)
-
-
-def log_training_results(log, epoch, n, N, k, K, correct, train_loss):
-    log(f'Train Epoch: {epoch} [{n}/{N} ({float(100 * k / K):.0f}%)]\tLoss: {train_loss / n:.6f} Accuracy: {correct}/{n} ({100. * correct / float(n):.3f}%)')
 
 
 def train_model(model, loss_fn, dataset, lr_scheduler, device, epochs, batch_size, log_interval, log):
@@ -175,18 +186,8 @@ def train_and_test(i, args, device, Xtrain, Ttrain, Xtest, Ttest, log: Logger):
     milestones = [int(args.epochs / 2) * args.multiplier, int(args.epochs * 3 / 4) * args.multiplier]
     print('milestones of the MultiStepLRScheduler:', milestones)
     lr_scheduler = MultiStepLRScheduler(args.lr, milestones, 0.1)
-    log(str(model))
-    log('=' * 60)
-    log(args.model)
-    log('=' * 60)
-    log('Prune mode: {0}'.format(args.prune))
-    log('Growth mode: {0}'.format(args.growth))
-    log('Redistribution mode: {0}'.format(args.redistribution))
-    log('=' * 60)
-    # create output folder
-    output_path = './save/' + str(args.model) + '/' + str(args.data) + '/' + str(args.sparse_init) + '/' + str(args.seed)
-    output_folder = os.path.join(output_path, f'sparsity{1 - args.density}' if args.sparse else 'dense')
-    if not os.path.exists(output_folder): os.makedirs(output_folder)
+    log_model_parameters(log, model, args)
     epochs = args.epochs * args.multiplier
     loss_fn = SoftmaxCrossEntropyLoss()
     train_model(model, loss_fn, dataset, lr_scheduler, device, epochs, args.batch_size, args.log_interval, log)
+    log("\nIteration end: {0}/{1}\n".format(i + 1, args.iters))

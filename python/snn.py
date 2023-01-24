@@ -20,7 +20,7 @@ import sparselearning
 from sparselearning.core import Masking
 from sparselearning.utils import get_mnist_dataloaders, get_cifar10_dataloaders, get_cifar100_dataloaders
 from sparselearning import train_nerva, train_pytorch
-from sparselearning.logger import DefaultLogger
+from sparselearning.logger import FileLogger
 
 from keras.datasets import cifar10
 from keras.utils import np_utils
@@ -140,7 +140,7 @@ def main():
     sparselearning.core.add_sparse_args(parser)
 
     args = parser.parse_args()
-    print_and_log = DefaultLogger(args)
+    print_and_log = FileLogger(args)
     print_and_log(str(args))
 
     use_cuda = not args.no_cuda and torch.cuda.is_available()

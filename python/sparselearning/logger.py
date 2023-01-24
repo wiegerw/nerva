@@ -8,7 +8,7 @@ class Logger(object):
         raise NotImplementedError
 
 
-class DefaultLogger(Logger):
+class FileLogger(Logger):
     def __init__(self, args):
         self.logger = logging.getLogger()
 
@@ -30,3 +30,9 @@ class DefaultLogger(Logger):
     def __call__(self, msg: str):
         print(msg)
         self.logger.info(msg)
+
+
+# only prints to standard output
+class DefaultLogger(Logger):
+    def __call__(self, msg: str):
+        print(msg)

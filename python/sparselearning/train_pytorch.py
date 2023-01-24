@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import os
 import time
 from typing import Tuple, Optional
 
@@ -10,7 +9,7 @@ from torch import nn as nn, optim as optim
 from sparselearning.core import Masking, CosineDecay
 from sparselearning.logger import Logger
 from sparselearning.models import MLP_CIFAR10
-from sparselearning.train_nerva import log_training_results, log_test_results
+from sparselearning.train_nerva import log_training_results, log_test_results, log_model_parameters
 
 
 def test_model(model, loss_fn, device, test_loader, log: Logger):
@@ -23,8 +22,7 @@ def test_model(model, loss_fn, device, test_loader, log: Logger):
             data, target = data.to(device), target.to(device)
             model.t = target
             output = model(data)
-            # test_loss += loss_fn(output, target, reduction='sum').item() # sum up batch loss
-            test_loss += loss_fn(output, target).item()
+            test_loss += loss_fn(output, target).item() * len(data)
             pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
             n += target.shape[0]
@@ -110,24 +108,11 @@ def train_and_test(i, args, device, train_loader, test_loader, log):
     log("\nIteration start: {0}/{1}\n".format(i + 1, args.iters))
     model = make_model(args.model, device)
     optimizer = make_optimizer(args.optimizer, model, args.lr, args.momentum, args.l2, nesterov=True)
-    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
-                                                        milestones=[int(args.epochs / 2) * args.multiplier, int(args.epochs * 3 / 4) * args.multiplier],
-                                                        last_epoch=-1)
+    milestones = [int(args.epochs / 2) * args.multiplier, int(args.epochs * 3 / 4) * args.multiplier]
+    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones, last_epoch=-1)
     mask = make_mask(args, model, optimizer, train_loader)
-    log(model)
-    log('=' * 60)
-    log(args.model)
-    log('=' * 60)
-    log('Prune mode: {0}'.format(args.prune))
-    log('Growth mode: {0}'.format(args.growth))
-    log('Redistribution mode: {0}'.format(args.redistribution))
-    log('=' * 60)
-    # create output folder
-    output_path = './save/' + str(args.model) + '/' + str(args.data) + '/' + str(args.sparse_init) + '/' + str(args.seed)
-    output_folder = os.path.join(output_path, f'sparsity{1 - args.density}' if args.sparse else 'dense')
-    if not os.path.exists(output_folder): os.makedirs(output_folder)
+    log_model_parameters(log, model, args)
     epochs = args.epochs * args.multiplier
     loss_fn = nn.CrossEntropyLoss()
     train_model(model, mask, loss_fn, train_loader, test_loader, lr_scheduler, optimizer, device, epochs, args.batch_size, args.log_interval, log)
-    model.load_state_dict(torch.load(os.path.join(output_folder, 'model_final.pth'))['state_dict'])
     log("\nIteration end: {0}/{1}\n".format(i + 1, args.iters))
