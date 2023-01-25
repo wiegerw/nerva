@@ -299,7 +299,7 @@ struct hyperbolic_tangent_activation
 
 struct softmax
 {
-  eigen::vector operator()(const eigen::vector& x) const
+  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
   {
     // use the log-sum-exp trick to make the computation robust, see also https://en.wikipedia.org/wiki/LogSumExp
     scalar c = x.maxCoeff();
@@ -319,7 +319,7 @@ struct softmax
 
 struct softmax_prime
 {
-  eigen::vector operator()(const eigen::vector& x) const
+  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
   {
     return softmax()(x).unaryExpr([](scalar t) { return t * (scalar(1) - t); });
   }
@@ -352,7 +352,7 @@ struct softmax_activation
 
 struct log_softmax
 {
-  eigen::vector operator()(const eigen::vector& x) const
+  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
   {
     auto c = x.array().maxCoeff();
     auto E = std::log((x.array() - c).exp().sum());
@@ -370,7 +370,7 @@ struct log_softmax
 
 struct log_softmax_prime
 {
-  eigen::vector operator()(const eigen::vector& x) const
+  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
   {
     long K = x.size();
     auto softmax_x = softmax()(x);

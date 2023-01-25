@@ -500,7 +500,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
     {
       auto K = Y.rows();
       auto softmax_Z = softmax()(Z);
-      DZ = DY - (softmax_Z.transpose() * DY).diagonal().colwise().replicate(K);
+      DZ = DY - (softmax_Z.transpose() * DY).diagonal().transpose().colwise().replicate(K);
       DW = DZ * X.transpose();
       Db = DZ.rowwise().sum();
       DX = W.transpose() * DZ;
