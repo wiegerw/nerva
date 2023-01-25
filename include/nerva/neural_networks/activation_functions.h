@@ -315,14 +315,6 @@ struct softmax
     auto E = x_minus_c.array().exp();
     return E.rowwise() / E.colwise().sum();
   }
-
-  eigen::matrix log(const eigen::matrix& X)
-  {
-    auto c = X.colwise().maxCoeff().eval();
-    auto x_minus_c = X.rowwise() - c;
-    auto E = x_minus_c.array().exp();
-    return x_minus_c.array().rowwise() - E.colwise().sum().log();
-  }
 };
 
 struct softmax_prime
@@ -352,10 +344,62 @@ struct softmax_activation
     return softmax_prime()(X);
   }
 
-
   [[nodiscard]] std::string to_string() const
   {
     return "Softmax()";
+  }
+};
+
+struct log_softmax
+{
+  eigen::vector operator()(const eigen::vector& x) const
+  {
+    auto c = x.array().maxCoeff();
+    auto E = std::log((x.array() - c).exp().sum());
+    return x.array() - c - E;
+  }
+
+  eigen::matrix operator()(const eigen::matrix& X) const
+  {
+    auto c = X.colwise().maxCoeff().eval();
+    auto x_minus_c = X.rowwise() - c;
+    auto E = x_minus_c.array().exp();
+    return x_minus_c.array().rowwise() - E.colwise().sum().log();
+  }
+};
+
+struct log_softmax_prime
+{
+  eigen::vector operator()(const eigen::vector& x) const
+  {
+    long K = x.size();
+    auto softmax_x = softmax()(x);
+    return eigen::matrix::Identity(K, K) - x.transpose().colwise().replicate(K);
+  }
+
+  eigen::matrix operator()(const eigen::matrix& X) const
+  {
+    throw std::runtime_error("log_softmax_prime is unsupported for matrices");
+  }
+};
+
+struct log_softmax_activation
+{
+  template <typename Matrix>
+  auto operator()(const Matrix& X) const
+  {
+    return log_softmax()(X);
+  }
+
+  template <typename Matrix>
+  auto prime(const Matrix& X) const
+  {
+    return log_softmax_prime()(X);
+  }
+
+  [[nodiscard]] std::string to_string() const
+  {
+    return "LogSoftmax()";
   }
 };
 

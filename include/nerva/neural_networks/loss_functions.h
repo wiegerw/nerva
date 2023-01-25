@@ -120,7 +120,7 @@ struct softmax_cross_entropy_loss: public loss_function
   template <typename Target>
   scalar operator()(const eigen::matrix& Y, const Target& T) const  // TODO: can the return type become auto?
   {
-    eigen::matrix log_softmax_Y = softmax().log(Y);
+    eigen::matrix log_softmax_Y = log_softmax()(Y);
     return (-T.cwiseProduct(log_softmax_Y).colwise().sum()).sum();
   }
 
@@ -138,7 +138,7 @@ struct softmax_cross_entropy_loss: public loss_function
 
   [[nodiscard]] scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
-    eigen::matrix log_softmax_Y = softmax().log(Y);
+    eigen::matrix log_softmax_Y = log_softmax()(Y);
     return (-T.cwiseProduct(log_softmax_Y).colwise().sum()).sum();
   }
 

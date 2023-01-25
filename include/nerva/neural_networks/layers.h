@@ -448,6 +448,74 @@ struct softmax_layer : public linear_layer<Matrix>
 using dense_softmax_layer = softmax_layer<eigen::matrix>;
 using sparse_softmax_layer = softmax_layer<mkl::sparse_matrix_csr<scalar>>;
 
+template <typename Matrix>
+struct log_softmax_layer : public linear_layer<Matrix>
+{
+  using super = linear_layer<Matrix>;
+  using super::W;
+  using super::DW;
+  using super::b;
+  using super::Db;
+  using super::X;
+  using super::DX;
+  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+
+  eigen::matrix Z;
+  eigen::matrix DZ;
+
+  log_softmax_layer(std::size_t D, std::size_t K, std::size_t Q = 1)
+    : super(D, K, Q), Z(K, Q), DZ(K, Q)
+  {}
+
+  void feedforward(eigen::matrix& result) override
+  {
+    if constexpr (IsSparse)
+    {
+      auto Q = X.cols();
+      mkl::assign_matrix_product(Z, W, X);
+      Z += b.rowwise().replicate(Q);
+      result = log_softmax()(Z);
+    }
+    else
+    {
+      auto Q = X.cols();
+      Z = W * X + b.rowwise().replicate(Q);
+      result = log_softmax()(Z);
+    }
+  }
+
+  // TODO: fix the backpropagate computation
+  void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
+  {
+    if constexpr (IsSparse)
+    {
+      auto K = Y.rows();
+      auto softmax_Z = softmax()(Z);
+      DZ = DY - (softmax_Z.transpose() * DY).diagonal().colwise().replicate(K);
+      mkl::assign_matrix_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
+      Db = DZ.rowwise().sum();
+      mkl::assign_matrix_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
+    }
+    else
+    {
+      auto K = Y.rows();
+      auto softmax_Z = softmax()(Z);
+      DZ = DY - (softmax_Z.transpose() * DY).diagonal().colwise().replicate(K);
+      DW = DZ * X.transpose();
+      Db = DZ.rowwise().sum();
+      DX = W.transpose() * DZ;
+    }
+  }
+
+  [[nodiscard]] std::string name() const override
+  {
+    return "log softmax layer";
+  }
+};
+
+using dense_log_softmax_layer = log_softmax_layer<eigen::matrix>;
+using sparse_log_softmax_layer = log_softmax_layer<mkl::sparse_matrix_csr<scalar>>;
+
 // Sets the optimizer in a layer
 template <typename Matrix>
 void set_optimizer(linear_layer<Matrix>& layer, const std::string& text)

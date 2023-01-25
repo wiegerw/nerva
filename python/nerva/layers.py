@@ -3,7 +3,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from typing import Optional, List, Union, Tuple
-from nerva.activation import Activation, NoActivation, ReLU, AllReLU, Softmax, Sigmoid, HyperbolicTangent, LeakyReLU
+from nerva.activation import Activation, NoActivation, ReLU, AllReLU, Softmax, LogSoftmax, Sigmoid, HyperbolicTangent, LeakyReLU
 from nerva.optimizers import Optimizer, GradientDescent
 from nerva.weights import WeightInitializer, Xavier
 import nervalib
@@ -64,6 +64,9 @@ class Dense(Layer):
                 layer = nervalib.sigmoid_layer(self.input_size, self.units, batch_size)
             elif isinstance(self.activation, Softmax):
                 layer = nervalib.softmax_layer(self.input_size, self.units, batch_size)
+            elif isinstance(self.activation, LogSoftmax):
+                print('warning: the LogSoftmax activation function is experimental')
+                layer = nervalib.log_softmax_layer(self.input_size, self.units, batch_size)
             elif isinstance(self.activation, HyperbolicTangent):
                 layer = nervalib.hyperbolic_tangent_layer(self.input_size, self.units, batch_size)
         else:
@@ -134,6 +137,9 @@ class Sparse(Layer):
                 layer = nervalib.sparse_sigmoid_layer(self.input_size, self.units, batch_size, self.sparsity)
             elif isinstance(self.activation, Softmax):
                 layer = nervalib.sparse_softmax_layer(self.input_size, self.units, batch_size, self.sparsity)
+            elif isinstance(self.activation, LogSoftmax):
+                print('warning: the LogSoftmax activation function is experimental')
+                layer = nervalib.sparse_log_softmax_layer(self.input_size, self.units, batch_size, self.sparsity)
             elif isinstance(self.activation, AllReLU):
                 layer = nervalib.sparse_all_relu_layer(self.activation.alpha, self.input_size, self.units, batch_size, self.sparsity)
             elif isinstance(self.activation, HyperbolicTangent):

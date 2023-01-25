@@ -26,6 +26,11 @@ class Softmax(Activation):
         return 'Softmax()'
 
 
+class LogSoftmax(Activation):
+    def __str__(self):
+        return 'LogSoftmax()'
+
+
 class LeakyReLU(Activation):
     def __init__(self, alpha: float):
         self.alpha = alpha

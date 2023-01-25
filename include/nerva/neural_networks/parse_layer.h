@@ -35,6 +35,10 @@ std::shared_ptr<neural_network_layer> parse_layer(char c, std::size_t D, std::si
     {
       return std::make_shared<dense_sigmoid_layer>(D, K, options.batch_size);
     }
+    else if (c == 'Y')
+    {
+      return std::make_shared<dense_log_softmax_layer>(D, K, options.batch_size);
+    }
     else if (c == 'Z')
     {
       return std::make_shared<dense_softmax_layer>(D, K, options.batch_size);
@@ -54,6 +58,12 @@ std::shared_ptr<neural_network_layer> parse_layer(char c, std::size_t D, std::si
     else if (c == 's')
     {
       auto layer = std::make_shared<sparse_sigmoid_layer>(D, K, options.batch_size);
+      initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
+      return layer;
+    }
+    else if (c == 'y')
+    {
+      auto layer = std::make_shared<sparse_log_softmax_layer>(D, K, options.batch_size);
       initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
       return layer;
     }

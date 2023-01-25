@@ -189,6 +189,10 @@ PYBIND11_MODULE(nervalib, m)
     .def(py::init<std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
 
+  py::class_<dense_log_softmax_layer, dense_linear_layer, std::shared_ptr<dense_log_softmax_layer>>(m, "log_softmax_layer")
+    .def(py::init<std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
+    ;
+
   py::class_<dense_hyperbolic_tangent_layer, dense_linear_layer, std::shared_ptr<dense_hyperbolic_tangent_layer>>(m, "hyperbolic_tangent_layer")
     .def(py::init<std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
@@ -286,7 +290,7 @@ PYBIND11_MODULE(nervalib, m)
                   }))
     ;
 
-  py::class_<sigmoid_layer<mkl::sparse_matrix_csr<scalar>>, sparse_linear_layer, std::shared_ptr<sigmoid_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_sigmoid_layer")
+  py::class_<sparse_sigmoid_layer, sparse_linear_layer, std::shared_ptr<sparse_sigmoid_layer>>(m, "sparse_sigmoid_layer")
     .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity)
                   {
                     auto layer = std::make_shared<sparse_sigmoid_layer>(D, K, batch_size);
@@ -295,10 +299,19 @@ PYBIND11_MODULE(nervalib, m)
                   }))
     ;
 
-  py::class_<softmax_layer<mkl::sparse_matrix_csr<scalar>>, sparse_linear_layer, std::shared_ptr<softmax_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_softmax_layer")
+  py::class_<sparse_softmax_layer, sparse_linear_layer, std::shared_ptr<sparse_softmax_layer>>(m, "sparse_softmax_layer")
     .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity)
                   {
                     auto layer = std::make_shared<sparse_softmax_layer>(D, K, batch_size);
+                    initialize_sparse_weights<scalar>(*layer, sparsity, nerva_rng);
+                    return layer;
+                  }))
+    ;
+
+  py::class_<sparse_log_softmax_layer, sparse_linear_layer, std::shared_ptr<sparse_log_softmax_layer>>(m, "sparse_log_softmax_layer")
+    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity)
+                  {
+                    auto layer = std::make_shared<sparse_log_softmax_layer>(D, K, batch_size);
                     initialize_sparse_weights<scalar>(*layer, sparsity, nerva_rng);
                     return layer;
                   }))
