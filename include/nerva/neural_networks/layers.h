@@ -491,7 +491,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
     {
       auto K = Y.rows();
       auto softmax_Z = softmax()(Z);
-      DZ = DY - (softmax_Z.transpose() * DY).diagonal().colwise().replicate(K);
+      DZ = DY - softmax_Z.cwiseProduct(DY.colwise().sum().colwise().replicate(K));
       mkl::assign_matrix_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
       Db = DZ.rowwise().sum();
       mkl::assign_matrix_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
@@ -500,7 +500,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
     {
       auto K = Y.rows();
       auto softmax_Z = softmax()(Z);
-      DZ = DY - (softmax_Z.transpose() * DY).diagonal().transpose().colwise().replicate(K);
+      DZ = DY - softmax_Z.cwiseProduct(DY.colwise().sum().colwise().replicate(K));
       DW = DZ * X.transpose();
       Db = DZ.rowwise().sum();
       DX = W.transpose() * DZ;
