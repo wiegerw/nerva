@@ -1,8 +1,7 @@
-import os
 import time
 from typing import List, Tuple
 from sparselearning.logger import Logger
-from nerva.activation import ReLU, NoActivation
+from nerva.activation import ReLU, LogSoftmax
 from nerva.dataset import DataSet
 from nerva.layers import Sequential, Dense, Sparse
 from nerva.learning_rate import MultiStepLRScheduler
@@ -93,7 +92,7 @@ class MLP_CIFAR10(Sequential):
         densities = compute_sparse_layer_densities(density, shapes)
         sparsities = [1.0 - x for x in densities]
         layer_sizes = [1024, 512, 10]
-        activations = [ReLU(), ReLU(), NoActivation()]
+        activations = [ReLU(), ReLU(), LogSoftmax()]
 
         for (sparsity, size, activation) in zip(sparsities, layer_sizes, activations):
             if sparsity == 0.0:
@@ -182,9 +181,7 @@ def train_and_test(i, args, device, Xtrain, Ttrain, Xtest, Ttest, log: Logger):
     optimizer = make_optimizer(args.momentum, nesterov=True)
     model = make_model(args.model, sparsity, optimizer)
     model.compile(3072, args.batch_size)
-    # model.info()
     milestones = [int(args.epochs / 2) * args.multiplier, int(args.epochs * 3 / 4) * args.multiplier]
-    print('milestones of the MultiStepLRScheduler:', milestones)
     lr_scheduler = MultiStepLRScheduler(args.lr, milestones, 0.1)
     log_model_parameters(log, model, args)
     epochs = args.epochs * args.multiplier
