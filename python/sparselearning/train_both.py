@@ -1,5 +1,6 @@
 import tempfile
 import time
+import numpy as np
 import torch
 import torch.nn as nn
 from sparselearning import train_pytorch, train_nerva
@@ -10,6 +11,16 @@ import nerva.layers
 import nerva.learning_rate
 import nerva.loss
 from nerva.learning_rate import MultiStepLRScheduler
+
+
+def flatten_numpy(X: np.array):
+    shape = X.shape
+    return X.reshape(shape[0], -1)
+
+
+def flatten_torch(X: torch.Tensor):
+    shape = X.shape
+    return X.reshape(shape[0], -1)
 
 
 # Copies models and weights from model1 to model2
@@ -88,6 +99,10 @@ def train_model(model, mask, loss_fn, train_loader, test_loader, lr_scheduler, o
         lr_scheduler.step()
 
 
+def to_numpy(x: torch.Tensor):
+    return np.asfortranarray(flatten_torch(x).detach().numpy().T)
+
+
 def train_and_test(i, args, device, train_loader, test_loader, dataset, log):
     log("\nIteration start: {0}/{1}\n".format(i + 1, args.iters))
 
@@ -97,6 +112,7 @@ def train_and_test(i, args, device, train_loader, test_loader, dataset, log):
     optimizer1 = train_pytorch.make_optimizer(args.optimizer, model1, args.lr, args.momentum, args.l2, nesterov=True)
     lr_scheduler1 = torch.optim.lr_scheduler.MultiStepLR(optimizer1, milestones, last_epoch=-1)
     mask = train_pytorch.make_mask(args, model1, optimizer1, train_loader)
+    loss_fn1 = nn.CrossEntropyLoss()
     log_model_parameters(log, model1, args)
 
     sparsity = 1.0 - args.density
@@ -109,7 +125,43 @@ def train_and_test(i, args, device, train_loader, test_loader, dataset, log):
     copy_weights_and_biases(model1, model2)
     log_model_parameters(log, model2, args)
     epochs = args.epochs * args.multiplier
-    train_nerva.train_model(model2, loss_fn2, dataset, lr_scheduler2, device, epochs, args.batch_size, args.log_interval, log)
+
+    for batch_idx, (data, target) in enumerate(train_loader):
+        X1, T1 = data.to(device), target.to(device)
+
+        optimizer1.zero_grad()
+        Y1 = model1(X1)
+        loss = loss_fn1(Y1, T1)
+        loss1 = loss.item()
+        print('loss1', loss1)
+        pred = Y1.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
+        correct1 = pred.eq(T1.view_as(pred)).sum().item()
+        print('correct1', correct1)
+        loss.backward()
+        if mask is not None:
+            mask.step()
+        else:
+            optimizer1.step()
+
+        X2 = to_numpy(X1)
+        T2 = to_numpy(torch.nn.functional.one_hot(T1, num_classes = 10).float())
+
+        eta = 0.1
+
+        Y2 = model2.feedforward(X2)
+        print(f'|Y1 - Y2| = {np.linalg.norm(to_numpy(Y1) - Y2)}')
+
+        correct2 = train_nerva.correct_predictions(Y2, T2)
+        print('correct2', correct2)
+        loss2 = loss_fn2.value(Y2, T2)
+        print('loss2', loss2)
+        dY2 = loss_fn2.gradient(Y2, T2) / args.batch_size
+        model2.backpropagate(Y2, dY2)
+        model2.optimize(eta)
+
+        break
+
+    # train_nerva.train_model(model2, loss_fn2, dataset, lr_scheduler2, device, epochs, args.batch_size, args.log_interval, log)
 
     # loss_fn2 = nn.CrossEntropyLoss()
     # train_pytorch.train_model(model1, mask, loss_fn2, train_loader, test_loader, lr_scheduler1, optimizer1, device, epochs, args.batch_size, args.log_interval, log)
