@@ -18,6 +18,43 @@ import nerva.loss
 import nerva.optimizers
 
 
+def flatten_torch(X: torch.Tensor) -> torch.Tensor:
+    shape = X.shape
+    return X.reshape(shape[0], -1)
+
+
+def to_numpy(x: torch.Tensor) -> np.ndarray:
+    return np.asfortranarray(flatten_torch(x).detach().numpy().T)
+
+
+def to_one_hot(x: torch.Tensor) -> np.ndarray:
+    return to_numpy(torch.nn.functional.one_hot(x, num_classes = 10).float())
+
+
+def generate_pytorch_batches(Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size: int):
+    N = Xdata.shape[0]   # N is the number of examples
+    K = N // batch_size  # K is the number of batches
+    for k in range(K):
+        batch = range(k * batch_size, (k + 1) * batch_size)
+        yield Xdata[batch], Tdata[batch]
+
+
+def generate_numpy_batches(Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size: int):
+    N = Xdata.shape[0]   # N is the number of examples
+    K = N // batch_size  # K is the number of batches
+    for k in range(K):
+        batch = range(k * batch_size, (k + 1) * batch_size)
+        yield to_numpy(Xdata[batch]), to_numpy(Tdata[batch])
+
+
+def generate_one_hot_numpy_batches(Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size: int):
+    N = Xdata.shape[0]   # N is the number of examples
+    K = N // batch_size  # K is the number of batches
+    for k in range(K):
+        batch = range(k * batch_size, (k + 1) * batch_size)
+        yield to_numpy(Xdata[batch]), to_one_hot(Tdata[batch])
+
+
 def normalize_cifar_data(X: np.array, mean=None, std=None):
     if not mean:
         mean = X.mean(axis=(0, 1, 2))
@@ -59,13 +96,9 @@ def load_data(show: bool):
 
 
 def compute_accuracy1(M: nn.Module, Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size):
-    N = Xdata.shape[0]   # N is the number of examples
-    K = N // batch_size  # K is the number of batches
+    N = Xdata.shape[0]  # N is the number of examples
     total_correct = 0
-    for k in range(K):
-        batch = range(k * batch_size, (k + 1) * batch_size)
-        X = Xdata[batch]
-        T = Tdata[batch]
+    for X, T in generate_pytorch_batches(Xdata, Tdata, batch_size):
         Y = M(X)
         predicted = Y.argmax(axis=1)  # the predicted classes for the batch
         total_correct += (predicted == T).sum().item()
@@ -74,25 +107,17 @@ def compute_accuracy1(M: nn.Module, Xdata: torch.Tensor, Tdata: torch.Tensor, ba
 
 def compute_loss1(M: nn.Module, loss, Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size):
     N = Xdata.shape[0]   # N is the number of examples
-    K = N // batch_size  # K is the number of batches
     total_loss = 0.0
-    for k in range(K):
-        batch = range(k * batch_size, (k + 1) * batch_size)
-        X = Xdata[batch]
-        T = Tdata[batch]
+    for X, T in generate_pytorch_batches(Xdata, Tdata, batch_size):
         Y = M(X)
         total_loss += loss(Y, T).sum()
     return batch_size * total_loss / N
 
 
 def compute_accuracy2(M: nerva.layers.Sequential, Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size):
-    N = Xdata.shape[0]   # N is the number of examples
-    K = N // batch_size  # K is the number of batches
+    N = Xdata.shape[0]  # N is the number of examples
     total_correct = 0
-    for k in range(K):
-        batch = range(k * batch_size, (k + 1) * batch_size)
-        X = to_numpy(Xdata[batch])
-        T = to_numpy(Tdata[batch])
+    for X, T in generate_numpy_batches(Xdata, Tdata, batch_size):
         Y = M.feedforward(X)
         predicted = Y.argmax(axis=0)  # the predicted classes for the batch
         total_correct += (predicted == T).sum().item()
@@ -100,13 +125,9 @@ def compute_accuracy2(M: nerva.layers.Sequential, Xdata: torch.Tensor, Tdata: to
 
 
 def compute_loss2(M: nerva.layers.Sequential, loss, Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size):
-    N = Xdata.shape[0]   # N is the number of examples
-    K = N // batch_size  # K is the number of batches
+    N = Xdata.shape[0]  # N is the number of examples
     total_loss = 0.0
-    for k in range(K):
-        batch = range(k * batch_size, (k + 1) * batch_size)
-        X = to_numpy(Xdata[batch])
-        T = to_one_hot(Tdata[batch])
+    for X, T in generate_one_hot_numpy_batches(Xdata, Tdata, batch_size):
         Y = M.feedforward(X)
         total_loss += loss.value(Y, T)
     return total_loss / N
@@ -166,27 +187,21 @@ def copy_weights_and_biases(model1: nn.Module, model2: nerva.layers.Sequential):
 def pp(name: str, x: Union[torch.Tensor, np.ndarray]):
     if isinstance(x, np.ndarray):
         x = torch.Tensor(x.T)
-    print(f'{name} ({x.shape[0]}x{x.shape[0]})\n{x.data}')
+    if len(x.shape) == 1:
+        print(f'{name} ({x.shape[0]})\n{x.data}')
+    else:
+        print(f'{name} ({x.shape[0]}x{x.shape[1]})\n{x.data}')
 
 
 def train_pytorch(M, Xtrain, Ttrain, Xtest, Ttest, optimizer, criterion, epochs, batch_size, show: bool):
     print('Training...')
     N = Xtrain.shape[0]
-    K = N // batch_size
-    for epoch in range(epochs):  # loop over the dataset multiple times
+    for epoch in range(epochs):
         start = timer()
-        for k in range(K):
-            batch = range(k*batch_size, (k+1)*batch_size)
-            X = Xtrain[batch]
-            T = Ttrain[batch]
-
-            # zero the parameter gradients
+        for k, (X, T) in enumerate(generate_pytorch_batches(Xtrain, Ttrain, batch_size)):
             optimizer.zero_grad()
-
-            # forward + backward + optimize
             Y = M(X)
             Y.retain_grad()
-
             loss = criterion(Y, T)
             loss.backward()
 
@@ -207,29 +222,12 @@ def train_pytorch(M, Xtrain, Ttrain, Xtest, Ttest, optimizer, criterion, epochs,
              )
 
 
-def flatten_torch(X: torch.Tensor) -> torch.Tensor:
-    shape = X.shape
-    return X.reshape(shape[0], -1)
-
-
-def to_numpy(x: torch.Tensor) -> np.ndarray:
-    return np.asfortranarray(flatten_torch(x).detach().numpy().T)
-
-
-def to_one_hot(x: torch.Tensor) -> np.ndarray:
-    return to_numpy(torch.nn.functional.one_hot(x, num_classes = 10).float())
-
-
 def train_nerva(M, Xtrain, Ttrain, Xtest, Ttest, criterion, epochs, batch_size, lr, show: bool):
     print('Training...')
     N = Xtrain.shape[0]
-    K = N // batch_size
     for epoch in range(epochs):  # loop over the dataset multiple times
         start = timer()
-        for k in range(K):
-            batch = range(k*batch_size, (k+1)*batch_size)
-            X = to_numpy(Xtrain[batch])
-            T = to_one_hot(Ttrain[batch])
+        for k, (X, T) in enumerate(generate_one_hot_numpy_batches(Xtrain, Ttrain, batch_size)):
             Y = M.feedforward(X)
             DY = criterion.gradient(Y, T) / batch_size
             M.backpropagate(Y, DY)

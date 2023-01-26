@@ -1,7 +1,7 @@
 import time
 from typing import List, Tuple
 from sparselearning.logger import Logger
-from nerva.activation import ReLU, LogSoftmax
+from nerva.activation import ReLU, NoActivation
 from nerva.dataset import DataSet
 from nerva.layers import Sequential, Dense, Sparse
 from nerva.learning_rate import MultiStepLRScheduler
@@ -92,7 +92,7 @@ class MLP_CIFAR10(Sequential):
         densities = compute_sparse_layer_densities(density, shapes)
         sparsities = [1.0 - x for x in densities]
         layer_sizes = [1024, 512, 10]
-        activations = [ReLU(), ReLU(), LogSoftmax()]
+        activations = [ReLU(), ReLU(), NoActivation()]
 
         for (sparsity, size, activation) in zip(sparsities, layer_sizes, activations):
             if sparsity == 0.0:
