@@ -23,22 +23,25 @@ def flatten_torch(x: torch.Tensor) -> torch.Tensor:
     shape = x.shape
     return x.reshape(shape[0], -1)
 
+
 def flatten_numpy(x: np.ndarray) -> np.ndarray:
     shape = x.shape
     return x.reshape(shape[0], -1)
 
+
 def to_numpy(x: torch.Tensor) -> np.ndarray:
-    return np.asfortranarray(flatten_torch(x).detach().numpy().T)
+    return np.asfortranarray(x.detach().numpy().T)
 
 
 def to_one_hot_torch(x: torch.Tensor) -> np.ndarray:
     return to_numpy(torch.nn.functional.one_hot(x, num_classes = 10).float())
 
+
 def to_one_hot_numpy(x: np.ndarray, n_classes: int):
     return flatten_numpy(np.asfortranarray(np.eye(n_classes)[x].T))
 
 
-def create_cifar10_dataloaders(batch_size, test_batch_size, datadir='_dataset'):
+def create_cifar10_dataloaders(batch_size, test_batch_size, datadir='./data'):
     """Creates augmented train and test data loaders."""
 
     normalize = transforms.Normalize((0.4914, 0.4822, 0.4465),
@@ -52,11 +55,13 @@ def create_cifar10_dataloaders(batch_size, test_batch_size, datadir='_dataset'):
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         normalize,
+        transforms.Lambda(lambda x: torch.flatten(x)),
     ])
 
     test_transform = transforms.Compose([
         transforms.ToTensor(),
-        normalize
+        normalize,
+        transforms.Lambda(lambda x: torch.flatten(x)),
     ])
 
     train_dataset = datasets.CIFAR10(datadir, True, train_transform, download=True)
@@ -79,28 +84,22 @@ def create_cifar10_dataloaders(batch_size, test_batch_size, datadir='_dataset'):
     return train_loader, test_loader
 
 
-def generate_pytorch_batches(Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size: int):
-    N = Xdata.shape[0]   # N is the number of examples
-    K = N // batch_size  # K is the number of batches
-    for k in range(K):
-        batch = range(k * batch_size, (k + 1) * batch_size)
-        yield Xdata[batch], Tdata[batch]
+class TorchDataLoader(object):
+    def __init__(self, Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size: int):
+        self.Xdata = Xdata
+        self.Tdata = Tdata
+        self.batch_size = batch_size
+        self.dataset = Xdata  # for conformance to the DataLoader interface
+    def __iter__(self):
+        N = self.Xdata.shape[0]  # N is the number of examples
+        K = N // self.batch_size  # K is the number of batches
+        for k in range(K):
+            batch = range(k * self.batch_size, (k + 1) * self.batch_size)
+            yield self.Xdata[batch], self.Tdata[batch]
 
-
-def generate_numpy_batches(Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size: int):
-    N = Xdata.shape[0]   # N is the number of examples
-    K = N // batch_size  # K is the number of batches
-    for k in range(K):
-        batch = range(k * batch_size, (k + 1) * batch_size)
-        yield to_numpy(Xdata[batch]), to_numpy(Tdata[batch])
-
-
-def generate_one_hot_numpy_batches(Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size: int):
-    N = Xdata.shape[0]   # N is the number of examples
-    K = N // batch_size  # K is the number of batches
-    for k in range(K):
-        batch = range(k * batch_size, (k + 1) * batch_size)
-        yield to_numpy(Xdata[batch]), to_one_hot_torch(Tdata[batch])
+    # returns the number of batches
+    def __len__(self):
+        return self.Xdata.shape[0] // self.batch_size
 
 
 def normalize_cifar_data(X: np.array, mean=None, std=None):
@@ -136,39 +135,43 @@ def load_cifar10_data(datadir):
     return Xtrain, Ttrain, Xtest, Ttest
 
 
-def compute_accuracy1(M: nn.Module, Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size):
-    N = Xdata.shape[0]  # N is the number of examples
+def compute_accuracy1(M: nn.Module, data_loader):
+    N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
-    for X, T in generate_pytorch_batches(Xdata, Tdata, batch_size):
+    for X, T in data_loader:
         Y = M(X)
         predicted = Y.argmax(axis=1)  # the predicted classes for the batch
         total_correct += (predicted == T).sum().item()
     return total_correct / N
 
 
-def compute_loss1(M: nn.Module, loss, Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size):
-    N = Xdata.shape[0]   # N is the number of examples
+def compute_loss1(M: nn.Module, loss, data_loader):
+    N = len(data_loader.dataset)  # N is the number of examples
+    batch_size = N // len(data_loader)
     total_loss = 0.0
-    for X, T in generate_pytorch_batches(Xdata, Tdata, batch_size):
+    for X, T in data_loader:
         Y = M(X)
         total_loss += loss(Y, T).sum()
     return batch_size * total_loss / N
 
 
-def compute_accuracy2(M: nerva.layers.Sequential, Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size):
-    N = Xdata.shape[0]  # N is the number of examples
+def compute_accuracy2(M: nerva.layers.Sequential, data_loader):
+    N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
-    for X, T in generate_numpy_batches(Xdata, Tdata, batch_size):
+    for X, T in data_loader:
+        X = to_numpy(X)
+        T = to_numpy(T)
         Y = M.feedforward(X)
         predicted = Y.argmax(axis=0)  # the predicted classes for the batch
         total_correct += (predicted == T).sum().item()
     return total_correct / N
 
 
-def compute_loss2(M: nerva.layers.Sequential, loss, Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size):
-    N = Xdata.shape[0]  # N is the number of examples
+def compute_loss2(M: nerva.layers.Sequential, loss, data_loader):
+    N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
-    for X, T in generate_numpy_batches(Xdata, Tdata, batch_size):
+    for X, T in data_loader:
+        X = to_numpy(X)
         T = to_one_hot_numpy(T, 10)
         Y = M.feedforward(X)
         total_loss += loss.value(Y, T)
@@ -235,11 +238,11 @@ def pp(name: str, x: Union[torch.Tensor, np.ndarray]):
         print(f'{name} ({x.shape[0]}x{x.shape[1]})\n{x.data}')
 
 
-def train_pytorch(M, Xtrain, Ttrain, Xtest, Ttest, optimizer, criterion, epochs, batch_size, show: bool):
+def train_pytorch(M, train_loader, test_loader, optimizer, criterion, epochs, show: bool):
     print('Training...')
     for epoch in range(epochs):
         start = timer()
-        for k, (X, T) in enumerate(generate_pytorch_batches(Xtrain, Ttrain, batch_size)):
+        for k, (X, T) in enumerate(train_loader):
             optimizer.zero_grad()
             Y = M(X)
             Y.retain_grad()
@@ -256,18 +259,19 @@ def train_pytorch(M, Xtrain, Ttrain, Xtest, Ttest, optimizer, criterion, epochs,
             elapsed = timer() - start
 
         print(f'epoch {epoch + 1:3}  '
-              f'loss: {compute_loss1(M, criterion, Xtrain, Ttrain, batch_size):.3f}  '
-              f'train accuracy: {compute_accuracy1(M, Xtrain, Ttrain, batch_size):.3f}  '
-              f'test accuracy: {compute_accuracy1(M, Xtest, Ttest, batch_size):.3f}  '
+              f'loss: {compute_loss1(M, criterion, train_loader):.3f}  '
+              f'train accuracy: {compute_accuracy1(M, train_loader):.3f}  '
+              f'test accuracy: {compute_accuracy1(M, test_loader):.3f}  '
               f'time: {elapsed:.3f}'
              )
 
 
-def train_nerva(M, Xtrain, Ttrain, Xtest, Ttest, criterion, epochs, batch_size, lr, show: bool):
+def train_nerva(M, train_loader, test_loader, criterion, epochs, batch_size, lr, show: bool):
     print('Training...')
     for epoch in range(epochs):  # loop over the dataset multiple times
         start = timer()
-        for k, (X, T) in enumerate(generate_numpy_batches(Xtrain, Ttrain, batch_size)):
+        for k, (X, T) in enumerate(train_loader):
+            X = to_numpy(X)
             T = to_one_hot_numpy(T, 10)
             Y = M.feedforward(X)
             DY = criterion.gradient(Y, T) / batch_size
@@ -283,9 +287,9 @@ def train_nerva(M, Xtrain, Ttrain, Xtest, Ttest, criterion, epochs, batch_size, 
             elapsed = timer() - start
 
         print(f'epoch {epoch + 1:3}  '
-              f'loss: {compute_loss2(M, criterion, Xtrain, Ttrain, batch_size):.3f}  '
-              f'train accuracy: {compute_accuracy2(M, Xtrain, Ttrain, batch_size):.3f}  '
-              f'test accuracy: {compute_accuracy2(M, Xtest, Ttest, batch_size):.3f}  '
+              f'loss: {compute_loss2(M, criterion, train_loader):.3f}  '
+              f'train accuracy: {compute_accuracy2(M, train_loader):.3f}  '
+              f'test accuracy: {compute_accuracy2(M, test_loader):.3f}  '
               f'time: {elapsed:.3f}'
              )
 
@@ -312,13 +316,19 @@ def main():
     cmdline_parser.add_argument('--momentum', type=float, default=0.9, help='the momentum value (default: off)')
     cmdline_parser.add_argument("--nesterov", help="apply nesterov", action="store_true")
     cmdline_parser.add_argument('--datadir', type=str, default='./data', help='the data directory (default: ./data)')
+    cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
     args = cmdline_parser.parse_args()
 
     if args.seed:
         torch.manual_seed(args.seed)
 
     torch.set_printoptions(precision=args.precision, edgeitems=args.edgeitems, threshold=5)
-    Xtrain, Ttrain, Xtest, Ttest = load_cifar10_data(args.datadir)
+    if args.augmented:
+        train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
+    else:
+        Xtrain, Ttrain, Xtest, Ttest = load_cifar10_data(args.datadir)
+        train_loader = TorchDataLoader(Xtrain, Ttrain, args.batch_size)
+        test_loader = TorchDataLoader(Xtest, Ttest, args.batch_size)
     sizes = [3072, 128, 64, 10]
 
     # create PyTorch model
@@ -337,12 +347,12 @@ def main():
     print(loss2)
 
     if args.run != 'nerva':
-        train_pytorch(M1, Xtrain, Ttrain, Xtest, Ttest, optimizer1, loss1, args.epochs, args.batch_size, args.show)
-        print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy1(M1, Xtest, Ttest, args.batch_size):.3f} %')
+        train_pytorch(M1, train_loader, test_loader, optimizer1, loss1, args.epochs, args.show)
+        print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy1(M1, test_loader):.3f} %')
 
     if args.run != 'pytorch':
-        train_nerva(M2, Xtrain, Ttrain, Xtest, Ttest, loss2, args.epochs, args.batch_size, args.learning_rate, args.show)
-        print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy2(M2, Xtest, Ttest, args.batch_size):.3f} %')
+        train_nerva(M2, train_loader, test_loader, loss2, args.epochs, args.batch_size, args.learning_rate, args.show)
+        print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy2(M2, test_loader):.3f} %')
 
 
 if __name__ == '__main__':
