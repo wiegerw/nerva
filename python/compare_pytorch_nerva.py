@@ -10,6 +10,7 @@ import torchvision
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from torchvision import datasets, transforms
 import numpy as np
 import nerva.dataset
 import nerva.layers
@@ -29,6 +30,47 @@ def to_numpy(x: torch.Tensor) -> np.ndarray:
 
 def to_one_hot(x: torch.Tensor) -> np.ndarray:
     return to_numpy(torch.nn.functional.one_hot(x, num_classes = 10).float())
+
+
+def create_cifar10_dataloaders(batch_size, test_batch_size, datadir='_dataset'):
+    """Creates augmented train and test data loaders."""
+
+    normalize = transforms.Normalize((0.4914, 0.4822, 0.4465),
+                                     (0.2023, 0.1994, 0.2010))
+
+    train_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Lambda(lambda x: F.pad(x.unsqueeze(0), (4, 4, 4, 4), mode='reflect').squeeze()),
+        transforms.ToPILImage(),
+        transforms.RandomCrop(32),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        normalize,
+    ])
+
+    test_transform = transforms.Compose([
+        transforms.ToTensor(),
+        normalize
+    ])
+
+    train_dataset = datasets.CIFAR10(datadir, True, train_transform, download=True)
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
+        batch_size,
+        num_workers=8,
+        pin_memory=True, shuffle=True)
+
+    print('Train loader length', len(train_loader))
+
+    test_dataset = datasets.CIFAR10(datadir, False, test_transform, download=False)
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset,
+        test_batch_size,
+        shuffle=False,
+        num_workers=1,
+        pin_memory=True)
+
+    return train_loader, test_loader
 
 
 def generate_pytorch_batches(Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size: int):
@@ -68,7 +110,7 @@ def flatten_cifar_data(X: np.array):
     return X.reshape(shape[0], -1)
 
 
-def load_data(show: bool):
+def load_cifar10_data(show: bool):
     if not os.path.exists("./data"):
         os.makedirs("./data")
 
@@ -276,21 +318,23 @@ def main():
         torch.manual_seed(args.seed)
 
     torch.set_printoptions(precision=args.precision, edgeitems=args.edgeitems, threshold=5)
-    Xtrain, Ttrain, Xtest, Ttest = load_data(args.show)
+    Xtrain, Ttrain, Xtest, Ttest = load_cifar10_data(args.show)
     sizes = [3072, 128, 64, 10]
 
     # create PyTorch model
     M1 = MLP1(sizes)
-    print(M1)
     loss1 = nn.CrossEntropyLoss()
     optimizer1 = optim.SGD(M1.parameters(), lr=args.learning_rate, momentum=args.momentum, nesterov=args.nesterov)
+    print(M1)
+    print(loss1)
 
     # create Nerva model
     optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
     M2 = MLP2(sizes, optimizer2, args.batch_size)
-    print(M2)
     loss2 = nerva.loss.SoftmaxCrossEntropyLoss()
     copy_weights_and_biases(M1, M2)
+    print(M2)
+    print(loss2)
 
     if args.run != 'nerva':
         train_pytorch(M1, Xtrain, Ttrain, Xtest, Ttest, optimizer1, loss1, args.epochs, args.batch_size, args.show)
