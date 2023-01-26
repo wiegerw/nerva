@@ -297,14 +297,14 @@ class Masking(object):
     def step(self):
         self.optimizer.step()
         self.apply_mask()
-        self.prune_rate_decay.step()
-        self.prune_rate = self.prune_rate_decay.get_dr()
-        self.steps += 1
-
-        if self.prune_interval and self.steps % self.prune_interval == 0:
-            self.truncate_weights()
-            _, _ = self.fired_masks_update()
-            self.print_nonzero_counts()
+        if self.prune_interval:
+            self.prune_rate_decay.step()
+            self.prune_rate = self.prune_rate_decay.get_dr()
+            self.steps += 1
+            if self.steps % self.prune_interval == 0:
+                self.truncate_weights()
+                _, _ = self.fired_masks_update()
+                self.print_nonzero_counts()
 
     def add_module(self, module, density, sparse_init='ER'):
         self.modules.append(module)

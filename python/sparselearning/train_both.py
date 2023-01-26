@@ -138,6 +138,7 @@ def train_and_test(i, args, device, train_loader, test_loader, dataset, log):
         correct1 = pred.eq(T1.view_as(pred)).sum().item()
         loss.backward()
         DY1 = Y1.grad.detach()
+        eta = optimizer1.param_groups[0]["lr"]
         if mask is not None:
             mask.step()
         else:
@@ -145,7 +146,6 @@ def train_and_test(i, args, device, train_loader, test_loader, dataset, log):
         X2 = to_numpy(X1)
         T2 = to_numpy(torch.nn.functional.one_hot(T1, num_classes = 10).float())
 
-        eta = 0.1
         Y2 = model2.feedforward(X2)
         correct2 = train_nerva.correct_predictions(Y2, T2)
         loss2 = loss_fn2.value(Y2, T2) / args.batch_size

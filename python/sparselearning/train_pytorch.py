@@ -94,7 +94,7 @@ def make_mask(args,
              ) -> Optional[Masking]:
     mask = None
     if args.sparse:
-        prune_interval = args.update_frequency if not args.fix else 0
+        prune_interval = 0  # disable pruning
         decay = CosineDecay(args.prune_rate, len(train_loader) * (args.epochs * args.multiplier))
         mask = Masking(optimizer, prune_rate=args.prune_rate, prune_mode=args.prune, prune_rate_decay=decay,
                        growth_mode=args.growth,
