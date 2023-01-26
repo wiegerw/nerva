@@ -19,17 +19,23 @@ import nerva.loss
 import nerva.optimizers
 
 
-def flatten_torch(X: torch.Tensor) -> torch.Tensor:
-    shape = X.shape
-    return X.reshape(shape[0], -1)
+def flatten_torch(x: torch.Tensor) -> torch.Tensor:
+    shape = x.shape
+    return x.reshape(shape[0], -1)
 
+def flatten_numpy(x: np.ndarray) -> np.ndarray:
+    shape = x.shape
+    return x.reshape(shape[0], -1)
 
 def to_numpy(x: torch.Tensor) -> np.ndarray:
     return np.asfortranarray(flatten_torch(x).detach().numpy().T)
 
 
-def to_one_hot(x: torch.Tensor) -> np.ndarray:
+def to_one_hot_torch(x: torch.Tensor) -> np.ndarray:
     return to_numpy(torch.nn.functional.one_hot(x, num_classes = 10).float())
+
+def to_one_hot_numpy(x: np.ndarray, n_classes: int):
+    return flatten_numpy(np.asfortranarray(np.eye(n_classes)[x].T))
 
 
 def create_cifar10_dataloaders(batch_size, test_batch_size, datadir='_dataset'):
@@ -94,7 +100,7 @@ def generate_one_hot_numpy_batches(Xdata: torch.Tensor, Tdata: torch.Tensor, bat
     K = N // batch_size  # K is the number of batches
     for k in range(K):
         batch = range(k * batch_size, (k + 1) * batch_size)
-        yield to_numpy(Xdata[batch]), to_one_hot(Tdata[batch])
+        yield to_numpy(Xdata[batch]), to_one_hot_torch(Tdata[batch])
 
 
 def normalize_cifar_data(X: np.array, mean=None, std=None):
@@ -110,24 +116,17 @@ def flatten_cifar_data(X: np.array):
     return X.reshape(shape[0], -1)
 
 
-def load_cifar10_data(show: bool):
-    if not os.path.exists("./data"):
-        os.makedirs("./data")
+def load_cifar10_data(datadir):
+    if not os.path.exists(datadir):
+        os.makedirs(datadir)
 
-    if not os.path.exists("./models"):
-        os.makedirs("./models")
+    trainset = torchvision.datasets.CIFAR10(root=datadir, train=True, download=True)
+    testset = torchvision.datasets.CIFAR10(root=datadir, train=False, download=True)
 
-    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True)
-    testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True)
-
-    if show:
-        print('Xtrain=\n', trainset.data.reshape(trainset.data.shape[0], -1))
     Xtrain = normalize_cifar_data(trainset.data / 255, mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     Xtrain = flatten_cifar_data(Xtrain)
     Xtrain = torch.Tensor(Xtrain)
     Ttrain = torch.LongTensor(trainset.targets)
-    if show:
-        print('Xtrain=\n', Xtrain)
 
     Xtest = normalize_cifar_data(testset.data / 255)
     Xtest = flatten_cifar_data(Xtest)
@@ -169,7 +168,8 @@ def compute_accuracy2(M: nerva.layers.Sequential, Xdata: torch.Tensor, Tdata: to
 def compute_loss2(M: nerva.layers.Sequential, loss, Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size):
     N = Xdata.shape[0]  # N is the number of examples
     total_loss = 0.0
-    for X, T in generate_one_hot_numpy_batches(Xdata, Tdata, batch_size):
+    for X, T in generate_numpy_batches(Xdata, Tdata, batch_size):
+        T = to_one_hot_numpy(T, 10)
         Y = M.feedforward(X)
         total_loss += loss.value(Y, T)
     return total_loss / N
@@ -237,7 +237,6 @@ def pp(name: str, x: Union[torch.Tensor, np.ndarray]):
 
 def train_pytorch(M, Xtrain, Ttrain, Xtest, Ttest, optimizer, criterion, epochs, batch_size, show: bool):
     print('Training...')
-    N = Xtrain.shape[0]
     for epoch in range(epochs):
         start = timer()
         for k, (X, T) in enumerate(generate_pytorch_batches(Xtrain, Ttrain, batch_size)):
@@ -266,10 +265,10 @@ def train_pytorch(M, Xtrain, Ttrain, Xtest, Ttest, optimizer, criterion, epochs,
 
 def train_nerva(M, Xtrain, Ttrain, Xtest, Ttest, criterion, epochs, batch_size, lr, show: bool):
     print('Training...')
-    N = Xtrain.shape[0]
     for epoch in range(epochs):  # loop over the dataset multiple times
         start = timer()
-        for k, (X, T) in enumerate(generate_one_hot_numpy_batches(Xtrain, Ttrain, batch_size)):
+        for k, (X, T) in enumerate(generate_numpy_batches(Xtrain, Ttrain, batch_size)):
+            T = to_one_hot_numpy(T, 10)
             Y = M.feedforward(X)
             DY = criterion.gradient(Y, T) / batch_size
             M.backpropagate(Y, DY)
@@ -310,15 +309,16 @@ def main():
     cmdline_parser.add_argument("--epochs", help="The number of epochs", type=int, default=100)
     cmdline_parser.add_argument("--learning-rate", help="The learning rate", type=float, default=0.001)
     cmdline_parser.add_argument("--run", help="The frameworks to run (both, nerva, pytorch)", type=str, default='both')
-    cmdline_parser.add_argument('--momentum', type=float, default=0.9, help='the momentum value (default off)')
+    cmdline_parser.add_argument('--momentum', type=float, default=0.9, help='the momentum value (default: off)')
     cmdline_parser.add_argument("--nesterov", help="apply nesterov", action="store_true")
+    cmdline_parser.add_argument('--datadir', type=str, default='./data', help='the data directory (default: ./data)')
     args = cmdline_parser.parse_args()
 
     if args.seed:
         torch.manual_seed(args.seed)
 
     torch.set_printoptions(precision=args.precision, edgeitems=args.edgeitems, threshold=5)
-    Xtrain, Ttrain, Xtest, Ttest = load_cifar10_data(args.show)
+    Xtrain, Ttrain, Xtest, Ttest = load_cifar10_data(args.datadir)
     sizes = [3072, 128, 64, 10]
 
     # create PyTorch model
