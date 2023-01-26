@@ -484,7 +484,6 @@ struct log_softmax_layer : public linear_layer<Matrix>
     }
   }
 
-  // TODO: fix the backpropagate computation
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
     if constexpr (IsSparse)

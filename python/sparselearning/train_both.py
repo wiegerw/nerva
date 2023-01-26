@@ -34,8 +34,8 @@ def copy_weights_and_biases(model1: nn.Module, model2: nerva.layers.Sequential):
     model2.import_weights(filename1)
     model1.export_bias(filename2)
     model2.import_bias(filename2)
-    model1.info()
-    model2.info()
+    #model1.info()
+    #model2.info()
 
 
 def test_model(model, loss_fn, device, test_loader, log: Logger):
@@ -131,35 +131,34 @@ def train_and_test(i, args, device, train_loader, test_loader, dataset, log):
 
         optimizer1.zero_grad()
         Y1 = model1(X1)
+        Y1.retain_grad()
         loss = loss_fn1(Y1, T1)
         loss1 = loss.item()
-        print('loss1', loss1)
         pred = Y1.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
         correct1 = pred.eq(T1.view_as(pred)).sum().item()
-        print('correct1', correct1)
         loss.backward()
+        DY1 = Y1.grad.detach()
         if mask is not None:
             mask.step()
         else:
             optimizer1.step()
-
         X2 = to_numpy(X1)
         T2 = to_numpy(torch.nn.functional.one_hot(T1, num_classes = 10).float())
 
         eta = 0.1
-
         Y2 = model2.feedforward(X2)
-        print(f'|Y1 - Y2| = {np.linalg.norm(to_numpy(Y1) - Y2)}')
-
         correct2 = train_nerva.correct_predictions(Y2, T2)
-        print('correct2', correct2)
-        loss2 = loss_fn2.value(Y2, T2)
-        print('loss2', loss2)
-        dY2 = loss_fn2.gradient(Y2, T2) / args.batch_size
-        model2.backpropagate(Y2, dY2)
+        loss2 = loss_fn2.value(Y2, T2) / args.batch_size
+        DY2 = loss_fn2.gradient(Y2, T2) / args.batch_size
+        model2.backpropagate(Y2, DY2)
         model2.optimize(eta)
 
-        break
+        print('correct1', correct1)
+        print('correct2', correct2)
+        print('loss1', loss1)
+        print('loss2', loss2)
+        print(f'|Y1 - Y2| = {np.linalg.norm(to_numpy(Y1) - Y2)}')
+        print(f'|DY1 - DY2| = {np.linalg.norm(to_numpy(DY1) - DY2)}')
 
     # train_nerva.train_model(model2, loss_fn2, dataset, lr_scheduler2, device, epochs, args.batch_size, args.log_interval, log)
 
