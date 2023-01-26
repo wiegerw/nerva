@@ -18,19 +18,6 @@ import nerva.loss
 import nerva.optimizers
 
 
-def print_tensor(filename: str, x: Union[torch.Tensor, np.array]) -> None:
-    import functools
-    import operator
-    n = functools.reduce(operator.mul, x.shape)
-    shape = ' '.join(map(str, x.shape))
-    values = x.reshape([n]).tolist()
-    with open(filename, 'w') as file:
-        file.write(f'{shape} # ')  ## use '#' as a delimiter
-        for value in values:
-            file.write(' ')
-            file.write(str(value))
-
-
 def normalize_cifar_data(X: np.array, mean=None, std=None):
     if not mean:
         mean = X.mean(axis=(0, 1, 2))
@@ -71,35 +58,35 @@ def load_data(show: bool):
     return Xtrain, Ttrain, Xtest, Ttest
 
 
-def compute_accuracy1(M: nn.Module, X, T, batch_size):
-    _, N = X.shape  # N is the number of examples
+def compute_accuracy1(M: nn.Module, Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size):
+    N = Xdata.shape[0]   # N is the number of examples
     K = N // batch_size  # K is the number of batches
     total_correct = 0
     for k in range(K):
         batch = range(k * batch_size, (k + 1) * batch_size)
-        Xbatch = X[batch]
-        Tbatch = T[batch]
-        Ybatch = M(Xbatch)
-        predicted = Ybatch.argmax(axis=1)  # the predicted classes for the batch
-        total_correct += (predicted == Tbatch).sum().item()
+        X = Xdata[batch]
+        T = Tdata[batch]
+        Y = M(X)
+        predicted = Y.argmax(axis=1)  # the predicted classes for the batch
+        total_correct += (predicted == T).sum().item()
     return total_correct / N
 
 
-def compute_loss1(M: nn.Module, loss, X, T, batch_size):
-    _, N = X.shape       # N is the number of examples
+def compute_loss1(M: nn.Module, loss, Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size):
+    N = Xdata.shape[0]   # N is the number of examples
     K = N // batch_size  # K is the number of batches
     total_loss = 0.0
     for k in range(K):
         batch = range(k * batch_size, (k + 1) * batch_size)
-        Xbatch = X[batch]
-        Tbatch = T[batch]
-        Ybatch = M(Xbatch)
-        total_loss += loss(Ybatch, Tbatch).sum()
+        X = Xdata[batch]
+        T = Tdata[batch]
+        Y = M(X)
+        total_loss += loss(Y, T).sum()
     return batch_size * total_loss / N
 
 
 def compute_accuracy2(M: nerva.layers.Sequential, Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size):
-    N = Xdata.shape[0]  # N is the number of examples
+    N = Xdata.shape[0]   # N is the number of examples
     K = N // batch_size  # K is the number of batches
     total_correct = 0
     for k in range(K):
@@ -112,16 +99,16 @@ def compute_accuracy2(M: nerva.layers.Sequential, Xdata: torch.Tensor, Tdata: to
     return total_correct / N
 
 
-def compute_loss2(M: nerva.layers.Sequential, loss, X: torch.Tensor, T: torch.Tensor, batch_size):
-    _, N = X.shape       # N is the number of examples
+def compute_loss2(M: nerva.layers.Sequential, loss, Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size):
+    N = Xdata.shape[0]   # N is the number of examples
     K = N // batch_size  # K is the number of batches
     total_loss = 0.0
     for k in range(K):
         batch = range(k * batch_size, (k + 1) * batch_size)
-        Xbatch = to_numpy(X[batch])
-        Tbatch = to_one_hot(T[batch])
-        Ybatch = M.feedforward(Xbatch)
-        total_loss += loss.value(Ybatch, Tbatch)
+        X = to_numpy(Xdata[batch])
+        T = to_one_hot(Tdata[batch])
+        Y = M.feedforward(X)
+        total_loss += loss.value(Y, T)
     return total_loss / N
 
 
@@ -176,6 +163,12 @@ def copy_weights_and_biases(model1: nn.Module, model2: nerva.layers.Sequential):
     model2.import_bias(filename2)
 
 
+def pp(name: str, x: Union[torch.Tensor, np.ndarray]):
+    if isinstance(x, np.ndarray):
+        x = torch.Tensor(x.T)
+    print(f'{name} ({x.shape[0]}x{x.shape[0]})\n{x.data}')
+
+
 def train_pytorch(M, Xtrain, Ttrain, Xtest, Ttest, optimizer, criterion, epochs, batch_size, show: bool):
     print('Training...')
     N = Xtrain.shape[0]
@@ -192,18 +185,16 @@ def train_pytorch(M, Xtrain, Ttrain, Xtest, Ttest, optimizer, criterion, epochs,
 
             # forward + backward + optimize
             Y = M(X)
-
-            if show:
-                print(f'epoch: {epoch} batch: {k}')
-                print(f'X:\n{X}')
-                print(f'Y:\n{Y.data}')
-                # Y.retain_grad()
+            Y.retain_grad()
 
             loss = criterion(Y, T)
             loss.backward()
 
-            # if show:
-            #    print(f'dY:\n{Y.grad.detach()}')
+            if show:
+                print(f'epoch: {epoch} batch: {k}')
+                #pp('X', X)
+                #pp('Y', Y)
+                pp('DY', Y.grad.detach())
 
             optimizer.step()
             elapsed = timer() - start
@@ -246,9 +237,9 @@ def train_nerva(M, Xtrain, Ttrain, Xtest, Ttest, optimizer, criterion, epochs, b
 
             if show:
                 print(f'epoch: {epoch} batch: {k}')
-                print(f'X:\n{X}')
-                print(f'Y:\n{Y}')
-                print(f'DY:\n{DY}')
+                #pp('X', X)
+                #pp('Y', Y)
+                pp('DY', DY)
 
             elapsed = timer() - start
 
@@ -269,6 +260,7 @@ def main():
     cmdline_parser.add_argument("--edgeitems", help="The edgeitems used for printing matrices", type=int, default=3)
     cmdline_parser.add_argument("--epochs", help="The number of epochs", type=int, default=100)
     cmdline_parser.add_argument("--learning-rate", help="The learning rate", type=float, default=0.001)
+    cmdline_parser.add_argument("--run", help="The frameworks to run (both, nerva, pytorch)", type=str, default='both')
     args = cmdline_parser.parse_args()
 
     if args.seed:
@@ -280,6 +272,7 @@ def main():
 
     # create PyTorch model
     M1 = MLP1(sizes)
+    print(M1)
     loss1 = nn.CrossEntropyLoss()
     optimizer1 = optim.SGD(M1.parameters(), lr=args.learning_rate)
 
@@ -290,11 +283,13 @@ def main():
     loss2 = nerva.loss.SoftmaxCrossEntropyLoss()
     copy_weights_and_biases(M1, M2)
 
-    train_pytorch(M1, Xtrain, Ttrain, Xtest, Ttest, optimizer1, loss1, args.epochs, args.batch_size, args.show)
-    print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy1(M1, Xtest, Ttest, args.batch_size):.3f} %')
+    if args.run != 'nerva':
+        train_pytorch(M1, Xtrain, Ttrain, Xtest, Ttest, optimizer1, loss1, args.epochs, args.batch_size, args.show)
+        print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy1(M1, Xtest, Ttest, args.batch_size):.3f} %')
 
-    train_nerva(M2, Xtrain, Ttrain, Xtest, Ttest, optimizer2, loss2, args.epochs, args.batch_size, args.learning_rate, args.show)
-    print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy2(M2, Xtest, Ttest, args.batch_size):.3f} %')
+    if args.run != 'pytorch':
+        train_nerva(M2, Xtrain, Ttrain, Xtest, Ttest, optimizer2, loss2, args.epochs, args.batch_size, args.learning_rate, args.show)
+        print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy2(M2, Xtest, Ttest, args.batch_size):.3f} %')
 
 
 if __name__ == '__main__':
