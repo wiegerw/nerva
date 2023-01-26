@@ -1,14 +1,9 @@
 # This code is originally from https://github.com/VITA-Group/Random_Pruning
 # There is no license information available
 
-from __future__ import print_function
-
 import os
 import time
 import argparse
-import logging
-import hashlib
-import copy
 import random
 from typing import Tuple
 
@@ -165,28 +160,10 @@ def main():
     for i in range(args.iters):
         print_and_log("\nIteration start: {0}/{1}\n".format(i + 1, args.iters))
 
-        # Xtrain, Ttrain, Xtest, Ttest = load_cifar10(datadir)
-
-        # Ttrain = flatten_torch(torch.nn.functional.one_hot(Ttrain, num_classes = 10)).float()
-        # Ttest = flatten_torch(torch.nn.functional.one_hot(Ttest, num_classes = 10)).float()
-        # print('dtype', Xtrain.dtype)
-        # print('dtype', Ttrain.dtype)
-        # dataset = DataSet(Xtrain.T, Ttrain.T, Xtest.T, Ttest.T)
-
-        # train_loader, valid_loader, test_loader = make_loaders(args, args.data, args.valid_split, args.max_threads)
-        # if args.nerva:
-        #     train_nerva.train_and_test(i, args, device, train_loader, test_loader, print_and_log)
-        # else:
-        #     train_pytorch.train_and_test(i, args, device, train_loader, test_loader, print_and_log)
-
         if args.nerva:
             Xtrain, Xtest, Ttrain, Ttest = read_cifar10()
             Xtrain = flatten_numpy(Xtrain)
             Xtest = flatten_numpy(Xtest)
-            # print('Xtrain', Xtrain.shape)
-            # print('Xtest', Xtest.shape)
-            # print('Ttrain', Ttrain.shape)
-            # print('Ttest', Ttest.shape)
             train_nerva.train_and_test(i, args, device, Xtrain, Ttrain, Xtest, Ttest, print_and_log)
         elif args.both:
             train_loader, valid_loader, test_loader = make_loaders(args, args.data, args.valid_split, args.max_threads)

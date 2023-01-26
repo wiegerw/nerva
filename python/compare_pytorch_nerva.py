@@ -4,7 +4,7 @@ import argparse
 import os
 import tempfile
 from timeit import default_timer as timer
-from typing import Union
+from typing import List, Tuple, Union
 import torch
 import torchvision
 import torch.nn as nn
@@ -303,6 +303,65 @@ def make_nerva_optimizer(momentum=0.0, nesterov=False) -> nerva.optimizers.Optim
         return nerva.optimizers.GradientDescent()
 
 
+def compute_densities(density: float, sizes: List[int], erk_power_scale: float = 1.0) -> List[float]:
+    layer_shapes = [(sizes[i], sizes[i+1]) for i in range(len(sizes) - 1)]
+    n = len(layer_shapes)  # the number of layers
+
+    if density == 1.0:
+        return [1.0] * n
+
+    total_params = sum(rows * columns for (rows, columns) in layer_shapes)
+
+    dense_layers = set()
+    while True:
+        divisor = 0
+        rhs = 0
+        raw_probabilities = [0.0] * n
+        for i, (rows, columns) in enumerate(layer_shapes):
+            n_param = rows * columns
+            n_zeros = n_param * (1 - density)
+            n_ones = n_param * density
+            if i in dense_layers:
+                rhs -= n_zeros
+            else:
+                rhs += n_ones
+                raw_probabilities[i] = ((rows + columns) / (rows * columns)) ** erk_power_scale
+                divisor += raw_probabilities[i] * n_param
+        epsilon = rhs / divisor
+        max_prob = max(raw_probabilities)
+        max_prob_one = max_prob * epsilon
+        if max_prob_one > 1:
+            for j, mask_raw_prob in enumerate(raw_probabilities):
+                if mask_raw_prob == max_prob:
+                    print(f"Sparsity of layer:{j} had to be set to 0.")
+                    dense_layers.add(j)
+        else:
+            break
+
+    # Compute the densities
+    densities = [0.0] * n
+    total_nonzero = 0.0
+    for i, (rows, columns) in enumerate(layer_shapes):
+        n_param = rows * columns
+        if i in dense_layers:
+            densities[i] = 1.0
+        else:
+            probability_one = epsilon * raw_probabilities[i]
+            densities[i] = probability_one
+        print(f"layer: {i}, shape: {(rows,columns)}, density: {densities[i]}")
+        total_nonzero += densities[i] * n_param
+    print(f"Overall sparsity {total_nonzero / total_params:.4f}")
+    return densities
+
+
+def make_models(sizes, densities, nerva_optimizer, batch_size):
+    if not densities:
+        M1 = MLP1(sizes)
+        M2 = MLP2(sizes, nerva_optimizer, batch_size)
+        return M1, M2
+    raise RuntimeError('sparse layers are not supported yet')
+
+
 def main():
     cmdline_parser = argparse.ArgumentParser()
     cmdline_parser.add_argument("--show", help="Show data and intermediate results", action="store_true")
@@ -317,6 +376,7 @@ def main():
     cmdline_parser.add_argument("--nesterov", help="apply nesterov", action="store_true")
     cmdline_parser.add_argument('--datadir', type=str, default='./data', help='the data directory (default: ./data)')
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
+    cmdline_parser.add_argument('--density', type=float, default=0.05, help='The density of the overall sparse network.')
     args = cmdline_parser.parse_args()
 
     if args.seed:
@@ -329,20 +389,20 @@ def main():
         Xtrain, Ttrain, Xtest, Ttest = load_cifar10_data(args.datadir)
         train_loader = TorchDataLoader(Xtrain, Ttrain, args.batch_size)
         test_loader = TorchDataLoader(Xtest, Ttest, args.batch_size)
+
     sizes = [3072, 128, 64, 10]
+    densities = compute_densities(args.density, sizes)
 
-    # create PyTorch model
-    M1 = MLP1(sizes)
-    loss1 = nn.CrossEntropyLoss()
-    optimizer1 = optim.SGD(M1.parameters(), lr=args.learning_rate, momentum=args.momentum, nesterov=args.nesterov)
-    print(M1)
-    print(loss1)
-
-    # create Nerva model
+    # create PyTorch model M1 and Nerva model M2
     optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
-    M2 = MLP2(sizes, optimizer2, args.batch_size)
+    M1, M2 = make_models(sizes, densities, optimizer2, args.batch_size)
+    optimizer1 = optim.SGD(M1.parameters(), lr=args.learning_rate, momentum=args.momentum, nesterov=args.nesterov)
+    loss1 = nn.CrossEntropyLoss()
     loss2 = nerva.loss.SoftmaxCrossEntropyLoss()
     copy_weights_and_biases(M1, M2)
+
+    print(M1)
+    print(loss1)
     print(M2)
     print(loss2)
 
