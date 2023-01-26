@@ -220,7 +220,7 @@ def to_one_hot(x: torch.Tensor) -> np.ndarray:
     return to_numpy(torch.nn.functional.one_hot(x, num_classes = 10).float())
 
 
-def train_nerva(M, Xtrain, Ttrain, Xtest, Ttest, optimizer, criterion, epochs, batch_size, lr, show: bool):
+def train_nerva(M, Xtrain, Ttrain, Xtest, Ttest, criterion, epochs, batch_size, lr, show: bool):
     print('Training...')
     N = Xtrain.shape[0]
     K = N // batch_size
@@ -251,6 +251,15 @@ def train_nerva(M, Xtrain, Ttrain, Xtest, Ttest, optimizer, criterion, epochs, b
              )
 
 
+def make_nerva_optimizer(momentum=0.0, nesterov=False) -> nerva.optimizers.Optimizer:
+    if nesterov:
+        return nerva.optimizers.Nesterov(momentum)
+    elif momentum > 0.0:
+        return nerva.optimizers.Momentum(momentum)
+    else:
+        return nerva.optimizers.GradientDescent()
+
+
 def main():
     cmdline_parser = argparse.ArgumentParser()
     cmdline_parser.add_argument("--show", help="Show data and intermediate results", action="store_true")
@@ -261,6 +270,8 @@ def main():
     cmdline_parser.add_argument("--epochs", help="The number of epochs", type=int, default=100)
     cmdline_parser.add_argument("--learning-rate", help="The learning rate", type=float, default=0.001)
     cmdline_parser.add_argument("--run", help="The frameworks to run (both, nerva, pytorch)", type=str, default='both')
+    cmdline_parser.add_argument('--momentum', type=float, default=0.9, help='the momentum value (default off)')
+    cmdline_parser.add_argument("--nesterov", help="apply nesterov", action="store_true")
     args = cmdline_parser.parse_args()
 
     if args.seed:
@@ -274,10 +285,10 @@ def main():
     M1 = MLP1(sizes)
     print(M1)
     loss1 = nn.CrossEntropyLoss()
-    optimizer1 = optim.SGD(M1.parameters(), lr=args.learning_rate)
+    optimizer1 = optim.SGD(M1.parameters(), lr=args.learning_rate, momentum=args.momentum, nesterov=args.nesterov)
 
     # create Nerva model
-    optimizer2 = nerva.optimizers.GradientDescent()
+    optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
     M2 = MLP2(sizes, optimizer2, args.batch_size)
     print(M2)
     loss2 = nerva.loss.SoftmaxCrossEntropyLoss()
@@ -288,7 +299,7 @@ def main():
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy1(M1, Xtest, Ttest, args.batch_size):.3f} %')
 
     if args.run != 'pytorch':
-        train_nerva(M2, Xtrain, Ttrain, Xtest, Ttest, optimizer2, loss2, args.epochs, args.batch_size, args.learning_rate, args.show)
+        train_nerva(M2, Xtrain, Ttrain, Xtest, Ttest, loss2, args.epochs, args.batch_size, args.learning_rate, args.show)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy2(M2, Xtest, Ttest, args.batch_size):.3f} %')
 
 
