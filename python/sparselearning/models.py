@@ -42,7 +42,8 @@ class MLP_CIFAR10(nn.Module):
     def forward(self, x):
         x0 = F.relu(self.fc1(x.view(-1, 3 * 32 * 32)))
         x1 = F.relu(self.fc2(x0))
-        return F.log_softmax(self.fc3(x1), dim=1)
+        return self.fc3(x1)
+        # return F.log_softmax(self.fc3(x1), dim=1)
 
     def export_weights(self, filename: str):
         with open(filename, "wb") as f:
