@@ -373,6 +373,10 @@ def main():
         torch.manual_seed(args.seed)
 
     torch.set_printoptions(precision=args.precision, edgeitems=args.edgeitems, threshold=5)
+
+    # avoid 'Too many open files' error when using data loaders
+    torch.multiprocessing.set_sharing_strategy('file_system')
+
     if args.augmented:
         train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
     else:
