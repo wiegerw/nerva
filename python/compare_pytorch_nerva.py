@@ -17,6 +17,7 @@ import nerva.layers
 import nerva.learning_rate
 import nerva.loss
 import nerva.optimizers
+from sparselearning.core import Masking
 
 
 def flatten_torch(x: torch.Tensor) -> torch.Tensor:
@@ -182,6 +183,8 @@ class MLP1(nn.Module):
     """ Multi-Layer Perceptron """
     def __init__(self, sizes):
         super().__init__()
+        self.optimizer = None
+        self.mask = None
         n = len(sizes) - 1  # the number of layers
         self.layers = nn.ModuleList()
         for i in range(n):
@@ -192,6 +195,18 @@ class MLP1(nn.Module):
             x = F.relu(self.layers[i](x))
         x = self.layers[-1](x)  # output layer does not have an activation function
         return x
+
+    def set_mask(self, mask, optimizer, density, sparse_init='ER'):
+        self.mask = mask
+        self.optimizer = optimizer
+        if mask:
+            mask.add_module(self, sparse_init=sparse_init, density=density)
+
+    def optimize(self):
+        if self.mask is not None:
+            self.mask.step()
+        else:
+            self.optimizer.step()
 
     def export_weights(self, filename: str):
         with open(filename, "wb") as f:
@@ -247,7 +262,7 @@ def train_pytorch(M, train_loader, test_loader, optimizer, criterion, learning_r
             Y.retain_grad()
             loss = criterion(Y, T)
             loss.backward()
-            optimizer.step()
+            M.optimize()
             elapsed = timer() - start
 
             if show:
@@ -353,6 +368,25 @@ def compute_densities(density: float, sizes: List[int], erk_power_scale: float =
     return densities
 
 
+def make_mask(model: torch.nn.Module,
+              optimizer: torch.optim.Optimizer,
+              density,
+              train_loader,
+              sparse_init='ER',
+             ) -> Masking:
+    mask = Masking(optimizer,
+                   prune_rate=0.5,
+                   prune_mode='none',
+                   prune_rate_decay=None,
+                   prune_interval=0,
+                   growth_mode='random',
+                   redistribution_mode='none',
+                   train_loader=train_loader,
+                   )
+    mask.add_module(model, sparse_init=sparse_init, density=density)
+    return mask
+
+
 def main():
     cmdline_parser = argparse.ArgumentParser()
     cmdline_parser.add_argument("--show", help="Show data and intermediate results", action="store_true")
@@ -401,6 +435,8 @@ def main():
     M1 = MLP1(sizes)
     loss1 = nn.CrossEntropyLoss()
     optimizer1 = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
+    mask = make_mask(M1, optimizer1, args.density, train_loader) if args.density != 1.0 else None
+    M1.set_mask(mask, optimizer1, args.density)  # this cannot be done during construction due to circular dependencies in PyTorch
     learning_rate1 = torch.optim.lr_scheduler.MultiStepLR(optimizer1, milestones=milestones, last_epoch=-1)
     print('\n=== PyTorch model ===')
     print(M1)
