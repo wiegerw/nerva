@@ -238,7 +238,7 @@ def pp(name: str, x: Union[torch.Tensor, np.ndarray]):
         print(f'{name} ({x.shape[0]}x{x.shape[1]})\n{x.data}')
 
 
-def train_pytorch(M, train_loader, test_loader, optimizer, criterion, epochs, show: bool):
+def train_pytorch(M, train_loader, test_loader, optimizer, criterion, learning_rate, epochs, show: bool):
     for epoch in range(epochs):
         start = timer()
         for k, (X, T) in enumerate(train_loader):
@@ -263,10 +263,13 @@ def train_pytorch(M, train_loader, test_loader, optimizer, criterion, epochs, sh
               f'time: {elapsed:.3f}'
              )
 
+        learning_rate.step()  # N.B. this updates the learning rate in optimizer
 
-def train_nerva(M, train_loader, test_loader, criterion, epochs, batch_size, lr, show: bool):
+
+def train_nerva(M, train_loader, test_loader, criterion, learning_rate, epochs, batch_size, show: bool):
     for epoch in range(epochs):
         start = timer()
+        lr = learning_rate(epoch)
         for k, (X, T) in enumerate(train_loader):
             X = to_numpy(X)
             T = to_one_hot_numpy(T, 10)
@@ -358,7 +361,7 @@ def main():
     cmdline_parser.add_argument("--precision", help="The precision used for printing", type=int, default=4)
     cmdline_parser.add_argument("--edgeitems", help="The edgeitems used for printing matrices", type=int, default=3)
     cmdline_parser.add_argument("--epochs", help="The number of epochs", type=int, default=100)
-    cmdline_parser.add_argument("--learning-rate", help="The learning rate", type=float, default=0.001)
+    cmdline_parser.add_argument("--lr", help="The learning rate", type=float, default=0.1)
     cmdline_parser.add_argument('--momentum', type=float, default=0.9, help='the momentum value (default: off)')
     cmdline_parser.add_argument("--nesterov", help="apply nesterov", action="store_true")
     cmdline_parser.add_argument('--datadir', type=str, default='./data', help='the data directory (default: ./data)')
@@ -391,33 +394,40 @@ def main():
     sizes = [int(s) for s in args.sizes.split(',')]
     densities = compute_densities(args.density, sizes)
 
+    # parameters for the learning rate scheduler
+    milestones = [int(args.epochs / 2), int(args.epochs * 3 / 4)]
+
     # create PyTorch model
     M1 = MLP1(sizes)
     loss1 = nn.CrossEntropyLoss()
-    optimizer1 = optim.SGD(M1.parameters(), lr=args.learning_rate, momentum=args.momentum, nesterov=args.nesterov)
+    optimizer1 = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
+    learning_rate1 = torch.optim.lr_scheduler.MultiStepLR(optimizer1, milestones=milestones, last_epoch=-1)
     print('\n=== PyTorch model ===')
     print(M1)
     print(loss1)
+    print(learning_rate1)
 
     # create Nerva model
     optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
     M2 = MLP2(sizes, densities, optimizer2, args.batch_size)
     loss2 = nerva.loss.SoftmaxCrossEntropyLoss()
+    learning_rate2 = nerva.learning_rate.MultiStepLRScheduler(args.lr, milestones, 0.1)
     print('\n=== Nerva model ===')
     print(M2)
     print(loss2)
+    print(learning_rate2)
 
     if args.copy:
         copy_weights_and_biases(M1, M2)
 
     if args.torch:
         print('\n=== Training PyTorch model ===')
-        train_pytorch(M1, train_loader, test_loader, optimizer1, loss1, args.epochs, args.show)
+        train_pytorch(M1, train_loader, test_loader, optimizer1, loss1, learning_rate1, args.epochs, args.show)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy1(M1, test_loader):.3f} %')
 
     if args.nerva:
         print('\n=== Training Nerva model ===')
-        train_nerva(M2, train_loader, test_loader, loss2, args.epochs, args.batch_size, args.learning_rate, args.show)
+        train_nerva(M2, train_loader, test_loader, loss2, learning_rate2, args.epochs, args.batch_size, args.show)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy2(M2, test_loader):.3f} %')
 
 
