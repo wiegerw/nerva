@@ -25,12 +25,34 @@
 namespace py = pybind11;
 using namespace nerva;
 
-template <typename T>
-std::string print(const T& t)
+// Precondition: the python interpreter must be running.
+// This can be enforced using `py::scoped_interpreter guard{};`
+inline
+void export_matrix_to_numpy(const std::string& filename, const eigen::matrix& A)
 {
-  std::ostringstream out;
-  out << t;
-  return out.str();
+  namespace py = pybind11;
+  auto np = py::module::import("numpy");
+  auto io = py::module::import("io");
+  auto file = io.attr("open")(filename, "wb");
+
+  np.attr("save")(file, eigen::to_numpy(A));
+  file.attr("close")();
+  print_numpy_matrix("A", A);
+}
+
+// Precondition: the python interpreter must be running.
+// This can be enforced using `py::scoped_interpreter guard{};`
+inline
+void import_matrix_from_numpy(const std::string& filename)
+{
+  namespace py = pybind11;
+  auto np = py::module::import("numpy");
+  auto io = py::module::import("io");
+  auto file = io.attr("open")(filename, "rb");
+
+  eigen::matrix A = eigen::from_numpy(np.attr("load")(file).cast<py::array_t<float>>());
+  file.attr("close")();
+  print_numpy_matrix("A", A);
 }
 
 PYBIND11_MODULE(nervalib, m)
@@ -411,6 +433,13 @@ PYBIND11_MODULE(nervalib, m)
   /////////////////////////////////////////////////////////////////////////
 
   m.def("manual_seed", manual_seed);
+
+  /////////////////////////////////////////////////////////////////////////
+  //                       testing
+  /////////////////////////////////////////////////////////////////////////
+
+  m.def("export_matrix_to_numpy", export_matrix_to_numpy);
+  m.def("import_matrix_from_numpy", import_matrix_from_numpy);
 
   m.attr("__version__") = "0.12";
 }
