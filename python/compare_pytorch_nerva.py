@@ -4,7 +4,7 @@ import argparse
 import os
 import tempfile
 from timeit import default_timer as timer
-from typing import List, Tuple, Union
+from typing import List, Union
 import torch
 import torchvision
 import torch.nn as nn
@@ -220,7 +220,6 @@ class MLP2(nerva.layers.Sequential):
 
 # Copies models and weights from model1 to model2
 def copy_weights_and_biases(model1: nn.Module, model2: nerva.layers.Sequential):
-    print('Copying weights and biases from the PyTorch model to the Nerva model')
     name = tempfile.NamedTemporaryFile().name
     filename1 =  name + '_weights.npy'
     filename2 =  name + '_bias.npy'
@@ -240,7 +239,6 @@ def pp(name: str, x: Union[torch.Tensor, np.ndarray]):
 
 
 def train_pytorch(M, train_loader, test_loader, optimizer, criterion, epochs, show: bool):
-    print('Training PyTorch model ...')
     for epoch in range(epochs):
         start = timer()
         for k, (X, T) in enumerate(train_loader):
@@ -258,6 +256,7 @@ def train_pytorch(M, train_loader, test_loader, optimizer, criterion, epochs, sh
                 pp('DY', Y.grad.detach())
 
         print(f'epoch {epoch + 1:3}  '
+              f'lr: {optimizer.param_groups[0]["lr"]:.4f}  '
               f'loss: {compute_loss1(M, criterion, train_loader):.3f}  '
               f'train accuracy: {compute_accuracy1(M, train_loader):.3f}  '
               f'test accuracy: {compute_accuracy1(M, test_loader):.3f}  '
@@ -266,7 +265,6 @@ def train_pytorch(M, train_loader, test_loader, optimizer, criterion, epochs, sh
 
 
 def train_nerva(M, train_loader, test_loader, criterion, epochs, batch_size, lr, show: bool):
-    print('Training Nerva model ...')
     for epoch in range(epochs):
         start = timer()
         for k, (X, T) in enumerate(train_loader):
@@ -284,6 +282,7 @@ def train_nerva(M, train_loader, test_loader, criterion, epochs, batch_size, lr,
                 pp('DY', DY)
 
         print(f'epoch {epoch + 1:3}  '
+              f'lr: {lr:.4f}  '
               f'loss: {compute_loss2(M, criterion, train_loader):.3f}  '
               f'train accuracy: {compute_accuracy2(M, train_loader):.3f}  '
               f'test accuracy: {compute_accuracy2(M, test_loader):.3f}  '
@@ -360,7 +359,6 @@ def main():
     cmdline_parser.add_argument("--edgeitems", help="The edgeitems used for printing matrices", type=int, default=3)
     cmdline_parser.add_argument("--epochs", help="The number of epochs", type=int, default=100)
     cmdline_parser.add_argument("--learning-rate", help="The learning rate", type=float, default=0.001)
-    cmdline_parser.add_argument("--run", help="The frameworks to run (both, nerva, pytorch)", type=str, default='both')
     cmdline_parser.add_argument('--momentum', type=float, default=0.9, help='the momentum value (default: off)')
     cmdline_parser.add_argument("--nesterov", help="apply nesterov", action="store_true")
     cmdline_parser.add_argument('--datadir', type=str, default='./data', help='the data directory (default: ./data)')
@@ -368,7 +366,12 @@ def main():
     cmdline_parser.add_argument('--density', type=float, default=1.0, help='The density of the overall sparse network.')
     cmdline_parser.add_argument('--sizes', type=str, default='3072,128,64,10', help='A comma separated list of layer sizes, e.g. "3072,128,64,10".')
     cmdline_parser.add_argument("--copy", help="copy weights and biases from the PyTorch model to the Nerva model", action="store_true")
+    cmdline_parser.add_argument("--nerva", help="Train using a Nerva model", action="store_true")
+    cmdline_parser.add_argument("--torch", help="Train using a PyTorch model", action="store_true")
     args = cmdline_parser.parse_args()
+
+    print('=== Command line arguments ===')
+    print(args)
 
     if args.seed:
         torch.manual_seed(args.seed)
@@ -392,6 +395,7 @@ def main():
     M1 = MLP1(sizes)
     loss1 = nn.CrossEntropyLoss()
     optimizer1 = optim.SGD(M1.parameters(), lr=args.learning_rate, momentum=args.momentum, nesterov=args.nesterov)
+    print('\n=== PyTorch model ===')
     print(M1)
     print(loss1)
 
@@ -399,17 +403,20 @@ def main():
     optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
     M2 = MLP2(sizes, densities, optimizer2, args.batch_size)
     loss2 = nerva.loss.SoftmaxCrossEntropyLoss()
+    print('\n=== Nerva model ===')
     print(M2)
     print(loss2)
 
     if args.copy:
         copy_weights_and_biases(M1, M2)
 
-    if args.run != 'nerva':
+    if args.torch:
+        print('\n=== Training PyTorch model ===')
         train_pytorch(M1, train_loader, test_loader, optimizer1, loss1, args.epochs, args.show)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy1(M1, test_loader):.3f} %')
 
-    if args.run != 'pytorch':
+    if args.nerva:
+        print('\n=== Training Nerva model ===')
         train_nerva(M2, train_loader, test_loader, loss2, args.epochs, args.batch_size, args.learning_rate, args.show)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy2(M2, test_loader):.3f} %')
 
