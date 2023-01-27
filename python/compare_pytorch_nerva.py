@@ -220,11 +220,10 @@ class MLP2(nerva.layers.Sequential):
 
 # Copies models and weights from model1 to model2
 def copy_weights_and_biases(model1: nn.Module, model2: nerva.layers.Sequential):
+    print('Copying weights and biases from the PyTorch model to the Nerva model')
     name = tempfile.NamedTemporaryFile().name
     filename1 =  name + '_weights.npy'
     filename2 =  name + '_bias.npy'
-    print('saving weights to', filename1)
-    print('saving bias to', filename2)
     model1.export_weights(filename1)
     model2.import_weights(filename1)
     model1.export_bias(filename2)
@@ -368,6 +367,7 @@ def main():
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
     cmdline_parser.add_argument('--density', type=float, default=1.0, help='The density of the overall sparse network.')
     cmdline_parser.add_argument('--sizes', type=str, default='3072,128,64,10', help='A comma separated list of layer sizes, e.g. "3072,128,64,10".')
+    cmdline_parser.add_argument("--copy", help="copy weights and biases from the PyTorch model to the Nerva model", action="store_true")
     args = cmdline_parser.parse_args()
 
     if args.seed:
@@ -399,9 +399,11 @@ def main():
     optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
     M2 = MLP2(sizes, densities, optimizer2, args.batch_size)
     loss2 = nerva.loss.SoftmaxCrossEntropyLoss()
-    copy_weights_and_biases(M1, M2)
     print(M2)
     print(loss2)
+
+    if args.copy:
+        copy_weights_and_biases(M1, M2)
 
     if args.run != 'nerva':
         train_pytorch(M1, train_loader, test_loader, optimizer1, loss1, args.epochs, args.show)

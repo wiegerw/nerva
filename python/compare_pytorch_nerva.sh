@@ -8,11 +8,11 @@ function train()
   shift
   extra_args=$*
 
-  echo "python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --learning-rate=0.01 --precision=5 --seed=159 --momentum=0.9 --nesterov --run=pytorch $extra_args >& $logfile1"
-  python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --learning-rate=0.01 --precision=5 --seed=159 --momentum=0.9 --nesterov --run=pytorch $extra_args >& $logfile1
+  echo "python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --learning-rate=0.01 --precision=5 --seed=159 --momentum=0.9 --nesterov --copy --run=pytorch $extra_args >& $logfile1"
+  python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --learning-rate=0.01 --precision=5 --seed=159 --momentum=0.9 --nesterov --copy --run=pytorch $extra_args >& $logfile1
 
-  echo "python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --learning-rate=0.01 --precision=5 --seed=159 --momentum=0.9 --nesterov --run=nerva $extra_args >& $logfile2"
-  python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --learning-rate=0.01 --precision=5 --seed=159 --momentum=0.9 --nesterov --run=nerva $extra_args >& $logfile2
+  echo "python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --learning-rate=0.01 --precision=5 --seed=159 --momentum=0.9 --nesterov --copy --run=nerva $extra_args >& $logfile2"
+  python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --learning-rate=0.01 --precision=5 --seed=159 --momentum=0.9 --nesterov --copy --run=nerva $extra_args >& $logfile2
 }
 
 train "compare1.log" "compare2.log"
