@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+# Copyright 2023 Wieger Wesselink.
+# Distributed under the Boost Software License, Version 1.0.
+# (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
+
 import argparse
 import os
 import tempfile
@@ -18,6 +22,26 @@ import nerva.learning_rate
 import nerva.loss
 import nerva.optimizers
 from sparselearning.core import Masking
+
+
+def to_eigen(x: np.ndarray):
+    return x.reshape(x.shape[1], x.shape[0], order='F').T
+
+
+def from_eigen(x: np.ndarray):
+    return x.reshape(x.shape[1], x.shape[0], order='C').T
+
+
+# Loads a number of Numpy arrays from an .npy file and returns them in a list
+def load_numpy_arrays_from_npy_file(filename: str) -> List[np.ndarray]:
+    arrays = []
+    try:
+        with open(filename, "rb") as f:
+            while True:
+                arrays.append(from_eigen(np.load(f, allow_pickle=True)))
+    except IOError:
+        pass
+    return arrays
 
 
 def flatten_torch(x: torch.Tensor) -> torch.Tensor:
@@ -217,24 +241,12 @@ class MLP1(nn.Module):
     def export_weights(self, filename: str):
         with open(filename, "wb") as f:
             for layer in self.layers:
-                np.save(f, np.asfortranarray(layer.weight.detach().numpy()))
+                np.save(f, to_eigen(layer.weight.detach().numpy()))
 
     def export_bias(self, filename: str):
         with open(filename, "wb") as f:
             for layer in self.layers:
-                np.save(f, np.asfortranarray(layer.bias.detach().numpy()))
-
-
-# Loads a number of Numpy arrays from an .npy file and returns them in a list
-def load_numpy_arrays_from_npy_file(filename: str) -> List[np.ndarray]:
-    arrays = []
-    try:
-        with open(filename, "rb") as f:
-            while True:
-                arrays.append(np.load(f, allow_pickle=True))
-    except IOError:
-        pass
-    return arrays
+                np.save(f, layer.bias.detach().numpy())
 
 
 class MLP2(nerva.layers.Sequential):
@@ -266,8 +278,8 @@ class MLP2(nerva.layers.Sequential):
 # Copies models and weights from model1 to model2
 def copy_weights_and_biases(model1: nn.Module, model2: nerva.layers.Sequential):
     name = tempfile.NamedTemporaryFile().name
-    filename1 =  name + '_weights.npy'
-    filename2 =  name + '_bias.npy'
+    filename1 = name + '_weights.npy'
+    filename2 = name + '_bias.npy'
     model1.export_weights(filename1)
     model2.import_weights(filename1)
     model1.export_bias(filename2)
@@ -452,7 +464,7 @@ def main():
     if args.seed:
         torch.manual_seed(args.seed)
 
-    torch.set_printoptions(precision=args.precision, edgeitems=args.edgeitems, threshold=5)
+    torch.set_printoptions(precision=args.precision, edgeitems=args.edgeitems, threshold=5, sci_mode=False, linewidth=120)
 
     # avoid 'Too many open files' error when using data loaders
     torch.multiprocessing.set_sharing_strategy('file_system')
@@ -496,7 +508,9 @@ def main():
         copy_weights_and_biases(M1, M2)
 
     if args.info:
+        print('\n=== PyTorch info ===')
         print_model_info(M1)
+        print('\n=== Nerva info ===')
         print_model_info(M2)
 
     if args.torch:
