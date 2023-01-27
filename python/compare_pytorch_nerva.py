@@ -208,6 +208,12 @@ class MLP1(nn.Module):
         else:
             self.optimizer.step()
 
+    def weights(self) -> List[torch.Tensor]:
+        return [layer.weight for layer in self.layers]
+
+    def bias(self) -> List[torch.Tensor]:
+        return [layer.bias for layer in self.layers]
+
     def export_weights(self, filename: str):
         with open(filename, "wb") as f:
             for layer in self.layers:
@@ -217,6 +223,18 @@ class MLP1(nn.Module):
         with open(filename, "wb") as f:
             for layer in self.layers:
                 np.save(f, np.asfortranarray(layer.bias.detach().numpy()))
+
+
+# Loads a number of Numpy arrays from an .npy file and returns them in a list
+def load_numpy_arrays_from_npy_file(filename: str) -> List[np.ndarray]:
+    arrays = []
+    try:
+        with open(filename, "rb") as f:
+            while True:
+                arrays.append(np.load(f, allow_pickle=True))
+    except IOError:
+        pass
+    return arrays
 
 
 class MLP2(nerva.layers.Sequential):
@@ -231,6 +249,18 @@ class MLP2(nerva.layers.Sequential):
             else:
                 self.add(nerva.layers.Sparse(size, 1.0 - density, activation=activation, optimizer=optimizer))
         self.compile(sizes[0], batch_size)
+
+    def weights(self) -> List[torch.Tensor]:
+        filename = tempfile.NamedTemporaryFile().name + '_weights.npy'
+        self.export_weights(filename)
+        weights = load_numpy_arrays_from_npy_file(filename)
+        return [torch.Tensor(W) for W in weights]
+
+    def bias(self) -> List[torch.Tensor]:
+        filename = tempfile.NamedTemporaryFile().name + '_bias.npy'
+        self.export_bias(filename)
+        bias = load_numpy_arrays_from_npy_file(filename)
+        return [torch.Tensor(b) for b in bias]
 
 
 # Copies models and weights from model1 to model2
@@ -251,6 +281,14 @@ def pp(name: str, x: Union[torch.Tensor, np.ndarray]):
         print(f'{name} ({x.shape[0]})\n{x.data}')
     else:
         print(f'{name} ({x.shape[0]}x{x.shape[1]})\n{x.data}')
+
+
+def print_model_info(M):
+    W = M.weights()
+    b = M.bias()
+    for i in range(len(W)):
+        pp(f'W{i+1}', W[i])
+        pp(f'b{i+1}', b[i])
 
 
 def train_pytorch(M, train_loader, test_loader, optimizer, criterion, learning_rate, epochs, show: bool):
@@ -405,6 +443,7 @@ def main():
     cmdline_parser.add_argument("--copy", help="copy weights and biases from the PyTorch model to the Nerva model", action="store_true")
     cmdline_parser.add_argument("--nerva", help="Train using a Nerva model", action="store_true")
     cmdline_parser.add_argument("--torch", help="Train using a PyTorch model", action="store_true")
+    cmdline_parser.add_argument("--info", help="Print detailed info about the models", action="store_true")
     args = cmdline_parser.parse_args()
 
     print('=== Command line arguments ===')
@@ -455,6 +494,10 @@ def main():
 
     if args.copy:
         copy_weights_and_biases(M1, M2)
+
+    if args.info:
+        print_model_info(M1)
+        print_model_info(M2)
 
     if args.torch:
         print('\n=== Training PyTorch model ===')
