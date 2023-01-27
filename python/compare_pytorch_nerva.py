@@ -205,15 +205,17 @@ class MLP1(nn.Module):
 
 
 class MLP2(nerva.layers.Sequential):
-    def __init__(self, sizes, optimizer, batch_size):
+    def __init__(self, sizes, densities, optimizer, batch_size):
         super().__init__()
-        input_size = sizes[0]
-        hidden_layer_sizes = sizes[1:-1]
-        output_size = sizes[-1]
-        for size in hidden_layer_sizes:
-            self.add(nerva.layers.Dense(size, activation=nerva.layers.ReLU(), optimizer=optimizer))
-        self.add(nerva.layers.Dense(output_size, activation=nerva.layers.NoActivation(), optimizer=optimizer))
-        self.compile(input_size, batch_size)
+        n = len(densities)  # the number of layers
+        activations = [nerva.layers.ReLU()] * (n-1) + [nerva.layers.NoActivation()]
+        output_sizes = sizes[1:]
+        for (density, size, activation) in zip(densities, output_sizes, activations):
+            if density == 1.0:
+                 self.add(nerva.layers.Dense(size, activation=activation, optimizer=optimizer))
+            else:
+                self.add(nerva.layers.Sparse(size, 1.0 - density, activation=activation, optimizer=optimizer))
+        self.compile(sizes[0], batch_size)
 
 
 # Copies models and weights from model1 to model2
@@ -239,7 +241,7 @@ def pp(name: str, x: Union[torch.Tensor, np.ndarray]):
 
 
 def train_pytorch(M, train_loader, test_loader, optimizer, criterion, epochs, show: bool):
-    print('Training...')
+    print('Training PyTorch model ...')
     for epoch in range(epochs):
         start = timer()
         for k, (X, T) in enumerate(train_loader):
@@ -248,15 +250,13 @@ def train_pytorch(M, train_loader, test_loader, optimizer, criterion, epochs, sh
             Y.retain_grad()
             loss = criterion(Y, T)
             loss.backward()
+            optimizer.step()
+            elapsed = timer() - start
 
             if show:
                 print(f'epoch: {epoch} batch: {k}')
-                #pp('X', X)
-                #pp('Y', Y)
+                pp('Y', Y)
                 pp('DY', Y.grad.detach())
-
-            optimizer.step()
-            elapsed = timer() - start
 
         print(f'epoch {epoch + 1:3}  '
               f'loss: {compute_loss1(M, criterion, train_loader):.3f}  '
@@ -267,8 +267,8 @@ def train_pytorch(M, train_loader, test_loader, optimizer, criterion, epochs, sh
 
 
 def train_nerva(M, train_loader, test_loader, criterion, epochs, batch_size, lr, show: bool):
-    print('Training...')
-    for epoch in range(epochs):  # loop over the dataset multiple times
+    print('Training Nerva model ...')
+    for epoch in range(epochs):
         start = timer()
         for k, (X, T) in enumerate(train_loader):
             X = to_numpy(X)
@@ -277,14 +277,12 @@ def train_nerva(M, train_loader, test_loader, criterion, epochs, batch_size, lr,
             DY = criterion.gradient(Y, T) / batch_size
             M.backpropagate(Y, DY)
             M.optimize(lr)
+            elapsed = timer() - start
 
             if show:
                 print(f'epoch: {epoch} batch: {k}')
-                #pp('X', X)
-                #pp('Y', Y)
+                pp('Y', Y)
                 pp('DY', DY)
-
-            elapsed = timer() - start
 
         print(f'epoch {epoch + 1:3}  '
               f'loss: {compute_loss2(M, criterion, train_loader):.3f}  '
@@ -354,14 +352,6 @@ def compute_densities(density: float, sizes: List[int], erk_power_scale: float =
     return densities
 
 
-def make_models(sizes, densities, nerva_optimizer, batch_size):
-    if not densities:
-        M1 = MLP1(sizes)
-        M2 = MLP2(sizes, nerva_optimizer, batch_size)
-        return M1, M2
-    raise RuntimeError('sparse layers are not supported yet')
-
-
 def main():
     cmdline_parser = argparse.ArgumentParser()
     cmdline_parser.add_argument("--show", help="Show data and intermediate results", action="store_true")
@@ -376,7 +366,7 @@ def main():
     cmdline_parser.add_argument("--nesterov", help="apply nesterov", action="store_true")
     cmdline_parser.add_argument('--datadir', type=str, default='./data', help='the data directory (default: ./data)')
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
-    cmdline_parser.add_argument('--density', type=float, default=0.05, help='The density of the overall sparse network.')
+    cmdline_parser.add_argument('--density', type=float, default=1.0, help='The density of the overall sparse network.')
     args = cmdline_parser.parse_args()
 
     if args.seed:
@@ -393,16 +383,18 @@ def main():
     sizes = [3072, 128, 64, 10]
     densities = compute_densities(args.density, sizes)
 
-    # create PyTorch model M1 and Nerva model M2
-    optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
-    M1, M2 = make_models(sizes, densities, optimizer2, args.batch_size)
-    optimizer1 = optim.SGD(M1.parameters(), lr=args.learning_rate, momentum=args.momentum, nesterov=args.nesterov)
+    # create PyTorch model
+    M1 = MLP1(sizes)
     loss1 = nn.CrossEntropyLoss()
-    loss2 = nerva.loss.SoftmaxCrossEntropyLoss()
-    copy_weights_and_biases(M1, M2)
-
+    optimizer1 = optim.SGD(M1.parameters(), lr=args.learning_rate, momentum=args.momentum, nesterov=args.nesterov)
     print(M1)
     print(loss1)
+
+    # create Nerva model
+    optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
+    M2 = MLP2(sizes, densities, optimizer2, args.batch_size)
+    loss2 = nerva.loss.SoftmaxCrossEntropyLoss()
+    copy_weights_and_biases(M1, M2)
     print(M2)
     print(loss2)
 

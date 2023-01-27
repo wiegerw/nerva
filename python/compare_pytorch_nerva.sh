@@ -1,9 +1,20 @@
 #!/bin/bash
 
-python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --learning-rate=0.001 --precision=5 --seed=159 --momentum=0.9 --nesterov --run=pytorch >& compare_pytorch_nerva1.log
-python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --learning-rate=0.001 --precision=5 --seed=159 --momentum=0.9 --nesterov --run=nerva   >& compare_pytorch_nerva2.log
-meld compare_pytorch_nerva1.log compare_pytorch_nerva2.log
+function train()
+{
+  logfile1=$1
+  shift
+  logfile2=$1
+  shift
+  extra_args=$*
 
-python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --learning-rate=0.001 --precision=5 --seed=159 --momentum=0.9 --nesterov --run=pytorch --augmented >& compare_pytorch_nerva_augmented1.log
-python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --learning-rate=0.001 --precision=5 --seed=159 --momentum=0.9 --nesterov --run=nerva   --augmented >& compare_pytorch_nerva_augmented2.log
-meld compare_pytorch_nerva_augmented1.log compare_pytorch_nerva_augmented2.log
+  echo "python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --learning-rate=0.01 --precision=5 --seed=159 --momentum=0.9 --nesterov --run=pytorch $extra_args >& $logfile1"
+  python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --learning-rate=0.01 --precision=5 --seed=159 --momentum=0.9 --nesterov --run=pytorch $extra_args >& $logfile1
+
+  echo "python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --learning-rate=0.01 --precision=5 --seed=159 --momentum=0.9 --nesterov --run=nerva $extra_args >& $logfile2"
+  python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --learning-rate=0.01 --precision=5 --seed=159 --momentum=0.9 --nesterov --run=nerva $extra_args >& $logfile2
+}
+
+train "compare1.log" "compare2.log"
+train "compare3.log" "compare4.log" "--augmented"
+train "compare5.log" "compare6.log" "--density=0.5"
