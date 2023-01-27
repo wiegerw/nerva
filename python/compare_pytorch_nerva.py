@@ -367,6 +367,7 @@ def main():
     cmdline_parser.add_argument('--datadir', type=str, default='./data', help='the data directory (default: ./data)')
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
     cmdline_parser.add_argument('--density', type=float, default=1.0, help='The density of the overall sparse network.')
+    cmdline_parser.add_argument('--sizes', type=str, default='3072,128,64,10', help='A comma separated list of layer sizes, e.g. "3072,128,64,10".')
     args = cmdline_parser.parse_args()
 
     if args.seed:
@@ -384,7 +385,7 @@ def main():
         train_loader = TorchDataLoader(Xtrain, Ttrain, args.batch_size)
         test_loader = TorchDataLoader(Xtest, Ttest, args.batch_size)
 
-    sizes = [3072, 128, 64, 10]
+    sizes = [int(s) for s in args.sizes.split(',')]
     densities = compute_densities(args.density, sizes)
 
     # create PyTorch model
