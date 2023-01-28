@@ -7,13 +7,13 @@ function train()
   shift
   extra_args=$*
 
-  echo "python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --lr=0.01 --precision=5 --seed=159 --momentum=0.9 --nesterov --copy --torch $extra_args >& $logfile1"
-  python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --lr=0.01 --precision=5 --seed=159 --momentum=0.9 --nesterov --copy --torch $extra_args >& $logfile1
+  python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --lr=0.01 --precision=5 --seed=159 --copy --torch $extra_args >& $logfile1
+  python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --lr=0.01 --precision=5 --seed=159 --copy --nerva $extra_args >& $logfile2
 
-  echo "python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --lr=0.01 --precision=5 --seed=159 --momentum=0.9 --nesterov --copy --nerva $extra_args >& $logfile2"
-  python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --lr=0.01 --precision=5 --seed=159 --momentum=0.9 --nesterov --copy --nerva $extra_args >& $logfile2
+  meld $logfile1 $logfile2
 }
 
-train "compare"
-train "compare-augmented" "--augmented"
-train "compare-sparse" "--density=0.5"
+train "c1" "--show"
+train "c2" "--show --momentum=0.9"
+train "c3" "--augmented"
+train "c4" "--density=0.5"

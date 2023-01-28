@@ -170,13 +170,13 @@ def compute_accuracy1(M: nn.Module, data_loader):
     return total_correct / N
 
 
-def compute_loss1(M: nn.Module, loss, data_loader):
+def compute_loss1(M: nn.Module, data_loader):
     N = len(data_loader.dataset)  # N is the number of examples
     batch_size = N // len(data_loader)
     total_loss = 0.0
     for X, T in data_loader:
         Y = M(X)
-        total_loss += loss(Y, T).sum()
+        total_loss += M.loss(Y, T).sum()
     return batch_size * total_loss / N
 
 
@@ -192,14 +192,14 @@ def compute_accuracy2(M: nerva.layers.Sequential, data_loader):
     return total_correct / N
 
 
-def compute_loss2(M: nerva.layers.Sequential, loss, data_loader):
+def compute_loss2(M: nerva.layers.Sequential, data_loader):
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
     for X, T in data_loader:
         X = to_numpy(X)
         T = to_one_hot_numpy(T, 10)
         Y = M.feedforward(X)
-        total_loss += loss.value(Y, T)
+        total_loss += M.loss.value(Y, T)
     return total_loss / N
 
 
@@ -207,6 +207,7 @@ class MLP1(nn.Module):
     """ Multi-Layer Perceptron """
     def __init__(self, sizes):
         super().__init__()
+        self.sizes = sizes
         self.optimizer = None
         self.mask = None
         n = len(sizes) - 1  # the number of layers
@@ -219,12 +220,6 @@ class MLP1(nn.Module):
             x = F.relu(self.layers[i](x))
         x = self.layers[-1](x)  # output layer does not have an activation function
         return x
-
-    def set_mask(self, mask, optimizer, density, sparse_init='ER'):
-        self.mask = mask
-        self.optimizer = optimizer
-        if mask:
-            mask.add_module(self, sparse_init=sparse_init, density=density)
 
     def optimize(self):
         if self.mask is not None:
@@ -252,6 +247,7 @@ class MLP1(nn.Module):
 class MLP2(nerva.layers.Sequential):
     def __init__(self, sizes, densities, optimizer, batch_size):
         super().__init__()
+        self.sizes = sizes
         n = len(densities)  # the number of layers
         activations = [nerva.layers.ReLU()] * (n-1) + [nerva.layers.NoActivation()]
         output_sizes = sizes[1:]
@@ -303,14 +299,20 @@ def print_model_info(M):
         pp(f'b{i+1}', b[i])
 
 
-def train_pytorch(M, train_loader, test_loader, optimizer, criterion, learning_rate, epochs, show: bool):
+def compute_weight_difference(M1, M2):
+    wdiff = [np.linalg.norm(W1 - W2) for W1, W2 in zip(M1.weights(), M2.weights())]
+    bdiff = [np.linalg.norm(b1 - b2) for b1, b2 in zip(M1.bias(), M2.bias())]
+    print(f'weight differences: {wdiff} bias differences: {bdiff}')
+
+
+def train_pytorch(M, train_loader, test_loader, epochs, show: bool):
     for epoch in range(epochs):
         start = timer()
         for k, (X, T) in enumerate(train_loader):
-            optimizer.zero_grad()
+            M.optimizer.zero_grad()
             Y = M(X)
             Y.retain_grad()
-            loss = criterion(Y, T)
+            loss = M.loss(Y, T)
             loss.backward()
             M.optimize()
             elapsed = timer() - start
@@ -321,25 +323,26 @@ def train_pytorch(M, train_loader, test_loader, optimizer, criterion, learning_r
                 pp('DY', Y.grad.detach())
 
         print(f'epoch {epoch + 1:3}  '
-              f'lr: {optimizer.param_groups[0]["lr"]:.4f}  '
-              f'loss: {compute_loss1(M, criterion, train_loader):.3f}  '
+              f'lr: {M.optimizer.param_groups[0]["lr"]:.4f}  '
+              f'loss: {compute_loss1(M, train_loader):.3f}  '
               f'train accuracy: {compute_accuracy1(M, train_loader):.3f}  '
               f'test accuracy: {compute_accuracy1(M, test_loader):.3f}  '
               f'time: {elapsed:.3f}'
              )
 
-        learning_rate.step()  # N.B. this updates the learning rate in optimizer
+        M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
 
 
-def train_nerva(M, train_loader, test_loader, criterion, learning_rate, epochs, batch_size, show: bool):
+def train_nerva(M, train_loader, test_loader, epochs, batch_size, show: bool):
+    n_classes = M.sizes[-1]
     for epoch in range(epochs):
         start = timer()
-        lr = learning_rate(epoch)
+        lr = M.learning_rate(epoch)
         for k, (X, T) in enumerate(train_loader):
             X = to_numpy(X)
-            T = to_one_hot_numpy(T, 10)
+            T = to_one_hot_numpy(T, n_classes)
             Y = M.feedforward(X)
-            DY = criterion.gradient(Y, T) / batch_size
+            DY = M.loss.gradient(Y, T) / batch_size
             M.backpropagate(Y, DY)
             M.optimize(lr)
             elapsed = timer() - start
@@ -351,7 +354,7 @@ def train_nerva(M, train_loader, test_loader, criterion, learning_rate, epochs, 
 
         print(f'epoch {epoch + 1:3}  '
               f'lr: {lr:.4f}  '
-              f'loss: {compute_loss2(M, criterion, train_loader):.3f}  '
+              f'loss: {compute_loss2(M, train_loader):.3f}  '
               f'train accuracy: {compute_accuracy2(M, train_loader):.3f}  '
               f'test accuracy: {compute_accuracy2(M, test_loader):.3f}  '
               f'time: {elapsed:.3f}'
@@ -419,12 +422,11 @@ def compute_densities(density: float, sizes: List[int], erk_power_scale: float =
 
 
 def make_mask(model: torch.nn.Module,
-              optimizer: torch.optim.Optimizer,
               density,
               train_loader,
               sparse_init='ER',
              ) -> Masking:
-    mask = Masking(optimizer,
+    mask = Masking(model.optimizer,
                    prune_rate=0.5,
                    prune_mode='none',
                    prune_rate_decay=None,
@@ -484,25 +486,27 @@ def main():
 
     # create PyTorch model
     M1 = MLP1(sizes)
-    loss1 = nn.CrossEntropyLoss()
-    optimizer1 = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
-    mask = make_mask(M1, optimizer1, args.density, train_loader) if args.density != 1.0 else None
-    M1.set_mask(mask, optimizer1, args.density)  # this cannot be done during construction due to circular dependencies in PyTorch
-    learning_rate1 = torch.optim.lr_scheduler.MultiStepLR(optimizer1, milestones=milestones, last_epoch=-1)
+    M1.loss = nn.CrossEntropyLoss()
+    M1.optimizer = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
+    if args.density != None:
+        mask = make_mask(M1, args.density, train_loader)
+        mask.add_module(M1, density=args.density, sparse_init='ER')
+        M1.mask = mask
+    M1.learning_rate = torch.optim.lr_scheduler.MultiStepLR(M1.optimizer, milestones=milestones, last_epoch=-1)
     print('\n=== PyTorch model ===')
     print(M1)
-    print(loss1)
-    print(learning_rate1)
+    print(M1.loss)
+    print(M1.learning_rate)
 
     # create Nerva model
     optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
     M2 = MLP2(sizes, densities, optimizer2, args.batch_size)
-    loss2 = nerva.loss.SoftmaxCrossEntropyLoss()
-    learning_rate2 = nerva.learning_rate.MultiStepLRScheduler(args.lr, milestones, 0.1)
+    M2.loss = nerva.loss.SoftmaxCrossEntropyLoss()
+    M2.learning_rate = nerva.learning_rate.MultiStepLRScheduler(args.lr, milestones, 0.1)
     print('\n=== Nerva model ===')
     print(M2)
-    print(loss2)
-    print(learning_rate2)
+    print(M2.loss)
+    print(M2.learning_rate)
 
     if args.copy:
         copy_weights_and_biases(M1, M2)
@@ -515,12 +519,12 @@ def main():
 
     if args.torch:
         print('\n=== Training PyTorch model ===')
-        train_pytorch(M1, train_loader, test_loader, optimizer1, loss1, learning_rate1, args.epochs, args.show)
+        train_pytorch(M1, train_loader, test_loader, args.epochs, args.show)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy1(M1, test_loader):.3f} %')
 
     if args.nerva:
         print('\n=== Training Nerva model ===')
-        train_nerva(M2, train_loader, test_loader, loss2, learning_rate2, args.epochs, args.batch_size, args.show)
+        train_nerva(M2, train_loader, test_loader, args.epochs, args.batch_size, args.show)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy2(M2, test_loader):.3f} %')
 
 
