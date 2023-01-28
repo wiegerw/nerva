@@ -6,6 +6,7 @@
 
 import argparse
 import os
+import pathlib
 import tempfile
 from timeit import default_timer as timer
 from typing import List, Union
@@ -21,6 +22,7 @@ import nerva.layers
 import nerva.learning_rate
 import nerva.loss
 import nerva.optimizers
+from nervalib import MLPMasking
 from sparselearning.core import Masking
 
 
@@ -221,7 +223,9 @@ class MLP2(nerva.layers.Sequential):
     def weights(self) -> List[np.ndarray]:
         filename = tempfile.NamedTemporaryFile().name + '_weights.npy'
         self.export_weights(filename)
-        return load_numpy_arrays_from_npy_file(filename)
+        result = load_numpy_arrays_from_npy_file(filename)
+        pathlib.Path(filename).unlink(True)
+        return result
 
     def bias(self) -> List[np.ndarray]:
         def flatten(x: np.ndarray):
@@ -233,6 +237,7 @@ class MLP2(nerva.layers.Sequential):
         filename = tempfile.NamedTemporaryFile().name + '_bias.npy'
         self.export_bias(filename)
         bias = load_numpy_arrays_from_npy_file(filename)
+        pathlib.Path(filename).unlink(True)
         # N.B. The shape of the bias can be (128,1), in which case we flatten it to (128).
         return [flatten(b) for b in bias]
 
@@ -289,6 +294,8 @@ def copy_weights_and_biases(model1: nn.Module, model2: nerva.layers.Sequential):
     model2.import_weights(filename1)
     model1.export_bias(filename2)
     model2.import_bias(filename2)
+    pathlib.Path(filename1).unlink(True)
+    pathlib.Path(filename2).unlink(True)
 
 
 def pp(name: str, x: Union[torch.Tensor, np.ndarray]):
@@ -446,6 +453,66 @@ def train_both(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs, show: bool
         M1.learning_rate.step()
 
 
+# M1 is a dense model
+# M2 is a sparse model with the same structure
+def train_dense_sparse(M1: MLP2, M2: MLP2, train_loader, test_loader, epochs, show: bool):
+    n_classes = M2.sizes[-1]
+    batch_size = len(train_loader.dataset) // len(train_loader)
+
+    if show:
+        compute_weight_difference(M1, M2)
+
+    masking = MLPMasking(M2.compiled_model)
+
+    for epoch in range(epochs):
+        start = timer()
+        lr = M1.learning_rate(epoch)
+
+        for k, (X, T) in enumerate(train_loader):
+            X = to_numpy(X)
+            T = to_one_hot_numpy(T, n_classes)
+
+            Y1 = M1.feedforward(X)
+            DY1 = M1.loss.gradient(Y1, T) / batch_size
+            M1.backpropagate(Y1, DY1)
+            M1.optimize(lr)
+
+            Y2 = M2.feedforward(X)
+            DY2 = M2.loss.gradient(Y2, T) / batch_size
+            M2.backpropagate(Y2, DY2)
+            M2.optimize(lr)
+
+            masking.apply(M1.compiled_model)
+
+            if show:
+                print(f'epoch: {epoch} batch: {k}')
+                compute_matrix_difference('Y', Y1, Y2)
+                compute_matrix_difference('DY', DY1, DY2)
+                # pp('Y', Y1)
+                # pp('DY', Y1.grad.detach())
+                # pp('Y', Y2)
+                # pp('DY', DY2)
+                compute_weight_difference(M1, M2)
+
+            elapsed = timer() - start
+
+        print(f'epoch {epoch + 1:3}  '
+              f'lr: {lr:.4f}  '
+              f'loss: {compute_loss2(M1, train_loader):.3f}  '
+              f'train accuracy: {compute_accuracy2(M1, train_loader):.3f}  '
+              f'test accuracy: {compute_accuracy2(M1, test_loader):.3f}  '
+              f'time: {elapsed:.3f}'
+             )
+
+        print(f'epoch {epoch + 1:3}  '
+              f'lr: {lr:.4f}  '
+              f'loss: {compute_loss2(M2, train_loader):.3f}  '
+              f'train accuracy: {compute_accuracy2(M2, train_loader):.3f}  '
+              f'test accuracy: {compute_accuracy2(M2, test_loader):.3f}  '
+              f'time: {elapsed:.3f}'
+             )
+
+
 def make_nerva_optimizer(momentum=0.0, nesterov=False) -> nerva.optimizers.Optimizer:
     if nesterov:
         return nerva.optimizers.Nesterov(momentum)
@@ -542,6 +609,7 @@ def main():
     cmdline_parser.add_argument("--copy", help="copy weights and biases from the PyTorch model to the Nerva model", action="store_true")
     cmdline_parser.add_argument("--nerva", help="Train using a Nerva model", action="store_true")
     cmdline_parser.add_argument("--torch", help="Train using a PyTorch model", action="store_true")
+    cmdline_parser.add_argument("--dense-sparse", help="Train using a dense and sparse Nerva model", action="store_true")
     cmdline_parser.add_argument("--info", help="Print detailed info about the models", action="store_true")
     args = cmdline_parser.parse_args()
 
@@ -569,6 +637,8 @@ def main():
     # parameters for the learning rate scheduler
     milestones = [int(args.epochs / 2), int(args.epochs * 3 / 4)]
 
+    gamma = 0.1  # decay of the learning rate scheduler
+
     # create PyTorch model
     M1 = MLP1(sizes)
     M1.loss = nn.CrossEntropyLoss()
@@ -577,7 +647,7 @@ def main():
         mask = make_mask(M1, args.density, train_loader)
         mask.add_module(M1, density=args.density, sparse_init='ER')
         M1.mask = mask
-    M1.learning_rate = torch.optim.lr_scheduler.MultiStepLR(M1.optimizer, milestones=milestones, last_epoch=-1)
+    M1.learning_rate = torch.optim.lr_scheduler.MultiStepLR(M1.optimizer, milestones=milestones, gamma=gamma, last_epoch=-1)
     print('\n=== PyTorch model ===')
     print(M1)
     print(M1.loss)
@@ -587,7 +657,7 @@ def main():
     optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
     M2 = MLP2(sizes, densities, optimizer2, args.batch_size)
     M2.loss = nerva.loss.SoftmaxCrossEntropyLoss()
-    M2.learning_rate = nerva.learning_rate.MultiStepLRScheduler(args.lr, milestones, 0.1)
+    M2.learning_rate = nerva.learning_rate.MultiStepLRScheduler(args.lr, milestones, gamma)
     print('\n=== Nerva model ===')
     print(M2)
     print(M2.loss)
@@ -615,6 +685,17 @@ def main():
         print('\n=== Training Nerva model ===')
         train_nerva(M2, train_loader, test_loader, args.epochs, args.show)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy2(M2, test_loader):.3f} %')
+    elif args.dense_sparse:
+        print('\n=== Training dense Nerva and sparse Nerva model ===')
+        # create a dense model M3
+        densities3 = [1.0 for d in densities]
+        M3 = MLP2(sizes, densities3, optimizer2, args.batch_size)
+        M3.loss = M2.loss
+        M3.learning_rate = M2.learning_rate
+        copy_weights_and_biases(M1, M3)
+        train_dense_sparse(M3, M2, train_loader, test_loader, args.epochs, args.show)
+        print(f'Accuracy of the network M1 on the 10000 test images: {100 * compute_accuracy2(M3, test_loader):.3f} %')
+        print(f'Accuracy of the network M2 on the 10000 test images: {100 * compute_accuracy2(M2, test_loader):.3f} %')
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 #!/bin/bash
 
-# This run leads to an at this moment inexplicable jump in the weight differences between the PyTorch and Nerva models
-
-python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --lr=0.1 --precision=5 --seed=159 --copy --torch --nerva --show >& both.log
+# python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --lr=0.1 --precision=5 --seed=159 --copy --torch --nerva --show >& both.log
+# python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --lr=0.1 --precision=5 --seed=159 --copy --torch --nerva --show --density=0.1 >& both.log
+python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --lr=0.1 --precision=5 --seed=159 --copy --dense-sparse --show --density=0.1 >& both.log

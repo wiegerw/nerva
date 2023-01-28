@@ -13,6 +13,7 @@
 #include "nerva/neural_networks/check_gradients.h"
 #include "nerva/neural_networks/dropout_layers.h"
 #include "nerva/neural_networks/eigen.h"
+#include "nerva/neural_networks/masking.h"
 #include "nerva/neural_networks/mkl_eigen.h"
 #include "nerva/neural_networks/numpy_eigen.h"
 #include "nerva/neural_networks/layers.h"
@@ -162,12 +163,12 @@ void import_weights(multilayer_perceptron& M, const std::string& dir)
   int index = 1;
   for (auto& layer: M.layers)
   {
-    if (auto dlayer = dynamic_cast<linear_layer<eigen::matrix>*>(layer.get()))
+    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
       load_matrix(dir + "/w" + std::to_string(index) + ".txt", dlayer->W);
       eigen::load_vector(dir + "/b" + std::to_string(index) + ".txt", dlayer->b);
     }
-    else if (auto slayer = dynamic_cast<linear_layer<mkl::sparse_matrix_csr<scalar>>*>(layer.get()))
+    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
       load_matrix(dir + "/w" + std::to_string(index) + ".txt", slayer->W);
       eigen::load_vector(dir + "/b" + std::to_string(index) + ".txt", slayer->b);
@@ -183,12 +184,12 @@ void export_weights(const multilayer_perceptron& M, const std::string& dir)
   int index = 1;
   for (auto& layer: M.layers)
   {
-    if (auto dlayer = dynamic_cast<linear_layer<eigen::matrix>*>(layer.get()))
+    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
       save_matrix(dir + "/w" + std::to_string(index) + ".txt", dlayer->W);
       eigen::save_vector(dir + "/b" + std::to_string(index) + ".txt", dlayer->b);
     }
-    else if (auto slayer = dynamic_cast<linear_layer<mkl::sparse_matrix_csr<scalar>>*>(layer.get()))
+    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
       save_matrix(dir + "/w" + std::to_string(index) + ".txt", slayer->W);
       eigen::save_vector(dir + "/b" + std::to_string(index) + ".txt", slayer->b);
@@ -211,11 +212,11 @@ void export_weights_to_numpy(const multilayer_perceptron& M, const std::string& 
 
   for (auto& layer: M.layers)
   {
-    if (auto dlayer = dynamic_cast<linear_layer<eigen::matrix>*>(layer.get()))
+    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
       np.attr("save")(file, eigen::to_numpy(dlayer->W));
     }
-    else if (auto slayer = dynamic_cast<linear_layer<mkl::sparse_matrix_csr<scalar>>*>(layer.get()))
+    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
       np.attr("save")(file, eigen::to_numpy(mkl::to_eigen(slayer->W)));
     }
@@ -238,11 +239,11 @@ void import_weights_from_numpy(multilayer_perceptron& M, const std::string& file
 
   for (auto& layer: M.layers)
   {
-    if (auto dlayer = dynamic_cast<linear_layer<eigen::matrix>*>(layer.get()))
+    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
       dlayer->W = eigen::from_numpy(np.attr("load")(file).cast<py::array_t<scalar>>());
     }
-    else if (auto slayer = dynamic_cast<linear_layer<mkl::sparse_matrix_csr<scalar>>*>(layer.get()))
+    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
       slayer->W = mkl::to_csr(eigen::from_numpy(np.attr("load")(file).cast<py::array_t<scalar>>()));
     }
@@ -265,11 +266,11 @@ void export_bias_to_numpy(const multilayer_perceptron& M, const std::string& fil
 
   for (auto& layer: M.layers)
   {
-    if (auto dlayer = dynamic_cast<linear_layer<eigen::matrix>*>(layer.get()))
+    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
       np.attr("save")(file, eigen::to_numpy(dlayer->b));
     }
-    else if (auto slayer = dynamic_cast<linear_layer<mkl::sparse_matrix_csr<scalar>>*>(layer.get()))
+    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
       np.attr("save")(file, eigen::to_numpy(slayer->b));
     }
@@ -292,11 +293,11 @@ void import_bias_from_numpy(multilayer_perceptron& M, const std::string& filenam
 
   for (auto& layer: M.layers)
   {
-    if (auto dlayer = dynamic_cast<linear_layer<eigen::matrix>*>(layer.get()))
+    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
       dlayer->b = eigen::from_numpy(np.attr("load")(file).cast<py::array_t<scalar>>());
     }
-    else if (auto slayer = dynamic_cast<linear_layer<mkl::sparse_matrix_csr<scalar>>*>(layer.get()))
+    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
       slayer->b = eigen::from_numpy(np.attr("load")(file).cast<py::array_t<scalar>>());
     }
@@ -304,6 +305,44 @@ void import_bias_from_numpy(multilayer_perceptron& M, const std::string& filenam
 
   file.attr("close")();
 }
+
+class mlp_masking
+{
+  using boolean_matrix = Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic>;
+
+  protected:
+    std::vector<boolean_matrix> masks;
+
+  public:
+    explicit mlp_masking(const multilayer_perceptron& M)
+    {
+      // create a binary mask for every sparse linear layer in M
+      for (auto& layer: M.layers)
+      {
+        if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
+        {
+          masks.push_back(create_binary_mask(mkl::to_eigen(slayer->W)));
+        }
+      }
+    }
+
+    // applies the masks to the dense linear layers in M
+    void apply(multilayer_perceptron& M)
+    {
+      int unsigned index = 0;
+      for (auto& layer: M.layers)
+      {
+        if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
+        {
+          apply_binary_mask(dlayer->W, masks[index++]);
+          if (index >= masks.size())
+          {
+            break;
+          }
+        }
+      }
+    }
+};
 
 } // namespace nerva
 

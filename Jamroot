@@ -23,6 +23,7 @@ project nerva
        <linkflags>-lpthread
        <linkflags>-lm
        <linkflags>-ldl
+       <linkflags>-ltbb  # it seems MKL requires this now...
 
        <toolset>clang-5:<cxxflags>"-std=c++1z" <warnings>all
        <toolset>clang:<cxxflags>"-std=c++17" <warnings>all
