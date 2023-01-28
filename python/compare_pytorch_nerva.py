@@ -9,7 +9,7 @@ import os
 import pathlib
 import tempfile
 from timeit import default_timer as timer
-from typing import List, Union
+from typing import List, Tuple, Union
 import torch
 import torchvision
 import torch.nn as nn
@@ -482,12 +482,13 @@ def train_dense_sparse(M1: MLP2, M2: MLP2, train_loader, test_loader, epochs, sh
             M2.backpropagate(Y2, DY2)
             M2.optimize(lr)
 
+            compute_weight_difference(M1, M2)
             masking.apply(M1.compiled_model)
 
             if show:
                 print(f'epoch: {epoch} batch: {k}')
-                compute_matrix_difference('Y', Y1, Y2)
-                compute_matrix_difference('DY', DY1, DY2)
+                # compute_matrix_difference('Y', Y1, Y2)
+                # compute_matrix_difference('DY', DY1, DY2)
                 # pp('Y', Y1)
                 # pp('DY', Y1.grad.detach())
                 # pp('Y', Y2)
@@ -575,7 +576,6 @@ def compute_densities(density: float, sizes: List[int], erk_power_scale: float =
 
 def make_mask(model: torch.nn.Module,
               density,
-              train_loader,
               sparse_init='ER',
              ) -> Masking:
     mask = Masking(model.optimizer,
@@ -585,10 +585,39 @@ def make_mask(model: torch.nn.Module,
                    prune_interval=0,
                    growth_mode='random',
                    redistribution_mode='none',
-                   train_loader=train_loader,
                    )
     mask.add_module(model, sparse_init=sparse_init, density=density)
     return mask
+
+
+def make_cifar10_models(args, sizes, densities) -> Tuple[MLP1, MLP2]:
+    # parameters for the learning rate scheduler
+    milestones = [int(args.epochs / 2), int(args.epochs * 3 / 4)]
+
+    M1 = MLP1(sizes)
+    M1.optimizer = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
+    if args.density != None:
+        mask = make_mask(M1, args.density)
+        mask.add_module(M1, density=args.density, sparse_init='ER')
+        M1.mask = mask
+    M1.loss = nn.CrossEntropyLoss()
+    M1.learning_rate = torch.optim.lr_scheduler.MultiStepLR(M1.optimizer, milestones=milestones, gamma=args.gamma, last_epoch=-1)
+    print('\n=== PyTorch model ===')
+    print(M1)
+    print(M1.loss)
+    print(M1.learning_rate)
+
+    # create Nerva model
+    optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
+    M2 = MLP2(sizes, densities, optimizer2, args.batch_size)
+    M2.loss = nerva.loss.SoftmaxCrossEntropyLoss()
+    M2.learning_rate = nerva.learning_rate.MultiStepLRScheduler(args.lr, milestones, args.gamma)
+    print('\n=== Nerva model ===')
+    print(M2)
+    print(M2.loss)
+    print(M2.learning_rate)
+
+    return M1, M2
 
 
 def main():
@@ -601,6 +630,7 @@ def main():
     cmdline_parser.add_argument("--epochs", help="The number of epochs", type=int, default=100)
     cmdline_parser.add_argument("--lr", help="The learning rate", type=float, default=0.1)
     cmdline_parser.add_argument('--momentum', type=float, default=0.9, help='the momentum value (default: off)')
+    cmdline_parser.add_argument('--gamma', type=float, default=0.1, help='the learning rate decay (default: 0.1)')
     cmdline_parser.add_argument("--nesterov", help="apply nesterov", action="store_true")
     cmdline_parser.add_argument('--datadir', type=str, default='./data', help='the data directory (default: ./data)')
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
@@ -634,34 +664,34 @@ def main():
     sizes = [int(s) for s in args.sizes.split(',')]
     densities = compute_densities(args.density, sizes)
 
-    # parameters for the learning rate scheduler
-    milestones = [int(args.epochs / 2), int(args.epochs * 3 / 4)]
+    M1, M2 = make_cifar10_models(args, sizes, densities)
 
-    gamma = 0.1  # decay of the learning rate scheduler
-
-    # create PyTorch model
-    M1 = MLP1(sizes)
-    M1.loss = nn.CrossEntropyLoss()
-    M1.optimizer = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
-    if args.density != None:
-        mask = make_mask(M1, args.density, train_loader)
-        mask.add_module(M1, density=args.density, sparse_init='ER')
-        M1.mask = mask
-    M1.learning_rate = torch.optim.lr_scheduler.MultiStepLR(M1.optimizer, milestones=milestones, gamma=gamma, last_epoch=-1)
-    print('\n=== PyTorch model ===')
-    print(M1)
-    print(M1.loss)
-    print(M1.learning_rate)
-
-    # create Nerva model
-    optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
-    M2 = MLP2(sizes, densities, optimizer2, args.batch_size)
-    M2.loss = nerva.loss.SoftmaxCrossEntropyLoss()
-    M2.learning_rate = nerva.learning_rate.MultiStepLRScheduler(args.lr, milestones, gamma)
-    print('\n=== Nerva model ===')
-    print(M2)
-    print(M2.loss)
-    print(M2.learning_rate)
+    # # parameters for the learning rate scheduler
+    # milestones = [int(args.epochs / 2), int(args.epochs * 3 / 4)]
+    #
+    # # create PyTorch model
+    # M1 = MLP1(sizes)
+    # M1.optimizer = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
+    # if args.density != None:
+    #     mask = make_mask(M1, args.density)
+    #     mask.add_module(M1, density=args.density, sparse_init='ER')
+    #     M1.mask = mask
+    # M1.loss = nn.CrossEntropyLoss()
+    # M1.learning_rate = torch.optim.lr_scheduler.MultiStepLR(M1.optimizer, milestones=milestones, gamma=args.gamma, last_epoch=-1)
+    # print('\n=== PyTorch model ===')
+    # print(M1)
+    # print(M1.loss)
+    # print(M1.learning_rate)
+    #
+    # # create Nerva model
+    # optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
+    # M2 = MLP2(sizes, densities, optimizer2, args.batch_size)
+    # M2.loss = nerva.loss.SoftmaxCrossEntropyLoss()
+    # M2.learning_rate = nerva.learning_rate.MultiStepLRScheduler(args.lr, milestones, args.gamma)
+    # print('\n=== Nerva model ===')
+    # print(M2)
+    # print(M2.loss)
+    # print(M2.learning_rate)
 
     if args.copy:
         copy_weights_and_biases(M1, M2)
@@ -689,7 +719,7 @@ def main():
         print('\n=== Training dense Nerva and sparse Nerva model ===')
         # create a dense model M3
         densities3 = [1.0 for d in densities]
-        M3 = MLP2(sizes, densities3, optimizer2, args.batch_size)
+        M3 = MLP2(sizes, densities3, M2.optimizer, args.batch_size)
         M3.loss = M2.loss
         M3.learning_rate = M2.learning_rate
         copy_weights_and_biases(M1, M3)
