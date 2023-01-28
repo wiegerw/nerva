@@ -422,6 +422,7 @@ def train_both(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs, show: bool
             if show:
                 print(f'epoch: {epoch} batch: {k}')
                 compute_matrix_difference('Y', Y1.detach().numpy().T, Y2)
+                compute_matrix_difference('DY', Y1.grad.detach().numpy().T, DY2)
                 compute_weight_difference(M1, M2)
 
             elapsed = timer() - start
