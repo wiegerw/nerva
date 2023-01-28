@@ -22,6 +22,7 @@ import nerva.layers
 import nerva.learning_rate
 import nerva.loss
 import nerva.optimizers
+import nerva.random
 from nervalib import MLPMasking
 from sparselearning.core import Masking
 
@@ -591,17 +592,24 @@ def make_mask(model: torch.nn.Module,
     return mask
 
 
-def make_schedulers(args, optimizer1):
+def make_nerva_scheduler(args):
     if args.scheduler == 'constant':
-        scheduler1 = torch.optim.lr_scheduler.ConstantLR(optimizer1, factor=1.0)
-        scheduler2 = nerva.learning_rate.ConstantScheduler(args.lr)
+        return nerva.learning_rate.ConstantScheduler(args.lr)
     elif args.scheduler == 'multistep':
         milestones = [int(args.epochs / 2), int(args.epochs * 3 / 4)]
-        scheduler1 = torch.optim.lr_scheduler.MultiStepLR(optimizer1, milestones=milestones, gamma=args.gamma, last_epoch=-1)
-        scheduler2 = nerva.learning_rate.MultiStepLRScheduler(args.lr, milestones, args.gamma)
+        return nerva.learning_rate.MultiStepLRScheduler(args.lr, milestones, args.gamma)
     else:
         raise RuntimeError(f'Unknown scheduler {args.scheduler}')
-    return scheduler1, scheduler2
+
+
+def make_torch_scheduler(args, optimizer):
+    if args.scheduler == 'constant':
+        return torch.optim.lr_scheduler.ConstantLR(optimizer, factor=1.0)
+    elif args.scheduler == 'multistep':
+        milestones = [int(args.epochs / 2), int(args.epochs * 3 / 4)]
+        return torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones, gamma=args.gamma, last_epoch=-1)
+    else:
+        raise RuntimeError(f'Unknown scheduler {args.scheduler}')
 
 
 def make_models(args, sizes, densities) -> Tuple[MLP1, MLP2]:
@@ -613,13 +621,13 @@ def make_models(args, sizes, densities) -> Tuple[MLP1, MLP2]:
         mask.add_module(M1, density=args.density, sparse_init='ER')
         M1.mask = mask
     M1.loss = nn.CrossEntropyLoss()
+    M1.learning_rate = make_torch_scheduler(args, M1.optimizer)
 
     # create Nerva model
     optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
     M2 = MLP2(sizes, densities, optimizer2, args.batch_size)
     M2.loss = nerva.loss.SoftmaxCrossEntropyLoss()
-
-    M1.learning_rate, M2.learning_rate = make_schedulers(args, M1.optimizer)
+    M2.learning_rate = make_nerva_scheduler(args)
 
     print('\n=== PyTorch model ===')
     print(M1)
@@ -643,7 +651,7 @@ def make_dense_copy(M: MLP2, sizes, densities, batch_size) -> MLP2:
     return M1
 
 
-def main():
+def make_argument_parser():
     cmdline_parser = argparse.ArgumentParser()
     cmdline_parser.add_argument("--show", help="Show data and intermediate results", action="store_true")
     cmdline_parser.add_argument("--batch-size", help="The batch size", type=int, default=1)
@@ -662,21 +670,31 @@ def main():
     cmdline_parser.add_argument("--copy", help="copy weights and biases from the PyTorch model to the Nerva model", action="store_true")
     cmdline_parser.add_argument("--nerva", help="Train using a Nerva model", action="store_true")
     cmdline_parser.add_argument("--torch", help="Train using a PyTorch model", action="store_true")
-    cmdline_parser.add_argument("--dense-sparse", help="Train using a dense and sparse Nerva model", action="store_true")
+    #cmdline_parser.add_argument("--dense-sparse", help="Train using a dense and sparse Nerva model", action="store_true")
     cmdline_parser.add_argument("--info", help="Print detailed info about the models", action="store_true")
     cmdline_parser.add_argument("--scheduler", type=str, help="the learning rate scheduler (constant,multistep)", default="multistep")
-    args = cmdline_parser.parse_args()
+    return cmdline_parser
 
-    print('=== Command line arguments ===')
-    print(args)
 
+def initialize_frameworks(args):
     if args.seed:
         torch.manual_seed(args.seed)
+        nerva.random.manual_seed(args.seed)
 
     torch.set_printoptions(precision=args.precision, edgeitems=args.edgeitems, threshold=5, sci_mode=False, linewidth=120)
 
     # avoid 'Too many open files' error when using data loaders
     torch.multiprocessing.set_sharing_strategy('file_system')
+
+
+def main():
+    cmdline_parser = make_argument_parser()
+    args = cmdline_parser.parse_args()
+
+    print('=== Command line arguments ===')
+    print(args)
+
+    initialize_frameworks(args)
 
     if args.augmented:
         train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
