@@ -233,7 +233,7 @@ class MLP2(nerva.layers.Sequential):
         filename = tempfile.NamedTemporaryFile().name + '_bias.npy'
         self.export_bias(filename)
         bias = load_numpy_arrays_from_npy_file(filename)
-        # N.B. The shapes of the bias can be (128,1), in which case we flatten it to (128).
+        # N.B. The shape of the bias can be (128,1), in which case we flatten it to (128).
         return [flatten(b) for b in bias]
 
 
@@ -308,9 +308,17 @@ def print_model_info(M):
         pp(f'b{i+1}', b[i])
 
 
+def l1_norm(x: np.ndarray):
+    return np.abs(x).sum()
+
+
+def l2_norm(x: np.ndarray):
+    return np.linalg.norm(x)
+
+
 def compute_weight_difference(M1, M2):
-    wdiff = [np.linalg.norm(W1 - W2) for W1, W2 in zip(M1.weights(), M2.weights())]
-    bdiff = [np.linalg.norm(b1 - b2) for b1, b2 in zip(M1.bias(), M2.bias())]
+    wdiff = [l1_norm(W1 - W2) for W1, W2 in zip(M1.weights(), M2.weights())]
+    bdiff = [l1_norm(b1 - b2) for b1, b2 in zip(M1.bias(), M2.bias())]
     print(f'weight differences: {wdiff} bias differences: {bdiff}')
 
 
