@@ -322,6 +322,10 @@ def compute_weight_difference(M1, M2):
     print(f'weight differences: {wdiff} bias differences: {bdiff}')
 
 
+def compute_matrix_difference(name, X1: np.ndarray, X2: np.ndarray):
+    print(f'{name} difference: {l1_norm(X1 - X2)}')
+
+
 def train_pytorch(M, train_loader, test_loader, epochs, show: bool):
     for epoch in range(epochs):
         start = timer()
@@ -417,6 +421,7 @@ def train_both(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs, show: bool
 
             if show:
                 print(f'epoch: {epoch} batch: {k}')
+                compute_matrix_difference('Y', Y1.detach().numpy().T, Y2)
                 compute_weight_difference(M1, M2)
 
             elapsed = timer() - start
