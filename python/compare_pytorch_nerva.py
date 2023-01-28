@@ -208,6 +208,7 @@ class MLP2(nerva.layers.Sequential):
     def __init__(self, sizes, densities, optimizer, batch_size):
         super().__init__()
         self.sizes = sizes
+        self.optimizer = optimizer
         self.loss = None
         self.learning_rate = None
         n = len(densities)  # the number of layers
@@ -286,7 +287,7 @@ def compute_loss2(M: MLP2, data_loader):
 
 
 # Copies models and weights from model1 to model2
-def copy_weights_and_biases(model1: nn.Module, model2: nerva.layers.Sequential):
+def copy_weights_and_biases(model1: Union[MLP1, MLP2], model2: MLP2):
     name = tempfile.NamedTemporaryFile().name
     filename1 = name + '_weights.npy'
     filename2 = name + '_bias.npy'
@@ -590,10 +591,21 @@ def make_mask(model: torch.nn.Module,
     return mask
 
 
-def make_cifar10_models(args, sizes, densities) -> Tuple[MLP1, MLP2]:
-    # parameters for the learning rate scheduler
-    milestones = [int(args.epochs / 2), int(args.epochs * 3 / 4)]
+def make_schedulers(args, optimizer1):
+    if args.scheduler == 'constant':
+        scheduler1 = torch.optim.lr_scheduler.ConstantLR(optimizer1, factor=1.0)
+        scheduler2 = nerva.learning_rate.ConstantScheduler(args.lr)
+    elif args.scheduler == 'multistep':
+        milestones = [int(args.epochs / 2), int(args.epochs * 3 / 4)]
+        scheduler1 = torch.optim.lr_scheduler.MultiStepLR(optimizer1, milestones=milestones, gamma=args.gamma, last_epoch=-1)
+        scheduler2 = nerva.learning_rate.MultiStepLRScheduler(args.lr, milestones, args.gamma)
+    else:
+        raise RuntimeError(f'Unknown scheduler {args.scheduler}')
+    return scheduler1, scheduler2
 
+
+def make_models(args, sizes, densities) -> Tuple[MLP1, MLP2]:
+    # create PyTorch model
     M1 = MLP1(sizes)
     M1.optimizer = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
     if args.density != None:
@@ -601,23 +613,34 @@ def make_cifar10_models(args, sizes, densities) -> Tuple[MLP1, MLP2]:
         mask.add_module(M1, density=args.density, sparse_init='ER')
         M1.mask = mask
     M1.loss = nn.CrossEntropyLoss()
-    M1.learning_rate = torch.optim.lr_scheduler.MultiStepLR(M1.optimizer, milestones=milestones, gamma=args.gamma, last_epoch=-1)
-    print('\n=== PyTorch model ===')
-    print(M1)
-    print(M1.loss)
-    print(M1.learning_rate)
 
     # create Nerva model
     optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
     M2 = MLP2(sizes, densities, optimizer2, args.batch_size)
     M2.loss = nerva.loss.SoftmaxCrossEntropyLoss()
-    M2.learning_rate = nerva.learning_rate.MultiStepLRScheduler(args.lr, milestones, args.gamma)
+
+    M1.learning_rate, M2.learning_rate = make_schedulers(args, M1.optimizer)
+
+    print('\n=== PyTorch model ===')
+    print(M1)
+    print(M1.loss)
+    print(M1.learning_rate)
+
     print('\n=== Nerva model ===')
     print(M2)
     print(M2.loss)
     print(M2.learning_rate)
 
     return M1, M2
+
+
+def make_dense_copy(M: MLP2, sizes, densities, batch_size) -> MLP2:
+    densities3 = [1.0 for _ in densities]
+    M1 = MLP2(sizes, densities3, M.optimizer, batch_size)
+    M1.loss = M.loss
+    M1.learning_rate = M.learning_rate
+    copy_weights_and_biases(M, M1)
+    return M1
 
 
 def main():
@@ -641,6 +664,7 @@ def main():
     cmdline_parser.add_argument("--torch", help="Train using a PyTorch model", action="store_true")
     cmdline_parser.add_argument("--dense-sparse", help="Train using a dense and sparse Nerva model", action="store_true")
     cmdline_parser.add_argument("--info", help="Print detailed info about the models", action="store_true")
+    cmdline_parser.add_argument("--scheduler", type=str, help="the learning rate scheduler (constant,multistep)", default="multistep")
     args = cmdline_parser.parse_args()
 
     print('=== Command line arguments ===')
@@ -664,34 +688,7 @@ def main():
     sizes = [int(s) for s in args.sizes.split(',')]
     densities = compute_densities(args.density, sizes)
 
-    M1, M2 = make_cifar10_models(args, sizes, densities)
-
-    # # parameters for the learning rate scheduler
-    # milestones = [int(args.epochs / 2), int(args.epochs * 3 / 4)]
-    #
-    # # create PyTorch model
-    # M1 = MLP1(sizes)
-    # M1.optimizer = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
-    # if args.density != None:
-    #     mask = make_mask(M1, args.density)
-    #     mask.add_module(M1, density=args.density, sparse_init='ER')
-    #     M1.mask = mask
-    # M1.loss = nn.CrossEntropyLoss()
-    # M1.learning_rate = torch.optim.lr_scheduler.MultiStepLR(M1.optimizer, milestones=milestones, gamma=args.gamma, last_epoch=-1)
-    # print('\n=== PyTorch model ===')
-    # print(M1)
-    # print(M1.loss)
-    # print(M1.learning_rate)
-    #
-    # # create Nerva model
-    # optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
-    # M2 = MLP2(sizes, densities, optimizer2, args.batch_size)
-    # M2.loss = nerva.loss.SoftmaxCrossEntropyLoss()
-    # M2.learning_rate = nerva.learning_rate.MultiStepLRScheduler(args.lr, milestones, args.gamma)
-    # print('\n=== Nerva model ===')
-    # print(M2)
-    # print(M2.loss)
-    # print(M2.learning_rate)
+    M1, M2 = make_models(args, sizes, densities)
 
     if args.copy:
         copy_weights_and_biases(M1, M2)
@@ -717,12 +714,7 @@ def main():
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy2(M2, test_loader):.3f} %')
     elif args.dense_sparse:
         print('\n=== Training dense Nerva and sparse Nerva model ===')
-        # create a dense model M3
-        densities3 = [1.0 for d in densities]
-        M3 = MLP2(sizes, densities3, M2.optimizer, args.batch_size)
-        M3.loss = M2.loss
-        M3.learning_rate = M2.learning_rate
-        copy_weights_and_biases(M1, M3)
+        M3 = make_dense_copy(M2, sizes, densities, args.batch_size)
         train_dense_sparse(M3, M2, train_loader, test_loader, args.epochs, args.show)
         print(f'Accuracy of the network M1 on the 10000 test images: {100 * compute_accuracy2(M3, test_loader):.3f} %')
         print(f'Accuracy of the network M2 on the 10000 test images: {100 * compute_accuracy2(M2, test_loader):.3f} %')
