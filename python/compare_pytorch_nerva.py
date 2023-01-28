@@ -224,9 +224,17 @@ class MLP2(nerva.layers.Sequential):
         return load_numpy_arrays_from_npy_file(filename)
 
     def bias(self) -> List[np.ndarray]:
+        def flatten(x: np.ndarray):
+            if len(x.shape) == 2 and x.shape[1] == 1:
+                return x.reshape(x.shape[0])
+            else:
+                return x
+
         filename = tempfile.NamedTemporaryFile().name + '_bias.npy'
         self.export_bias(filename)
-        return load_numpy_arrays_from_npy_file(filename)
+        bias = load_numpy_arrays_from_npy_file(filename)
+        # N.B. The shapes of the bias can be (128,1), in which case we flatten it to (128).
+        return [flatten(b) for b in bias]
 
 
 def compute_accuracy1(M: MLP1, data_loader):
@@ -366,6 +374,10 @@ def train_nerva(M, train_loader, test_loader, epochs, show: bool):
 def train_both(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs, show: bool):
     n_classes = M2.sizes[-1]
     batch_size = len(train_loader.dataset) // len(train_loader)
+
+    if show:
+        compute_weight_difference(M1, M2)
+
     for epoch in range(epochs):
         start = timer()
         lr = M2.learning_rate(epoch)
@@ -390,12 +402,13 @@ def train_both(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs, show: bool
             M2.backpropagate(Y2, DY2)
             M2.optimize(lr)
 
-            if show:
-                print(f'epoch: {epoch} batch: {k}')
-                pp('Y', Y2)
-                pp('DY', DY2)
+            # if show:
+            #     print(f'epoch: {epoch} batch: {k}')
+            #     pp('Y', Y2)
+            #     pp('DY', DY2)
 
             if show:
+                print(f'epoch: {epoch} batch: {k}')
                 compute_weight_difference(M1, M2)
 
             elapsed = timer() - start
