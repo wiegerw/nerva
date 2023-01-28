@@ -7,8 +7,8 @@ function train()
   shift
   extra_args=$*
 
-  python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --lr=0.01 --precision=5 --seed=159 --copy --torch $extra_args >& $logfile1
-  python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --lr=0.01 --precision=5 --seed=159 --copy --nerva $extra_args >& $logfile2
+  python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --lr=0.1 --precision=5 --seed=159 --copy --torch $extra_args >& $logfile1
+  python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --lr=0.1 --precision=5 --seed=159 --copy --nerva $extra_args >& $logfile2
 
   meld $logfile1 $logfile2
 }

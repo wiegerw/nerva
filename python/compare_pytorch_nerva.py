@@ -115,6 +115,7 @@ class TorchDataLoader(object):
         self.Tdata = Tdata
         self.batch_size = batch_size
         self.dataset = Xdata  # for conformance to the DataLoader interface
+
     def __iter__(self):
         N = self.Xdata.shape[0]  # N is the number of examples
         K = N // self.batch_size  # K is the number of batches
@@ -160,49 +161,6 @@ def load_cifar10_data(datadir):
     return Xtrain, Ttrain, Xtest, Ttest
 
 
-def compute_accuracy1(M: nn.Module, data_loader):
-    N = len(data_loader.dataset)  # N is the number of examples
-    total_correct = 0
-    for X, T in data_loader:
-        Y = M(X)
-        predicted = Y.argmax(axis=1)  # the predicted classes for the batch
-        total_correct += (predicted == T).sum().item()
-    return total_correct / N
-
-
-def compute_loss1(M: nn.Module, data_loader):
-    N = len(data_loader.dataset)  # N is the number of examples
-    batch_size = N // len(data_loader)
-    total_loss = 0.0
-    for X, T in data_loader:
-        Y = M(X)
-        total_loss += M.loss(Y, T).sum()
-    return batch_size * total_loss / N
-
-
-def compute_accuracy2(M: nerva.layers.Sequential, data_loader):
-    N = len(data_loader.dataset)  # N is the number of examples
-    total_correct = 0
-    for X, T in data_loader:
-        X = to_numpy(X)
-        T = to_numpy(T)
-        Y = M.feedforward(X)
-        predicted = Y.argmax(axis=0)  # the predicted classes for the batch
-        total_correct += (predicted == T).sum().item()
-    return total_correct / N
-
-
-def compute_loss2(M: nerva.layers.Sequential, data_loader):
-    N = len(data_loader.dataset)  # N is the number of examples
-    total_loss = 0.0
-    for X, T in data_loader:
-        X = to_numpy(X)
-        T = to_one_hot_numpy(T, 10)
-        Y = M.feedforward(X)
-        total_loss += M.loss.value(Y, T)
-    return total_loss / N
-
-
 class MLP1(nn.Module):
     """ Multi-Layer Perceptron """
     def __init__(self, sizes):
@@ -228,10 +186,10 @@ class MLP1(nn.Module):
             self.optimizer.step()
 
     def weights(self) -> List[torch.Tensor]:
-        return [layer.weight for layer in self.layers]
+        return [layer.weight.detach().numpy() for layer in self.layers]
 
     def bias(self) -> List[torch.Tensor]:
-        return [layer.bias for layer in self.layers]
+        return [layer.bias.detach().numpy() for layer in self.layers]
 
     def export_weights(self, filename: str):
         with open(filename, "wb") as f:
@@ -248,6 +206,8 @@ class MLP2(nerva.layers.Sequential):
     def __init__(self, sizes, densities, optimizer, batch_size):
         super().__init__()
         self.sizes = sizes
+        self.loss = None
+        self.learning_rate = None
         n = len(densities)  # the number of layers
         activations = [nerva.layers.ReLU()] * (n-1) + [nerva.layers.NoActivation()]
         output_sizes = sizes[1:]
@@ -258,17 +218,58 @@ class MLP2(nerva.layers.Sequential):
                 self.add(nerva.layers.Sparse(size, 1.0 - density, activation=activation, optimizer=optimizer))
         self.compile(sizes[0], batch_size)
 
-    def weights(self) -> List[torch.Tensor]:
+    def weights(self) -> List[np.ndarray]:
         filename = tempfile.NamedTemporaryFile().name + '_weights.npy'
         self.export_weights(filename)
-        weights = load_numpy_arrays_from_npy_file(filename)
-        return [torch.Tensor(W) for W in weights]
+        return load_numpy_arrays_from_npy_file(filename)
 
-    def bias(self) -> List[torch.Tensor]:
+    def bias(self) -> List[np.ndarray]:
         filename = tempfile.NamedTemporaryFile().name + '_bias.npy'
         self.export_bias(filename)
-        bias = load_numpy_arrays_from_npy_file(filename)
-        return [torch.Tensor(b) for b in bias]
+        return load_numpy_arrays_from_npy_file(filename)
+
+
+def compute_accuracy1(M: MLP1, data_loader):
+    N = len(data_loader.dataset)  # N is the number of examples
+    total_correct = 0
+    for X, T in data_loader:
+        Y = M(X)
+        predicted = Y.argmax(axis=1)  # the predicted classes for the batch
+        total_correct += (predicted == T).sum().item()
+    return total_correct / N
+
+
+def compute_loss1(M: MLP1, data_loader):
+    N = len(data_loader.dataset)  # N is the number of examples
+    batch_size = N // len(data_loader)
+    total_loss = 0.0
+    for X, T in data_loader:
+        Y = M(X)
+        total_loss += M.loss(Y, T).sum()
+    return batch_size * total_loss / N
+
+
+def compute_accuracy2(M: MLP2, data_loader):
+    N = len(data_loader.dataset)  # N is the number of examples
+    total_correct = 0
+    for X, T in data_loader:
+        X = to_numpy(X)
+        T = to_numpy(T)
+        Y = M.feedforward(X)
+        predicted = Y.argmax(axis=0)  # the predicted classes for the batch
+        total_correct += (predicted == T).sum().item()
+    return total_correct / N
+
+
+def compute_loss2(M: MLP2, data_loader):
+    N = len(data_loader.dataset)  # N is the number of examples
+    total_loss = 0.0
+    for X, T in data_loader:
+        X = to_numpy(X)
+        T = to_one_hot_numpy(T, 10)
+        Y = M.feedforward(X)
+        total_loss += M.loss.value(Y, T)
+    return total_loss / N
 
 
 # Copies models and weights from model1 to model2
@@ -333,8 +334,9 @@ def train_pytorch(M, train_loader, test_loader, epochs, show: bool):
         M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
 
 
-def train_nerva(M, train_loader, test_loader, epochs, batch_size, show: bool):
+def train_nerva(M, train_loader, test_loader, epochs, show: bool):
     n_classes = M.sizes[-1]
+    batch_size = len(train_loader.dataset) // len(train_loader)
     for epoch in range(epochs):
         start = timer()
         lr = M.learning_rate(epoch)
@@ -359,6 +361,62 @@ def train_nerva(M, train_loader, test_loader, epochs, batch_size, show: bool):
               f'test accuracy: {compute_accuracy2(M, test_loader):.3f}  '
               f'time: {elapsed:.3f}'
              )
+
+
+def train_both(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs, show: bool):
+    n_classes = M2.sizes[-1]
+    batch_size = len(train_loader.dataset) // len(train_loader)
+    for epoch in range(epochs):
+        start = timer()
+        lr = M2.learning_rate(epoch)
+
+        for k, (X1, T1) in enumerate(train_loader):
+            M1.optimizer.zero_grad()
+            Y1 = M1(X1)
+            Y1.retain_grad()
+            loss = M1.loss(Y1, T1)
+            loss.backward()
+            M1.optimize()
+
+            # if show:
+            #     print(f'epoch: {epoch} batch: {k}')
+            #     pp('Y', Y1)
+            #     pp('DY', Y1.grad.detach())
+
+            X2 = to_numpy(X1)
+            T2 = to_one_hot_numpy(T1, n_classes)
+            Y2 = M2.feedforward(X2)
+            DY2 = M2.loss.gradient(Y2, T2) / batch_size
+            M2.backpropagate(Y2, DY2)
+            M2.optimize(lr)
+
+            if show:
+                print(f'epoch: {epoch} batch: {k}')
+                pp('Y', Y2)
+                pp('DY', DY2)
+
+            if show:
+                compute_weight_difference(M1, M2)
+
+            elapsed = timer() - start
+
+        print(f'epoch {epoch + 1:3}  '
+              f'lr: {M1.optimizer.param_groups[0]["lr"]:.4f}  '
+              f'loss: {compute_loss1(M1, train_loader):.3f}  '
+              f'train accuracy: {compute_accuracy1(M1, train_loader):.3f}  '
+              f'test accuracy: {compute_accuracy1(M1, test_loader):.3f}  '
+              f'time: {elapsed:.3f}'
+             )
+
+        print(f'epoch {epoch + 1:3}  '
+              f'lr: {lr:.4f}  '
+              f'loss: {compute_loss2(M2, train_loader):.3f}  '
+              f'train accuracy: {compute_accuracy2(M2, train_loader):.3f}  '
+              f'test accuracy: {compute_accuracy2(M2, test_loader):.3f}  '
+              f'time: {elapsed:.3f}'
+             )
+
+        M1.learning_rate.step()
 
 
 def make_nerva_optimizer(momentum=0.0, nesterov=False) -> nerva.optimizers.Optimizer:
@@ -517,14 +575,18 @@ def main():
         print('\n=== Nerva info ===')
         print_model_info(M2)
 
-    if args.torch:
+    if args.torch and args.nerva:
+        print('\n=== Training PyTorch and Nerva model ===')
+        train_both(M1, M2, train_loader, test_loader, args.epochs, args.show)
+        print(f'Accuracy of the network M1 on the 10000 test images: {100 * compute_accuracy1(M1, test_loader):.3f} %')
+        print(f'Accuracy of the network M2 on the 10000 test images: {100 * compute_accuracy2(M2, test_loader):.3f} %')
+    elif args.torch:
         print('\n=== Training PyTorch model ===')
         train_pytorch(M1, train_loader, test_loader, args.epochs, args.show)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy1(M1, test_loader):.3f} %')
-
-    if args.nerva:
+    elif args.nerva:
         print('\n=== Training Nerva model ===')
-        train_nerva(M2, train_loader, test_loader, args.epochs, args.batch_size, args.show)
+        train_nerva(M2, train_loader, test_loader, args.epochs, args.show)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy2(M2, test_loader):.3f} %')
 
 
