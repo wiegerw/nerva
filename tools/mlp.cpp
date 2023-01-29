@@ -312,6 +312,8 @@ class tool: public command_line_tool
       CALLGRIND_START_INSTRUMENTATION;
 #endif
 
+      std::cout << M.to_string() << std::endl;
+
       if (options.algorithm == "sgd")
       {
         stochastic_gradient_descent(M, loss, data, options, learning_rate, rng);

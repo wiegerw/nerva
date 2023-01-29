@@ -85,11 +85,11 @@ struct linear_layer: public neural_network_layer
   {
     if constexpr (IsSparse)
     {
-      return fmt::format("Sparse({}, optimizer={}, activation=NoActivation())", output_size(), optimizer->to_string());
+      return fmt::format("Sparse(units={}, density={}, optimizer={}, activation=NoActivation())", output_size(), W.density(), optimizer->to_string());
     }
     else
     {
-      return fmt::format("Dense({}, optimizer={}, activation=NoActivation())", output_size(), optimizer->to_string());
+      return fmt::format("Dense(units={}, optimizer={}, activation=NoActivation())", output_size(), optimizer->to_string());
     }
   }
 
@@ -184,11 +184,11 @@ struct sigmoid_layer : public linear_layer<Matrix>
   {
     if constexpr (IsSparse)
     {
-      return fmt::format("Sparse({}, optimizer={}, activation=Sigmoid())", output_size(), optimizer->to_string());
+      return fmt::format("Sparse(units={}, density={}, optimizer={}, activation=Sigmoid())", output_size(), W.density(), optimizer->to_string());
     }
     else
     {
-      return fmt::format("Dense({}, optimizer={}, activation=Sigmoid())", output_size(), optimizer->to_string());
+      return fmt::format("Dense(units={}, optimizer={}, activation=Sigmoid())", output_size(), optimizer->to_string());
     }
   }
 
@@ -262,11 +262,11 @@ struct activation_layer : public linear_layer<Matrix>
   {
     if constexpr (IsSparse)
     {
-      return fmt::format("Sparse({}, optimizer={}, activation={})", output_size(), optimizer->to_string(), act.to_string());
+      return fmt::format("units=Sparse({}, density={}, optimizer={}, activation={})", output_size(), W.density(), optimizer->to_string(), act.to_string());
     }
     else
     {
-      return fmt::format("Dense({}, optimizer={}, activation={})", output_size(), optimizer->to_string(), act.to_string());
+      return fmt::format("units=Dense({}, optimizer={}, activation={})", output_size(), optimizer->to_string(), act.to_string());
     }
   }
 

@@ -225,7 +225,7 @@ struct sparse_matrix_csr
     return *this;
   }
 
-  std::string to_string() const
+  [[nodiscard]] std::string to_string() const
   {
     std::ostringstream out;
     out << "--- mkl matrix ---\n";
@@ -234,6 +234,11 @@ struct sparse_matrix_csr
     out << "columns:   " << columns.size() << ' ' << nerva::print_list(columns) << '\n';
     out << "row_index: " << row_index.size() << ' ' << nerva::print_list(row_index) << '\n';
     return out.str();
+  }
+
+  scalar density() const
+  {
+    return scalar(values.size()) / (m * n);
   }
 };
 
