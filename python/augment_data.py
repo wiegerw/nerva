@@ -8,7 +8,7 @@ import argparse
 import pathlib
 import torch
 from testing.datasets import create_cifar10_datasets, create_dataloaders
-from testing.numpy_utils import save_numpy_arrays_to_npy_file
+from testing.numpy_utils import save_eigen_array
 
 
 def load_models(model: str, datadir: str):
@@ -42,7 +42,11 @@ def main():
         Xtrain, Ttrain = next(iter(train_loader))
         Xtest, Ttest = next(iter(test_loader))
         print(f'Saving epoch {epoch} data to {filename}')
-        save_numpy_arrays_to_npy_file(filename, [Xtrain.detach().numpy(), Ttrain.detach().numpy(), Xtest.detach().numpy(), Ttest.detach().numpy()])
+        with open(filename, "wb") as f:
+            save_eigen_array(f, Xtrain.detach().numpy())
+            save_eigen_array(f, Ttrain.detach().numpy())
+            save_eigen_array(f, Xtest.detach().numpy())
+            save_eigen_array(f, Ttest.detach().numpy())
         del Xtrain, Ttrain, Xtest, Ttest
 
 
