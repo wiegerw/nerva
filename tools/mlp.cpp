@@ -113,6 +113,23 @@ std::vector<scalar> parse_real_numbers(const std::string& text)
   return result;
 }
 
+inline
+std::vector<scalar> parse_densities(const std::string& architecture, scalar sparsity, const std::string& densities_text)
+{
+  std::vector<scalar> densities = parse_real_numbers(densities_text);
+  if (densities.empty())
+  {
+    for (char c: architecture)
+    {
+      if (is_linear_layer(c))
+      {
+        densities.push_back(scalar(1) - sparsity);
+      }
+    }
+  }
+  return densities;
+}
+
 // D is the input size of the neural network
 // K is the output size of the neural network
 inline
@@ -230,7 +247,7 @@ class tool: public command_line_tool
         options.statistics = false;
       }
       std::vector<std::size_t> hidden_layer_sizes = parse_numbers(hidden_layer_sizes_text);
-      std::vector<scalar> densities = parse_real_numbers(densities_text);
+      std::vector<scalar> densities = parse_densities(options.architecture, options.sparsity, densities_text);
       check_options(options, hidden_layer_sizes);
 
       std::mt19937 rng{options.seed};
@@ -255,9 +272,19 @@ class tool: public command_line_tool
 
       // construct the multilayer perceptron M
       multilayer_perceptron M;
+      unsigned int densities_index = 0;
       for (std::size_t i = 0; i < options.architecture.size(); i++)
       {
-        M.layers.push_back(parse_layer(options.architecture[i], options.sizes[i], options.sizes[i+1], options, rng));
+        char a = options.architecture[i];
+        if (!is_linear_layer(a) || densities[densities_index] == 1.0)
+        {
+          M.layers.push_back(parse_dense_layer(a, options.sizes[i], options.sizes[i+1], options, rng));
+        }
+        else
+        {
+          scalar sparsity = scalar(1) - densities[densities_index++];
+          M.layers.push_back(parse_sparse_layer(a, options.sizes[i], options.sizes[i+1], sparsity, options, rng));
+        }
 
         if (auto layer = dynamic_cast<dense_linear_layer*>(M.layers.back().get()))
         {

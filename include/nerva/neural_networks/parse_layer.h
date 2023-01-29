@@ -19,8 +19,19 @@
 namespace nerva {
 
 inline
-std::shared_ptr<neural_network_layer> parse_layer(char c, std::size_t D, std::size_t K, const mlp_options& options, std::mt19937& rng)
+bool is_linear_layer(char c)
 {
+  return std::string("LRSYZ").find(c) != std::string::npos;
+}
+
+inline
+std::shared_ptr<neural_network_layer> parse_dense_layer(char c, std::size_t D, std::size_t K, const mlp_options& options, std::mt19937& rng)
+{
+  if (c == 'B')
+  {
+    return std::make_shared<dense_batch_normalization_layer>(D, options.batch_size);
+  }
+
   if (options.dropout == scalar(0))
   {
     if (c == 'L')
@@ -43,36 +54,6 @@ std::shared_ptr<neural_network_layer> parse_layer(char c, std::size_t D, std::si
     {
       return std::make_shared<dense_softmax_layer>(D, K, options.batch_size);
     }
-    else if (c == 'l')
-    {
-      auto layer = std::make_shared<sparse_linear_layer>(D, K, options.batch_size);
-      initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
-      return layer;
-    }
-    else if (c == 'r')
-    {
-      auto layer = std::make_shared<sparse_relu_layer>(D, K, options.batch_size);
-      initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
-      return layer;
-    }
-    else if (c == 's')
-    {
-      auto layer = std::make_shared<sparse_sigmoid_layer>(D, K, options.batch_size);
-      initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
-      return layer;
-    }
-    else if (c == 'y')
-    {
-      auto layer = std::make_shared<sparse_log_softmax_layer>(D, K, options.batch_size);
-      initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
-      return layer;
-    }
-    else if (c == 'z')
-    {
-      auto layer = std::make_shared<sparse_softmax_layer>(D, K, options.batch_size);
-      initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
-      return layer;
-    }
   }
   else
   {
@@ -90,9 +71,41 @@ std::shared_ptr<neural_network_layer> parse_layer(char c, std::size_t D, std::si
     }
   }
 
-  if (c == 'B')
+  throw std::runtime_error(std::string("Error: unknown layer type '") + c + "'");
+}
+
+inline
+std::shared_ptr<neural_network_layer> parse_sparse_layer(char c, std::size_t D, std::size_t K, scalar sparsity, const mlp_options& options, std::mt19937& rng)
+{
+  if (c == 'L')
   {
-    return std::make_shared<dense_batch_normalization_layer>(D, options.batch_size);
+    auto layer = std::make_shared<sparse_linear_layer>(D, K, options.batch_size);
+    initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
+    return layer;
+  }
+  else if (c == 'R')
+  {
+    auto layer = std::make_shared<sparse_relu_layer>(D, K, options.batch_size);
+    initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
+    return layer;
+  }
+  else if (c == 'S')
+  {
+    auto layer = std::make_shared<sparse_sigmoid_layer>(D, K, options.batch_size);
+    initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
+    return layer;
+  }
+  else if (c == 'Y')
+  {
+    auto layer = std::make_shared<sparse_log_softmax_layer>(D, K, options.batch_size);
+    initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
+    return layer;
+  }
+  else if (c == 'Z')
+  {
+    auto layer = std::make_shared<sparse_softmax_layer>(D, K, options.batch_size);
+    initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
+    return layer;
   }
 
   throw std::runtime_error(std::string("Error: unknown layer type '") + c + "'");
