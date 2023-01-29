@@ -2,6 +2,7 @@
 
 import numpy as np
 import nervalib
+from testing.numpy_utils import load_eigen_array, save_eigen_array, pp
 
 
 def export_array(filename: str, x: np.ndarray):
@@ -40,5 +41,20 @@ def test_import_export():
     nervalib.import_matrix_from_numpy('E2.npy')
 
 
+def test_load_save():
+    A = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+    pp('A', A)
+
+    with open('A.npy', "wb") as f:
+        save_eigen_array(f, A)
+
+    with open('A.npy', "rb") as f:
+        B = load_eigen_array(f)
+
+    pp('B', B)
+    assert (A == B).all()
+
+
 if __name__ == '__main__':
     test_import_export()
+    test_load_save()

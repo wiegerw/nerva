@@ -66,7 +66,7 @@ def normalize_image_data(X: np.array, mean=None, std=None):
 
 def pp(name: str, x: Union[torch.Tensor, np.ndarray]):
     if isinstance(x, np.ndarray):
-        x = torch.Tensor(x.T)
+        x = torch.Tensor(x)
     if len(x.shape) == 1:
         print(f'{name} ({x.shape[0]})\n{x.data}')
     else:
