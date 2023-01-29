@@ -4,7 +4,16 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from compare_pytorch_nerva import *
+from timeit import default_timer as timer
+from testing.datasets import create_cifar10_dataloaders, load_cifar10_data, TorchDataLoader
+from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
+from testing.models import MLP2, copy_weights_and_biases
+from testing.numpy_utils import to_numpy, to_one_hot_numpy
+from testing.training import compute_accuracy_nerva, compute_loss_nerva, compute_weight_difference, \
+    compute_matrix_difference, compute_densities
+import nerva.loss
+from nervalib import MLPMasking
+from compare_pytorch_nerva import make_argument_parser, initialize_frameworks
 
 
 # M1 is a dense model
@@ -50,17 +59,17 @@ def train_dense_sparse(M1: MLP2, M2: MLP2, train_loader, test_loader, epochs, sh
 
         print(f'epoch {epoch + 1:3}  '
               f'lr: {lr:.4f}  '
-              f'loss: {compute_loss2(M1, train_loader):.3f}  '
-              f'train accuracy: {compute_accuracy2(M1, train_loader):.3f}  '
-              f'test accuracy: {compute_accuracy2(M1, test_loader):.3f}  '
+              f'loss: {compute_loss_nerva(M1, train_loader):.3f}  '
+              f'train accuracy: {compute_accuracy_nerva(M1, train_loader):.3f}  '
+              f'test accuracy: {compute_accuracy_nerva(M1, test_loader):.3f}  '
               f'time: {elapsed:.3f}'
              )
 
         print(f'epoch {epoch + 1:3}  '
               f'lr: {lr:.4f}  '
-              f'loss: {compute_loss2(M2, train_loader):.3f}  '
-              f'train accuracy: {compute_accuracy2(M2, train_loader):.3f}  '
-              f'test accuracy: {compute_accuracy2(M2, test_loader):.3f}  '
+              f'loss: {compute_loss_nerva(M2, train_loader):.3f}  '
+              f'train accuracy: {compute_accuracy_nerva(M2, train_loader):.3f}  '
+              f'test accuracy: {compute_accuracy_nerva(M2, test_loader):.3f}  '
               f'time: {elapsed:.3f}'
              )
 
@@ -70,13 +79,16 @@ def make_sparse_model(args, sizes, densities) -> MLP2:
     M = MLP2(sizes, densities, optimizer, args.batch_size)
     M.loss = nerva.loss.SoftmaxCrossEntropyLoss()
     M.learning_rate = make_nerva_scheduler(args)
-
-    print('\n=== Nerva model ===')
-    print(M)
-    print(M.loss)
-    print(M.learning_rate)
-
     return M
+
+
+def make_dense_copy(M: MLP2, sizes, densities, batch_size) -> MLP2:
+    full_densities = [1.0 for _ in densities]
+    M1 = MLP2(sizes, full_densities, M.optimizer, batch_size)
+    M1.loss = M.loss
+    M1.learning_rate = M.learning_rate
+    copy_weights_and_biases(M, M1)
+    return M1
 
 
 def main():
@@ -113,8 +125,8 @@ def main():
 
     print('\n=== Training dense Nerva and sparse Nerva model ===')
     train_dense_sparse(M2, M1, train_loader, test_loader, args.epochs, args.show)
-    print(f'Accuracy of the network M1 on the 10000 test images: {100 * compute_accuracy2(M1, test_loader):.3f} %')
-    print(f'Accuracy of the network M2 on the 10000 test images: {100 * compute_accuracy2(M2, test_loader):.3f} %')
+    print(f'Accuracy of the network M1 on the 10000 test images: {100 * compute_accuracy_nerva(M1, test_loader):.3f} %')
+    print(f'Accuracy of the network M2 on the 10000 test images: {100 * compute_accuracy_nerva(M2, test_loader):.3f} %')
 
 
 if __name__ == '__main__':
