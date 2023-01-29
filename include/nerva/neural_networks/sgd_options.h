@@ -46,6 +46,7 @@ struct mlp_options: public sgd_options
   std::string optimizer = "gradient-descent";
   scalar dropout = 0;
   scalar sparsity = 0;
+  std::vector<scalar> densities;
   std::size_t seed = std::random_device{}();
   int precision = 4;
   int threads = 1;
@@ -80,6 +81,7 @@ std::ostream& operator<<(std::ostream& out, const mlp_options& options)
   out << "optimizer = " << options.optimizer << std::endl;
   out << "dropout = " << options.dropout << std::endl;
   out << "sparsity = " << options.sparsity << std::endl;
+  out << "densities = " << print_list(options.densities) << std::endl;
   out << "seed = " << options.seed << std::endl;
   out << "precision = " << options.precision << std::endl;
   out << "threads = " << options.threads << std::endl;

@@ -102,6 +102,17 @@ std::vector<std::size_t> parse_numbers(const std::string& text)
   return result;
 }
 
+inline
+std::vector<scalar> parse_real_numbers(const std::string& text)
+{
+  std::vector<scalar> result;
+  for (const std::string& word: utilities::regex_split(text, ","))
+  {
+    result.push_back(static_cast<scalar>(parse_double(word)));
+  }
+  return result;
+}
+
 // D is the input size of the neural network
 // K is the output size of the neural network
 inline
@@ -167,6 +178,7 @@ class tool: public command_line_tool
     std::string import_weights_dir;
     std::string export_weights_dir;
     std::string hidden_layer_sizes_text;
+    std::string densities_text;
     bool no_shuffle = false;
     bool no_statistics = false;
     bool info = false;
@@ -186,6 +198,7 @@ class tool: public command_line_tool
       cli |= lyra::opt(hidden_layer_sizes_text, "value")["--hidden"]("A comma separated list of the hidden layer sizes");
       cli |= lyra::opt(options.dropout, "value")["--dropout"]("The dropout rate for the weights of the layers");
       cli |= lyra::opt(options.sparsity, "value")["--sparsity"]("The sparsity rate of the sparse layers");
+      cli |= lyra::opt(densities_text, "value")["--densities"]("A comma separated list of sparse layer densities");
       cli |= lyra::opt(options.optimizer, "value")["--optimizer"]("The optimizer (gradient-descent, momentum(<mu>), nesterov(<mu>))");
       cli |= lyra::opt(options.seed, "value")["--seed"]("A seed value for the random generator.");
       cli |= lyra::opt(no_shuffle)["--no-shuffle"]("Do not shuffle the dataset during training.");
@@ -217,6 +230,7 @@ class tool: public command_line_tool
         options.statistics = false;
       }
       std::vector<std::size_t> hidden_layer_sizes = parse_numbers(hidden_layer_sizes_text);
+      std::vector<scalar> densities = parse_real_numbers(densities_text);
       check_options(options, hidden_layer_sizes);
 
       std::mt19937 rng{options.seed};
@@ -229,6 +243,7 @@ class tool: public command_line_tool
       NERVA_LOG(log::verbose) << "number of outputs: " << K << std::endl;
 
       options.sizes = compute_sizes(D, K, hidden_layer_sizes, options.architecture);
+      options.densities = densities;
       options.info();
 
       std::cout << "number type = " << (std::is_same<scalar, double>::value ? "double" : "float") << "\n\n";

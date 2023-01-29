@@ -23,7 +23,7 @@ namespace nerva {
 struct learning_rate_scheduler
 {
   // Returns the learning rate at iteration i
-  virtual scalar operator()(std::size_t i) = 0;
+  virtual scalar operator()(unsigned int i) = 0;
 
   virtual ~learning_rate_scheduler() = default;
 };
@@ -36,7 +36,7 @@ struct constant_scheduler: public learning_rate_scheduler
       : eta(eta_)
   {}
 
-  scalar operator()(std::size_t i) override
+  scalar operator()(unsigned int i) override
   {
     return eta;
   }
@@ -51,7 +51,7 @@ struct time_based_scheduler: public learning_rate_scheduler
    : eta(eta_), decay(decay_)
   {}
 
-  scalar operator()(std::size_t i) override
+  scalar operator()(unsigned int i) override
   {
     eta = eta / (1 + decay * scalar(i));
     return eta;
@@ -68,7 +68,7 @@ struct step_based_scheduler: public learning_rate_scheduler
       : eta0(eta), d(drop_rate), r(change_rate)
   {}
 
-  scalar operator()(std::size_t i) override
+  scalar operator()(unsigned int i) override
   {
     return eta0 * std::pow(d, std::floor((1.0 + i) / r));
   }
@@ -77,17 +77,17 @@ struct step_based_scheduler: public learning_rate_scheduler
 struct multi_step_lr_scheduler: public learning_rate_scheduler
 {
   scalar eta0; // the initial value of the learning rate
-  std::vector<int> milestones; // an increasing list of epoch indices
+  std::vector<unsigned int> milestones; // an increasing list of epoch indices
   scalar gamma; // the multiplicative factor of the decay
 
-  explicit multi_step_lr_scheduler(scalar eta, std::vector<int> milestones_, scalar gamma_)
+  explicit multi_step_lr_scheduler(scalar eta, std::vector<unsigned int> milestones_, scalar gamma_)
    : eta0(eta), milestones(std::move(milestones_)), gamma(gamma_)
   {}
 
-  scalar operator()(std::size_t i) override
+  scalar operator()(unsigned int i) override
   {
     scalar eta = eta0;
-    for (int milestone: milestones)
+    for (unsigned int milestone: milestones)
     {
       if (i >= milestone)
       {
@@ -111,7 +111,7 @@ struct exponential_scheduler: public learning_rate_scheduler
       : eta0(eta), d(change_rate)
   {}
 
-  scalar operator()(std::size_t i) override
+  scalar operator()(unsigned int i) override
   {
     return eta0 * std::exp(-d * scalar(i));
   }
