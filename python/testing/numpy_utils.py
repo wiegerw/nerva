@@ -3,6 +3,18 @@ from typing import List, Union
 import numpy as np
 import torch
 
+# Save it in a format compatible with Nerva C++
+def to_eigen(x: np.ndarray):
+    if len(x.shape) == 2:
+        return x.reshape(x.shape[1], x.shape[0], order='F').T
+    return x
+
+
+def from_eigen(x: np.ndarray):
+    if len(x.shape) == 2:
+        return x.reshape(x.shape[1], x.shape[0], order='C').T
+    return x
+
 
 # Loads a number of Numpy arrays from an .npy file and returns them in a list
 def load_numpy_arrays_from_npy_file(filename: str) -> List[np.ndarray]:
@@ -16,20 +28,18 @@ def load_numpy_arrays_from_npy_file(filename: str) -> List[np.ndarray]:
     return arrays
 
 
+def save_numpy_arrays_to_npy_file(filename: str, arrays: List[np.ndarray]):
+    with open(filename, "wb") as f:
+        for array in arrays:
+            np.save(f, to_eigen(array), allow_pickle=True)
+
+
 def to_numpy(x: torch.Tensor) -> np.ndarray:
     return np.asfortranarray(x.detach().numpy().T)
 
 
 def to_one_hot_numpy(x: np.ndarray, n_classes: int):
     return flatten_numpy(np.asfortranarray(np.eye(n_classes)[x].T))
-
-
-def to_eigen(x: np.ndarray):
-    return x.reshape(x.shape[1], x.shape[0], order='F').T
-
-
-def from_eigen(x: np.ndarray):
-    return x.reshape(x.shape[1], x.shape[0], order='C').T
 
 
 def flatten_numpy(x: np.ndarray) -> np.ndarray:

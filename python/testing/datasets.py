@@ -36,18 +36,12 @@ def create_cifar10_datasets(datadir='./data'):
     return train_dataset, test_dataset
 
 
-def create_cifar10_dataloaders(batch_size, test_batch_size, datadir='./data'):
-    """Creates augmented train and test data loaders."""
-
-    train_dataset, test_dataset = create_cifar10_datasets(datadir='./data')
-
+def create_dataloaders(train_dataset, test_dataset, batch_size, test_batch_size):
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size,
         num_workers=8,
         pin_memory=True, shuffle=True)
-
-    print('Train loader length', len(train_loader))
 
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
@@ -57,6 +51,12 @@ def create_cifar10_dataloaders(batch_size, test_batch_size, datadir='./data'):
         pin_memory=True)
 
     return train_loader, test_loader
+
+
+def create_cifar10_dataloaders(batch_size, test_batch_size):
+    """Creates augmented train and test data loaders."""
+    train_dataset, test_dataset = create_cifar10_datasets(datadir='./data')
+    return create_dataloaders(train_dataset, test_dataset, batch_size, test_batch_size)
 
 
 def load_cifar10_data(datadir):
