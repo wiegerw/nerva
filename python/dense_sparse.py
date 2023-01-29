@@ -13,7 +13,7 @@ from testing.training import compute_accuracy_nerva, compute_loss_nerva, compute
     compute_matrix_difference, compute_densities
 import nerva.loss
 from nervalib import MLPMasking
-from compare_pytorch_nerva import make_argument_parser, initialize_frameworks
+from snn import make_argument_parser, initialize_frameworks
 
 
 # M1 is a dense model

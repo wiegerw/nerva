@@ -1,5 +1,0 @@
-#!/bin/bash
-
-python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --lr=0.1 --precision=5 --seed=159 --copy --torch --nerva --show >& both1.log
-python3 compare_pytorch_nerva.py --batch-size=50 --epochs=1 --lr=0.1 --precision=5 --seed=159 --copy --torch --nerva --show --density=0.1 >& both2.log
-python3 dense_sparse.py --batch-size=50 --epochs=1 --lr=0.1 --precision=5 --seed=159 --density=0.1 >& dense_sparse.log
