@@ -126,6 +126,7 @@ double compute_loss_batch(MultilayerPerceptron& M, const std::shared_ptr<loss_fu
 
 template <typename MultilayerPerceptron, typename DataSet>
 void compute_statistics(MultilayerPerceptron& M,
+                        scalar lr,
                         const std::shared_ptr<loss_function>& loss,
                         const DataSet& data,
                         unsigned int epoch,
@@ -139,7 +140,7 @@ void compute_statistics(MultilayerPerceptron& M,
     auto training_loss = compute_loss(M, loss, data.Xtrain, data.Ttrain);
     auto training_accuracy = compute_accuracy(M, data.Xtrain, data.Ttrain);
     auto test_accuracy = compute_accuracy(M, data.Xtest, data.Ttest);
-    std::cout << fmt::format("  loss: {:7.4f}  train accuracy: {:7.4f}  test accuracy: {:7.4f}", training_loss, training_accuracy, test_accuracy);
+    std::cout << fmt::format("  lr: {:3f}  loss: {:7.4f}  train accuracy: {:7.4f}  test accuracy: {:7.4f}", lr, training_loss, training_accuracy, test_accuracy);
   }
   if (elapsed_seconds >= 0)
   {
@@ -150,6 +151,7 @@ void compute_statistics(MultilayerPerceptron& M,
 
 template <typename MultilayerPerceptron, typename DataSet>
 void compute_statistics_batch(MultilayerPerceptron& M,
+                              scalar lr,
                               const std::shared_ptr<loss_function>& loss,
                               const DataSet& data,
                               long Q, // the batch size
@@ -164,7 +166,7 @@ void compute_statistics_batch(MultilayerPerceptron& M,
     auto training_loss = compute_loss_batch(M, loss, data.Xtrain, data.Ttrain, Q);
     auto training_accuracy = compute_accuracy_batch(M, data.Xtrain, data.Ttrain, Q);
     auto test_accuracy = compute_accuracy_batch(M, data.Xtest, data.Ttest, Q);
-    std::cout << fmt::format(" loss: {:7.4f}  train accuracy: {:7.4f}  test accuracy: {:7.4f}", training_loss, training_accuracy, test_accuracy);
+    std::cout << fmt::format(" lr: {:.3f}  loss: {:7.4f}  train accuracy: {:7.4f}  test accuracy: {:7.4f}", lr, training_loss, training_accuracy, test_accuracy);
   }
   if (elapsed_seconds >= 0)
   {
@@ -191,7 +193,9 @@ void stochastic_gradient_descent(
   eigen::matrix y(D, 1);
   eigen::matrix dy(D, 1);
   utilities::stopwatch watch;
-  compute_statistics(M, loss, data, -1, options.statistics, 0.0);
+  scalar eta = learning_rate->operator()(0);
+
+  compute_statistics(M, eta, loss, data, -1, options.statistics, 0.0);
 
   for (unsigned int epoch = 0; epoch < options.epochs; ++epoch)
   {
@@ -201,7 +205,7 @@ void stochastic_gradient_descent(
       std::shuffle(I.begin(), I.end(), rng);   // shuffle the examples at the start of each epoch
     }
     M.renew_dropout_mask(rng);
-    scalar eta = learning_rate->operator()(epoch);       // update the learning at the start of each epoch
+    eta = learning_rate->operator()(epoch);       // update the learning at the start of each epoch
 
     for (auto i: I)
     {
@@ -223,7 +227,7 @@ void stochastic_gradient_descent(
       M.optimize(eta);
     }
 
-    compute_statistics(M, loss, data, epoch, options.statistics, watch.seconds());
+    compute_statistics(M, eta, loss, data, epoch, options.statistics, watch.seconds());
   }
   std::cout << "Accuracy of the network on the " << data.Xtest.cols() << " test images: " << std::setw(10) << (100.0 * compute_accuracy(M, data.Xtest, data.Ttest)) << "%" << std::endl;
 }
@@ -248,7 +252,9 @@ void minibatch_stochastic_gradient_descent(
   eigen::matrix dy(L, options.batch_size);
   long K = N / options.batch_size; // the number of batches
   utilities::stopwatch watch;
-  compute_statistics(M, loss, data, -1, options.statistics, 0.0);
+  scalar eta = learning_rate->operator()(0);
+
+  compute_statistics(M, eta, loss, data, -1, options.statistics, 0.0);
 
   typename MultilayerPerceptron::gradient_type dWdb(M);
 
@@ -260,7 +266,7 @@ void minibatch_stochastic_gradient_descent(
       std::shuffle(I.begin(), I.end(), rng);// shuffle the examples at the start of each epoch
     }
     M.renew_dropout_mask(rng);
-    scalar eta = learning_rate->operator()(epoch);       // update the learning at the start of each epoch
+    eta = learning_rate->operator()(epoch);       // update the learning at the start of each epoch
 
     for (long k = 0; k < K; k++)
     {
@@ -284,7 +290,7 @@ void minibatch_stochastic_gradient_descent(
 
     if (options.statistics)
     {
-      compute_statistics(M, loss, data, epoch, options.statistics, watch.seconds());
+      compute_statistics(M, eta, loss, data, epoch, options.statistics, watch.seconds());
     }
   }
   std::cout << "Accuracy of the network on the " << data.Xtest.cols() << " test images: " << std::setw(10) << (100.0 * compute_accuracy(M, data.Xtest, data.Ttest)) << "%" << std::endl;
@@ -303,15 +309,14 @@ std::pair<double, double> minibatch_gradient_descent(
   double total_training_time = 0;
   long N = data.Xtrain.cols(); // the number of examples
   long L = data.Ttrain.rows(); // the number of outputs
-
   std::vector<long> I(N);
   std::iota(I.begin(), I.end(), 0);
   eigen::matrix Y(L, options.batch_size);
-
   long K = N / options.batch_size; // the number of batches
-
   utilities::stopwatch watch;
-  compute_statistics_batch(M, loss, data, options.batch_size, -1, options.statistics, 0.0);
+  scalar eta = learning_rate->operator()(0);
+
+  compute_statistics_batch(M, eta, loss, data, options.batch_size, -1, options.statistics, 0.0);
 
   for (unsigned int epoch = 0; epoch < options.epochs; ++epoch)
   {
@@ -321,7 +326,7 @@ std::pair<double, double> minibatch_gradient_descent(
       std::shuffle(I.begin(), I.end(), rng);// shuffle the examples at the start of each epoch
     }
     M.renew_dropout_mask(rng);
-    scalar eta = learning_rate->operator()(epoch);       // update the learning at the start of each epoch
+    eta = learning_rate->operator()(epoch);       // update the learning at the start of each epoch
     eigen::matrix DY(L, options.batch_size);
 
     for (long k = 0; k < K; k++)
@@ -355,7 +360,7 @@ std::pair<double, double> minibatch_gradient_descent(
     }
     double seconds = watch.seconds();
     total_training_time += seconds;
-    compute_statistics_batch(M, loss, data, options.batch_size, epoch, options.statistics, seconds);
+    compute_statistics_batch(M, eta, loss, data, options.batch_size, epoch, options.statistics, seconds);
   }
   double test_accuracy = compute_accuracy_batch(M, data.Xtest, data.Ttest, options.batch_size);
   std::cout << fmt::format("Accuracy of the network on the {} test examples: {:4.2f}%", data.Xtest.cols(), test_accuracy * 100.0) << std::endl;
