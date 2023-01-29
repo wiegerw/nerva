@@ -5,7 +5,6 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import argparse
-from typing import Tuple
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -23,8 +22,7 @@ from testing.training import train_torch, compute_accuracy_torch, compute_accura
     train_both, compute_densities
 
 
-def make_models(args, sizes, densities) -> Tuple[MLP1, MLP2]:
-    # create PyTorch model
+def make_torch_model(args, sizes):
     M1 = MLP1(sizes)
     M1.optimizer = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
     if args.density != None:
@@ -33,24 +31,15 @@ def make_models(args, sizes, densities) -> Tuple[MLP1, MLP2]:
         M1.mask = mask
     M1.loss = nn.CrossEntropyLoss()
     M1.learning_rate = make_torch_scheduler(args, M1.optimizer)
+    return M1
 
-    # create Nerva model
+
+def make_nerva_model(args, sizes, densities):
     optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
     M2 = MLP2(sizes, densities, optimizer2, args.batch_size)
     M2.loss = nerva.loss.SoftmaxCrossEntropyLoss()
     M2.learning_rate = make_nerva_scheduler(args)
-
-    print('\n=== PyTorch model ===')
-    print(M1)
-    print(M1.loss)
-    print(M1.learning_rate)
-
-    print('\n=== Nerva model ===')
-    print(M2)
-    print(M2.loss)
-    print(M2.learning_rate)
-
-    return M1, M2
+    return M2
 
 
 def make_argument_parser():
@@ -72,7 +61,6 @@ def make_argument_parser():
     cmdline_parser.add_argument("--copy", help="copy weights and biases from the PyTorch model to the Nerva model", action="store_true")
     cmdline_parser.add_argument("--nerva", help="Train using a Nerva model", action="store_true")
     cmdline_parser.add_argument("--torch", help="Train using a PyTorch model", action="store_true")
-    #cmdline_parser.add_argument("--dense-sparse", help="Train using a dense and sparse Nerva model", action="store_true")
     cmdline_parser.add_argument("--info", help="Print detailed info about the models", action="store_true")
     cmdline_parser.add_argument("--scheduler", type=str, help="the learning rate scheduler (constant,multistep)", default="multistep")
     return cmdline_parser
@@ -108,7 +96,18 @@ def main():
     sizes = [int(s) for s in args.sizes.split(',')]
     densities = compute_densities(args.density, sizes)
 
-    M1, M2 = make_models(args, sizes, densities)
+    M1 = make_torch_model(args, sizes)
+    M2 = make_nerva_model(args, sizes, densities)
+
+    print('\n=== PyTorch model ===')
+    print(M1)
+    print(M1.loss)
+    print(M1.learning_rate)
+
+    print('\n=== Nerva model ===')
+    print(M2)
+    print(M2.loss)
+    print(M2.learning_rate)
 
     if args.copy:
         copy_weights_and_biases(M1, M2)

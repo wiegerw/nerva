@@ -53,9 +53,9 @@ def create_dataloaders(train_dataset, test_dataset, batch_size, test_batch_size)
     return train_loader, test_loader
 
 
-def create_cifar10_dataloaders(batch_size, test_batch_size):
+def create_cifar10_dataloaders(batch_size, test_batch_size, datadir):
     """Creates augmented train and test data loaders."""
-    train_dataset, test_dataset = create_cifar10_datasets(datadir='./data')
+    train_dataset, test_dataset = create_cifar10_datasets(datadir=datadir)
     return create_dataloaders(train_dataset, test_dataset, batch_size, test_batch_size)
 
 

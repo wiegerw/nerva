@@ -1,6 +1,8 @@
 # This code is originally from https://github.com/VITA-Group/Random_Pruning
 # There is no license information available
 
+# It has been stripped down to an experiment with static sparse training.
+
 import os
 import time
 import argparse
