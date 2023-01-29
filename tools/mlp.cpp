@@ -92,18 +92,7 @@ void set_weights(multilayer_perceptron& M, std::string weights_initialization, c
 }
 
 inline
-std::vector<std::size_t> parse_numbers(const std::string& text)
-{
-  std::vector<std::size_t> result;
-  for (const std::string& word: utilities::regex_split(text, ","))
-  {
-    result.push_back(parse_natural_number(word));
-  }
-  return result;
-}
-
-inline
-std::vector<scalar> parse_real_numbers(const std::string& text)
+std::vector<scalar> parse_comma_separated_real_numbers(const std::string& text)
 {
   std::vector<scalar> result;
   for (const std::string& word: utilities::regex_split(text, ","))
@@ -116,7 +105,7 @@ std::vector<scalar> parse_real_numbers(const std::string& text)
 inline
 std::vector<scalar> parse_densities(const std::string& architecture, scalar sparsity, const std::string& densities_text)
 {
-  std::vector<scalar> densities = parse_real_numbers(densities_text);
+  std::vector<scalar> densities = parse_comma_separated_real_numbers(densities_text);
   if (densities.empty())
   {
     for (char c: architecture)
@@ -246,7 +235,7 @@ class tool: public command_line_tool
       {
         options.statistics = false;
       }
-      std::vector<std::size_t> hidden_layer_sizes = parse_numbers(hidden_layer_sizes_text);
+      std::vector<std::size_t> hidden_layer_sizes = parse_comma_separated_numbers(hidden_layer_sizes_text);
       std::vector<scalar> densities = parse_densities(options.architecture, options.sparsity, densities_text);
       check_options(options, hidden_layer_sizes);
 

@@ -16,6 +16,7 @@
 #include <regex>
 #include <utility>
 #include "nerva/neural_networks/eigen.h"
+#include "nerva/utilities/parse_numbers.h"
 #include "nerva/utilities/string_utility.h"
 
 namespace nerva {
@@ -127,8 +128,24 @@ std::shared_ptr<learning_rate_scheduler> parse_constant_scheduler(const std::str
   {
     throw std::runtime_error("Error: could not parse learning scheduler '" + text + "'");
   }
-  scalar value = std::stod(m[1]);
+  scalar value = parse_scalar(m[1]);
   return std::make_shared<constant_scheduler>(value);
+}
+
+inline
+std::shared_ptr<learning_rate_scheduler> parse_multistep_lr_scheduler(const std::string& text)
+{
+  std::regex re{R"(multistep_lr\((.*?);(.*?);(.*?)\))"};
+  std::smatch m;
+  bool result = std::regex_match(text, m, re);
+  if (!result)
+  {
+    throw std::runtime_error("Error: could not parse learning scheduler '" + text + "'");
+  }
+  scalar eta = parse_scalar(m[1]);
+  std::vector<unsigned int> milestones = parse_comma_separated_numbers<unsigned int>(m[2]);
+  scalar gamma = parse_scalar(m[3]);
+  return std::make_shared<multi_step_lr_scheduler>(eta, milestones, gamma);
 }
 
 inline
@@ -141,8 +158,8 @@ std::shared_ptr<learning_rate_scheduler> parse_time_based_scheduler(const std::s
   {
     throw std::runtime_error("Error: could not parse learning scheduler '" + text + "'");
   }
-  scalar eta = std::stod(m[1]);
-  scalar decay = std::stod(m[2]);
+  scalar eta = parse_scalar(m[1]);
+  scalar decay = parse_scalar(m[2]);
   return std::make_shared<time_based_scheduler>(eta, decay);
 }
 
@@ -156,9 +173,9 @@ std::shared_ptr<learning_rate_scheduler> parse_step_based_scheduler(const std::s
   {
     throw std::runtime_error("Error: could not parse learning scheduler '" + text + "'");
   }
-  scalar eta = std::stod(m[1]);
-  scalar drop_rate = std::stod(m[2]);
-  scalar change_rate = std::stod(m[3]);
+  scalar eta = parse_scalar(m[1]);
+  scalar drop_rate = parse_scalar(m[2]);
+  scalar change_rate = parse_scalar(m[3]);
   return std::make_shared<step_based_scheduler>(eta, drop_rate, change_rate);
 }
 
@@ -172,8 +189,8 @@ std::shared_ptr<learning_rate_scheduler> parse_exponential_scheduler(const std::
   {
     throw std::runtime_error("Error: could not parse learning scheduler '" + text + "'");
   }
-  scalar eta = std::stod(m[1]);
-  scalar change_rate = std::stod(m[2]);
+  scalar eta = parse_scalar(m[1]);
+  scalar change_rate = parse_scalar(m[2]);
   return std::make_shared<exponential_scheduler>(eta, change_rate);
 }
 
@@ -183,6 +200,10 @@ std::shared_ptr<learning_rate_scheduler> parse_learning_rate_scheduler(const std
   if (utilities::starts_with(text, "constant"))
   {
     return parse_constant_scheduler(text);
+  }
+  else if (utilities::starts_with(text, "multistep_lr"))
+  {
+    return parse_multistep_lr_scheduler(text);
   }
   else if (utilities::starts_with(text, "time_based"))
   {

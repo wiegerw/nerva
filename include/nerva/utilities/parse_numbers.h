@@ -17,6 +17,7 @@
 #include <vector>
 #include "nerva/utilities/logger.h"
 #include "nerva/neural_networks/scalar.h"
+#include "nerva/utilities/string_utility.h"
 
 namespace nerva {
 
@@ -244,6 +245,17 @@ const char* parse_double(const char* first, double& result)
   }
 
   return const_cast<const char*>(end);
+}
+
+template <typename Number = std::size_t>
+std::vector<Number> parse_comma_separated_numbers(const std::string& text)
+{
+  std::vector<Number> result;
+  for (const std::string& word: utilities::regex_split(text, ","))
+  {
+    result.push_back(parse_natural_number<Number>(word));
+  }
+  return result;
 }
 
 } // namespace nerva
