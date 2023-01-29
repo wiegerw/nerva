@@ -75,36 +75,36 @@ std::shared_ptr<neural_network_layer> parse_dense_layer(char c, std::size_t D, s
 }
 
 inline
-std::shared_ptr<neural_network_layer> parse_sparse_layer(char c, std::size_t D, std::size_t K, scalar sparsity, const mlp_options& options, std::mt19937& rng)
+std::shared_ptr<neural_network_layer> parse_sparse_layer(char c, std::size_t D, std::size_t K, scalar density, const mlp_options& options, std::mt19937& rng)
 {
   if (c == 'L')
   {
     auto layer = std::make_shared<sparse_linear_layer>(D, K, options.batch_size);
-    initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
+    initialize_sparse_weights<scalar>(*layer, density, rng);
     return layer;
   }
   else if (c == 'R')
   {
     auto layer = std::make_shared<sparse_relu_layer>(D, K, options.batch_size);
-    initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
+    initialize_sparse_weights<scalar>(*layer, density, rng);
     return layer;
   }
   else if (c == 'S')
   {
     auto layer = std::make_shared<sparse_sigmoid_layer>(D, K, options.batch_size);
-    initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
+    initialize_sparse_weights<scalar>(*layer, density, rng);
     return layer;
   }
   else if (c == 'Y')
   {
     auto layer = std::make_shared<sparse_log_softmax_layer>(D, K, options.batch_size);
-    initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
+    initialize_sparse_weights<scalar>(*layer, density, rng);
     return layer;
   }
   else if (c == 'Z')
   {
     auto layer = std::make_shared<sparse_softmax_layer>(D, K, options.batch_size);
-    initialize_sparse_weights<scalar>(*layer, options.sparsity, rng);
+    initialize_sparse_weights<scalar>(*layer, density, rng);
     return layer;
   }
 

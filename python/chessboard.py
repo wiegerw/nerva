@@ -39,16 +39,16 @@ def make_dataset_chessboard(n: int):
     return X, T
 
 
-def create_model(sparsity: float):
+def create_model(density: float):
     model = Sequential()
-    if sparsity == 0:
+    if density == 0:
         model.add(Dense(64, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
         model.add(Dense(16, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
         model.add(Dense(2, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))
     else:
-        model.add(Sparse(32, sparsity, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
-        model.add(Sparse(8, sparsity, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
-        model.add(Sparse(2, sparsity, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+        model.add(Sparse(32, density, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+        model.add(Sparse(8, density, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+        model.add(Sparse(2, density, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))
     return model
 
 
@@ -88,14 +88,14 @@ def minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate, 
     print(f'Total training time for the {epochs} epochs: {total_time:4.2f}s')
 
 
-def train_sparse_model_with_regrow(dataset, sparsity):
+def train_sparse_model_with_regrow(dataset, density):
     seed = random.randint(0, 999999999)
     print('seed', seed)
     loss = SoftmaxCrossEntropyLoss()
     learning_rate_scheduler = ConstantScheduler(0.1)
     input_size = 2
     batch_size = 100
-    model = create_model(sparsity)
+    model = create_model(density)
     model.compile(input_size, batch_size)
     minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=batch_size, shuffle=True, statistics=True, zeta=0.1, weights_initializer=Xavier())
     print('')
@@ -121,5 +121,5 @@ if __name__ == '__main__':
     # plot_dataset(Xtrain, Ttrain)
     # plot_dataset(Xtest, Ttest)
     dataset = DataSet(Xtrain.T, Ttrain.T, Xtest.T, Ttest.T)
-    sparsity = 0.2
-    train_sparse_model_with_regrow(dataset, sparsity)
+    density = 0.8
+    train_sparse_model_with_regrow(dataset, density)

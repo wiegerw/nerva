@@ -94,12 +94,12 @@ class Dense(Layer):
 
 
 class Sparse(Layer):
-    def __init__(self, units: int, sparsity: float, activation: Activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()):
+    def __init__(self, units: int, density: float, activation: Activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()):
         """
         A sparse layer.
 
         :param units: the number of outputs of the layer
-        :param sparsity: the sparsity of the layer. This is a number between 0.0 (fully dense) and 1.0 (fully sparse).
+        :param density: the density of the layer. This is a number between 0.0 (fully sparse) and 1.0 (fully dense).
         :param activation: the activation function
         :param optimizer: the optimizer
         """
@@ -109,7 +109,7 @@ class Sparse(Layer):
                 f"Received an invalid value for `units`, expected "
                 f"a positive integer. Received: units={units}"
             )
-        self.sparsity = sparsity
+        self.density = density
         self.activation = activation
         self.optimizer = optimizer
         self.weight_initializer = weight_initializer
@@ -117,7 +117,7 @@ class Sparse(Layer):
         self._layer = None
 
     def __str__(self):
-        return f'Sparse(units={self.units}, sparsity={self.sparsity}, activation={self.activation}, optimizer={self.optimizer}, weight_initializer={self.weight_initializer})'
+        return f'Sparse(units={self.units}, density={self.density}, activation={self.activation}, optimizer={self.optimizer}, weight_initializer={self.weight_initializer})'
 
     def compile(self, batch_size: int, dropout_rate: float=0.0):
         """
@@ -130,20 +130,20 @@ class Sparse(Layer):
         layer = None
         if dropout_rate == 0.0:
             if isinstance(self.activation, NoActivation):
-                layer = nervalib.sparse_linear_layer(self.input_size, self.units, batch_size, self.sparsity)
+                layer = nervalib.sparse_linear_layer(self.input_size, self.units, batch_size, self.density)
             elif isinstance(self.activation, ReLU):
-                layer = nervalib.sparse_relu_layer(self.input_size, self.units, batch_size, self.sparsity)
+                layer = nervalib.sparse_relu_layer(self.input_size, self.units, batch_size, self.density)
             elif isinstance(self.activation, Sigmoid):
-                layer = nervalib.sparse_sigmoid_layer(self.input_size, self.units, batch_size, self.sparsity)
+                layer = nervalib.sparse_sigmoid_layer(self.input_size, self.units, batch_size, self.density)
             elif isinstance(self.activation, Softmax):
-                layer = nervalib.sparse_softmax_layer(self.input_size, self.units, batch_size, self.sparsity)
+                layer = nervalib.sparse_softmax_layer(self.input_size, self.units, batch_size, self.density)
             elif isinstance(self.activation, LogSoftmax):
                 print('warning: the LogSoftmax activation function is experimental')
-                layer = nervalib.sparse_log_softmax_layer(self.input_size, self.units, batch_size, self.sparsity)
+                layer = nervalib.sparse_log_softmax_layer(self.input_size, self.units, batch_size, self.density)
             elif isinstance(self.activation, AllReLU):
-                layer = nervalib.sparse_all_relu_layer(self.activation.alpha, self.input_size, self.units, batch_size, self.sparsity)
+                layer = nervalib.sparse_all_relu_layer(self.activation.alpha, self.input_size, self.units, batch_size, self.density)
             elif isinstance(self.activation, HyperbolicTangent):
-                layer = nervalib.sparse_hyperbolic_tangent_layer(self.input_size, self.units, batch_size, self.sparsity)
+                layer = nervalib.sparse_hyperbolic_tangent_layer(self.input_size, self.units, batch_size, self.density)
 
         if not layer:
             raise RuntimeError('Unsupported layer type')

@@ -150,7 +150,7 @@ PYBIND11_MODULE(nervalib, m)
     ;
 
   py::class_<multi_step_lr_scheduler, learning_rate_scheduler, std::shared_ptr<multi_step_lr_scheduler>>(m, "multi_step_lr_scheduler")
-    .def(py::init<scalar, std::vector<int>, scalar>(), py::return_value_policy::copy)
+    .def(py::init<scalar, std::vector<unsigned int>, scalar>(), py::return_value_policy::copy)
     ;
 
   py::class_<exponential_scheduler, learning_rate_scheduler, std::shared_ptr<exponential_scheduler>>(m, "exponential_scheduler")

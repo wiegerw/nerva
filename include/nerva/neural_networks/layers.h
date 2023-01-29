@@ -148,11 +148,11 @@ struct linear_layer: public neural_network_layer
 };
 
 template <typename Scalar>
-void initialize_sparse_weights(linear_layer<mkl::sparse_matrix_csr<Scalar>>& layer, Scalar sparsity, std::mt19937& rng)
+void initialize_sparse_weights(linear_layer<mkl::sparse_matrix_csr<Scalar>>& layer, Scalar density, std::mt19937& rng)
 {
   auto m = layer.W.rows();
   auto n = layer.W.cols();
-  layer.W = mkl::sparse_matrix_csr<Scalar>(m, n, sparsity, rng, scalar(0));
+  layer.W = mkl::sparse_matrix_csr<Scalar>(m, n, density, rng, scalar(0));
   layer.DW = layer.W;
 }
 
@@ -262,11 +262,11 @@ struct activation_layer : public linear_layer<Matrix>
   {
     if constexpr (IsSparse)
     {
-      return fmt::format("units=Sparse({}, density={}, optimizer={}, activation={})", output_size(), W.density(), optimizer->to_string(), act.to_string());
+      return fmt::format("Sparse(units={}, density={}, optimizer={}, activation={})", output_size(), W.density(), optimizer->to_string(), act.to_string());
     }
     else
     {
-      return fmt::format("units=Dense({}, optimizer={}, activation={})", output_size(), optimizer->to_string(), act.to_string());
+      return fmt::format("Dense(units={}, optimizer={}, activation={})", output_size(), optimizer->to_string(), act.to_string());
     }
   }
 

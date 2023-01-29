@@ -121,12 +121,12 @@ struct sparse_matrix_csr
     check();
   }
 
-  sparse_matrix_csr(int rows, int cols, Scalar sparsity, std::mt19937& rng, Scalar value = 0)
+  sparse_matrix_csr(int rows, int cols, Scalar density, std::mt19937& rng, Scalar value = 0)
    : m(rows), n(cols)
   {
     row_index.push_back(0);
     int count = 0; // the number of nonzero elements
-    std::bernoulli_distribution dist(1.0 - sparsity);
+    std::bernoulli_distribution dist(density);
     for (auto i = 0; i < m; i++)
     {
       for (auto j = 0; j < n; j++)
@@ -243,9 +243,9 @@ struct sparse_matrix_csr
 };
 
 template <typename Scalar>
-void fill_matrix(sparse_matrix_csr<Scalar>& A, Scalar sparsity, std::mt19937& rng, Scalar value = 0)
+void fill_matrix(sparse_matrix_csr<Scalar>& A, Scalar density, std::mt19937& rng, Scalar value = 0)
 {
-  A = sparse_matrix_csr<Scalar>(A.cols(), A.rows(), sparsity, rng, value);
+  A = sparse_matrix_csr<Scalar>(A.cols(), A.rows(), density, rng, value);
 }
 
 template <typename Scalar, typename Function>

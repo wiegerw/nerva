@@ -71,11 +71,11 @@ def create_dense_model():
     return model
 
 
-def create_sparse_model(sparsity: float):
+def create_sparse_model(density: float):
     model = Sequential()
-    model.add(Sparse(128, sparsity, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
-    model.add(Sparse(64, sparsity, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
-    model.add(Sparse(10, sparsity, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+    model.add(Sparse(128, density, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+    model.add(Sparse(64, density, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+    model.add(Sparse(10, density, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))
     return model
 
 
@@ -85,8 +85,9 @@ def minibatch_gradient_descent_with_augmentation(model, dataset, datagen, loss, 
     N = dataset.Xtrain.shape[1]  # the number of examples
     K = N // batch_size  # the number of batches
     M = model.compiled_model
+    eta = learning_rate(0)
 
-    compute_statistics(M, loss, dataset, batch_size, -1, statistics, 0.0)
+    compute_statistics(M, eta, loss, dataset, batch_size, -1, statistics, 0.0)
     total_time = 0.0
     watch = StopWatch()
 
@@ -106,7 +107,7 @@ def minibatch_gradient_descent_with_augmentation(model, dataset, datagen, loss, 
             model.optimize(eta)
 
         seconds = watch.seconds()
-        compute_statistics(M, loss, dataset, batch_size, epoch, statistics, seconds)
+        compute_statistics(M, eta, loss, dataset, batch_size, epoch, statistics, seconds)
         total_time += seconds
 
     print(f'Accuracy of the network on the {dataset.Xtest.shape[1]} test examples: {(100.0 * compute_accuracy(M, dataset.Xtest, dataset.Ttest, batch_size)):.2f}%')
@@ -143,8 +144,8 @@ def train_sparse_model(dataset):
     learning_rate_scheduler = ConstantScheduler(0.01)
     input_size = 3072
     batch_size = 100
-    sparsity = 0.5
-    model = create_sparse_model(sparsity)
+    density = 0.5
+    model = create_sparse_model(density)
     model.compile(input_size, batch_size)
     minibatch_gradient_descent_python(model, dataset, loss, learning_rate_scheduler, epochs=10, batch_size=100, shuffle=True, statistics=True)
     print('')
@@ -190,7 +191,8 @@ def minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate, 
     N = dataset.Xtrain.shape[1]  # the number of examples
     I = list(range(N))
     K = N // batch_size  # the number of batches
-    compute_statistics(M, loss, dataset, batch_size, -1, statistics, 0.0)
+    eta = learning_rate(0)
+    compute_statistics(M, eta, loss, dataset, batch_size, -1, statistics, 0.0)
     total_time = 0.0
     watch = StopWatch()
 
@@ -217,7 +219,7 @@ def minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate, 
             model.optimize(eta)
 
         seconds = watch.seconds()
-        compute_statistics(M, loss, dataset, batch_size, epoch, statistics, seconds)
+        compute_statistics(M, eta, loss, dataset, batch_size, epoch, statistics, seconds)
         total_time += seconds
 
     print(f'Accuracy of the network on the {dataset.Xtest.shape[1]} test examples: {(100.0 * compute_accuracy(M, dataset.Xtest, dataset.Ttest, batch_size)):.2f}%')
@@ -229,8 +231,8 @@ def train_sparse_model_with_regrow(dataset):
     learning_rate_scheduler = ConstantScheduler(0.01)
     input_size = 3072
     batch_size = 100
-    sparsity = 0.5
-    model = create_sparse_model(sparsity)
+    density = 0.5
+    model = create_sparse_model(density)
     model.compile(input_size, batch_size)
     minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=100, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Xavier())
     print('')

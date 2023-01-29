@@ -103,16 +103,16 @@ std::vector<scalar> parse_comma_separated_real_numbers(const std::string& text)
 }
 
 inline
-std::vector<scalar> parse_densities(const std::string& architecture, scalar sparsity, const std::string& densities_text)
+std::vector<scalar> parse_densities(const std::string& architecture, scalar density, const std::string& densities_text)
 {
   std::vector<scalar> densities = parse_comma_separated_real_numbers(densities_text);
   if (densities.empty())
   {
-    for (char c: architecture)
+    for (char a: architecture)
     {
-      if (is_linear_layer(c))
+      if (is_linear_layer(a))
       {
-        densities.push_back(scalar(1) - sparsity);
+        densities.push_back(density);
       }
     }
   }
@@ -203,7 +203,7 @@ class tool: public command_line_tool
       cli |= lyra::opt(options.architecture, "value")["--architecture"]("The architecture of the multilayer perceptron e.g. RRL,\nwhere R=ReLU, S=Sigmoid, L=Linear, B=Batchnorm, Z=Softmax");
       cli |= lyra::opt(hidden_layer_sizes_text, "value")["--hidden"]("A comma separated list of the hidden layer sizes");
       cli |= lyra::opt(options.dropout, "value")["--dropout"]("The dropout rate for the weights of the layers");
-      cli |= lyra::opt(options.sparsity, "value")["--sparsity"]("The sparsity rate of the sparse layers");
+      cli |= lyra::opt(options.density, "value")["--density"]("The density rate of the sparse layers");
       cli |= lyra::opt(densities_text, "value")["--densities"]("A comma separated list of sparse layer densities");
       cli |= lyra::opt(options.optimizer, "value")["--optimizer"]("The optimizer (gradient-descent, momentum(<mu>), nesterov(<mu>))");
       cli |= lyra::opt(options.seed, "value")["--seed"]("A seed value for the random generator.");
@@ -236,7 +236,7 @@ class tool: public command_line_tool
         options.statistics = false;
       }
       std::vector<std::size_t> hidden_layer_sizes = parse_comma_separated_numbers(hidden_layer_sizes_text);
-      std::vector<scalar> densities = parse_densities(options.architecture, options.sparsity, densities_text);
+      std::vector<scalar> densities = parse_densities(options.architecture, options.density, densities_text);
       check_options(options, hidden_layer_sizes);
 
       std::mt19937 rng{options.seed};
@@ -271,8 +271,8 @@ class tool: public command_line_tool
         }
         else
         {
-          scalar sparsity = scalar(1) - densities[densities_index++];
-          M.layers.push_back(parse_sparse_layer(a, options.sizes[i], options.sizes[i+1], sparsity, options, rng));
+          scalar density = densities[densities_index++];
+          M.layers.push_back(parse_sparse_layer(a, options.sizes[i], options.sizes[i+1], density, options, rng));
         }
 
         if (auto layer = dynamic_cast<dense_linear_layer*>(M.layers.back().get()))
