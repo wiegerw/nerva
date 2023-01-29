@@ -66,7 +66,7 @@ class MLP2(nerva.layers.Sequential):
             if density == 1.0:
                  self.add(nerva.layers.Dense(size, activation=activation, optimizer=optimizer))
             else:
-                self.add(nerva.layers.Sparse(size, 1.0 - density, activation=activation, optimizer=optimizer))
+                self.add(nerva.layers.Sparse(size, density, activation=activation, optimizer=optimizer))
         self.compile(sizes[0], batch_size)
 
     def weights(self) -> List[np.ndarray]:

@@ -6,7 +6,7 @@ function train()
   shift
   extra_args=$*
 
-  python3 snn.py --sizes="3072,1024,512,10" --batch-size=100 --epochs=1 --momentum=0.9 --nesterov --lr=0.1 --precision=5 --seed=159 --copy $extra_args >& $logfile
+  python3 snn.py --sizes="3072,1024,512,10" --batch-size=100 --epochs=100 --momentum=0.9 --nesterov --lr=0.1 --precision=5 --seed=159 --copy $extra_args >& $logfile
 }
 
 # create logfile directory

@@ -45,7 +45,7 @@ struct mlp_options: public sgd_options
   std::string weights_initialization;
   std::string optimizer = "gradient-descent";
   scalar dropout = 0;
-  scalar density = 0;
+  scalar density = 1;
   std::vector<scalar> densities;
   std::size_t seed = std::random_device{}();
   int precision = 4;
