@@ -8,9 +8,9 @@ densesizes="1024,512"
 densearchitecture=RRL
 denseweights=xxx
 
-sparsesizes="1024,1024"
-sparsearchitecture=RRL
-sparseweights=xxx
+sparsesizes="1024,1024,1024"
+sparsearchitecture=RRRL
+sparseweights=xxxx
 
 function train_sparse_torch()
 {
@@ -100,7 +100,8 @@ function train_all()
     do
         for augmented in true false
         do
-            train_dense_torch  $seed $augmented 0.1
+            train_dense_torch  $seed $augmented 0.01
+            train_dense_nerva  $seed $augmented 0.01
             train_sparse_torch $seed $augmented 0.1 0.001
             train_sparse_nerva $seed $augmented 0.1 0.001
             train_sparse_torch $seed $augmented 0.1 0.005
