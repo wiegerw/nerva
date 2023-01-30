@@ -71,6 +71,13 @@ def print_epoch(epoch, lr, loss, train_accuracy, test_accuracy, elapsed):
 def train_torch(M, train_loader, test_loader, epochs, show: bool):
     M.train()  # Set model in training mode
 
+    print_epoch(epoch=0,
+                lr=M.optimizer.param_groups[0]["lr"],
+                loss=compute_loss_torch(M, train_loader),
+                train_accuracy=compute_accuracy_torch(M, train_loader),
+                test_accuracy=compute_accuracy_torch(M, test_loader),
+                elapsed=0)
+
     for epoch in range(epochs):
         start = timer()
         for k, (X, T) in enumerate(train_loader):
@@ -100,6 +107,14 @@ def train_torch(M, train_loader, test_loader, epochs, show: bool):
 def train_nerva(M, train_loader, test_loader, epochs, show: bool):
     n_classes = M.sizes[-1]
     batch_size = len(train_loader.dataset) // len(train_loader)
+
+    print_epoch(epoch=0,
+                lr=M.learning_rate(0),
+                loss=compute_loss_nerva(M, train_loader),
+                train_accuracy=compute_accuracy_nerva(M, train_loader),
+                test_accuracy=compute_accuracy_nerva(M, test_loader),
+                elapsed=0)
+
     for epoch in range(epochs):
         start = timer()
         lr = M.learning_rate(epoch)
@@ -126,6 +141,8 @@ def train_nerva(M, train_loader, test_loader, epochs, show: bool):
 
 
 def train_both(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs, show: bool):
+    M1.train()  # Set model in training mode
+
     n_classes = M2.sizes[-1]
     batch_size = len(train_loader.dataset) // len(train_loader)
 
