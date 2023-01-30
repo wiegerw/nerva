@@ -70,7 +70,7 @@ def snn_example():
     loss = SoftmaxCrossEntropyLoss()
     learning_rate_scheduler = ConstantScheduler(0.01)
     manual_seed(1234567)
-    density = 0.5
+    density = 0.05
 
     model = Sequential()
     model.add(BatchNormalization())
