@@ -58,7 +58,19 @@ def compute_matrix_difference(name, X1: np.ndarray, X2: np.ndarray):
     print(f'{name} difference: {l1_norm(X1 - X2)}')
 
 
+def print_epoch(epoch, lr, loss, train_accuracy, test_accuracy, elapsed):
+    print(f'epoch {epoch + 1:3}  '
+          f'lr: {lr:.8f}  '
+          f'loss: {loss:.8f}  '
+          f'train accuracy: {train_accuracy:.8f}  '
+          f'test accuracy: {test_accuracy:.8f}  '
+          f'time: {elapsed:.8f}s'
+         )
+
+
 def train_torch(M, train_loader, test_loader, epochs, show: bool):
+    M.train()  # Set model in training mode
+
     for epoch in range(epochs):
         start = timer()
         for k, (X, T) in enumerate(train_loader):
@@ -75,13 +87,12 @@ def train_torch(M, train_loader, test_loader, epochs, show: bool):
                 pp('Y', Y)
                 pp('DY', Y.grad.detach())
 
-        print(f'epoch {epoch + 1:3}  '
-              f'lr: {M.optimizer.param_groups[0]["lr"]:.4f}  '
-              f'loss: {compute_loss_torch(M, train_loader):.3f}  '
-              f'train accuracy: {compute_accuracy_torch(M, train_loader):.3f}  '
-              f'test accuracy: {compute_accuracy_torch(M, test_loader):.3f}  '
-              f'time: {elapsed:.3f}'
-             )
+        print_epoch(epoch=epoch,
+                    lr=M.optimizer.param_groups[0]["lr"],
+                    loss=compute_loss_torch(M, train_loader),
+                    train_accuracy=compute_accuracy_torch(M, train_loader),
+                    test_accuracy=compute_accuracy_torch(M, test_loader),
+                    elapsed=elapsed)
 
         M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
 
@@ -106,13 +117,12 @@ def train_nerva(M, train_loader, test_loader, epochs, show: bool):
                 pp('Y', Y)
                 pp('DY', DY)
 
-        print(f'epoch {epoch + 1:3}  '
-              f'lr: {lr:.4f}  '
-              f'loss: {compute_loss_nerva(M, train_loader):.3f}  '
-              f'train accuracy: {compute_accuracy_nerva(M, train_loader):.3f}  '
-              f'test accuracy: {compute_accuracy_nerva(M, test_loader):.3f}  '
-              f'time: {elapsed:.3f}'
-             )
+        print_epoch(epoch=epoch,
+                    lr=lr,
+                    loss=compute_loss_nerva(M, train_loader),
+                    train_accuracy=compute_accuracy_nerva(M, train_loader),
+                    test_accuracy=compute_accuracy_nerva(M, test_loader),
+                    elapsed=elapsed)
 
 
 def train_both(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs, show: bool):
@@ -159,21 +169,19 @@ def train_both(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs, show: bool
 
             elapsed = timer() - start
 
-        print(f'epoch {epoch + 1:3}  '
-              f'lr: {M1.optimizer.param_groups[0]["lr"]:.4f}  '
-              f'loss: {compute_loss_torch(M1, train_loader):.3f}  '
-              f'train accuracy: {compute_accuracy_torch(M1, train_loader):.3f}  '
-              f'test accuracy: {compute_accuracy_torch(M1, test_loader):.3f}  '
-              f'time: {elapsed:.3f}'
-             )
+        print_epoch(epoch=epoch,
+                    lr=M1.optimizer.param_groups[0]["lr"],
+                    loss=compute_loss_torch(M1, train_loader),
+                    train_accuracy=compute_accuracy_torch(M1, train_loader),
+                    test_accuracy=compute_accuracy_torch(M1, test_loader),
+                    elapsed=elapsed)
 
-        print(f'epoch {epoch + 1:3}  '
-              f'lr: {lr:.4f}  '
-              f'loss: {compute_loss_nerva(M2, train_loader):.3f}  '
-              f'train accuracy: {compute_accuracy_nerva(M2, train_loader):.3f}  '
-              f'test accuracy: {compute_accuracy_nerva(M2, test_loader):.3f}  '
-              f'time: {elapsed:.3f}'
-             )
+        print_epoch(epoch=epoch,
+                    lr=lr,
+                    loss=compute_loss_nerva(M2, train_loader),
+                    train_accuracy=compute_accuracy_nerva(M2, train_loader),
+                    test_accuracy=compute_accuracy_nerva(M2, test_loader),
+                    elapsed=elapsed)
 
         M1.learning_rate.step()
 
