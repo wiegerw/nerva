@@ -344,6 +344,21 @@ class mlp_masking
     }
 };
 
+inline
+std::vector<std::pair<long, long>> sparse_linear_layer_sizes(multilayer_perceptron& M)
+{
+  std::vector<std::pair<long, long>> result;
+  for (auto& layer: M.layers)
+  {
+    if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
+    {
+      const auto& W = slayer->W;
+      result.emplace_back(W.rows(), W.cols());
+    }
+  }
+  return result;
+}
+
 } // namespace nerva
 
 #endif // NERVA_NEURAL_NETWORKS_MULTILAYER_PERCEPTRON_H

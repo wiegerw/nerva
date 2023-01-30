@@ -550,6 +550,95 @@ void set_optimizer(linear_layer<Matrix>& layer, const std::string& text)
   }
 }
 
+template <typename Scalar>
+std::vector<Scalar> compute_sparse_layer_densities(Scalar density,
+                                                   const std::vector<std::pair<long, long>>& layer_shapes,
+                                                   Scalar erk_power_scale = Scalar(1)
+                                                  )
+{
+  long n = layer_shapes.size(); // the number of layers
+
+  if (density == Scalar(1))
+  {
+    return std::vector<Scalar>(n, Scalar(1));
+  }
+
+  long total_params = 0;
+  for (const auto& [rows, columns]: layer_shapes)
+  {
+    total_params += rows * columns;
+  }
+
+  std::set<long> dense_layers;
+  std::vector<Scalar> raw_probabilities(n, Scalar(0));
+  Scalar epsilon;
+
+  while (true)
+  {
+    Scalar divisor = 0;
+    Scalar rhs = 0;
+    std::fill(raw_probabilities.begin(), raw_probabilities.end(), Scalar(0));
+    for (long i = 0; i < n; i++)
+    {
+      auto [rows, columns] = layer_shapes[i];
+      long n_param = rows * columns;
+      long n_zeros = n_param * (Scalar(1) - density);
+      long n_ones = n_param * density;
+      if (dense_layers.count(i))
+      {
+        rhs -= n_zeros;
+      }
+      else
+      {
+        rhs += n_ones;
+        raw_probabilities[i] = ((rows + columns) / (Scalar)(rows * columns)) * std::pow(erk_power_scale, Scalar(1));
+        divisor += raw_probabilities[i] * n_param;
+      }
+    }
+    epsilon = rhs / divisor;
+    Scalar max_prob = *std::max_element(raw_probabilities.begin(), raw_probabilities.end());
+    Scalar max_prob_one = max_prob * epsilon;
+    if (max_prob_one > 1)
+    {
+      for (long j = 0; j < n; j++)
+      {
+        if (raw_probabilities[j] == max_prob)
+        {
+          std::cout << "Sparsity of layer:" << j << " had to be set to 0." << std::endl;
+          dense_layers.insert(j);
+        }
+      }
+    }
+    else
+    {
+      break;
+    }
+  }
+
+  // Compute the densities
+  std::vector<Scalar> densities(n, 0);
+  Scalar total_nonzero = 0;
+  for (long i = 0; i < n; i++)
+  {
+    long rows = layer_shapes[i].first;
+    long columns = layer_shapes[i].second;
+    long n_param = rows * columns;
+    if (dense_layers.count(i))
+    {
+      densities[i] = Scalar(1);
+    }
+    else
+    {
+      Scalar probability_one = epsilon * raw_probabilities[i];
+      densities[i] = probability_one;
+    }
+    std::cout << "layer: " << i << ", shape: " << "(" << rows << "," << columns << ")" << ", density: " << densities[i] << std::endl;
+    total_nonzero += densities[i] * n_param;
+  }
+  std::cout << "Overall sparsity " << total_nonzero / total_params << std::endl;
+  return densities;
+}
+
 } // namespace nerva
 
 #endif // NERVA_NEURAL_NETWORKS_LAYERS_H
