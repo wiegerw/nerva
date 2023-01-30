@@ -6,9 +6,10 @@
 
 import argparse
 import pathlib
+import sys
 import torch
 from testing.datasets import create_cifar10_datasets, create_dataloaders
-from testing.numpy_utils import save_eigen_array
+from testing.numpy_utils import load_eigen_array, save_eigen_array, pp
 
 
 def load_models(model: str, datadir: str):
@@ -19,6 +20,21 @@ def load_models(model: str, datadir: str):
         raise RuntimeError(f'Unknown model {model}')
 
 
+def inspect_data(outputdir, epochs):
+    for epoch in range(epochs):
+        print(f'--- epoch {epoch} ---')
+        path = pathlib.Path(outputdir) / f'epoch{epoch}.npy'
+        with open(path, "rb") as f:
+            Xtrain = load_eigen_array(f)
+            Ttrain = load_eigen_array(f)
+            Xtest = load_eigen_array(f)
+            Ttest = load_eigen_array(f)
+            pp(f'Xtrain', Xtrain)
+            pp(f'Ttrain', Ttrain)
+            pp(f'Xtest', Xtest)
+            pp(f'Ttest', Ttest)
+
+
 def main():
     cmdline_parser = argparse.ArgumentParser()
     cmdline_parser.add_argument("--batch-size", help="The batch size", type=int, default=1)
@@ -26,11 +42,16 @@ def main():
     cmdline_parser.add_argument('--model', type=str, default='cifar10', help='the data set (default: cifar10)')
     cmdline_parser.add_argument("--seed", help="The initial seed of the random generator", type=int)
     cmdline_parser.add_argument('--datadir', type=str, default='./data', help='the data directory (default: ./data)')
-    cmdline_parser.add_argument("--outputdir", type=str, help="the directory where the results are stored")
+    cmdline_parser.add_argument("--outputdir", type=str, help="the output directory where the results are stored")
+    cmdline_parser.add_argument("--inspect", help="if this flag is set, the output directory will be inspected", action="store_true")
     args = cmdline_parser.parse_args()
 
     if args.seed:
         torch.manual_seed(args.seed)
+
+    if args.inspect:
+        inspect_data(args.outputdir, args.epochs)
+        sys.exit(0)
 
     pathlib.Path(args.outputdir).mkdir(parents=True, exist_ok=True)
 
