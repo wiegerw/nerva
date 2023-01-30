@@ -140,11 +140,11 @@ void compute_statistics(MultilayerPerceptron& M,
     auto training_loss = compute_loss(M, loss, data.Xtrain, data.Ttrain);
     auto training_accuracy = compute_accuracy(M, data.Xtrain, data.Ttrain);
     auto test_accuracy = compute_accuracy(M, data.Xtest, data.Ttest);
-    std::cout << fmt::format("  lr: {:3f}  loss: {:7.4f}  train accuracy: {:7.4f}  test accuracy: {:7.4f}", lr, training_loss, training_accuracy, test_accuracy);
+    std::cout << fmt::format("  lr: {:.8f}  loss: {:.8f}  train accuracy: {:.8f}  test accuracy: {:.8f}", lr, training_loss, training_accuracy, test_accuracy);
   }
   if (elapsed_seconds >= 0)
   {
-    std::cout << fmt::format("  time: {:7.4f}s", elapsed_seconds);
+    std::cout << fmt::format("  time: {:.8f}s", elapsed_seconds);
   }
   std::cout << std::endl;
 }
@@ -166,11 +166,11 @@ void compute_statistics_batch(MultilayerPerceptron& M,
     auto training_loss = compute_loss_batch(M, loss, data.Xtrain, data.Ttrain, Q);
     auto training_accuracy = compute_accuracy_batch(M, data.Xtrain, data.Ttrain, Q);
     auto test_accuracy = compute_accuracy_batch(M, data.Xtest, data.Ttest, Q);
-    std::cout << fmt::format(" lr: {:.3f}  loss: {:7.4f}  train accuracy: {:7.4f}  test accuracy: {:7.4f}", lr, training_loss, training_accuracy, test_accuracy);
+    std::cout << fmt::format(" lr: {:.8f}  loss: {:.8f}  train accuracy: {:.8f}  test accuracy: {:.8f}", lr, training_loss, training_accuracy, test_accuracy);
   }
   if (elapsed_seconds >= 0)
   {
-    std::cout << fmt::format(" time: {:7.4f}s", elapsed_seconds);
+    std::cout << fmt::format(" time: {:.8f}s", elapsed_seconds);
   }
   std::cout << std::endl;
 }
@@ -363,8 +363,8 @@ std::pair<double, double> minibatch_gradient_descent(
     compute_statistics_batch(M, eta, loss, data, options.batch_size, epoch, options.statistics, seconds);
   }
   double test_accuracy = compute_accuracy_batch(M, data.Xtest, data.Ttest, options.batch_size);
-  std::cout << fmt::format("Accuracy of the network on the {} test examples: {:4.2f}%", data.Xtest.cols(), test_accuracy * 100.0) << std::endl;
-  std::cout << fmt::format("Total training time for the {} epochs: {:7.4f}s\n", options.epochs, total_training_time);
+  std::cout << fmt::format("Accuracy of the network on the {} test examples: {:.2f}%", data.Xtest.cols(), test_accuracy * 100.0) << std::endl;
+  std::cout << fmt::format("Total training time for the {} epochs: {:.8f}s\n", options.epochs, total_training_time);
   return {test_accuracy, total_training_time};
 }
 
