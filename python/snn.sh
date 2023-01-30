@@ -3,10 +3,14 @@
 epochs=1
 batchsize=100
 momentum=0.9
+
 densesizes="1024,512"
+densearchitecture=RRL
+denseweights=xxx
+
 sparsesizes="1024,1024"
-architecture=RRL
-weights=xxx
+sparsearchitecture=RRL
+sparseweights=xxx
 
 function train_sparse_torch()
 {
@@ -46,7 +50,7 @@ function train_sparse_nerva()
 
   ../tools/dist/mlpf --seed=$seed --density=$density $augmentedflag --hidden="$sparsesizes" --batch-size=$batchsize \
                      --epochs=$epochs --learning-rate="multistep_lr($lr;50,75;0.1)" --optimizer="nesterov($momentum)"  \
-                     --architecture=$architecture --weights=$weights --dataset=cifar10 --size=50000 \
+                     --architecture=$sparsearchitecture --weights=$sparseweights --dataset=cifar10 --size=50000 \
                      --loss="softmax-cross-entropy" --algorithm=minibatch --threads=4 -v >& $logfile
 }
 
@@ -86,7 +90,7 @@ function train_dense_nerva()
 
   ../tools/dist/mlpf --seed=$seed $augmentedflag --hidden="$densesizes" --batch-size=$batchsize \
                      --epochs=$epochs --learning-rate="multistep_lr($lr;50,75;0.1)" --optimizer="nesterov($momentum)"  \
-                     --architecture=$architecture --weights=$weights --dataset=cifar10 --size=50000 \
+                     --architecture=$densearchitecture --weights=$denseweights --dataset=cifar10 --size=50000 \
                      --loss="softmax-cross-entropy" --algorithm=minibatch --threads=4 -v >& $logfile
 }
 
@@ -115,11 +119,18 @@ function train_all()
     done
 }
 
+# used for quick testing
 function train_one()
 {
     epochs=1
     densesizes="64,32"
+    densearchitecture=RRL
+    denseweights=xxx
+
     sparsesizes="64,64"
+    sparsearchitecture=RRL
+    sparseweights=xxx
+
     for seed in 1
     do
         for augmented in false
@@ -132,5 +143,5 @@ function train_one()
     done
 }
 
-train_one
-#train_all
+#train_one
+train_all
