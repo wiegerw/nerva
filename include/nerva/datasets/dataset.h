@@ -44,33 +44,44 @@ struct dataset
     eigen::print_numpy_matrix("Ttest", Ttest);
   }
 
-  // Loads data from the directory datadir.
   // Precondition: the python interpreter must be running.
   // This can be enforced using `py::scoped_interpreter guard{};`
-  void import_from_npy(const std::string& datadir, unsigned int epoch)
+  void import_cifar10_from_npz(const std::string& datadir, int epoch)
   {
     std::cout << "Loading epoch " << epoch << " from directory " << datadir << std::endl;
     namespace py = pybind11;
     auto np = py::module::import("numpy");
     auto io = py::module::import("io");
 
-    auto load = [&](const std::filesystem::path& path, eigen::matrix& A)
+    auto path = std::filesystem::path(datadir) / ("epoch" + std::to_string(epoch) + ".npz");
+    if (!std::filesystem::exists(path))
     {
-      if (!std::filesystem::exists(path))
-      {
-        throw std::runtime_error("Could not load file '" + path.native() + "'");
-      }
-      auto file = io.attr("open")(path.native(), "rb");
-      A = eigen::from_numpy(np.attr("load")(file).cast<py::array_t<scalar>>());
-      file.attr("close")();
-    };
+      throw std::runtime_error("Could not load file '" + path.native() + "'");
+    }
 
-    std::string suffix = std::to_string(epoch) + ".npy";
-    std::filesystem::path dir(datadir);
-    load(dir / ("Xtrain" + suffix), Xtrain);
-    load(dir / ("Ttrain" + suffix), Ttrain);
-    load(dir / ("Xtest" + suffix), Xtest);
-    load(dir / ("Ttest" + suffix), Ttest);
+    py::dict d = np.attr("load")(path.native());
+
+    Xtrain = nerva::eigen::from_numpy(d["Xtrain"].cast<py::array_t<scalar>>());
+
+    // create one hot encoded matrix Ttrain
+    Ttrain = eigen::matrix::Zero(10, 50000);
+    auto ttrain = d["Ttrain"].cast<py::array_t<long>>();
+    auto rtrain = ttrain.unchecked<1>();
+    for (long i = 0; i < 50000; i++)
+    {
+      Ttrain(rtrain(i), i) = scalar(1);
+    }
+
+    Xtest  = nerva::eigen::from_numpy(d["Xtest"].cast<py::array_t<scalar>>());
+
+    // create one hot encoded matrix Ttest
+    Ttest = eigen::matrix::Zero(10, 10000);
+    auto ttest = d["Ttest"].cast<py::array_t<long>>();
+    auto rtest = ttest.unchecked<1>();
+    for (long i = 0; i < 10000; i++)
+    {
+      Ttest(rtest(i), i) = scalar(1);
+    }
   }
 };
 

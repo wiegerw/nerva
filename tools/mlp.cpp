@@ -230,7 +230,7 @@ class tool: public command_line_tool
       cli |= lyra::opt(no_shuffle)["--no-shuffle"]("Do not shuffle the dataset during training.");
       cli |= lyra::opt(no_statistics)["--no-statistics"]("Do not compute statistics during training.");
       cli |= lyra::opt(options.threads, "value")["--threads"]("The number of threads used by Eigen.");
-      cli |= lyra::opt(datadir, "value")["--import-dataset"]("A directory containing the files Xtrain<nnn>.npy etc.");
+      cli |= lyra::opt(datadir, "value")["--datadir"]("A directory containing the files epoch<nnn>.npz");
       cli |= lyra::opt(import_weights_dir, "value")["--import-weights"]("A directory containing the files w1.txt etc.");
       cli |= lyra::opt(export_weights_dir, "value")["--export-weights"]("A directory where the weights are saved in the filese w1.txt etc.");
       cli |= lyra::opt(options.debug)["--debug"]("Show debug output");
@@ -261,7 +261,9 @@ class tool: public command_line_tool
 
       std::mt19937 rng{options.seed};
       NERVA_LOG(log::verbose) << "loading dataset " << options.dataset << std::endl;
-      datasets::dataset data = datadir.empty() ? datasets::make_dataset(options.dataset, options.dataset_size, rng) : datasets::load_dataset(datadir);
+      // TODO: loading the dataset should be avoided when the flag --augmented is set.
+      // Now this is not possible, because the input and output size are unknown.
+      datasets::dataset data = datasets::make_dataset(options.dataset, options.dataset_size, rng);
       std::size_t D = data.Xtrain.rows(); // the number of features
       std::size_t K = data.Ttrain.rows(); // the number of outputs
       NERVA_LOG(log::verbose) << "number of examples: " << data.Xtrain.cols() << std::endl;
@@ -375,5 +377,6 @@ class tool: public command_line_tool
 
 int main(int argc, const char** argv)
 {
+  pybind11::scoped_interpreter guard{};
   return tool().execute(argc, argv);
 }
