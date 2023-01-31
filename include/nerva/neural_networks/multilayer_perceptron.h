@@ -156,48 +156,6 @@ struct multilayer_perceptron
   }
 };
 
-inline
-void import_weights(multilayer_perceptron& M, const std::string& dir)
-{
-  std::cout << "importing weights from directory " << dir << std::endl;
-  int index = 1;
-  for (auto& layer: M.layers)
-  {
-    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
-    {
-      load_matrix(dir + "/w" + std::to_string(index) + ".txt", dlayer->W);
-      eigen::load_vector(dir + "/b" + std::to_string(index) + ".txt", dlayer->b);
-    }
-    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
-    {
-      load_matrix(dir + "/w" + std::to_string(index) + ".txt", slayer->W);
-      eigen::load_vector(dir + "/b" + std::to_string(index) + ".txt", slayer->b);
-    }
-    index++;
-  }
-}
-
-inline
-void export_weights(const multilayer_perceptron& M, const std::string& dir)
-{
-  std::cout << "exporting weights to directory " << dir << std::endl;
-  int index = 1;
-  for (auto& layer: M.layers)
-  {
-    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
-    {
-      save_matrix(dir + "/w" + std::to_string(index) + ".txt", dlayer->W);
-      eigen::save_vector(dir + "/b" + std::to_string(index) + ".txt", dlayer->b);
-    }
-    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
-    {
-      save_matrix(dir + "/w" + std::to_string(index) + ".txt", slayer->W);
-      eigen::save_vector(dir + "/b" + std::to_string(index) + ".txt", slayer->b);
-    }
-    index++;
-  }
-}
-
 // Precondition: the python interpreter must be running.
 // This can be enforced using `py::scoped_interpreter guard{};`
 inline

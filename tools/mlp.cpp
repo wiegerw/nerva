@@ -200,8 +200,8 @@ class tool: public command_line_tool
   protected:
     mlp_options options;
     std::string datadir;
-    std::string import_weights_dir;
-    std::string export_weights_dir;
+    std::string import_weights_file;
+    std::string export_weights_file;
     std::string hidden_layer_sizes_text;
     std::string densities_text;
     bool no_shuffle = false;
@@ -231,8 +231,9 @@ class tool: public command_line_tool
       cli |= lyra::opt(no_statistics)["--no-statistics"]("Do not compute statistics during training.");
       cli |= lyra::opt(options.threads, "value")["--threads"]("The number of threads used by Eigen.");
       cli |= lyra::opt(datadir, "value")["--datadir"]("A directory containing the files epoch<nnn>.npz");
-      cli |= lyra::opt(import_weights_dir, "value")["--import-weights"]("A directory containing the files w1.txt etc.");
-      cli |= lyra::opt(export_weights_dir, "value")["--export-weights"]("A directory where the weights are saved in the filese w1.txt etc.");
+      // TODO: add import/export of weights in .npz format
+      // cli |= lyra::opt(import_weights_file, "value")["--import-weights"]("Loads the weights from a file in .npz format");
+      cli |= lyra::opt(export_weights_file, "value")["--export-weights"]("Exports the weights to a file in .npy format");
       cli |= lyra::opt(options.debug)["--debug"]("Show debug output");
       cli |= lyra::opt(options.precision, "value")["--precision"]("The precision that is used for printing.");
       cli |= lyra::opt(options.check_gradients)["--check"]("Check the computed gradients");
@@ -315,18 +316,13 @@ class tool: public command_line_tool
       std::shared_ptr<loss_function> loss = parse_loss_function(options.loss_function);
       std::shared_ptr<learning_rate_scheduler> learning_rate = parse_learning_rate_scheduler(options.learning_rate_scheduler);
 
-      if (import_weights_dir.empty())
+      if (import_weights_file.empty())
       {
         set_weights(M, options.weights_initialization, options.architecture, rng);
       }
       else
       {
-        import_weights(M, import_weights_dir);
-      }
-
-      if (!export_weights_dir.empty())
-      {
-        export_weights(M, export_weights_dir);
+        import_weights_from_numpy(M, import_weights_file);
       }
 
       if (info)
@@ -369,6 +365,11 @@ class tool: public command_line_tool
       if (info)
       {
         M.info("after training");
+      }
+
+      if (!export_weights_file.empty())
+      {
+        export_weights_to_numpy(M, export_weights_file);
       }
 
       return true;
