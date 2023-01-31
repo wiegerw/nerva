@@ -8,7 +8,7 @@ from torch import nn as nn
 from torch.nn import functional as F
 
 import nerva.layers
-from testing.numpy_utils import load_numpy_arrays_from_npy_file, pp, save_eigen_array
+from testing.numpy_utils import load_numpy_arrays_from_npy_file, pp, save_eigen_array, load_eigen_array
 
 
 class MLP1(nn.Module):
@@ -46,10 +46,20 @@ class MLP1(nn.Module):
             for layer in self.layers:
                 save_eigen_array(f, layer.weight.detach().numpy())
 
+    def import_weights(self, filename: str):
+        with open(filename, "rb") as f:
+            for layer in self.layers:
+                layer.weight = torch.Tensor(load_eigen_array(f))
+
     def export_bias(self, filename: str):
         with open(filename, "wb") as f:
             for layer in self.layers:
                 save_eigen_array(f, layer.bias.detach().numpy())
+
+    def import_bias(self, filename: str):
+        with open(filename, "rb") as f:
+            for layer in self.layers:
+                layer.bias = torch.Tensor(load_eigen_array(f))
 
 
 class MLP2(nerva.layers.Sequential):

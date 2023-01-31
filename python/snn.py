@@ -63,6 +63,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--torch", help="Train using a PyTorch model", action="store_true")
     cmdline_parser.add_argument("--info", help="Print detailed info about the models", action="store_true")
     cmdline_parser.add_argument("--scheduler", type=str, help="the learning rate scheduler (constant,multistep)", default="multistep")
+    cmdline_parser.add_argument('--import-weights', type=str, help='Import weights from a file in .npy format')
     return cmdline_parser
 
 
@@ -103,6 +104,10 @@ def main():
 
     if args.copy:
         copy_weights_and_biases(M1, M2)
+
+    if args.import_weights:
+        M1.import_weights(args.import_weights)
+        M2.import_weights(args.import_weights)
 
     if args.info:
         print('\n=== PyTorch info ===')
