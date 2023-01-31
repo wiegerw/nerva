@@ -7,6 +7,8 @@
 import argparse
 import pathlib
 import sys
+
+import numpy as np
 import torch
 from testing.datasets import create_cifar10_datasets, create_dataloaders
 from testing.numpy_utils import load_eigen_array, save_eigen_array, pp
@@ -20,19 +22,25 @@ def load_models(model: str, datadir: str):
         raise RuntimeError(f'Unknown model {model}')
 
 
+def to_eigen(x: np.ndarray):
+    if len(x.shape) == 2:
+        return x.reshape(x.shape[1], x.shape[0], order='F').T
+    return x
+
+
+def from_eigen(x: np.ndarray):
+    if len(x.shape) == 2:
+        return x.reshape(x.shape[1], x.shape[0], order='C').T
+    return x
+
+
 def inspect_data(outputdir, epochs):
     for epoch in range(epochs):
         print(f'--- epoch {epoch} ---')
-        path = pathlib.Path(outputdir) / f'epoch{epoch}.npy'
-        with open(path, "rb") as f:
-            Xtrain = load_eigen_array(f)
-            Ttrain = load_eigen_array(f)
-            Xtest = load_eigen_array(f)
-            Ttest = load_eigen_array(f)
-            pp(f'Xtrain', Xtrain)
-            pp(f'Ttrain', Ttrain)
-            pp(f'Xtest', Xtest)
-            pp(f'Ttest', Ttest)
+        path = pathlib.Path(outputdir) / f'epoch{epoch}.npz'
+        d = np.load(path)
+        Xtrain = from_eigen(d['Xtrain'])
+        pp(f'Xtrain', Xtrain)
 
 
 def main():
@@ -58,16 +66,18 @@ def main():
     print(f'Generating augmented datasets')
     for epoch in range(args.epochs):
         print(f'epoch {epoch}')
-        filename = f'{args.outputdir}/epoch{epoch}.npy'
+        filename = f'{args.outputdir}/epoch{epoch}.npz'
         train_loader, test_loader = load_models(args.model, args.datadir)
         Xtrain, Ttrain = next(iter(train_loader))
         Xtest, Ttest = next(iter(test_loader))
         print(f'Saving epoch {epoch} data to {filename}')
         with open(filename, "wb") as f:
-            save_eigen_array(f, Xtrain.detach().numpy())
-            save_eigen_array(f, Ttrain.detach().numpy())
-            save_eigen_array(f, Xtest.detach().numpy())
-            save_eigen_array(f, Ttest.detach().numpy())
+            np.savez_compressed(f,
+                                Xtrain=to_eigen(Xtrain.detach().numpy()),
+                                Ttrain=to_eigen(Ttrain.detach().numpy()),
+                                Xtest=to_eigen(Xtest.detach().numpy()),
+                                Ttest=to_eigen(Ttest.detach().numpy())
+                                )
         del Xtrain, Ttrain, Xtest, Ttest
 
 
