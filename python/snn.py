@@ -87,7 +87,9 @@ def main():
     initialize_frameworks(args)
 
     if args.augmented:
-        train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
+        pass
+        # N.B. skip this step, since we use preprocessed data
+        # train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
     else:
         Xtrain, Ttrain, Xtest, Ttest = load_cifar10_data(args.datadir)
         train_loader = TorchDataLoader(Xtrain, Ttrain, args.batch_size)
@@ -124,14 +126,14 @@ def main():
             train_torch_augmented(M1, args.datadir, args.epochs, args.batch_size, args.show)
         else:
             train_torch(M1, train_loader, test_loader, args.epochs, args.show)
-        print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_torch(M1, test_loader):.3f} %')
+        # print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_torch(M1, test_loader):.3f} %')
     elif args.nerva:
         print('\n=== Training Nerva model ===')
         if args.augmented:
             train_nerva_augmented(M2, args.datadir, args.epochs, args.batch_size, args.show)
         else:
             train_nerva(M2, train_loader, test_loader, args.epochs, args.show)
-        print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_nerva(M2, test_loader):.3f} %')
+        # print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_nerva(M2, test_loader):.3f} %')
 
 
 if __name__ == '__main__':

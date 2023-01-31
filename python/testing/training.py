@@ -61,7 +61,7 @@ def compute_matrix_difference(name, X1: np.ndarray, X2: np.ndarray):
 
 
 def print_epoch(epoch, lr, loss, train_accuracy, test_accuracy, elapsed):
-    print(f'epoch {epoch + 1:3}  '
+    print(f'epoch {epoch:3}  '
           f'lr: {lr:.8f}  '
           f'loss: {loss:.8f}  '
           f'train accuracy: {train_accuracy:.8f}  '
@@ -96,7 +96,7 @@ def train_torch(M, train_loader, test_loader, epochs, show: bool):
                 pp('Y', Y)
                 pp('DY', Y.grad.detach())
 
-        print_epoch(epoch=epoch,
+        print_epoch(epoch=epoch + 1,
                     lr=M.optimizer.param_groups[0]["lr"],
                     loss=compute_loss_torch(M, train_loader),
                     train_accuracy=compute_accuracy_torch(M, train_loader),
@@ -110,26 +110,23 @@ def make_data_loaders(datadir: str, epoch: int, batch_size: int) -> Tuple[TorchD
     from pathlib import Path
     import torch
 
-    dir = Path(datadir)
+    path = Path(datadir) / f'epoch{epoch}.npz'
+    print(f'Loading dataset from file {path}')
+    if not path.exists():
+        raise RuntimeError(f"Could not load file '{path}'")
 
-    def load(name: str):
-        path = dir / f'{name}{epoch}.npy'
-        if not path.exists():
-            raise RuntimeError(f"Could not load file '{path}'")
-        with open(path, 'rb') as f:
-            return torch.Tensor(load_eigen_array(f))
-
-    Xtrain = load('Xtrain')
-    Ttrain = load('Ttrain')
-    Xtest = load('Xtest')
-    Ttest = load('Ttest')
+    d = np.load(str(path))
+    Xtrain = torch.Tensor(d['Xtrain'])
+    Ttrain = torch.LongTensor(d['Ttrain'])
+    Xtest = torch.Tensor(d['Xtest'])
+    Ttest = torch.LongTensor(d['Ttest'])
     train_loader = TorchDataLoader(Xtrain, Ttrain, batch_size)
     test_loader = TorchDataLoader(Xtest, Ttest, batch_size)
     return train_loader, test_loader
 
 
 # TODO: use classes to reuse code
-# At every epoch a new dataset in .npy format is read from datadir.
+# At every epoch a new dataset in .npz format is read from datadir.
 def train_torch_augmented(M, datadir, epochs, batch_size, show: bool):
     M.train()  # Set model in training mode
 
@@ -161,7 +158,7 @@ def train_torch_augmented(M, datadir, epochs, batch_size, show: bool):
                 pp('Y', Y)
                 pp('DY', Y.grad.detach())
 
-        print_epoch(epoch=epoch,
+        print_epoch(epoch=epoch + 1,
                     lr=M.optimizer.param_groups[0]["lr"],
                     loss=compute_loss_torch(M, train_loader),
                     train_accuracy=compute_accuracy_torch(M, train_loader),
@@ -199,7 +196,7 @@ def train_nerva(M, train_loader, test_loader, epochs, show: bool):
                 pp('Y', Y)
                 pp('DY', DY)
 
-        print_epoch(epoch=epoch,
+        print_epoch(epoch=epoch + 1,
                     lr=lr,
                     loss=compute_loss_nerva(M, train_loader),
                     train_accuracy=compute_accuracy_nerva(M, train_loader),
@@ -208,7 +205,7 @@ def train_nerva(M, train_loader, test_loader, epochs, show: bool):
 
 
 # TODO: use classes to reuse code
-# At every epoch a new dataset in .npy format is read from datadir.
+# At every epoch a new dataset in .npz format is read from datadir.
 def train_nerva_augmented(M, datadir, epochs, batch_size, show: bool):
     train_loader, test_loader = make_data_loaders(datadir, epoch=0, batch_size=batch_size)
 
@@ -242,7 +239,7 @@ def train_nerva_augmented(M, datadir, epochs, batch_size, show: bool):
                 pp('Y', Y)
                 pp('DY', DY)
 
-        print_epoch(epoch=epoch,
+        print_epoch(epoch=epoch + 1,
                     lr=lr,
                     loss=compute_loss_nerva(M, train_loader),
                     train_accuracy=compute_accuracy_nerva(M, train_loader),
@@ -296,14 +293,14 @@ def train_both(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs, show: bool
 
             elapsed = timer() - start
 
-        print_epoch(epoch=epoch,
+        print_epoch(epoch=epoch + 1,
                     lr=M1.optimizer.param_groups[0]["lr"],
                     loss=compute_loss_torch(M1, train_loader),
                     train_accuracy=compute_accuracy_torch(M1, train_loader),
                     test_accuracy=compute_accuracy_torch(M1, test_loader),
                     elapsed=elapsed)
 
-        print_epoch(epoch=epoch,
+        print_epoch(epoch=epoch + 1,
                     lr=lr,
                     loss=compute_loss_nerva(M2, train_loader),
                     train_accuracy=compute_accuracy_nerva(M2, train_loader),
