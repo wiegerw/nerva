@@ -46,20 +46,19 @@ struct dataset
 
   // Precondition: the python interpreter must be running.
   // This can be enforced using `py::scoped_interpreter guard{};`
-  void import_cifar10_from_npz(const std::string& datadir, int epoch)
+  void import_cifar10_from_npz(const std::string& filename)
   {
-    std::cout << "Loading epoch " << epoch << " from directory " << datadir << std::endl;
+    std::cout << "Loading data from file " << filename << std::endl;
     namespace py = pybind11;
     auto np = py::module::import("numpy");
     auto io = py::module::import("io");
 
-    auto path = std::filesystem::path(datadir) / ("epoch" + std::to_string(epoch) + ".npz");
-    if (!std::filesystem::exists(path))
+    if (!std::filesystem::exists(std::filesystem::path(filename)))
     {
-      throw std::runtime_error("Could not load file '" + path.native() + "'");
+      throw std::runtime_error("Could not load file '" + filename + "'");
     }
 
-    py::dict d = np.attr("load")(path.native());
+    py::dict d = np.attr("load")(filename);
 
     Xtrain = nerva::eigen::from_numpy(d["Xtrain"].cast<py::array_t<scalar>>());
 

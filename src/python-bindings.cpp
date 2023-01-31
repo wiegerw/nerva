@@ -95,6 +95,12 @@ PYBIND11_MODULE(nervalib, m)
   //                       datasets
   /////////////////////////////////////////////////////////////////////////
 
+  py::class_<datasets::dataset, std::shared_ptr<datasets::dataset>>(m, "data_set")
+    .def(py::init<>(), py::return_value_policy::copy)
+    .def("info", &datasets::dataset::info)
+    .def("import_cifar10_from_npz", &datasets::dataset::import_cifar10_from_npz)
+    ;
+
   py::class_<datasets::dataset_view, std::shared_ptr<datasets::dataset_view>>(m, "DataSetView")
     .def(py::init<datasets::matrix_ref, datasets::matrix_ref, datasets::matrix_ref, datasets::matrix_ref>(), py::return_value_policy::copy)
     .def("info", &datasets::dataset_view::info)
