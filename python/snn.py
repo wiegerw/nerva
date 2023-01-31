@@ -18,7 +18,8 @@ from testing.datasets import create_cifar10_dataloaders, load_cifar10_data, Torc
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
 from testing.torch_models import make_torch_mask, make_torch_scheduler
 from testing.models import MLP1, MLP2, copy_weights_and_biases, print_model_info
-from testing.training import train_nerva, train_torch, compute_accuracy_torch, compute_accuracy_nerva, compute_densities
+from testing.training import train_nerva, train_torch, compute_accuracy_torch, compute_accuracy_nerva, \
+    compute_densities, train_torch_augmented, train_nerva_augmented
 
 
 def make_torch_model(args, sizes):
@@ -119,11 +120,17 @@ def main():
 
     if args.torch:
         print('\n=== Training PyTorch model ===')
-        train_torch(M1, train_loader, test_loader, args.epochs, args.show)
+        if args.augmented:
+            train_torch_augmented(M1, args.datadir, args.epochs, args.batch_size, args.show)
+        else:
+            train_torch(M1, train_loader, test_loader, args.epochs, args.show)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_torch(M1, test_loader):.3f} %')
     elif args.nerva:
         print('\n=== Training Nerva model ===')
-        train_nerva(M2, train_loader, test_loader, args.epochs, args.show)
+        if args.augmented:
+            train_nerva_augmented(M2, args.datadir, args.epochs, args.batch_size, args.show)
+        else:
+            train_nerva(M2, train_loader, test_loader, args.epochs, args.show)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_nerva(M2, test_loader):.3f} %')
 
 

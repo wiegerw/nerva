@@ -1,7 +1,9 @@
 from timeit import default_timer as timer
-from typing import List
+from typing import List, Tuple
 import numpy as np
-from testing.numpy_utils import to_numpy, to_one_hot_numpy, l1_norm, pp
+
+from testing.datasets import TorchDataLoader
+from testing.numpy_utils import to_numpy, to_one_hot_numpy, l1_norm, pp, load_eigen_array
 from testing.models import MLP1, MLP2
 
 
@@ -104,6 +106,71 @@ def train_torch(M, train_loader, test_loader, epochs, show: bool):
         M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
 
 
+def make_data_loaders(datadir: str, epoch: int, batch_size: int) -> Tuple[TorchDataLoader, TorchDataLoader]:
+    from pathlib import Path
+    import torch
+
+    dir = Path(datadir)
+
+    def load(name: str):
+        path = dir / f'{name}{epoch}.npy'
+        if not path.exists():
+            raise RuntimeError(f"Could not load file '{path}'")
+        with open(path, 'rb') as f:
+            return torch.Tensor(load_eigen_array(f))
+
+    Xtrain = load('Xtrain')
+    Ttrain = load('Ttrain')
+    Xtest = load('Xtest')
+    Ttest = load('Ttest')
+    train_loader = TorchDataLoader(Xtrain, Ttrain, batch_size)
+    test_loader = TorchDataLoader(Xtest, Ttest, batch_size)
+    return train_loader, test_loader
+
+
+# TODO: use classes to reuse code
+# At every epoch a new dataset in .npy format is read from datadir.
+def train_torch_augmented(M, datadir, epochs, batch_size, show: bool):
+    M.train()  # Set model in training mode
+
+    train_loader, test_loader = make_data_loaders(datadir, epoch=0, batch_size=batch_size)
+
+    print_epoch(epoch=0,
+                lr=M.optimizer.param_groups[0]["lr"],
+                loss=compute_loss_torch(M, train_loader),
+                train_accuracy=compute_accuracy_torch(M, train_loader),
+                test_accuracy=compute_accuracy_torch(M, test_loader),
+                elapsed=0)
+
+    for epoch in range(epochs):
+        if epoch > 0:
+            train_loader, test_loader = make_data_loaders(datadir, epoch, batch_size)
+
+        start = timer()
+        for k, (X, T) in enumerate(train_loader):
+            M.optimizer.zero_grad()
+            Y = M(X)
+            Y.retain_grad()
+            loss = M.loss(Y, T)
+            loss.backward()
+            M.optimize()
+            elapsed = timer() - start
+
+            if show:
+                print(f'epoch: {epoch} batch: {k}')
+                pp('Y', Y)
+                pp('DY', Y.grad.detach())
+
+        print_epoch(epoch=epoch,
+                    lr=M.optimizer.param_groups[0]["lr"],
+                    loss=compute_loss_torch(M, train_loader),
+                    train_accuracy=compute_accuracy_torch(M, train_loader),
+                    test_accuracy=compute_accuracy_torch(M, test_loader),
+                    elapsed=elapsed)
+
+        M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
+
+
 def train_nerva(M, train_loader, test_loader, epochs, show: bool):
     n_classes = M.sizes[-1]
     batch_size = len(train_loader.dataset) // len(train_loader)
@@ -116,6 +183,49 @@ def train_nerva(M, train_loader, test_loader, epochs, show: bool):
                 elapsed=0)
 
     for epoch in range(epochs):
+        start = timer()
+        lr = M.learning_rate(epoch)
+        for k, (X, T) in enumerate(train_loader):
+            X = to_numpy(X)
+            T = to_one_hot_numpy(T, n_classes)
+            Y = M.feedforward(X)
+            DY = M.loss.gradient(Y, T) / batch_size
+            M.backpropagate(Y, DY)
+            M.optimize(lr)
+            elapsed = timer() - start
+
+            if show:
+                print(f'epoch: {epoch} batch: {k}')
+                pp('Y', Y)
+                pp('DY', DY)
+
+        print_epoch(epoch=epoch,
+                    lr=lr,
+                    loss=compute_loss_nerva(M, train_loader),
+                    train_accuracy=compute_accuracy_nerva(M, train_loader),
+                    test_accuracy=compute_accuracy_nerva(M, test_loader),
+                    elapsed=elapsed)
+
+
+# TODO: use classes to reuse code
+# At every epoch a new dataset in .npy format is read from datadir.
+def train_nerva_augmented(M, datadir, epochs, batch_size, show: bool):
+    train_loader, test_loader = make_data_loaders(datadir, epoch=0, batch_size=batch_size)
+
+    n_classes = M.sizes[-1]
+    batch_size = len(train_loader.dataset) // len(train_loader)
+
+    print_epoch(epoch=0,
+                lr=M.learning_rate(0),
+                loss=compute_loss_nerva(M, train_loader),
+                train_accuracy=compute_accuracy_nerva(M, train_loader),
+                test_accuracy=compute_accuracy_nerva(M, test_loader),
+                elapsed=0)
+
+    for epoch in range(epochs):
+        if epoch > 0:
+            train_loader, test_loader = make_data_loaders(datadir, epoch, batch_size)
+
         start = timer()
         lr = M.learning_rate(epoch)
         for k, (X, T) in enumerate(train_loader):
