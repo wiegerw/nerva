@@ -1,6 +1,6 @@
 #!/bin/bash
 
-epochs=1
+epochs=100
 batchsize=100
 momentum=0.9
 
@@ -11,6 +11,8 @@ denseweights=xxx
 sparsesizes="1024,1024,1024"
 sparsearchitecture=RRRL
 sparseweights=xxxx
+
+datadir="./data"
 
 function train_sparse_torch()
 {
@@ -29,7 +31,8 @@ function train_sparse_torch()
   fi
 
   python3 snn.py --torch --seed=$seed --density=$density --lr=$lr $augmentedflag --sizes="3072,$sparsesizes,10" \
-                 --batch-size=$batchsize --epochs=$epochs --momentum=$momentum --nesterov >& $logfile
+                 --batch-size=$batchsize --epochs=$epochs --momentum=$momentum --nesterov --datadir="$datadir" \
+                 >& $logfile
 }
 
 function train_sparse_nerva()
@@ -51,7 +54,8 @@ function train_sparse_nerva()
   ../tools/dist/mlpf --seed=$seed --density=$density $augmentedflag --hidden="$sparsesizes" --batch-size=$batchsize \
                      --epochs=$epochs --learning-rate="multistep_lr($lr;50,75;0.1)" --optimizer="nesterov($momentum)"  \
                      --architecture=$sparsearchitecture --weights=$sparseweights --dataset=cifar10 --size=50000 \
-                     --loss="softmax-cross-entropy" --algorithm=minibatch --threads=4 -v >& $logfile
+                     --loss="softmax-cross-entropy" --algorithm=minibatch --threads=4 -v --datadir="$datadir" \
+                     >& $logfile
 }
 
 function train_dense_torch()
@@ -70,7 +74,8 @@ function train_dense_torch()
   fi
 
   python3 snn.py --torch --seed=$seed --lr=$lr $augmentedflag --sizes="3072,$densesizes,10" --batch-size=$batchsize \
-                 --epochs=$epochs --momentum=$momentum --nesterov >& $logfile
+                 --epochs=$epochs --momentum=$momentum --nesterov --datadir="$datadir" \
+                 >& $logfile
 }
 
 function train_dense_nerva()
@@ -91,7 +96,8 @@ function train_dense_nerva()
   ../tools/dist/mlpf --seed=$seed $augmentedflag --hidden="$densesizes" --batch-size=$batchsize \
                      --epochs=$epochs --learning-rate="multistep_lr($lr;50,75;0.1)" --optimizer="nesterov($momentum)"  \
                      --architecture=$densearchitecture --weights=$denseweights --dataset=cifar10 --size=50000 \
-                     --loss="softmax-cross-entropy" --algorithm=minibatch --threads=4 -v >& $logfile
+                     --loss="softmax-cross-entropy" --algorithm=minibatch --threads=4 -v --datadir="$datadir" \
+                     >& $logfile
 }
 
 function train_all()
@@ -100,6 +106,13 @@ function train_all()
     do
         for augmented in true false
         do
+            if [ "$augmented" = "true" ]
+            then
+                datadir="./cifar$seed"
+            else
+                datadir="./data"
+            fi
+
             train_dense_torch  $seed $augmented 0.01
             train_dense_nerva  $seed $augmented 0.01
             train_sparse_torch $seed $augmented 0.1 0.001
