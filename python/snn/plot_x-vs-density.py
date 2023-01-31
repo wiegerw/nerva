@@ -36,9 +36,29 @@ def parse_logfile(path: pathlib.Path) -> pd.DataFrame:
                          'test accuracy': test_accuracy,
                          'time': time})
 
-def make_acc_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str = 'density'):
+def make_acc_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str = 'density', log_scale: bool = False):
     # plot 'accuracy' vs 'density' for each framework using seaborn
     sns.lineplot(x=x_axis, y='test accuracy', hue='framework', data=df, marker='o')
+
+    # Make the y-axis between 0 and 1
+    plt.ylim(0, 1)
+
+    if log_scale:
+        if x_axis == 'density':
+            # Make the xaxis log scale from 0 to 1, such that very small numbers like 0.001 and 0.005 are distinguishable
+            plt.xscale('log')
+            plt.xlim(xmax=1)
+            # Make the x-axis ticks on the specific density levels
+            plt.xticks([ 0.001,   0.005,   0.01,   0.05,   0.1,   0.2,   0.5,   1],
+                       ['0.001', '0.005', '0.01', '0.05', '0.1', '0.2', '0.5', '1'])
+        else:
+            # Make the xaxis log scale from 0 to 1, such that numbers close to 1 like 0.999 and 0.995 are distinguishable
+            plt.xscale('logit')
+            # plt.xlim(xmax=1)
+            # Make the x-axis ticks on the specific sparsity levels
+            plt.xticks([ 0.5,   0.8,   0.9,   0.95,   0.99,   0.995,   0.999],
+                       ['0.5', '0.8', '0.9', '0.95', '0.99', '0.995', '0.999'])
+            # TODO: dense run should be plotted as a horizontal line (because sparsity=0 does not work in logit scale)
 
     # Add labels and title to the plot
     xlabel = x_axis[0].upper() + x_axis[1:]  # make first letter x_axis uppercase
@@ -96,11 +116,11 @@ def main():
     df_best['sparsity'] = 1 - df_best['density']
 
 
-    # x_axis = 'sparsity'
-    x_axis = 'density'
+    x_axis = 'sparsity'
+    # x_axis = 'density'
 
     # make_time_vs_density_plot(df_time, pathlib.Path(f'./plots/time-vs-{x_axis}.png'), x_axis)
-    make_acc_vs_density_plot(df_best, pathlib.Path(f'./plots/accuracy-vs-{x_axis}.png'), x_axis)
+    make_acc_vs_density_plot(df_best, pathlib.Path(f'./plots/accuracy-vs-{x_axis}1.png'), x_axis)
 
 
 
