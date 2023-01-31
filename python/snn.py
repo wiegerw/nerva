@@ -101,16 +101,6 @@ def main():
     M1 = make_torch_model(args, sizes)
     M2 = make_nerva_model(args, sizes, densities)
 
-    print('\n=== PyTorch model ===')
-    print(M1)
-    print(M1.loss)
-    print(M1.learning_rate)
-
-    print('\n=== Nerva model ===')
-    print(M2)
-    print(M2.loss)
-    print(M2.learning_rate)
-
     if args.copy:
         copy_weights_and_biases(M1, M2)
 
@@ -121,18 +111,30 @@ def main():
         print_model_info(M2)
 
     if args.torch:
+        print('\n=== PyTorch model ===')
+        print(M1)
+        print(M1.loss)
+        print(M1.learning_rate)
+
         print('\n=== Training PyTorch model ===')
         if args.augmented:
             train_torch_augmented(M1, args.datadir, args.epochs, args.batch_size, args.show)
         else:
             train_torch(M1, train_loader, test_loader, args.epochs, args.show)
+        # TODO: in the augmented case no train and test loaders are available ...
         # print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_torch(M1, test_loader):.3f} %')
     elif args.nerva:
+        print('\n=== Nerva model ===')
+        print(M2)
+        print(M2.loss)
+        print(M2.learning_rate)
+
         print('\n=== Training Nerva model ===')
         if args.augmented:
             train_nerva_augmented(M2, args.datadir, args.epochs, args.batch_size, args.show)
         else:
             train_nerva(M2, train_loader, test_loader, args.epochs, args.show)
+        # TODO: in the augmented case no train and test loaders are available ...
         # print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_nerva(M2, test_loader):.3f} %')
 
 
