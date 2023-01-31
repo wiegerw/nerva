@@ -381,7 +381,7 @@ std::pair<double, double> minibatch_gradient_descent_augmented(
   datasets::dataset data;
 
   // read the first dataset
-  data.import_from_npy(datadir, 0);
+  data.import_cifar10_from_npz(datadir, 0);
 
   double total_training_time = 0;
   long N = data.Xtrain.cols(); // the number of examples
@@ -400,7 +400,7 @@ std::pair<double, double> minibatch_gradient_descent_augmented(
     // read the next dataset
     if (epoch > 0)
     {
-      data.import_from_npy(datadir, epoch);
+      data.import_cifar10_from_npz(datadir, epoch);
     }
 
     watch.reset();
