@@ -325,6 +325,11 @@ class tool: public command_line_tool
         import_weights_from_numpy(M, import_weights_file);
       }
 
+      if (!export_weights_file.empty())
+      {
+        export_weights_to_numpy(M, export_weights_file);
+      }
+
       if (info)
       {
         data.info();
@@ -365,11 +370,6 @@ class tool: public command_line_tool
       if (info)
       {
         M.info("after training");
-      }
-
-      if (!export_weights_file.empty())
-      {
-        export_weights_to_numpy(M, export_weights_file);
       }
 
       return true;
