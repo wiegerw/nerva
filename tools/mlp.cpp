@@ -224,12 +224,13 @@ class tool: public command_line_tool
       cli |= lyra::opt(options.dropout, "value")["--dropout"]("The dropout rate for the weights of the layers");
       cli |= lyra::opt(options.density, "value")["--density"]("The density rate of the sparse layers");
       cli |= lyra::opt(densities_text, "value")["--densities"]("A comma separated list of sparse layer densities");
+      cli |= lyra::opt(options.augmented)["--augmented"]("Load an augmented dataset in every epoch. They should be named epoch<nnn>.npy and stored in datadir");
       cli |= lyra::opt(options.optimizer, "value")["--optimizer"]("The optimizer (gradient-descent, momentum(<mu>), nesterov(<mu>))");
       cli |= lyra::opt(options.seed, "value")["--seed"]("A seed value for the random generator.");
       cli |= lyra::opt(no_shuffle)["--no-shuffle"]("Do not shuffle the dataset during training.");
       cli |= lyra::opt(no_statistics)["--no-statistics"]("Do not compute statistics during training.");
       cli |= lyra::opt(options.threads, "value")["--threads"]("The number of threads used by Eigen.");
-      cli |= lyra::opt(datadir, "value")["--import-dataset"]("A directory containing the files xtrain.txt etc.");
+      cli |= lyra::opt(datadir, "value")["--import-dataset"]("A directory containing the files Xtrain<nnn>.npy etc.");
       cli |= lyra::opt(import_weights_dir, "value")["--import-weights"]("A directory containing the files w1.txt etc.");
       cli |= lyra::opt(export_weights_dir, "value")["--export-weights"]("A directory where the weights are saved in the filese w1.txt etc.");
       cli |= lyra::opt(options.debug)["--debug"]("Show debug output");
@@ -344,7 +345,14 @@ class tool: public command_line_tool
       }
       else if (options.algorithm == "minibatch")
       {
-        minibatch_gradient_descent(M, loss, data, options, learning_rate, rng);
+        if (options.augmented)
+        {
+          minibatch_gradient_descent_augmented(M, loss, datadir, options, learning_rate, rng);
+        }
+        else
+        {
+          minibatch_gradient_descent(M, loss, data, options, learning_rate, rng);
+        }
       }
       else
       {

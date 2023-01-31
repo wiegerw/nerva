@@ -368,6 +368,89 @@ std::pair<double, double> minibatch_gradient_descent(
   return {test_accuracy, total_training_time};
 }
 
+// TODO: use a class with virtual methods to reuse code
+template <typename MultilayerPerceptron, typename RandomNumberGenerator>
+std::pair<double, double> minibatch_gradient_descent_augmented(
+  MultilayerPerceptron& M,
+  const std::shared_ptr<loss_function>& loss,
+  const std::string& datadir,
+  const sgd_options& options,
+  const std::shared_ptr<learning_rate_scheduler>& learning_rate,
+  RandomNumberGenerator rng)
+{
+  datasets::dataset data;
+
+  // read the first dataset
+  data.import_from_npy(datadir, 0);
+
+  double total_training_time = 0;
+  long N = data.Xtrain.cols(); // the number of examples
+  long L = data.Ttrain.rows(); // the number of outputs
+  std::vector<long> I(N);
+  std::iota(I.begin(), I.end(), 0);
+  eigen::matrix Y(L, options.batch_size);
+  long K = N / options.batch_size; // the number of batches
+  utilities::stopwatch watch;
+  scalar eta = learning_rate->operator()(0);
+
+  compute_statistics_batch(M, eta, loss, data, options.batch_size, -1, options.statistics, 0.0);
+
+  for (unsigned int epoch = 0; epoch < options.epochs; ++epoch)
+  {
+    // read the next dataset
+    if (epoch > 0)
+    {
+      data.import_from_npy(datadir, epoch);
+    }
+
+    watch.reset();
+    if (options.shuffle)
+    {
+      std::shuffle(I.begin(), I.end(), rng);// shuffle the examples at the start of each epoch
+    }
+    M.renew_dropout_mask(rng);
+    eta = learning_rate->operator()(epoch);       // update the learning at the start of each epoch
+    eigen::matrix DY(L, options.batch_size);
+
+    for (long k = 0; k < K; k++)
+    {
+      eigen::eigen_slice batch(I.begin() + k * options.batch_size, options.batch_size);
+      auto X = data.Xtrain(Eigen::all, batch);
+      auto T = data.Ttrain(Eigen::all, batch);
+      M.feedforward(X, Y);
+      if (options.debug)
+      {
+        std::cout << "epoch: " << epoch << " batch: " << k << std::endl;
+        eigen::print_numpy_matrix("X", X.transpose());
+        eigen::print_numpy_matrix("Y", Y.transpose());
+      }
+      if (options.check_gradients)
+      {
+        DY = loss->gradient(Y, T);
+        auto f = [loss, &Y, &T]() { return loss->value(Y, T); };
+        check_gradient("DY", f, Y, DY, options.check_gradients_step);
+      }
+      else
+      {
+        DY = loss->gradient(Y, T) / options.batch_size;  // pytorch does it like this
+      }
+      M.backpropagate(Y, DY);
+      if (options.check_gradients)
+      {
+        M.check_gradients(loss, T, options.check_gradients_step);
+      }
+      M.optimize(eta);
+    }
+    double seconds = watch.seconds();
+    total_training_time += seconds;
+    compute_statistics_batch(M, eta, loss, data, options.batch_size, epoch, options.statistics, seconds);
+  }
+  double test_accuracy = compute_accuracy_batch(M, data.Xtest, data.Ttest, options.batch_size);
+  std::cout << fmt::format("Accuracy of the network on the {} test examples: {:.2f}%", data.Xtest.cols(), test_accuracy * 100.0) << std::endl;
+  std::cout << fmt::format("Total training time for the {} epochs: {:.8f}s\n", options.epochs, total_training_time);
+  return {test_accuracy, total_training_time};
+}
+
 } // namespace nerva
 
 #endif // NERVA_NEURAL_NETWORKS_TRAINING_H

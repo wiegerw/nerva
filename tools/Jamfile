@@ -1,6 +1,7 @@
 project nerva_tools
    : requirements
        <library>/nerva//nervalib
+       <linkflags>-lpython3.10  # TODO: find a better way to do this
    ;
 
 exe mlpd : mlp.cpp : <scalar>double ;
