@@ -55,6 +55,8 @@ def check(datadir):
     pp('Xtrain', Xtrain)
     pp('Ttrain', Ttrain)
 
+    filename = tempfile.NamedTemporaryFile().name + '_cifar.npz'
+
     # save the data to .npz
     print(f'Saving data to file {filename}')
     with open(filename, "wb") as f:

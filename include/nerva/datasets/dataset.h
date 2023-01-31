@@ -60,7 +60,7 @@ struct dataset
 
     py::dict d = np.attr("load")(filename);
 
-    Xtrain = nerva::eigen::from_numpy(d["Xtrain"].cast<py::array_t<scalar>>());
+    Xtrain = nerva::eigen::from_numpy(d["Xtrain"].cast<py::array_t<scalar>>()).transpose();
 
     // create one hot encoded matrix Ttrain
     Ttrain = eigen::matrix::Zero(10, 50000);
@@ -71,7 +71,7 @@ struct dataset
       Ttrain(rtrain(i), i) = scalar(1);
     }
 
-    Xtest  = nerva::eigen::from_numpy(d["Xtest"].cast<py::array_t<scalar>>());
+    Xtest = nerva::eigen::from_numpy(d["Xtest"].cast<py::array_t<scalar>>()).transpose();
 
     // create one hot encoded matrix Ttest
     Ttest = eigen::matrix::Zero(10, 10000);
