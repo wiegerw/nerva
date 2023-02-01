@@ -1,3 +1,4 @@
+import math
 import pathlib
 import tempfile
 from typing import List, Union
@@ -34,6 +35,86 @@ class MLP1(nn.Module):
             self.mask.step()
         else:
             self.optimizer.step()
+
+    def weights(self) -> List[torch.Tensor]:
+        return [layer.weight.detach().numpy() for layer in self.layers]
+
+    def bias(self) -> List[torch.Tensor]:
+        return [layer.bias.detach().numpy() for layer in self.layers]
+
+    def export_weights(self, filename: str):
+        with open(filename, "wb") as f:
+            for layer in self.layers:
+                save_eigen_array(f, layer.weight.detach().numpy())
+
+    def import_weights(self, filename: str):
+        print(f'Importing weights from {filename}')
+        with open(filename, "rb") as f:
+            for layer in self.layers:
+                layer.weight.data = torch.Tensor(load_eigen_array(f))
+
+    def export_bias(self, filename: str):
+        with open(filename, "wb") as f:
+            for layer in self.layers:
+                save_eigen_array(f, layer.bias.detach().numpy())
+
+    def import_bias(self, filename: str):
+        print(f'Importing bias from {filename}')
+        with open(filename, "rb") as f:
+            for layer in self.layers:
+                layer.bias.data = torch.Tensor(load_eigen_array(f))
+
+
+# For now, we only support Xavier weights
+def create_mask(W: torch.Tensor, density: float):
+    x = 1.0 / math.sqrt(W.shape[0])
+    x /= density  # compensate for the sparsity
+    mask = torch.zeros_like(W)
+
+    for i in range(mask.size(0)):
+        for j in range(mask.size(1)):
+            if np.random.uniform(0.0, 1.0) < density:
+                mask[i, j] = np.random.uniform(-x, x)
+    return mask
+
+
+# Alternative version that uses a more direct way of masking
+class MLP1a(nn.Module):
+    """ Multi-Layer Perceptron """
+    def __init__(self, sizes, densities):
+        super().__init__()
+        self.sizes = sizes
+        self.optimizer = None
+        self.masks = None
+        n = len(sizes) - 1  # the number of layers
+        self.layers = nn.ModuleList()
+        for i in range(n):
+            self.layers.append(nn.Linear(sizes[i], sizes[i + 1]))
+        self.set_masks(densities)
+
+    def set_masks(self, densities):
+        print(f'Setting masks with densities {densities}')
+        self.masks = []
+        for layer, density in zip(self.layers, densities):
+            if density == 1.0:
+                self.masks.append(None)
+            else:
+                self.masks.append(create_mask(layer.weight, density))
+
+    def apply_masks(self):
+        for layer, mask in zip(self.layers, self.masks):
+            if mask is not None:
+                layer.weight.data = layer.weight.data * mask
+
+    def optimize(self):
+        self.optimizer.step()
+        self.apply_masks()
+
+    def forward(self, x):
+        for i in range(len(self.layers) - 1):
+            x = F.relu(self.layers[i](x))
+        x = self.layers[-1](x)  # output layer does not have an activation function
+        return x
 
     def weights(self) -> List[torch.Tensor]:
         return [layer.weight.detach().numpy() for layer in self.layers]
@@ -103,7 +184,7 @@ class MLP2(nerva.layers.Sequential):
         return [flatten(b) for b in bias]
 
 
-def copy_weights_and_biases(model1: Union[MLP1, MLP2], model2: MLP2):
+def copy_weights_and_biases(model1: Union[MLP1, MLP1a, MLP2], model2: MLP2):
     """
     Copies models and weights from model1 to model2
     :param model1:
