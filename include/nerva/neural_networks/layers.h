@@ -604,7 +604,7 @@ std::vector<Scalar> compute_sparse_layer_densities(Scalar density,
       {
         if (raw_probabilities[j] == max_prob)
         {
-          std::cout << "Sparsity of layer:" << j << " had to be set to 0." << std::endl;
+          // std::cout << "Sparsity of layer:" << j << " had to be set to 0." << std::endl;
           dense_layers.insert(j);
         }
       }
@@ -632,10 +632,10 @@ std::vector<Scalar> compute_sparse_layer_densities(Scalar density,
       Scalar probability_one = epsilon * raw_probabilities[i];
       densities[i] = probability_one;
     }
-    std::cout << "layer: " << i << ", shape: " << "(" << rows << "," << columns << ")" << ", density: " << densities[i] << std::endl;
+    // std::cout << "layer: " << i << ", shape: " << "(" << rows << "," << columns << ")" << ", density: " << densities[i] << std::endl;
     total_nonzero += densities[i] * n_param;
   }
-  std::cout << "Overall sparsity " << total_nonzero / total_params << std::endl;
+  // std::cout << "Overall sparsity " << total_nonzero / total_params << std::endl;
   return densities;
 }
 

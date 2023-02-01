@@ -199,7 +199,7 @@ class Masking(object):
                     is_epsilon_valid = False
                     for mask_name, mask_raw_prob in raw_probabilities.items():
                         if mask_raw_prob == max_prob:
-                            print(f"Sparsity of var:{mask_name} had to be set to 0.")
+                            #print(f"Sparsity of var:{mask_name} had to be set to 0.")
                             dense_layers.add(mask_name)
                 else:
                     is_epsilon_valid = True
@@ -214,9 +214,7 @@ class Masking(object):
                 else:
                     probability_one = epsilon * raw_probabilities[name]
                     density_dict[name] = probability_one
-                print(
-                    f"layer: {name}, shape: {mask.shape}, density: {density_dict[name]}"
-                )
+                #print(f"layer: {name}, shape: {mask.shape}, density: {density_dict[name]}")
                 self.masks[name][:] = (torch.rand(mask.shape) < density_dict[name]).float().data
 
                 total_nonzero += density_dict[name] * mask.numel()
@@ -255,7 +253,7 @@ class Masking(object):
                     is_epsilon_valid = False
                     for mask_name, mask_raw_prob in raw_probabilities.items():
                         if mask_raw_prob == max_prob:
-                            print(f"Sparsity of var:{mask_name} had to be set to 0.")
+                            #print(f"Sparsity of var:{mask_name} had to be set to 0.")
                             dense_layers.add(mask_name)
                 else:
                     is_epsilon_valid = True
@@ -270,9 +268,7 @@ class Masking(object):
                 else:
                     probability_one = epsilon * raw_probabilities[name]
                     density_dict[name] = probability_one
-                print(
-                    f"layer: {name}, shape: {mask.shape}, density: {density_dict[name]}"
-                )
+                #print(f"layer: {name}, shape: {mask.shape}, density: {density_dict[name]}")
                 self.masks[name][:] = (torch.rand(mask.shape) < density_dict[name]).float().data
 
                 total_nonzero += density_dict[name] * mask.numel()
@@ -285,7 +281,7 @@ class Masking(object):
         for module in self.modules:
             for name, weight in module.named_parameters():
                 if name in self.masks:
-                    print(name, 'density:', (weight != 0).sum().item() / weight.numel())
+                    #print(name, 'density:', (weight != 0).sum().item() / weight.numel())
                     total_size += weight.numel()
                     sparse_size += (weight != 0).sum().int().item()
         print('Total Model parameters:', total_size)
@@ -313,22 +309,20 @@ class Masking(object):
             self.names.append(name)
             self.masks[name] = torch.zeros_like(tensor, dtype=torch.float32, requires_grad=False)
 
-        print('Removing biases...')
+        #print('Removing biases...')
         self.remove_weight_partial_name('bias')
-        print('Removing 2D batch norms...')
+        #print('Removing 2D batch norms...')
         self.remove_type(nn.BatchNorm2d)
-        print('Removing 1D batch norms...')
+        #print('Removing 1D batch norms...')
         self.remove_type(nn.BatchNorm1d)
         self.init(mode=sparse_init, density=density)
 
     def remove_weight(self, name):
         if name in self.masks:
-            print('Removing {0} of size {1} = {2} parameters.'.format(name, self.masks[name].shape,
-                                                                      self.masks[name].numel()))
+            #print('Removing {0} of size {1} = {2} parameters.'.format(name, self.masks[name].shape, self.masks[name].numel()))
             self.masks.pop(name)
         elif name + '.weight' in self.masks:
-            print('Removing {0} of size {1} = {2} parameters.'.format(name, self.masks[name + '.weight'].shape,
-                                                                      self.masks[name + '.weight'].numel()))
+            #print('Removing {0} of size {1} = {2} parameters.'.format(name, self.masks[name + '.weight'].shape, self.masks[name + '.weight'].numel()))
             self.masks.pop(name + '.weight')
         else:
             print('ERROR', name)
@@ -337,12 +331,11 @@ class Masking(object):
         removed = set()
         for name in list(self.masks.keys()):
             if partial_name in name:
-                print('Removing {0} of size {1} with {2} parameters...'.format(name, self.masks[name].shape,
-                                                                               np.prod(self.masks[name].shape)))
+                #print('Removing {0} of size {1} with {2} parameters...'.format(name, self.masks[name].shape, np.prod(self.masks[name].shape)))
                 removed.add(name)
                 self.masks.pop(name)
 
-        print('Removed {0} layers.'.format(len(removed)))
+        #print('Removed {0} layers.'.format(len(removed)))
 
         i = 0
         while i < len(self.names):
@@ -579,7 +572,7 @@ class Masking(object):
                 num_nonzeros = (mask != 0).sum().item()
                 val = '{0}: {1}->{2}, density: {3:.3f}'.format(name, self.name2nonzeros[name], num_nonzeros,
                                                                num_nonzeros / float(mask.numel()))
-                print(val)
+                #print(val)
 
         for module in self.modules:
             for name, tensor in module.named_parameters():

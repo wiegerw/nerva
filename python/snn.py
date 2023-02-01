@@ -72,7 +72,6 @@ def make_argument_parser():
     cmdline_parser.add_argument("--copy", help="copy weights and biases from the PyTorch model to the Nerva model", action="store_true")
     cmdline_parser.add_argument("--nerva", help="Train using a Nerva model", action="store_true")
     cmdline_parser.add_argument("--torch", help="Train using a PyTorch model", action="store_true")
-    cmdline_parser.add_argument("--info", help="Print detailed info about the models", action="store_true")
     cmdline_parser.add_argument("--scheduler", type=str, help="the learning rate scheduler (constant,multistep)", default="multistep")
     cmdline_parser.add_argument('--import-weights', type=str, help='Import weights from a file in .npy format')
     cmdline_parser.add_argument("--custom-masking", help="Use a custom variant of masking in the PyTorch models", action="store_true")
@@ -114,6 +113,9 @@ def main():
     M1 = make_torch_model(args, sizes)
     M2 = make_nerva_model(args, sizes, densities)
 
+    if args.augmented and args.preprocessed:
+        raise RuntimeError('the combination of --augmented and --preprocessed is unsupported')
+
     if args.custom_masking:
         M1 = make_torch_model_new(args, sizes, densities)
 
@@ -123,12 +125,6 @@ def main():
     if args.import_weights:
         M1.import_weights(args.import_weights)
         M2.import_weights(args.import_weights)
-
-    if args.info:
-        print('\n=== PyTorch info ===')
-        print_model_info(M1)
-        print('\n=== Nerva info ===')
-        print_model_info(M2)
 
     if args.torch:
         print('\n=== PyTorch model ===')
