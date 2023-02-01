@@ -127,7 +127,7 @@ def make_data_loaders(datadir: str, epoch: int, batch_size: int) -> Tuple[TorchD
 
 # TODO: use classes to reuse code
 # At every epoch a new dataset in .npz format is read from datadir.
-def train_torch_augmented(M, datadir, epochs, batch_size, show: bool):
+def train_torch_augmented_old(M, datadir, epochs, batch_size, show: bool):
     M.train()  # Set model in training mode
 
     train_loader, test_loader = make_data_loaders(datadir, epoch=0, batch_size=batch_size)
@@ -157,6 +157,39 @@ def train_torch_augmented(M, datadir, epochs, batch_size, show: bool):
                 print(f'epoch: {epoch} batch: {k}')
                 pp('Y', Y)
                 pp('DY', Y.grad.detach())
+
+        print_epoch(epoch=epoch + 1,
+                    lr=M.optimizer.param_groups[0]["lr"],
+                    loss=compute_loss_torch(M, train_loader),
+                    train_accuracy=compute_accuracy_torch(M, train_loader),
+                    test_accuracy=compute_accuracy_torch(M, test_loader),
+                    elapsed=elapsed)
+
+        M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
+
+
+# Use on the fly data augmentation, but exclude the time for loading and transforming images
+def train_torch_augmented(M, train_loader, test_loader, epochs):
+    M.train()  # Set model in training mode
+
+    print_epoch(epoch=0,
+                lr=M.optimizer.param_groups[0]["lr"],
+                loss=compute_loss_torch(M, train_loader),
+                train_accuracy=compute_accuracy_torch(M, train_loader),
+                test_accuracy=compute_accuracy_torch(M, test_loader),
+                elapsed=0)
+
+    for epoch in range(epochs):
+        elapsed = 0.0
+        for k, (X, T) in enumerate(train_loader):
+            start = timer()
+            M.optimizer.zero_grad()
+            Y = M(X)
+            Y.retain_grad()
+            loss = M.loss(Y, T)
+            loss.backward()
+            M.optimize()
+            elapsed += (timer() - start)
 
         print_epoch(epoch=epoch + 1,
                     lr=M.optimizer.param_groups[0]["lr"],

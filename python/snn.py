@@ -88,9 +88,8 @@ def main():
     initialize_frameworks(args)
 
     if args.augmented:
-        pass
-        # N.B. skip this step, since we use preprocessed data
-        # train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
+        if args.torch:
+            train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
     else:
         Xtrain, Ttrain, Xtest, Ttest = load_cifar10_data(args.datadir)
         train_loader = TorchDataLoader(Xtrain, Ttrain, args.batch_size)
@@ -123,7 +122,7 @@ def main():
 
         print('\n=== Training PyTorch model ===')
         if args.augmented:
-            train_torch_augmented(M1, args.datadir, args.epochs, args.batch_size, args.show)
+            train_torch_augmented(M1, train_loader, test_loader, args.epochs)
         else:
             train_torch(M1, train_loader, test_loader, args.epochs, args.show)
         # TODO: in the augmented case no train and test loaders are available ...
