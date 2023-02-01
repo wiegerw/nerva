@@ -14,6 +14,7 @@ import nerva.learning_rate
 import nerva.loss
 import nerva.optimizers
 import nerva.random
+from sparselearning.utils import get_cifar10_dataloaders
 from testing.datasets import create_cifar10_dataloaders, load_cifar10_data, TorchDataLoader
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
 from testing.torch_models import make_torch_mask, make_torch_scheduler
@@ -87,8 +88,13 @@ def main():
 
     initialize_frameworks(args)
 
+    if args.epochs <= 10:
+        print('Setting gamma to 1.0')
+        args.gamma = 1.0
+
     if args.augmented:
         if args.torch:
+            #train_loader, _, test_loader = get_cifar10_dataloaders(args.batch_size, args.batch_size)
             train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
     else:
         Xtrain, Ttrain, Xtest, Ttest = load_cifar10_data(args.datadir)
