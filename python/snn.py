@@ -14,7 +14,6 @@ import nerva.learning_rate
 import nerva.loss
 import nerva.optimizers
 import nerva.random
-from sparselearning.utils import get_cifar10_dataloaders
 from testing.datasets import create_cifar10_dataloaders, load_cifar10_data, TorchDataLoader
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
 from testing.torch_models import make_torch_mask, make_torch_scheduler
@@ -93,9 +92,9 @@ def main():
         args.gamma = 1.0
 
     if args.augmented:
-        if args.torch:
-            #train_loader, _, test_loader = get_cifar10_dataloaders(args.batch_size, args.batch_size)
-            train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
+        pass
+        # N.B. skip this step, since we use preprocessed data
+        # train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
     else:
         Xtrain, Ttrain, Xtest, Ttest = load_cifar10_data(args.datadir)
         train_loader = TorchDataLoader(Xtrain, Ttrain, args.batch_size)
@@ -128,7 +127,7 @@ def main():
 
         print('\n=== Training PyTorch model ===')
         if args.augmented:
-            train_torch_augmented(M1, train_loader, test_loader, args.epochs)
+            train_torch_augmented(M1, args.datadir, args.epochs, args.batch_size, args.show)
         else:
             train_torch(M1, train_loader, test_loader, args.epochs, args.show)
         # TODO: in the augmented case no train and test loaders are available ...
