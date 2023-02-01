@@ -1,13 +1,13 @@
 from timeit import default_timer as timer
-from typing import List, Tuple
+from typing import List, Tuple, Union
 import numpy as np
 
 from testing.datasets import TorchDataLoader
 from testing.numpy_utils import to_numpy, to_one_hot_numpy, l1_norm, pp, load_eigen_array
-from testing.models import MLP1, MLP2
+from testing.models import MLP1, MLP1a, MLP2
 
 
-def compute_accuracy_torch(M: MLP1, data_loader):
+def compute_accuracy_torch(M: Union[MLP1, MLP1a], data_loader):
     N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
     for X, T in data_loader:
@@ -17,7 +17,7 @@ def compute_accuracy_torch(M: MLP1, data_loader):
     return total_correct / N
 
 
-def compute_loss_torch(M: MLP1, data_loader):
+def compute_loss_torch(M: Union[MLP1, MLP1a], data_loader):
     N = len(data_loader.dataset)  # N is the number of examples
     batch_size = N // len(data_loader)
     total_loss = 0.0
@@ -81,15 +81,16 @@ def train_torch(M, train_loader, test_loader, epochs, show: bool):
                 elapsed=0)
 
     for epoch in range(epochs):
-        start = timer()
+        elapsed = 0.0
         for k, (X, T) in enumerate(train_loader):
+            start = timer()
             M.optimizer.zero_grad()
             Y = M(X)
             Y.retain_grad()
             loss = M.loss(Y, T)
             loss.backward()
             M.optimize()
-            elapsed = timer() - start
+            elapsed += (timer() - start)
 
             if show:
                 print(f'epoch: {epoch} batch: {k}')
@@ -125,9 +126,8 @@ def make_data_loaders(datadir: str, epoch: int, batch_size: int) -> Tuple[TorchD
     return train_loader, test_loader
 
 
-# TODO: use classes to reuse code
 # At every epoch a new dataset in .npz format is read from datadir.
-def train_torch_augmented(M, datadir, epochs, batch_size, show: bool):
+def train_torch_preprocessed(M, datadir, epochs, batch_size, show: bool):
     M.train()  # Set model in training mode
 
     train_loader, test_loader = make_data_loaders(datadir, epoch=0, batch_size=batch_size)
@@ -143,15 +143,16 @@ def train_torch_augmented(M, datadir, epochs, batch_size, show: bool):
         if epoch > 0:
             train_loader, test_loader = make_data_loaders(datadir, epoch, batch_size)
 
-        start = timer()
+        elapsed = 0.0
         for k, (X, T) in enumerate(train_loader):
+            start = timer()
             M.optimizer.zero_grad()
             Y = M(X)
-            Y.retain_grad()
+            # Y.retain_grad()
             loss = M.loss(Y, T)
             loss.backward()
             M.optimize()
-            elapsed = timer() - start
+            elapsed += (timer() - start)
 
             if show:
                 print(f'epoch: {epoch} batch: {k}')
@@ -180,16 +181,17 @@ def train_nerva(M, train_loader, test_loader, epochs, show: bool):
                 elapsed=0)
 
     for epoch in range(epochs):
-        start = timer()
         lr = M.learning_rate(epoch)
+        elapsed = 0.0
         for k, (X, T) in enumerate(train_loader):
+            start = timer()
             X = to_numpy(X)
             T = to_one_hot_numpy(T, n_classes)
             Y = M.feedforward(X)
             DY = M.loss.gradient(Y, T) / batch_size
             M.backpropagate(Y, DY)
             M.optimize(lr)
-            elapsed = timer() - start
+            elapsed += (timer() - start)
 
             if show:
                 print(f'epoch: {epoch} batch: {k}')
@@ -206,7 +208,7 @@ def train_nerva(M, train_loader, test_loader, epochs, show: bool):
 
 # TODO: use classes to reuse code
 # At every epoch a new dataset in .npz format is read from datadir.
-def train_nerva_augmented(M, datadir, epochs, batch_size, show: bool):
+def train_nerva_preprocessed(M, datadir, epochs, batch_size, show: bool):
     train_loader, test_loader = make_data_loaders(datadir, epoch=0, batch_size=batch_size)
 
     n_classes = M.sizes[-1]
@@ -223,16 +225,17 @@ def train_nerva_augmented(M, datadir, epochs, batch_size, show: bool):
         if epoch > 0:
             train_loader, test_loader = make_data_loaders(datadir, epoch, batch_size)
 
-        start = timer()
         lr = M.learning_rate(epoch)
+        elapsed = 0.0
         for k, (X, T) in enumerate(train_loader):
+            start = timer()
             X = to_numpy(X)
             T = to_one_hot_numpy(T, n_classes)
             Y = M.feedforward(X)
             DY = M.loss.gradient(Y, T) / batch_size
             M.backpropagate(Y, DY)
             M.optimize(lr)
-            elapsed = timer() - start
+            elapsed += (timer() - start)
 
             if show:
                 print(f'epoch: {epoch} batch: {k}')

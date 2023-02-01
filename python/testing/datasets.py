@@ -7,7 +7,7 @@ from torchvision import transforms, datasets
 from testing.numpy_utils import flatten_numpy, normalize_image_data
 
 
-def create_cifar10_datasets(datadir='./data'):
+def create_cifar10_augmented_datasets(datadir='./data'):
     """Creates train and test datasets with augmentation."""
 
     normalize = transforms.Normalize((0.4914, 0.4822, 0.4465),
@@ -19,6 +19,30 @@ def create_cifar10_datasets(datadir='./data'):
         transforms.ToPILImage(),
         transforms.RandomCrop(32),
         transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        normalize,
+        transforms.Lambda(lambda x: torch.flatten(x)),
+    ])
+
+    test_transform = transforms.Compose([
+        transforms.ToTensor(),
+        normalize,
+        transforms.Lambda(lambda x: torch.flatten(x)),
+    ])
+
+    train_dataset = datasets.CIFAR10(datadir, True, train_transform, download=True)
+    test_dataset = datasets.CIFAR10(datadir, False, test_transform, download=False)
+
+    return train_dataset, test_dataset
+
+
+def create_cifar10_datasets(datadir='./data'):
+    """Creates train and test datasets without augmentation."""
+
+    normalize = transforms.Normalize((0.4914, 0.4822, 0.4465),
+                                     (0.2023, 0.1994, 0.2010))
+
+    train_transform = transforms.Compose([
         transforms.ToTensor(),
         normalize,
         transforms.Lambda(lambda x: torch.flatten(x)),
@@ -53,13 +77,17 @@ def create_dataloaders(train_dataset, test_dataset, batch_size, test_batch_size)
     return train_loader, test_loader
 
 
+def create_cifar10_augmented_dataloaders(batch_size, test_batch_size, datadir):
+    train_dataset, test_dataset = create_cifar10_augmented_datasets(datadir=datadir)
+    return create_dataloaders(train_dataset, test_dataset, batch_size, test_batch_size)
+
+
 def create_cifar10_dataloaders(batch_size, test_batch_size, datadir):
-    """Creates augmented train and test data loaders."""
     train_dataset, test_dataset = create_cifar10_datasets(datadir=datadir)
     return create_dataloaders(train_dataset, test_dataset, batch_size, test_batch_size)
 
 
-def load_cifar10_data(datadir):
+def custom_load_cifar10_data(datadir):
     if not os.path.exists(datadir):
         os.makedirs(datadir)
 

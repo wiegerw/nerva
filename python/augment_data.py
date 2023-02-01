@@ -10,14 +10,14 @@ import sys
 
 import numpy as np
 import torch
-from testing.datasets import create_cifar10_datasets, create_dataloaders, load_cifar10_data
+from testing.datasets import create_cifar10_augmented_datasets, create_dataloaders, custom_load_cifar10_data
 from testing.numpy_utils import pp, to_numpy, to_one_hot_numpy
 from testing.torch_models import to_one_hot_torch
 
 
 def load_models(model: str, datadir: str):
     if model == 'cifar10':
-        train_dataset, test_dataset = create_cifar10_datasets(datadir)
+        train_dataset, test_dataset = create_cifar10_augmented_datasets(datadir)
         return create_dataloaders(train_dataset, test_dataset, len(train_dataset), len(test_dataset))
     else:
         raise RuntimeError(f'Unknown model {model}')
@@ -51,7 +51,7 @@ def check(datadir):
     from nervalib import data_set
     import nerva.dataset
 
-    Xtrain, Ttrain, Xtest, Ttest = load_cifar10_data(datadir)
+    Xtrain, Ttrain, Xtest, Ttest = custom_load_cifar10_data(datadir)
     pp('Xtrain', Xtrain)
     pp('Ttrain', Ttrain)
 
