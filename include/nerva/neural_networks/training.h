@@ -378,10 +378,12 @@ std::pair<double, double> minibatch_gradient_descent_augmented(
   const std::shared_ptr<learning_rate_scheduler>& learning_rate,
   RandomNumberGenerator rng)
 {
+  auto path = std::filesystem::path(datadir);
   datasets::dataset data;
 
   // read the first dataset
-  data.import_cifar10_from_npz(datadir, 0);
+  data.import_cifar10_from_npz(path / "epoch0.npz");
+  // data.info();
 
   double total_training_time = 0;
   long N = data.Xtrain.cols(); // the number of examples
@@ -400,9 +402,8 @@ std::pair<double, double> minibatch_gradient_descent_augmented(
     // read the next dataset
     if (epoch > 0)
     {
-      data.import_cifar10_from_npz(datadir, epoch);
+      data.import_cifar10_from_npz((path / ("epoch" + std::to_string(epoch) + ".npz")).native());
     }
-
     watch.reset();
     if (options.shuffle)
     {

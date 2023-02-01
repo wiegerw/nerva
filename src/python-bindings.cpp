@@ -95,6 +95,12 @@ PYBIND11_MODULE(nervalib, m)
   //                       datasets
   /////////////////////////////////////////////////////////////////////////
 
+  py::class_<datasets::dataset, std::shared_ptr<datasets::dataset>>(m, "data_set")
+    .def(py::init<>(), py::return_value_policy::copy)
+    .def("info", &datasets::dataset::info)
+    .def("import_cifar10_from_npz", &datasets::dataset::import_cifar10_from_npz)
+    ;
+
   py::class_<datasets::dataset_view, std::shared_ptr<datasets::dataset_view>>(m, "DataSetView")
     .def(py::init<datasets::matrix_ref, datasets::matrix_ref, datasets::matrix_ref, datasets::matrix_ref>(), py::return_value_policy::copy)
     .def("info", &datasets::dataset_view::info)
@@ -406,8 +412,6 @@ PYBIND11_MODULE(nervalib, m)
     ;
 
   m.def("initialize_weights", initialize_weights<eigen::matrix>);
-  m.def("import_weights", import_weights);
-  m.def("export_weights", export_weights);
   m.def("regrow", [](eigen::matrix_ref<scalar> W, scalar zeta, weight_initialization w)
         {
           auto f = create_weight_initializer(W, w, nerva_rng);

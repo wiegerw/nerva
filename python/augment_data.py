@@ -11,7 +11,8 @@ import sys
 import numpy as np
 import torch
 from testing.datasets import create_cifar10_datasets, create_dataloaders, load_cifar10_data
-from testing.numpy_utils import pp
+from testing.numpy_utils import pp, to_numpy, to_one_hot_numpy
+from testing.torch_models import to_one_hot_torch
 
 
 def load_models(model: str, datadir: str):
@@ -43,13 +44,18 @@ def inspect_data(outputdir, epochs):
         pp(f'Xtrain', Xtrain)
 
 
+
 # check if the data is stored correctly
 def check(datadir):
     import tempfile
-    filename = tempfile.NamedTemporaryFile().name + '_cifar.npz'
+    from nervalib import data_set
+    import nerva.dataset
 
     Xtrain, Ttrain, Xtest, Ttest = load_cifar10_data(datadir)
     pp('Xtrain', Xtrain)
+    pp('Ttrain', Ttrain)
+
+    filename = tempfile.NamedTemporaryFile().name + '_cifar.npz'
 
     # save the data to .npz
     print(f'Saving data to file {filename}')
@@ -66,6 +72,11 @@ def check(datadir):
     d = np.load(filename)
     Xtrain_new = from_eigen(d['Xtrain'])
     pp(f'Xtrain_new', Xtrain_new)
+
+    print(f'Loading data to c++ data_set {filename}')
+    data2 = data_set()
+    data2.import_cifar10_from_npz(filename)
+    data2.info()
 
     pathlib.Path(filename).unlink()
 
