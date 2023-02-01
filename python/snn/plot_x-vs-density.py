@@ -36,46 +36,75 @@ def parse_logfile(path: pathlib.Path) -> pd.DataFrame:
                          'test accuracy': test_accuracy,
                          'time': time})
 
-def make_acc_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str = 'density', log_scale: bool = False):
-    # plot 'accuracy' vs 'density' for each framework using seaborn
-    sns.lineplot(x=x_axis, y='test accuracy', hue='framework', data=df, marker='o')
 
-    # Make the y-axis between 0 and 1
-    plt.ylim(0, 1)
+def get_full_dataframe(folder: pathlib.Path = pathlib.Path('.')) -> pd.DataFrame:
+    df = pd.DataFrame()
+    for path in folder.glob('*.log'):
+        data = parse_logfile(path)
 
-    if log_scale:
-        if x_axis == 'density':
-            # Make the xaxis log scale from 0 to 1, such that very small numbers like 0.001 and 0.005 are distinguishable
-            plt.xscale('log')
-            plt.xlim(xmax=1)
-            # Make the x-axis ticks on the specific density levels
-            plt.xticks([ 0.001,   0.005,   0.01,   0.05,   0.1,   0.2,   0.5,   1],
-                       ['0.001', '0.005', '0.01', '0.05', '0.1', '0.2', '0.5', '1'])
+        # example path.name = 'nerva-dense-augmented-seed1.log'
+        # example path.name = 'nerva-sparse-0.1-augmented-seed1.log'
+        if 'dense' in path.name:
+            density = 1.0
         else:
-            # Make the xaxis log scale from 0 to 1, such that numbers close to 1 like 0.999 and 0.995 are distinguishable
-            plt.xscale('logit')
-            # plt.xlim(xmax=1)
-            # Make the x-axis ticks on the specific sparsity levels
-            plt.xticks([ 0.5,   0.8,   0.9,   0.95,   0.99,   0.995,   0.999],
-                       ['0.5', '0.8', '0.9', '0.95', '0.99', '0.995', '0.999'])
-            # TODO: dense run should be plotted as a horizontal line (because sparsity=0 does not work in logit scale)
+            density = float(path.name.split('-')[2])
+        framework = path.name.split('-')[0]
+        seed = int(path.name.split('-')[-1].split('.')[0].replace('seed', ''))
 
+        data['framework'] = framework
+        data['density'] = density
+        data['seed'] = seed
+
+        df = pd.concat([df, data])
+    return df
+
+
+def set_log_scale(x_axis: str):
+    # Make the xaxis log scale from 0 to 1, such that very small numbers like 0.001 and 0.005 are distinguishable
+    if x_axis == 'density':
+        plt.xscale('log')
+        plt.xlim(xmax=1)
+        plt.xticks([0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1],
+                   ['0.001', '0.005', '0.01', '0.05', '0.1', '0.2', '0.5', '1'])
+    else:
+        plt.xscale('logit')
+        plt.xticks([0.5, 0.8, 0.9, 0.95, 0.99, 0.995, 0.999],
+                   ['0.5', '0.8', '0.9', '0.95', '0.99', '0.995', '0.999'])
+        # TODO: dense run should be plotted as a horizontal line (because sparsity=0 does not work in logit scale)
+
+
+def make_acc_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str = 'density', log_scale: bool = False):
+    frameworks = {'nerva': 'Nerva', 'torch': 'PyTorch'}
+    for framework in frameworks:
+        data = df[df['framework'] == framework]
+        sns.lineplot(x=x_axis, y='test accuracy', data=data, marker='o', label=frameworks[framework])
+
+    plt.grid(zorder=0)
+    plt.ylim(ymin=0)
+    if log_scale:
+        set_log_scale(x_axis)
     # Add labels and title to the plot
     xlabel = x_axis[0].upper() + x_axis[1:]  # make first letter x_axis uppercase
     plt.xlabel(xlabel)
     plt.ylabel('Best test accuracy')
     plt.title(f'Accuracy vs {xlabel}')
-    # Add a legend to the plot
+    # Add a legend to the plot. Make sure nerva is presented as Nerva and torch as PyTorch
     plt.legend()
     # Save the plot
-    plt.savefig(path)
+    plt.savefig(path, bbox_inches='tight')
     plt.close()
 
 
-def make_time_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str = 'density'):
-    # plot 'time' vs 'density/sparsity' for each framework using seaborn
-    sns.lineplot(x=x_axis, y='time', hue='framework', data=df, marker='o')
+def make_time_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str = 'density', log_scale: bool = False):
+    frameworks = {'nerva': 'Nerva', 'torch': 'PyTorch'}
+    for framework in frameworks:
+        data = df[df['framework'] == framework]
+        sns.lineplot(x=x_axis, y='time', data=data, marker='o', label=frameworks[framework])
 
+    plt.grid(zorder=0)
+    plt.ylim(ymin=0)
+    if log_scale:
+        set_log_scale(x_axis)
     # Add labels and title to the plot
     xlabel = x_axis[0].upper() + x_axis[1:]  # make first letter x_axis uppercase
     plt.xlabel(xlabel)
@@ -84,25 +113,15 @@ def make_time_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str 
     # Add a legend to the plot
     plt.legend()
     # Save the plot
-    plt.savefig(path)
+    plt.savefig(path, bbox_inches='tight')
     plt.close()
 
 
+
 def main():
-    df = pd.DataFrame()
-    for path in pathlib.Path('./logs').glob('*.log'):
-        data = parse_logfile(path)
-
-        # example path.name = 'nerva-sparse-0.1-seed1.log'
-        framework = path.name.split('-')[0]
-        density = float(path.name.split('-')[2])
-        seed = int(path.name.split('-')[-1].split('.')[0].replace('seed', ''))
-
-        data['framework'] = framework
-        data['density'] = density
-        data['seed'] = seed
-
-        df = pd.concat([df, data])
+    # folder = pathlib.Path('./logs')
+    folder = pathlib.Path('./three-nerva-runs')
+    df = get_full_dataframe(folder)
 
     # make a new df with the total time summed for each framework and density and seed
     df_time = df.drop(columns=['epoch', 'lr', 'loss', 'train accuracy', 'test accuracy'])
@@ -116,11 +135,13 @@ def main():
     df_best['sparsity'] = 1 - df_best['density']
 
 
+    log_scale = True
+
     x_axis = 'sparsity'
     # x_axis = 'density'
 
-    # make_time_vs_density_plot(df_time, pathlib.Path(f'./plots/time-vs-{x_axis}.png'), x_axis)
-    make_acc_vs_density_plot(df_best, pathlib.Path(f'./plots/accuracy-vs-{x_axis}1.png'), x_axis)
+    make_time_vs_density_plot(df_time, pathlib.Path(f'./three-nerva-runs_plots/time-vs-{x_axis}3.png'), x_axis)
+    # make_acc_vs_density_plot(df_best, pathlib.Path(f'./three-nerva-runs_plots/accuracy-vs-{x_axis}3.png'), x_axis, log_scale)
 
 
 
