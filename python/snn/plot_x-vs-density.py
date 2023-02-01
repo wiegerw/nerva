@@ -59,11 +59,28 @@ def get_full_dataframe(folder: pathlib.Path = pathlib.Path('.')) -> pd.DataFrame
     return df
 
 
+def make_df_time(df: pd.DataFrame):
+    # make a new df with the total time summed for each framework and density and seed
+    df_time = df.drop(columns=['epoch', 'lr', 'loss', 'train accuracy', 'test accuracy'])
+    df_time = df_time.groupby(['framework', 'density', 'seed']).sum().reset_index()
+    df_time['time'] = df_time['time'] / 60  # convert time to minutes
+    df_time['sparsity'] = 1 - df_time['density']
+    return df_time
+
+
+def make_df_acc(df: pd.DataFrame):
+    # make a new df with the best test accuracy for each framework and density and seed
+    df_best = df.drop(columns=['epoch', 'time', 'loss'])
+    df_best = df_best.groupby(['framework', 'density', 'seed']).max().reset_index()
+    df_best['sparsity'] = 1 - df_best['density']
+    return df_best
+
+
 def set_log_scale(x_axis: str):
-    # Make the xaxis log scale from 0 to 1, such that very small numbers like 0.001 and 0.005 are distinguishable
+    # Make the xaxis log scale from 0 to 1, such that very small densities like 0.001 and 0.005 are distinguishable
     if x_axis == 'density':
         plt.xscale('log')
-        plt.xlim(xmax=1)
+        # plt.xlim(xmax=1)
         plt.xticks([0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1],
                    ['0.001', '0.005', '0.01', '0.05', '0.1', '0.2', '0.5', '1'])
     else:
@@ -74,10 +91,24 @@ def set_log_scale(x_axis: str):
 
 
 def make_acc_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str = 'density', log_scale: bool = False):
-    frameworks = {'nerva': 'Nerva', 'torch': 'PyTorch'}
-    for framework in frameworks:
-        data = df[df['framework'] == framework]
-        sns.lineplot(x=x_axis, y='test accuracy', data=data, marker='o', label=frameworks[framework])
+    palette = sns.color_palette()
+    frameworks = {'nerva': {'label': 'Nerva', 'color': palette[0]},
+                  'torch': {'label': 'PyTorch', 'color': palette[1]}}
+    for fw in frameworks:
+        data = df[df['framework'] == fw]
+        sns.lineplot(x=x_axis, y='test accuracy', data=data, marker='o',
+                     label=frameworks[fw]['label'], color=frameworks[fw]['color'])
+
+    if x_axis == 'sparsity':
+        # horizontal lines for the fully dense model
+        for fw in frameworks:
+            runs = (df['framework'] == fw) & (df['density'] == 1.0)
+            tmp_df = df[runs].copy(deep=True)
+            tmp_df = pd.concat([tmp_df, tmp_df], ignore_index=True)
+            tmp_df.loc[:int(len(tmp_df)/2)-1, 'sparsity'] = 0.5
+            tmp_df.loc[int(len(tmp_df)/2):, 'sparsity'] = 0.999
+            sns.lineplot(data=tmp_df, x=x_axis, y='test accuracy', linestyle='--',
+                         label=f"{frameworks[fw]['label']} dense", color=frameworks[fw]['color'])
 
     plt.grid(zorder=0)
     plt.ylim(ymin=0)
@@ -96,10 +127,23 @@ def make_acc_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str =
 
 
 def make_time_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str = 'density', log_scale: bool = False):
-    frameworks = {'nerva': 'Nerva', 'torch': 'PyTorch'}
-    for framework in frameworks:
-        data = df[df['framework'] == framework]
-        sns.lineplot(x=x_axis, y='time', data=data, marker='o', label=frameworks[framework])
+    palette = sns.color_palette()
+    frameworks = {'nerva': {'label': 'Nerva', 'color': palette[0]},
+                  'torch': {'label': 'PyTorch', 'color': palette[1]}}
+    for fw in frameworks:
+        # remove sparsity=0 from df
+        runs = (df['framework'] == fw) & (df['sparsity'] != 0)
+        sns.lineplot(x=x_axis, y='time', data=df[runs], marker='o',
+                     label=frameworks[fw]['label'], color=frameworks[fw]['color'])
+
+        # horizontal lines for the fully dense model
+        runs = (df['framework'] == fw) & (df['density'] == 1.0)
+        tmp_df = df[runs].copy(deep=True)
+        tmp_df = pd.concat([tmp_df, tmp_df], ignore_index=True)
+        tmp_df.loc[:int(len(tmp_df)/2)-1, 'sparsity'] = 0.5
+        tmp_df.loc[int(len(tmp_df)/2):, 'sparsity'] = 0.999
+        sns.lineplot(data=tmp_df, x=x_axis, y='time', linestyle='--',
+                     label=f"{frameworks[fw]['label']} dense", color=frameworks[fw]['color'])
 
     plt.grid(zorder=0)
     plt.ylim(ymin=0)
@@ -123,25 +167,15 @@ def main():
     folder = pathlib.Path('./three-nerva-runs')
     df = get_full_dataframe(folder)
 
-    # make a new df with the total time summed for each framework and density and seed
-    df_time = df.drop(columns=['epoch', 'lr', 'loss', 'train accuracy', 'test accuracy'])
-    df_time = df_time.groupby(['framework', 'density', 'seed']).sum().reset_index()
-    df_time['time'] = df_time['time'] / 60  # convert time to minutes
-    df_time['sparsity'] = 1 - df_time['density']
+    df_time = make_df_time(df)
+    df_acc = make_df_acc(df)
 
-    # make a new df with the best test accuracy for each framework and density and seed
-    df_best = df.drop(columns=['epoch', 'time', 'loss'])
-    df_best = df_best.groupby(['framework', 'density', 'seed']).max().reset_index()
-    df_best['sparsity'] = 1 - df_best['density']
-
-
-    log_scale = True
 
     x_axis = 'sparsity'
     # x_axis = 'density'
 
     make_time_vs_density_plot(df_time, pathlib.Path(f'./three-nerva-runs_plots/time-vs-{x_axis}3.png'), x_axis)
-    # make_acc_vs_density_plot(df_best, pathlib.Path(f'./three-nerva-runs_plots/accuracy-vs-{x_axis}3.png'), x_axis, log_scale)
+    # make_acc_vs_density_plot(df_acc, pathlib.Path(f'./three-nerva-runs_plots/accuracy-vs-{x_axis}3.png'), x_axis, log_scale=True)
 
 
 
