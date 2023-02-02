@@ -231,9 +231,8 @@ class tool: public command_line_tool
       cli |= lyra::opt(no_statistics)["--no-statistics"]("Do not compute statistics during training.");
       cli |= lyra::opt(options.threads, "value")["--threads"]("The number of threads used by Eigen.");
       cli |= lyra::opt(datadir, "value")["--datadir"]("A directory containing the files epoch<nnn>.npz");
-      // TODO: add import/export of weights in .npz format
-      // cli |= lyra::opt(import_weights_file, "value")["--import-weights"]("Loads the weights from a file in .npz format");
-      cli |= lyra::opt(export_weights_file, "value")["--export-weights"]("Exports the weights to a file in .npy format");
+      cli |= lyra::opt(import_weights_file, "value")["--import-weights"]("Loads the weights from a file in .npz format");
+      cli |= lyra::opt(export_weights_file, "value")["--export-weights"]("Exports the weights to a file in .npz format");
       cli |= lyra::opt(options.debug)["--debug"]("Show debug output");
       cli |= lyra::opt(options.precision, "value")["--precision"]("The precision that is used for printing.");
       cli |= lyra::opt(options.check_gradients)["--check"]("Check the computed gradients");
@@ -323,11 +322,13 @@ class tool: public command_line_tool
       else
       {
         import_weights_from_numpy(M, import_weights_file);
+        //import_weights_and_bias_from_numpy(M, import_weights_file);
       }
 
       if (!export_weights_file.empty())
       {
         export_weights_to_numpy(M, export_weights_file);
+        //export_weights_and_bias_to_numpy(M, export_weights_file);
       }
 
       if (info)

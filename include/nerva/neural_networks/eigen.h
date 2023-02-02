@@ -599,6 +599,17 @@ scalar l2_distance(const sparse_matrix& A, const Eigen::Matrix<Scalar, Eigen::Dy
   return (B - A).squaredNorm();
 }
 
+// convert a vector of longs into a one hot matrix
+void to_one_hot(const Eigen::Matrix<long, Eigen::Dynamic, 1>& x, eigen::matrix& result, long classes = 10)
+{
+  long n = x.size();
+  result = eigen::matrix::Zero(classes, n);
+  for (long i = 0; i < n; i++)
+  {
+    result(x(i), i) = scalar(1);
+  }
+}
+
 } // namespace nerva::eigen
 
 #endif // NERVA_NEURAL_NETWORKS_EIGEN_H

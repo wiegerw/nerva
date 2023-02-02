@@ -48,18 +48,8 @@ struct dataset
   )
    : Xtrain(std::move(Xtrain_)), Xtest(std::move(Xtest_))
   {
-    to_one_hot(Ttrain_, Ttrain);
-    to_one_hot(Ttest_, Ttest);
-  }
-
-  void to_one_hot(const long_vector& x, eigen::matrix& result)
-  {
-    long n = x.size();
-    result = eigen::matrix::Zero(10, n);
-    for (long i = 0; i < n; i++)
-    {
-      result(x(i), i) = scalar(1);
-    }
+    eigen::to_one_hot(Ttrain_, Ttrain);
+    eigen::to_one_hot(Ttest_, Ttest);
   }
 
   void info() const
@@ -84,15 +74,15 @@ struct dataset
       throw std::runtime_error("Could not load file '" + filename + "'");
     }
 
-    py::dict d = np.attr("load")(filename);
+    py::dict data = np.attr("load")(filename);
 
-    Xtrain = nerva::eigen::from_numpy(d["Xtrain"].cast<py::array_t<scalar>>()).transpose();
-    auto ttrain = nerva::eigen::from_numpy_1d(d["Ttrain"].cast<py::array_t<long>>());
-    Xtest = nerva::eigen::from_numpy(d["Xtest"].cast<py::array_t<scalar>>()).transpose();
-    auto ttest  = nerva::eigen::from_numpy_1d(d["Ttest"].cast<py::array_t<long>>());
+    Xtrain = nerva::eigen::from_numpy(data["Xtrain"].cast<py::array_t<scalar>>()).transpose();
+    auto ttrain = nerva::eigen::from_numpy_1d(data["Ttrain"].cast<py::array_t<long>>());
+    Xtest = nerva::eigen::from_numpy(data["Xtest"].cast<py::array_t<scalar>>()).transpose();
+    auto ttest  = nerva::eigen::from_numpy_1d(data["Ttest"].cast<py::array_t<long>>());
 
-    to_one_hot(ttrain, Ttrain);
-    to_one_hot(ttest, Ttest);
+    eigen::to_one_hot(ttrain, Ttrain);
+    eigen::to_one_hot(ttest, Ttest);
   }
 };
 

@@ -390,6 +390,8 @@ PYBIND11_MODULE(nervalib, m)
     .def("import_weights", [](multilayer_perceptron& M, const std::string& filename) { import_weights_from_numpy(M, filename); })
     .def("export_bias", [](const multilayer_perceptron& M, const std::string& filename) { export_bias_to_numpy(M, filename); })
     .def("import_bias", [](multilayer_perceptron& M, const std::string& filename) { import_bias_from_numpy(M, filename); })
+    .def("export_weights_and_bias", [](const multilayer_perceptron& M, const std::string& filename) { export_weights_and_bias_to_numpy(M, filename); })
+    .def("import_weights_and_bias", [](multilayer_perceptron& M, const std::string& filename) { import_weights_and_bias_from_numpy(M, filename); })
     ;
 
   py::class_<mlp_masking, std::shared_ptr<mlp_masking>>(m, "MLPMasking")
