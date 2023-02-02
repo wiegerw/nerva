@@ -68,7 +68,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--nesterov", help="apply nesterov", action="store_true")
     cmdline_parser.add_argument('--datadir', type=str, default='./data', help='the data directory (default: ./data)')
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
-    cmdline_parser.add_argument("--preprocessed", help="use preprocessed dataset for every epoch", action="store_true")
+    cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
     cmdline_parser.add_argument("--copy", help="copy weights and biases from the PyTorch model to the Nerva model", action="store_true")
     cmdline_parser.add_argument("--nerva", help="Train using a Nerva model", action="store_true")
     cmdline_parser.add_argument("--torch", help="Train using a PyTorch model", action="store_true")
@@ -134,7 +134,7 @@ def main():
 
         print('\n=== Training PyTorch model ===')
         if args.preprocessed:
-            train_torch_preprocessed(M1, args.datadir, args.epochs, args.batch_size, args.show)
+            train_torch_preprocessed(M1, args.preprocessed, args.epochs, args.batch_size, args.show)
         else:
             train_torch(M1, train_loader, test_loader, args.epochs, args.show)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_torch(M1, test_loader):.3f} %')
@@ -145,8 +145,8 @@ def main():
         print(M2.learning_rate)
 
         print('\n=== Training Nerva model ===')
-        if args.augmented:
-            train_nerva_preprocessed(M2, args.datadir, args.epochs, args.batch_size, args.show)
+        if args.preprocessed:
+            train_nerva_preprocessed(M2, args.preprocessed, args.epochs, args.batch_size, args.show)
         else:
             train_nerva(M2, train_loader, test_loader, args.epochs, args.show)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_nerva(M2, test_loader):.3f} %')

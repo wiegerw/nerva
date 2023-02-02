@@ -1,8 +1,9 @@
+from pathlib import Path
 from timeit import default_timer as timer
 from typing import List, Tuple, Union
 import numpy as np
 
-from testing.datasets import TorchDataLoader
+from testing.datasets import TorchDataLoader, create_npz_dataloaders
 from testing.numpy_utils import to_numpy, to_one_hot_numpy, l1_norm, pp, load_eigen_array
 from testing.models import MLP1, MLP1a, MLP2
 
@@ -209,7 +210,7 @@ def train_nerva(M, train_loader, test_loader, epochs, show: bool):
 # TODO: use classes to reuse code
 # At every epoch a new dataset in .npz format is read from datadir.
 def train_nerva_preprocessed(M, datadir, epochs, batch_size, show: bool):
-    train_loader, test_loader = make_data_loaders(datadir, epoch=0, batch_size=batch_size)
+    train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch0.npz', batch_size=batch_size)
 
     n_classes = M.sizes[-1]
     batch_size = len(train_loader.dataset) // len(train_loader)
@@ -223,7 +224,7 @@ def train_nerva_preprocessed(M, datadir, epochs, batch_size, show: bool):
 
     for epoch in range(epochs):
         if epoch > 0:
-            train_loader, test_loader = make_data_loaders(datadir, epoch, batch_size)
+            train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch{epoch}.npz', batch_size)
 
         lr = M.learning_rate(epoch)
         elapsed = 0.0
