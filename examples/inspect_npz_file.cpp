@@ -1,3 +1,4 @@
+#include "nerva/datasets/dataset.h"
 #include "nerva/neural_networks/numpy_eigen.h"
 #include <pybind11/embed.h>
 #include <pybind11/eigen.h>
@@ -22,14 +23,8 @@ void load_npz(const std::string& filename)
   nerva::eigen::print_numpy_matrix("Xtest", Xtest);
   nerva::eigen::print_numpy_matrix("Ttest", Ttest.transpose());
 
-//  // access the elements of the py_array_t Ttrain directly
-//  auto ttrain = d["Ttrain"].cast<py::array_t<long>>();
-//  auto rtrain = ttrain.unchecked<1>();
-//  long sum = 0;
-//  for (auto i = 0; i < 50000; i++)
-//  {
-//    sum += rtrain(i);
-//  }
+  nerva::datasets::dataset data(Xtrain, Ttrain, Xtest, Ttest);
+  data.info();
 }
 
 int main(int argc, char *argv[])
