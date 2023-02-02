@@ -1,6 +1,5 @@
-from pathlib import Path
 from timeit import default_timer as timer
-from typing import List, Tuple, Union
+from typing import List, Union
 import numpy as np
 
 from testing.datasets import TorchDataLoader, create_npz_dataloaders
@@ -108,30 +107,11 @@ def train_torch(M, train_loader, test_loader, epochs, show: bool):
         M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
 
 
-def make_data_loaders(datadir: str, epoch: int, batch_size: int) -> Tuple[TorchDataLoader, TorchDataLoader]:
-    from pathlib import Path
-    import torch
-
-    path = Path(datadir) / f'epoch{epoch}.npz'
-    print(f'Loading dataset from file {path}')
-    if not path.exists():
-        raise RuntimeError(f"Could not load file '{path}'")
-
-    d = np.load(str(path))
-    Xtrain = torch.Tensor(d['Xtrain'])
-    Ttrain = torch.LongTensor(d['Ttrain'])
-    Xtest = torch.Tensor(d['Xtest'])
-    Ttest = torch.LongTensor(d['Ttest'])
-    train_loader = TorchDataLoader(Xtrain, Ttrain, batch_size)
-    test_loader = TorchDataLoader(Xtest, Ttest, batch_size)
-    return train_loader, test_loader
-
-
 # At every epoch a new dataset in .npz format is read from datadir.
 def train_torch_preprocessed(M, datadir, epochs, batch_size, show: bool):
     M.train()  # Set model in training mode
 
-    train_loader, test_loader = make_data_loaders(datadir, epoch=0, batch_size=batch_size)
+    train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch0.npz', batch_size=batch_size)
 
     print_epoch(epoch=0,
                 lr=M.optimizer.param_groups[0]["lr"],
@@ -142,7 +122,7 @@ def train_torch_preprocessed(M, datadir, epochs, batch_size, show: bool):
 
     for epoch in range(epochs):
         if epoch > 0:
-            train_loader, test_loader = make_data_loaders(datadir, epoch, batch_size)
+            train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch{epoch}.npz', batch_size)
 
         elapsed = 0.0
         for k, (X, T) in enumerate(train_loader):
