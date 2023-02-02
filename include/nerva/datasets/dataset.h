@@ -20,6 +20,7 @@
 #include <iostream>
 #include <filesystem>
 #include <fstream>
+#include <utility>
 #include <vector>
 #include <string>
 #include <random>
@@ -40,12 +41,12 @@ struct dataset
 
   dataset() = default;
 
-  dataset(const eigen::matrix& Xtrain_,
+  dataset(eigen::matrix  Xtrain_,
           const long_vector& Ttrain_,
-          const eigen::matrix& Xtest_,
+          eigen::matrix  Xtest_,
           const long_vector& Ttest_
   )
-   : Xtrain(Xtrain_), Xtest(Xtest_)
+   : Xtrain(std::move(Xtrain_)), Xtest(std::move(Xtest_))
   {
     to_one_hot(Ttrain_, Ttrain);
     to_one_hot(Ttest_, Ttest);
