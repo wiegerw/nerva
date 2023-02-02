@@ -368,9 +368,9 @@ std::pair<double, double> minibatch_gradient_descent(
   return {test_accuracy, total_training_time};
 }
 
-// TODO: use a class with virtual methods to reuse code
+// Loads a new dataset at every epoch from the directory datadir
 template <typename MultilayerPerceptron, typename RandomNumberGenerator>
-std::pair<double, double> minibatch_gradient_descent_augmented(
+std::pair<double, double> minibatch_gradient_descent_preprocessed(
   MultilayerPerceptron& M,
   const std::shared_ptr<loss_function>& loss,
   const std::string& datadir,

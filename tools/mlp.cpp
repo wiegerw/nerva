@@ -199,11 +199,11 @@ class tool: public command_line_tool
 {
   protected:
     mlp_options options;
-    std::string datadir;
     std::string import_weights_file;
     std::string export_weights_file;
     std::string hidden_layer_sizes_text;
     std::string densities_text;
+    std::string preprocessed_dir;  // a directory containing a dataset for every epoch
     bool no_shuffle = false;
     bool no_statistics = false;
     bool info = false;
@@ -224,13 +224,12 @@ class tool: public command_line_tool
       cli |= lyra::opt(options.dropout, "value")["--dropout"]("The dropout rate for the weights of the layers");
       cli |= lyra::opt(options.density, "value")["--density"]("The density rate of the sparse layers");
       cli |= lyra::opt(densities_text, "value")["--densities"]("A comma separated list of sparse layer densities");
-      cli |= lyra::opt(options.augmented)["--augmented"]("Load an augmented dataset in every epoch. They should be named epoch<nnn>.npy and stored in datadir");
       cli |= lyra::opt(options.optimizer, "value")["--optimizer"]("The optimizer (gradient-descent, momentum(<mu>), nesterov(<mu>))");
       cli |= lyra::opt(options.seed, "value")["--seed"]("A seed value for the random generator.");
       cli |= lyra::opt(no_shuffle)["--no-shuffle"]("Do not shuffle the dataset during training.");
       cli |= lyra::opt(no_statistics)["--no-statistics"]("Do not compute statistics during training.");
       cli |= lyra::opt(options.threads, "value")["--threads"]("The number of threads used by Eigen.");
-      cli |= lyra::opt(datadir, "value")["--datadir"]("A directory containing the files epoch<nnn>.npz");
+      cli |= lyra::opt(preprocessed_dir, "value")["--preprocessed"]("A directory containing the files epoch<nnn>.npz");
       cli |= lyra::opt(import_weights_file, "value")["--import-weights"]("Loads the weights from a file in .npz format");
       cli |= lyra::opt(export_weights_file, "value")["--export-weights"]("Exports the weights to a file in .npz format");
       cli |= lyra::opt(options.debug)["--debug"]("Show debug output");
@@ -349,9 +348,9 @@ class tool: public command_line_tool
       }
       else if (options.algorithm == "minibatch")
       {
-        if (options.augmented)
+        if (!preprocessed_dir.empty())
         {
-          minibatch_gradient_descent_augmented(M, loss, datadir, options, learning_rate, rng);
+          minibatch_gradient_descent_preprocessed(M, loss, preprocessed_dir, options, learning_rate, rng);
         }
         else
         {
