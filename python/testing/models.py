@@ -9,7 +9,7 @@ from torch import nn as nn
 from torch.nn import functional as F
 
 import nerva.layers
-from testing.numpy_utils import load_numpy_arrays_from_npy_file, pp, save_eigen_array, load_eigen_array
+from testing.numpy_utils import load_numpy_arrays_from_npy_file, pp, save_eigen_array, load_eigen_array, l1_norm
 
 
 class MLP1(nn.Module):
@@ -63,6 +63,15 @@ class MLP1(nn.Module):
         with open(filename, "rb") as f:
             for layer in self.layers:
                 layer.bias.data = torch.Tensor(load_eigen_array(f))
+
+    def print_weight_info(self):
+        for i, layer in enumerate(self.layers):
+            print(f'|w{i}| = {l1_norm(layer.weight.detach().numpy())}')
+
+    def scale_weights(self, factor):
+        print(f'Scale weights with factor {factor}')
+        for layer in self.layers:
+            layer.weight.data *= factor
 
 
 # For now, we only support Xavier weights
@@ -144,6 +153,15 @@ class MLP1a(nn.Module):
             for layer in self.layers:
                 layer.bias.data = torch.Tensor(load_eigen_array(f))
 
+    def print_weight_info(self):
+        for i, layer in enumerate(self.layers):
+            print(f'|w{i}| = {l1_norm(layer.weight.detach().numpy())}')
+
+    def scale_weights(self, factor):
+        print(f'Scale weights with factor {factor}')
+        for layer in self.layers:
+            layer.weight.data *= factor
+
 
 class MLP2(nerva.layers.Sequential):
     def __init__(self, sizes, densities, optimizer, batch_size):
@@ -184,7 +202,7 @@ class MLP2(nerva.layers.Sequential):
         return [flatten(b) for b in bias]
 
 
-def copy_weights_and_biases(model1: Union[MLP1, MLP1a, MLP2], model2: MLP2):
+def copy_weights_and_biases(model1: Union[MLP1, MLP1a, MLP2], model2: Union[MLP1, MLP2]):
     """
     Copies models and weights from model1 to model2
     :param model1:

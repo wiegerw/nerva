@@ -20,7 +20,7 @@ from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
 from testing.torch_models import make_torch_mask, make_torch_scheduler
 from testing.models import MLP1, MLP1a, MLP2, copy_weights_and_biases, print_model_info
 from testing.training import train_nerva, train_torch, compute_accuracy_torch, compute_accuracy_nerva, \
-    compute_densities, train_torch_preprocessed, train_nerva_preprocessed
+    compute_densities, train_torch_preprocessed, train_nerva_preprocessed, train_both, compute_weight_difference
 
 
 def make_torch_model_new(args, sizes, densities):
@@ -150,6 +150,12 @@ def main():
         else:
             train_nerva(M2, train_loader, test_loader, args.epochs, args.show)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_nerva(M2, test_loader):.3f} %')
+    else:
+        #copy_weights_and_biases(M1, M2)
+        print_model_info(M1)
+        print_model_info(M2)
+        compute_weight_difference(M1, M2)
+        train_both(M1, M2, train_loader, test_loader, args.epochs, args.show)
 
 
 if __name__ == '__main__':

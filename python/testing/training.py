@@ -53,7 +53,9 @@ def compute_loss_nerva(M: MLP2, data_loader):
 def compute_weight_difference(M1, M2):
     wdiff = [l1_norm(W1 - W2) for W1, W2 in zip(M1.weights(), M2.weights())]
     bdiff = [l1_norm(b1 - b2) for b1, b2 in zip(M1.bias(), M2.bias())]
-    print(f'weight differences: {wdiff} bias differences: {bdiff}')
+    w1 = [l1_norm(W) for W in M1.weights()]
+    w2 = [l1_norm(W) for W in M2.weights()]
+    print(f'weight differences: {wdiff} bias differences: {bdiff} |W1|={w1} |W2|={w2}')
 
 
 def compute_matrix_difference(name, X1: np.ndarray, X2: np.ndarray):
@@ -237,8 +239,7 @@ def train_both(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs, show: bool
     n_classes = M2.sizes[-1]
     batch_size = len(train_loader.dataset) // len(train_loader)
 
-    if show:
-        compute_weight_difference(M1, M2)
+    compute_weight_difference(M1, M2)
 
     for epoch in range(epochs):
         start = timer()
@@ -252,10 +253,10 @@ def train_both(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs, show: bool
             loss.backward()
             M1.optimize()
 
-            # if show:
-            #     print(f'epoch: {epoch} batch: {k}')
-            #     pp('Y', Y1)
-            #     pp('DY', Y1.grad.detach())
+            if show:
+                print(f'epoch: {epoch} batch: {k}')
+                pp('Y', Y1)
+                pp('DY', Y1.grad.detach())
 
             X2 = to_numpy(X1)
             T2 = to_one_hot_numpy(T1, n_classes)
@@ -264,16 +265,16 @@ def train_both(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs, show: bool
             M2.backpropagate(Y2, DY2)
             M2.optimize(lr)
 
-            # if show:
-            #     print(f'epoch: {epoch} batch: {k}')
-            #     pp('Y', Y2)
-            #     pp('DY', DY2)
+            if show:
+                print(f'epoch: {epoch} batch: {k}')
+                pp('Y', Y2)
+                pp('DY', DY2)
 
             if show:
                 print(f'epoch: {epoch} batch: {k}')
                 compute_matrix_difference('Y', Y1.detach().numpy().T, Y2)
                 compute_matrix_difference('DY', Y1.grad.detach().numpy().T, DY2)
-                compute_weight_difference(M1, M2)
+            compute_weight_difference(M1, M2)
 
             elapsed = timer() - start
 
