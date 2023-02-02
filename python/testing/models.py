@@ -1,4 +1,3 @@
-import math
 import pathlib
 import tempfile
 from typing import List, Union
@@ -10,6 +9,7 @@ from torch.nn import functional as F
 
 import nerva.layers
 from testing.datasets import to_eigen, from_eigen
+from testing.masking import create_mask
 from testing.numpy_utils import load_numpy_arrays_from_npy_file, pp, save_eigen_array, load_eigen_array, l1_norm
 
 
@@ -92,19 +92,6 @@ class MLP1(nn.Module):
             layer.weight.data *= factor
 
 
-# For now, we only support Xavier weights
-def create_mask(W: torch.Tensor, density: float):
-    x = 1.0 / math.sqrt(W.shape[0])
-    x /= density  # compensate for the sparsity
-    mask = torch.zeros_like(W)
-
-    for i in range(mask.size(0)):
-        for j in range(mask.size(1)):
-            if np.random.uniform(0.0, 1.0) < density:
-                mask[i, j] = np.random.uniform(-x, x)
-    return mask
-
-
 # Alternative version that uses a more direct way of masking
 class MLP1a(nn.Module):
     """ Multi-Layer Perceptron """
@@ -126,7 +113,7 @@ class MLP1a(nn.Module):
             if density == 1.0:
                 self.masks.append(None)
             else:
-                self.masks.append(create_mask(layer.weight, density))
+                self.masks.append(create_mask(layer.weight, int(density * layer.weight.numel())))
 
     def apply_masks(self):
         for layer, mask in zip(self.layers, self.masks):
