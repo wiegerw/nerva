@@ -42,6 +42,16 @@ Eigen::Matrix<Scalar, Rows, Cols, MatrixLayout> from_numpy(const py::array_t<Sca
   return Eigen::Map<matrix_t>(const_cast<Scalar*>(A.data()), shape[0], shape[1]);
 }
 
+template <typename Scalar = double, int Rows = Eigen::Dynamic, int Cols = Eigen::Dynamic>
+Eigen::Matrix<Scalar, Rows, 1> from_numpy_1d(const py::array_t<Scalar>& A)
+{
+  using matrix_t = Eigen::Matrix<Scalar, Rows, 1>;
+
+  assert(A.ndim() == 1);
+  auto shape = A.shape();
+  return Eigen::Map<matrix_t>(const_cast<Scalar*>(A.data()), shape[0], 1);
+}
+
 // Save a Numpy array to a file in .npy format
 template <typename Scalar>
 void save_numpy_array(const std::string& filename, const py::array_t<Scalar>& A)

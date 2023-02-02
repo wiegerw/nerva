@@ -80,6 +80,20 @@ void print_numpy_row_full(const Matrix& x, long i)
 template <typename Row>
 void print_numpy_row(const Row& x, long edgeitems=3)
 {
+  typedef typename Row::Scalar Scalar;
+
+  auto print = [](auto x)
+  {
+    if constexpr (std::is_integral<Scalar>::value)
+    {
+      std::cout << fmt::format("{:3d}", x);
+    }
+    else
+    {
+      std::cout << fmt::format("{:7.4f}", x);
+    }
+  };
+
   long n = x.size();
   long left = n;
   long right = n;
@@ -97,7 +111,7 @@ void print_numpy_row(const Row& x, long edgeitems=3)
     {
       std::cout << ", ";
     }
-    std::cout << fmt::format("{:7.4f}", x(j));
+    print(x(j));
   }
 
   if (n > 2*edgeitems)
@@ -112,7 +126,7 @@ void print_numpy_row(const Row& x, long edgeitems=3)
     {
       std::cout << ", ";
     }
-    std::cout << fmt::format("{:7.4f}", x(j));
+    print(x(j));
   }
 
   std::cout << "]\n";
@@ -129,6 +143,8 @@ void print_numpy_vector(const std::string& name, const Vector& x, long edgeitems
 template <typename Matrix>
 struct matrix_row
 {
+  typedef typename Matrix::Scalar Scalar;
+
   const Matrix& x;
   long i;
 
@@ -154,7 +170,6 @@ void print_numpy_matrix(const std::string& name, const Matrix& x, long edgeitems
   long m = x.rows();
   long top = m;
   long bottom = m;
-
 
   if (m > 2*edgeitems)
   {
