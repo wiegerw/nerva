@@ -88,7 +88,7 @@ def train_torch(M, train_loader, test_loader, epochs, show: bool):
             start = timer()
             M.optimizer.zero_grad()
             Y = M(X)
-            Y.retain_grad()
+            # Y.retain_grad()
             loss = M.loss(Y, T)
             loss.backward()
             M.optimize()

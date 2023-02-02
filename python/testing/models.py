@@ -9,6 +9,7 @@ from torch import nn as nn
 from torch.nn import functional as F
 
 import nerva.layers
+from testing.datasets import to_eigen, from_eigen
 from testing.numpy_utils import load_numpy_arrays_from_npy_file, pp, save_eigen_array, load_eigen_array, l1_norm
 
 
@@ -41,6 +42,23 @@ class MLP1(nn.Module):
 
     def bias(self) -> List[torch.Tensor]:
         return [layer.bias.detach().numpy() for layer in self.layers]
+
+    def export_weights_and_bias(self, filename: str):
+        weights = [layer.weight for layer in self.layers]
+        bias = [layer.bias for layer in self.layers]
+        save_weights_to_npz(filename, weights, bias)
+        # weights1, bias1 = load_weights_from_npz(filename)
+        # for W1, W2 in zip(weights, weights1):
+        #     assert torch.equal(W1, W2)
+        # for b1, b2 in zip(bias, bias1):
+        #     assert torch.equal(b1, b2)
+
+    def import_weights_and_bias(self, filename: str):
+        weights, bias = load_weights_from_npz(filename)
+        for layer, W in zip(self.layers, weights):
+            layer.weight.data = W
+        for layer, b in zip(self.layers, bias):
+            layer.bias.data = b
 
     def export_weights(self, filename: str):
         with open(filename, "wb") as f:
@@ -226,3 +244,24 @@ def print_model_info(M):
     for i in range(len(W)):
         pp(f'W{i + 1}', W[i])
         pp(f'b{i + 1}', b[i])
+
+
+# Save weights and biases to a file in a format readable in C++
+def save_weights_to_npz(filename, weights: List[torch.Tensor], bias: List[torch.Tensor]):
+    print(f'Saving weights and biases to {filename}')
+    data = {}
+    for i, (W, b) in enumerate(zip(weights, bias)):
+        data[f'W{i}'] = to_eigen(W.detach().numpy())
+        data[f'b{i}'] = to_eigen(b.detach().numpy())
+    with open(filename, "wb") as f:
+        np.savez_compressed(f, data)
+
+
+# load weights and biases from a file in a format readable in C++
+def load_weights_from_npz(filename):
+    print(f'Loading data from {filename}')
+    data = np.load(filename, allow_pickle=True)
+    n = len(data) // 2
+    weights = [torch.Tensor(from_eigen(data[f'W{i}'])) for i in range(n)]
+    bias = [torch.Tensor(from_eigen(data[f'b{i}'])) for i in range(n)]
+    return weights, bias
