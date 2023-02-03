@@ -6,11 +6,11 @@ momentum=0.9
 
 densesizes="1024,512"
 densearchitecture=RRL
-denseweights=xxx
+denseweights=XXX
 
 sparsesizes="1024,512"
 sparsearchitecture=RRL
-sparseweights=xxx
+sparseweights=XXX
 
 datadir="./data"
 
@@ -22,8 +22,15 @@ function train_sparse_torch()
 
   logfile="snn/torch-sparse-$density-augmented-seed$seed.log"
 
-  python3 snn.py --torch --seed=$seed --density=$density --lr=$lr --sizes="3072,$sparsesizes,10" \
-                 --batch-size=$batchsize --epochs=$epochs --momentum=$momentum --nesterov --datadir="$datadir" \
+  python3 snn.py --torch --seed=$seed \
+                 --density=$density \
+                 --lr=$lr --sizes="3072,$sparsesizes,10" \
+                 --batch-size=$batchsize \
+                 --epochs=$epochs \
+                 --momentum=$momentum \
+                 --nesterov \
+                 --custom-masking \
+                 --datadir="$datadir" \
                  --preprocessed=./cifar$seed \
                  >& $logfile
 }
@@ -36,12 +43,22 @@ function train_sparse_nerva()
 
   logfile="snn/nerva-sparse-$density-augmented-seed$seed.log"
 
-  ../tools/dist/mlpf --seed=$seed --density=$density --hidden="$sparsesizes" --batch-size=$batchsize \
-                     --epochs=$epochs --learning-rate="multistep_lr($lr;50,75;0.1)" --optimizer="nesterov($momentum)" \
-                     --architecture=$sparsearchitecture --weights=$sparseweights --dataset=cifar10 --size=50000 \
-                     --loss="softmax-cross-entropy" --algorithm=minibatch --threads=4 -v --datadir="$datadir" \
+  ../tools/dist/mlpf --seed=$seed \
+                     --density=$density \
+                     --hidden="$sparsesizes" \
+                     --batch-size=$batchsize \
+                     --epochs=$epochs \
+                     --learning-rate="multistep_lr($lr;50,75;0.1)" \
+                     --optimizer="nesterov($momentum)" \
+                     --architecture=$sparsearchitecture \
+                     --weights=$sparseweights \
+                     --dataset=cifar10 --size=50000 \
+                     --loss="softmax-cross-entropy" \
+                     --algorithm=minibatch \
+                     --threads=4 \
+                     --verbose \
                      --preprocessed=./cifar$seed \
-                     >& $logfile
+                     | tee $logfile 2>&1
 }
 
 function train_dense_torch()
@@ -51,8 +68,16 @@ function train_dense_torch()
 
   logfile="snn/torch-dense-augmented-seed$seed.log"
 
-  python3 snn.py --torch --seed=$seed --lr=$lr --sizes="3072,$densesizes,10" --batch-size=$batchsize \
-                 --epochs=$epochs --momentum=$momentum --nesterov --datadir="$datadir" \
+  python3 snn.py --torch \
+                 --seed=$seed \
+                 --lr=$lr \
+                 --sizes="3072,$densesizes,10" \
+                 --batch-size=$batchsize \
+                 --epochs=$epochs \
+                 --momentum=$momentum \
+                 --nesterov \
+                 --custom-masking \
+                 --datadir="$datadir" \
                  --preprocessed=./cifar$seed \
                  >& $logfile
 }
@@ -64,17 +89,27 @@ function train_dense_nerva()
 
   logfile="snn/nerva-dense-augmented-seed$seed.log"
 
-  ../tools/dist/mlpf --seed=$seed --hidden="$densesizes" --batch-size=$batchsize \
-                     --epochs=$epochs --learning-rate="multistep_lr($lr;50,75;0.1)" --optimizer="nesterov($momentum)"  \
-                     --architecture=$densearchitecture --weights=$denseweights --dataset=cifar10 --size=50000 \
-                     --loss="softmax-cross-entropy" --algorithm=minibatch --threads=4 -v --datadir="$datadir" \
+  ../tools/dist/mlpf --seed=$seed \
+                     --hidden="$densesizes" \
+                     --batch-size=$batchsize \
+                     --epochs=$epochs \
+                     --learning-rate="multistep_lr($lr;50,75;0.1)" \
+                     --optimizer="nesterov($momentum)"  \
+                     --architecture=$densearchitecture \
+                     --weights=$denseweights \
+                     --dataset=cifar10 \
+                     --size=50000 \
+                     --loss="softmax-cross-entropy" \
+                     --algorithm=minibatch \
+                     --threads=4 \
+                     --verbose \
                      --preprocessed=./cifar$seed \
                      >& $logfile
 }
 
 function train_all()
 {
-    for seed in 1
+    for seed in 1 2 3 4 5
     do
         train_sparse_torch $seed 0.1  0.001
         train_sparse_torch $seed 0.1  0.005
