@@ -15,13 +15,13 @@ architecture=RRL
 weights=xxx
 
 # do one experiment with pytorch and nerva
-function run()
+function run
 {
   sizes=$1
   architecture=$2
   weights=$3
-
   logfile="snn/running-time/torch-density-$density-sizes-$sizes-seed-$seed.log"
+
   echo "Creating $logfile"
   python3 snn.py --torch \
                  --seed=$seed \
@@ -35,8 +35,8 @@ function run()
                  --datadir="$datadir" \
                  >& $logfile
 
-
   logfile="snn/running-time/nerva-density-$density-sizes-$sizes-seed-$seed.log"
+
   echo "Creating $logfile"
   ../tools/dist/mlpf --seed=$seed \
                      --density=$density \
@@ -59,16 +59,21 @@ function run()
 
 function run_all()
 {
-    run "1024,1024"                     "RRL"  "xxx"
-    run "1024,1024,1024"                "RRRL" "xxxx"
-    run "1024,1024,1024,1024"           "RRRRL" "xxxxx"
-    run "1024,1024,1024,1024,1024"      "RRRRRL" "xxxxxx"
-    run "1024,1024,1024,1024,1024,1024" "RRRRRRL" "xxxxxxx"
-    run "2048,2048"                     "RRL"  "xxx"
-    run "2048,2048,2048"                "RRRL" "xxxx"
-    run "2048,2048,2048,2048"           "RRRRL" "xxxxx"
-    run "2048,2048,2048,2048,2048"      "RRRRRL" "xxxxxx"
-    run "2048,2048,2048,2048,2048,2048" "RRRRRRL" "xxxxxxx"
+  run "1024"                                              "RL"          "xx"
+  run "1024,1024"                                         "RRL"         "xxx"
+  run "1024,1024,1024"                                    "RRRL"        "xxxx"
+  run "1024,1024,1024,1024"                               "RRRRL"       "xxxxx"
+  run "1024,1024,1024,1024,1024"                          "RRRRRL"      "xxxxxx"
+  run "1024,1024,1024,1024,1024,1024"                     "RRRRRRL"     "xxxxxxx"
+  run "1024,1024,1024,1024,1024,1024,1024"                "RRRRRRRL"    "xxxxxxxx"
+  run "1024,1024,1024,1024,1024,1024,1024,1024"           "RRRRRRRRL"   "xxxxxxxxx"
+  run "1024,1024,1024,1024,1024,1024,1024,1024,1024"      "RRRRRRRRRL"  "xxxxxxxxxx"
+  run "1024,1024,1024,1024,1024,1024,1024,1024,102,10244" "RRRRRRRRRRL" "xxxxxxxxxxx"
+  run "2048,2048,2048"                                    "RRRL"        "xxxx"
+  run "4096,4096,4096"                                    "RRRL"        "xxxx"
+  run "8192,8192,8192"                                    "RRRL"        "xxxx"
+  run "16384,16384,16384"                                 "RRRL"        "xxxx"
+  run "32768,32768,32768"                                 "RRRL"        "xxxx"
 }
 
 run_all
