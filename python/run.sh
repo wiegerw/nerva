@@ -22,17 +22,17 @@ function train_sparse_torch()
 
   logfile="snn/torch-sparse-$density-augmented-seed$seed.log"
 
-  python3 snn.py --torch --seed=$seed \
-                 --density=$density \
-                 --lr=$lr --sizes="3072,$sparsesizes,10" \
-                 --batch-size=$batchsize \
-                 --epochs=$epochs \
-                 --momentum=$momentum \
-                 --nesterov \
-                 --custom-masking \
-                 --datadir="$datadir" \
-                 --preprocessed=./cifar$seed \
-                 >& $logfile
+  python3 -u snn.py --torch --seed=$seed \
+                    --density=$density \
+                    --lr=$lr --sizes="3072,$sparsesizes,10" \
+                    --batch-size=$batchsize \
+                    --epochs=$epochs \
+                    --momentum=$momentum \
+                    --nesterov \
+                    --custom-masking \
+                    --datadir="$datadir" \
+                    --preprocessed=./cifar$seed \
+                    2>&1 | tee $logfile
 }
 
 function train_sparse_nerva()
@@ -58,7 +58,7 @@ function train_sparse_nerva()
                      --threads=4 \
                      --verbose \
                      --preprocessed=./cifar$seed \
-                     | tee $logfile 2>&1
+                     2>&1 | tee $logfile
 }
 
 function train_dense_torch()
@@ -68,18 +68,18 @@ function train_dense_torch()
 
   logfile="snn/torch-dense-augmented-seed$seed.log"
 
-  python3 snn.py --torch \
-                 --seed=$seed \
-                 --lr=$lr \
-                 --sizes="3072,$densesizes,10" \
-                 --batch-size=$batchsize \
-                 --epochs=$epochs \
-                 --momentum=$momentum \
-                 --nesterov \
-                 --custom-masking \
-                 --datadir="$datadir" \
-                 --preprocessed=./cifar$seed \
-                 >& $logfile
+  python3 -u snn.py --torch \
+                    --seed=$seed \
+                    --lr=$lr \
+                    --sizes="3072,$densesizes,10" \
+                    --batch-size=$batchsize \
+                    --epochs=$epochs \
+                    --momentum=$momentum \
+                    --nesterov \
+                    --custom-masking \
+                    --datadir="$datadir" \
+                    --preprocessed=./cifar$seed \
+                    2>&1 | tee $logfile
 }
 
 function train_dense_nerva()
@@ -104,7 +104,7 @@ function train_dense_nerva()
                      --threads=4 \
                      --verbose \
                      --preprocessed=./cifar$seed \
-                     >& $logfile
+                     2>&1 | tee $logfile
 }
 
 function train_all()
