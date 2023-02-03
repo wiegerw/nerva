@@ -11,7 +11,7 @@ import sys
 import numpy as np
 import torch
 from testing.datasets import create_cifar10_augmented_datasets, create_dataloaders, custom_load_cifar10_data, \
-    create_cifar10_augmented_dataloaders, extract_tensors_from_dataloader, save_data_to_npz, from_eigen, to_eigen
+    create_cifar10_augmented_dataloaders, extract_tensors_from_dataloader, save_train_test_data_to_npz, from_eigen, to_eigen
 from testing.numpy_utils import pp
 
 
@@ -101,7 +101,7 @@ def main():
         Xtrain, Ttrain = extract_tensors_from_dataloader(train_loader)
         Xtest, Ttest = extract_tensors_from_dataloader(test_loader)
         print(f'Saving epoch {epoch} data to {filename}')
-        save_data_to_npz(filename, Xtrain, Ttrain, Xtest, Ttest)
+        save_train_test_data_to_npz(filename, Xtrain, Ttrain, Xtest, Ttest)
         del Xtrain, Ttrain, Xtest, Ttest
 
 
