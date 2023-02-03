@@ -87,7 +87,6 @@ def set_log_scale(x_axis: str):
         plt.xscale('logit')
         plt.xticks([0.5, 0.8, 0.9, 0.95, 0.99, 0.995, 0.999],
                    ['0.5', '0.8', '0.9', '0.95', '0.99', '0.995', '0.999'])
-        # TODO: dense run should be plotted as a horizontal line (because sparsity=0 does not work in logit scale)
 
 
 def make_acc_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str = 'density', log_scale: bool = False):
@@ -95,13 +94,12 @@ def make_acc_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str =
     frameworks = {'nerva': {'label': 'Nerva', 'color': palette[0]},
                   'torch': {'label': 'PyTorch', 'color': palette[1]}}
     for fw in frameworks:
-        data = df[df['framework'] == fw]
-        sns.lineplot(x=x_axis, y='test accuracy', data=data, marker='o',
+        runs = (df['framework'] == fw) & (df['sparsity'] != 0)  # & (df['sparsity'] != 0.5)
+        sns.lineplot(x=x_axis, y='test accuracy', data=df[runs], marker='o',
                      label=frameworks[fw]['label'], color=frameworks[fw]['color'])
 
-    if x_axis == 'sparsity':
-        # horizontal lines for the fully dense model
-        for fw in frameworks:
+        if x_axis == 'sparsity':
+            # horizontal lines for the fully dense model
             runs = (df['framework'] == fw) & (df['density'] == 1.0)
             tmp_df = df[runs].copy(deep=True)
             tmp_df = pd.concat([tmp_df, tmp_df], ignore_index=True)
@@ -132,7 +130,7 @@ def make_time_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str 
                   'torch': {'label': 'PyTorch', 'color': palette[1]}}
     for fw in frameworks:
         # remove sparsity=0 from df
-        runs = (df['framework'] == fw) & (df['sparsity'] != 0)
+        runs = (df['framework'] == fw) & (df['sparsity'] != 0)  # & (df['sparsity'] != 0.5)
         sns.lineplot(x=x_axis, y='time', data=df[runs], marker='o',
                      label=frameworks[fw]['label'], color=frameworks[fw]['color'])
 
@@ -164,7 +162,7 @@ def make_time_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str 
 
 def main():
     # folder = pathlib.Path('./logs')
-    folder = pathlib.Path('./three-nerva-runs')
+    folder = pathlib.Path('./seed12')
     df = get_full_dataframe(folder)
 
     df_time = make_df_time(df)
@@ -174,8 +172,8 @@ def main():
     x_axis = 'sparsity'
     # x_axis = 'density'
 
-    make_time_vs_density_plot(df_time, pathlib.Path(f'./three-nerva-runs_plots/time-vs-{x_axis}3.png'), x_axis)
-    # make_acc_vs_density_plot(df_acc, pathlib.Path(f'./three-nerva-runs_plots/accuracy-vs-{x_axis}3.png'), x_axis, log_scale=True)
+    # make_time_vs_density_plot(df_time, pathlib.Path(f'./seed12_plots/time-vs-{x_axis}.pdf'), x_axis)  # log_scale=True)
+    make_acc_vs_density_plot(df_acc, pathlib.Path(f'./seed12_plots/accuracy-vs-{x_axis}.pdf'), x_axis, log_scale=True)
 
 
 
