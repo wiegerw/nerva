@@ -122,8 +122,8 @@ class MLP1a(nn.Module):
                 layer.weight.data = layer.weight.data * mask
 
     def optimize(self):
+        self.apply_masks()  # N.B. This seems to be the correct order
         self.optimizer.step()
-        self.apply_masks()
 
     def forward(self, x):
         for i in range(len(self.layers) - 1):
