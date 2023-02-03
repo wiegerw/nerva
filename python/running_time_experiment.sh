@@ -33,7 +33,7 @@ function run
                  --momentum=$momentum \
                  --nesterov \
                  --datadir="$datadir" \
-                 >& $logfile
+                 2>&1 | tee $logfile
 
   logfile="snn/running-time/nerva-density-$density-sizes-$sizes-seed-$seed.log"
 
@@ -54,7 +54,7 @@ function run
                      --threads=4 \
                      --datadir="$datadir" \
                      -v \
-                     >& $logfile
+                     2>&1 | tee $logfile
 }
 
 function run_all()
@@ -68,7 +68,7 @@ function run_all()
   run "1024,1024,1024,1024,1024,1024,1024"                "RRRRRRRL"    "xxxxxxxx"
   run "1024,1024,1024,1024,1024,1024,1024,1024"           "RRRRRRRRL"   "xxxxxxxxx"
   run "1024,1024,1024,1024,1024,1024,1024,1024,1024"      "RRRRRRRRRL"  "xxxxxxxxxx"
-  run "1024,1024,1024,1024,1024,1024,1024,1024,102,10244" "RRRRRRRRRRL" "xxxxxxxxxxx"
+  run "1024,1024,1024,1024,1024,1024,1024,1024,1024,1024" "RRRRRRRRRRL" "xxxxxxxxxxx"
   run "2048,2048,2048"                                    "RRRL"        "xxxx"
   run "4096,4096,4096"                                    "RRRL"        "xxxx"
   run "8192,8192,8192"                                    "RRRL"        "xxxx"
