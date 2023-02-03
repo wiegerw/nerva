@@ -49,13 +49,16 @@ def make_plot(df_data, sparsity=None, labels=None):
                   'torch': {'label': 'PyTorch ', 'color': palette[1]}}
 
     # for fw in frameworks:
-    ii = 0
+    # ii = 0
     for fw in frameworks:
         data = df_data[df_data['framework'] == fw]
         for lb in labels:
             label = frameworks[fw]['label'] + lb
-            sns.lineplot(data=data[lb], label=label, color=palette[ii])
-            ii += 1
+            if lb == 'train accuracy':
+                sns.lineplot(data=data[lb], label=label, color=frameworks[fw]['color'],  linestyle='--')
+            else:
+                sns.lineplot(data=data[lb], label=label, color=frameworks[fw]['color'])
+            # ii += 1
 
 
     # ax.set_ylim([0.85, 1.01])
@@ -70,7 +73,8 @@ def make_plot(df_data, sparsity=None, labels=None):
     plt.title('{} vs Epoch (Sparsity: {})'.format(label_l[0], sparsity))
 
     # Add a legend to the plot
-    plt.savefig('./pics/three-nerva-runs/{}.png'.format(str(1)))
+    # plt.savefig('./pics/three-nerva-runs/{}.png'.format(str(1)))
+    plt.savefig('./seed12_plots/{}.png'.format(str(1)))
     plt.close()
 
 def make_df_acc(df: pd.DataFrame):
@@ -82,7 +86,8 @@ def make_df_acc(df: pd.DataFrame):
 
 def main():
 
-    path_lc_logs = './pics/three-nerva-runs'
+    # path_lc_logs = './pics/three-nerva-runs'
+    path_lc_logs = './seed12'
     labels = ['train accuracy', 'test accuracy']
     # labels = ['loss']
 
