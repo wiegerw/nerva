@@ -1,0 +1,20 @@
+project nerva/examples
+   : requirements
+       <library>/nerva//nervalib
+       <linkflags>-lpython3.10  # TODO: find a better way to do this
+   ;
+
+SOURCES = [ glob *.cpp ] ;
+
+for local src in $(SOURCES)
+{
+  local base = $(src[1]:B) ;
+  exe $(base) : $(src) : ;
+  EXES += $(base) ;
+}
+
+install dist
+  :
+    $(EXES)
+  ;
+

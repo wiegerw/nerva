@@ -20,6 +20,7 @@
 #include <iostream>
 #include <filesystem>
 #include <fstream>
+#include <utility>
 #include <vector>
 #include <string>
 #include <random>
@@ -31,10 +32,25 @@ using matrix_ref = eigen::matrix_ref<scalar>;
 
 struct dataset
 {
+  using long_vector = Eigen::Matrix<long, Eigen::Dynamic, 1>;
+
   eigen::matrix Xtrain;
   eigen::matrix Ttrain;
   eigen::matrix Xtest;
   eigen::matrix Ttest;
+
+  dataset() = default;
+
+  dataset(eigen::matrix  Xtrain_,
+          const long_vector& Ttrain_,
+          eigen::matrix  Xtest_,
+          const long_vector& Ttest_
+  )
+   : Xtrain(std::move(Xtrain_)), Xtest(std::move(Xtest_))
+  {
+    eigen::to_one_hot(Ttrain_, Ttrain);
+    eigen::to_one_hot(Ttest_, Ttest);
+  }
 
   void info() const
   {
@@ -58,29 +74,15 @@ struct dataset
       throw std::runtime_error("Could not load file '" + filename + "'");
     }
 
-    py::dict d = np.attr("load")(filename);
+    py::dict data = np.attr("load")(filename);
 
-    Xtrain = nerva::eigen::from_numpy(d["Xtrain"].cast<py::array_t<scalar>>()).transpose();
+    Xtrain = nerva::eigen::from_numpy(data["Xtrain"].cast<py::array_t<scalar>>()).transpose();
+    auto ttrain = nerva::eigen::from_numpy_1d(data["Ttrain"].cast<py::array_t<long>>());
+    Xtest = nerva::eigen::from_numpy(data["Xtest"].cast<py::array_t<scalar>>()).transpose();
+    auto ttest  = nerva::eigen::from_numpy_1d(data["Ttest"].cast<py::array_t<long>>());
 
-    // create one hot encoded matrix Ttrain
-    Ttrain = eigen::matrix::Zero(10, 50000);
-    auto ttrain = d["Ttrain"].cast<py::array_t<long>>();
-    auto rtrain = ttrain.unchecked<1>();
-    for (long i = 0; i < 50000; i++)
-    {
-      Ttrain(rtrain(i), i) = scalar(1);
-    }
-
-    Xtest = nerva::eigen::from_numpy(d["Xtest"].cast<py::array_t<scalar>>()).transpose();
-
-    // create one hot encoded matrix Ttest
-    Ttest = eigen::matrix::Zero(10, 10000);
-    auto ttest = d["Ttest"].cast<py::array_t<long>>();
-    auto rtest = ttest.unchecked<1>();
-    for (long i = 0; i < 10000; i++)
-    {
-      Ttest(rtest(i), i) = scalar(1);
-    }
+    eigen::to_one_hot(ttrain, Ttrain);
+    eigen::to_one_hot(ttest, Ttest);
   }
 };
 

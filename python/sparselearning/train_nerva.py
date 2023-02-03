@@ -63,7 +63,7 @@ def compute_sparse_layer_densities(density: float, layer_shapes: List[Tuple[int,
         if max_prob_one > 1:
             for j, mask_raw_prob in enumerate(raw_probabilities):
                 if mask_raw_prob == max_prob:
-                    print(f"Sparsity of layer:{j} had to be set to 0.")
+                    #print(f"Sparsity of layer:{j} had to be set to 0.")
                     dense_layers.add(j)
         else:
             break
@@ -78,7 +78,7 @@ def compute_sparse_layer_densities(density: float, layer_shapes: List[Tuple[int,
         else:
             probability_one = epsilon * raw_probabilities[i]
             densities[i] = probability_one
-        print(f"layer: {i}, shape: {(rows,columns)}, density: {densities[i]}")
+        #print(f"layer: {i}, shape: {(rows,columns)}, density: {densities[i]}")
         total_nonzero += densities[i] * n_param
     print(f"Overall sparsity {total_nonzero / total_params:.4f}")
     return densities

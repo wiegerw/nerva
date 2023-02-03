@@ -10,29 +10,17 @@ import sys
 
 import numpy as np
 import torch
-from testing.datasets import create_cifar10_datasets, create_dataloaders, load_cifar10_data
-from testing.numpy_utils import pp, to_numpy, to_one_hot_numpy
-from testing.torch_models import to_one_hot_torch
+from testing.datasets import create_cifar10_augmented_datasets, create_dataloaders, custom_load_cifar10_data, \
+    create_cifar10_augmented_dataloaders, extract_tensors_from_dataloader, save_data_to_npz, from_eigen, to_eigen
+from testing.numpy_utils import pp
 
 
 def load_models(model: str, datadir: str):
     if model == 'cifar10':
-        train_dataset, test_dataset = create_cifar10_datasets(datadir)
+        train_dataset, test_dataset = create_cifar10_augmented_datasets(datadir)
         return create_dataloaders(train_dataset, test_dataset, len(train_dataset), len(test_dataset))
     else:
         raise RuntimeError(f'Unknown model {model}')
-
-
-def to_eigen(x: np.ndarray):
-    if len(x.shape) == 2:
-        return x.reshape(x.shape[1], x.shape[0], order='F').T
-    return x
-
-
-def from_eigen(x: np.ndarray):
-    if len(x.shape) == 2:
-        return x.reshape(x.shape[1], x.shape[0], order='C').T
-    return x
 
 
 def inspect_data(outputdir, epochs):
@@ -49,9 +37,8 @@ def inspect_data(outputdir, epochs):
 def check(datadir):
     import tempfile
     from nervalib import data_set
-    import nerva.dataset
 
-    Xtrain, Ttrain, Xtest, Ttest = load_cifar10_data(datadir)
+    Xtrain, Ttrain, Xtest, Ttest = custom_load_cifar10_data(datadir)
     pp('Xtrain', Xtrain)
     pp('Ttrain', Ttrain)
 
@@ -110,17 +97,11 @@ def main():
     for epoch in range(args.epochs):
         print(f'epoch {epoch}')
         filename = f'{args.outputdir}/epoch{epoch}.npz'
-        train_loader, test_loader = load_models(args.model, args.datadir)
-        Xtrain, Ttrain = next(iter(train_loader))
-        Xtest, Ttest = next(iter(test_loader))
+        train_loader, test_loader = create_cifar10_augmented_dataloaders(args.batch_size, args.batch_size, args.datadir)
+        Xtrain, Ttrain = extract_tensors_from_dataloader(train_loader)
+        Xtest, Ttest = extract_tensors_from_dataloader(test_loader)
         print(f'Saving epoch {epoch} data to {filename}')
-        with open(filename, "wb") as f:
-            np.savez_compressed(f,
-                                Xtrain=to_eigen(Xtrain.detach().numpy()),
-                                Ttrain=to_eigen(Ttrain.detach().numpy()),
-                                Xtest=to_eigen(Xtest.detach().numpy()),
-                                Ttest=to_eigen(Ttest.detach().numpy())
-                                )
+        save_data_to_npz(filename, Xtrain, Ttrain, Xtest, Ttest)
         del Xtrain, Ttrain, Xtest, Ttest
 
 

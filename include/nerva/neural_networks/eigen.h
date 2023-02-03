@@ -80,6 +80,20 @@ void print_numpy_row_full(const Matrix& x, long i)
 template <typename Row>
 void print_numpy_row(const Row& x, long edgeitems=3)
 {
+  typedef typename Row::Scalar Scalar;
+
+  auto print = [](auto x)
+  {
+    if constexpr (std::is_integral<Scalar>::value)
+    {
+      std::cout << fmt::format("{:3d}", x);
+    }
+    else
+    {
+      std::cout << fmt::format("{:7.4f}", x);
+    }
+  };
+
   long n = x.size();
   long left = n;
   long right = n;
@@ -97,7 +111,7 @@ void print_numpy_row(const Row& x, long edgeitems=3)
     {
       std::cout << ", ";
     }
-    std::cout << fmt::format("{:7.4f}", x(j));
+    print(x(j));
   }
 
   if (n > 2*edgeitems)
@@ -112,7 +126,7 @@ void print_numpy_row(const Row& x, long edgeitems=3)
     {
       std::cout << ", ";
     }
-    std::cout << fmt::format("{:7.4f}", x(j));
+    print(x(j));
   }
 
   std::cout << "]\n";
@@ -129,6 +143,8 @@ void print_numpy_vector(const std::string& name, const Vector& x, long edgeitems
 template <typename Matrix>
 struct matrix_row
 {
+  typedef typename Matrix::Scalar Scalar;
+
   const Matrix& x;
   long i;
 
@@ -154,7 +170,6 @@ void print_numpy_matrix(const std::string& name, const Matrix& x, long edgeitems
   long m = x.rows();
   long top = m;
   long bottom = m;
-
 
   if (m > 2*edgeitems)
   {
@@ -582,6 +597,17 @@ template <typename Scalar = scalar, int MatrixLayout = default_matrix_layout>
 scalar l2_distance(const sparse_matrix& A, const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& B, scalar epsilon)
 {
   return (B - A).squaredNorm();
+}
+
+// convert a vector of longs into a one hot matrix
+void to_one_hot(const Eigen::Matrix<long, Eigen::Dynamic, 1>& x, eigen::matrix& result, long classes = 10)
+{
+  long n = x.size();
+  result = eigen::matrix::Zero(classes, n);
+  for (long i = 0; i < n; i++)
+  {
+    result(x(i), i) = scalar(1);
+  }
 }
 
 } // namespace nerva::eigen

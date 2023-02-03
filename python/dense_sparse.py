@@ -5,7 +5,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from timeit import default_timer as timer
-from testing.datasets import create_cifar10_dataloaders, load_cifar10_data, TorchDataLoader
+from testing.datasets import create_cifar10_augmented_dataloaders, custom_load_cifar10_data, TorchDataLoader
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
 from testing.models import MLP2, copy_weights_and_biases
 from testing.numpy_utils import to_numpy, to_one_hot_numpy
@@ -101,9 +101,9 @@ def main():
     initialize_frameworks(args)
 
     if args.augmented:
-        train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
+        train_loader, test_loader = create_cifar10_augmented_dataloaders(args.batch_size, args.batch_size, args.datadir)
     else:
-        Xtrain, Ttrain, Xtest, Ttest = load_cifar10_data(args.datadir)
+        Xtrain, Ttrain, Xtest, Ttest = custom_load_cifar10_data(args.datadir)
         train_loader = TorchDataLoader(Xtrain, Ttrain, args.batch_size)
         test_loader = TorchDataLoader(Xtest, Ttest, args.batch_size)
 
