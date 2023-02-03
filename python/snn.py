@@ -23,12 +23,21 @@ from testing.training import train_nerva, train_torch, compute_accuracy_torch, c
     compute_densities, train_torch_preprocessed, train_nerva_preprocessed, train_both, compute_weight_difference
 
 
+def xavier_initialize(W: torch.Tensor) -> None:
+    fan_in, fan_out = W.size(1), W.size(0)
+    limit = torch.sqrt(torch.tensor(1, dtype=W.dtype) / fan_in)
+    W.uniform_(-limit, limit)
+
+
 def make_torch_model_new(args, sizes, densities):
     print('Use MLP1 variant with custom masking')
     M1 = MLP1a(sizes, densities)
     M1.optimizer = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
     M1.loss = nn.CrossEntropyLoss()
     M1.learning_rate = make_torch_scheduler(args, M1.optimizer)
+    for layer in M1.layers:
+        xavier_initialize(layer.weight.data)
+    M1.apply_masks()
     return M1
 
 
