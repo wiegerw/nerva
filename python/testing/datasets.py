@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 import torch
@@ -185,9 +185,14 @@ def save_dict_to_npz(filename, data: dict[str, torch.Tensor]):
 
 # load dict from .npz file in a format readable in C++
 def load_dict_from_npz(filename):
+    def make_tensor(x: np.ndarray) -> Union[torch.Tensor, torch.LongTensor]:
+        if np.issubdtype(x.dtype, np.integer):
+            return torch.LongTensor(x)
+        return torch.Tensor(x)
+
     print(f'Loading data from {filename}')
     data = dict(np.load(filename, allow_pickle=True))
-    data = {key: torch.Tensor(from_eigen(value)) for key, value in data.items()}
+    data = {key: make_tensor(from_eigen(value)) for key, value in data.items()}
     return data
 
 
