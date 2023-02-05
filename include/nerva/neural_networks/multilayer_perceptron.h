@@ -243,7 +243,7 @@ void export_weights_and_bias_to_npz(const multilayer_perceptron& M, const std::s
     }
   }
 
-  np.attr("savez")(filename, **data);
+  np.attr("savez")(filename, data);
 }
 
 // Precondition: the python interpreter must be running.
