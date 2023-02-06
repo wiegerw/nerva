@@ -260,8 +260,8 @@ class tool: public command_line_tool
 
       std::mt19937 rng{options.seed};
       NERVA_LOG(log::verbose) << "loading dataset " << options.dataset << std::endl;
-      // TODO: loading the dataset should be avoided when the flag --augmented is set.
-      // Now this is not possible, because the input and output size are unknown.
+      // TODO: loading the dataset should be avoided when the flag --preprocessed is set.
+      // The input and output size should be added to the sizes array.
       datasets::dataset data = datasets::make_dataset(options.dataset, options.dataset_size, rng);
       std::size_t D = data.Xtrain.rows(); // the number of features
       std::size_t K = data.Ttrain.rows(); // the number of outputs
@@ -320,14 +320,14 @@ class tool: public command_line_tool
       }
       else
       {
-        import_weights_from_numpy(M, import_weights_file);
-        //import_weights_and_bias_from_numpy(M, import_weights_file);
+        //import_weights_from_numpy(M, import_weights_file);
+        import_weights_and_bias_from_npz(M, import_weights_file);
       }
 
       if (!export_weights_file.empty())
       {
-        export_weights_to_numpy(M, export_weights_file);
-        //export_weights_and_bias_to_numpy(M, export_weights_file);
+        //export_weights_to_numpy(M, export_weights_file);
+        export_weights_and_bias_to_npz(M, export_weights_file);
       }
 
       if (info)

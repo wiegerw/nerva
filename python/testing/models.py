@@ -1,4 +1,3 @@
-import math
 import pathlib
 import tempfile
 from typing import List, Union
@@ -9,7 +8,8 @@ from torch import nn as nn
 from torch.nn import functional as F
 
 import nerva.layers
-from testing.datasets import to_eigen, from_eigen
+from testing.datasets import to_eigen, from_eigen, save_dict_to_npz, load_dict_from_npz
+from testing.masking import create_mask
 from testing.numpy_utils import load_numpy_arrays_from_npy_file, pp, save_eigen_array, load_eigen_array, l1_norm
 
 
@@ -44,21 +44,17 @@ class MLP1(nn.Module):
         return [layer.bias.detach().numpy() for layer in self.layers]
 
     def export_weights_and_bias(self, filename: str):
-        weights = [layer.weight for layer in self.layers]
-        bias = [layer.bias for layer in self.layers]
-        save_weights_to_npz(filename, weights, bias)
-        # weights1, bias1 = load_weights_from_npz(filename)
-        # for W1, W2 in zip(weights, weights1):
-        #     assert torch.equal(W1, W2)
-        # for b1, b2 in zip(bias, bias1):
-        #     assert torch.equal(b1, b2)
+        data = {}
+        for i, layer in enumerate(self.layers):
+            data[f'W{i + 1}'] = layer.weight.data
+            data[f'b{i + 1}'] = layer.bias.data
+        save_dict_to_npz(filename, data)
 
     def import_weights_and_bias(self, filename: str):
-        weights, bias = load_weights_from_npz(filename)
-        for layer, W in zip(self.layers, weights):
-            layer.weight.data = W
-        for layer, b in zip(self.layers, bias):
-            layer.bias.data = b
+        data = load_dict_from_npz(filename)
+        for i, layer in enumerate(self.layers):
+            layer.weight.data = data[f'W{i + 1}']
+            layer.bias.data = data[f'b{i + 1}']
 
     def export_weights(self, filename: str):
         with open(filename, "wb") as f:
@@ -91,18 +87,10 @@ class MLP1(nn.Module):
         for layer in self.layers:
             layer.weight.data *= factor
 
-
-# For now, we only support Xavier weights
-def create_mask(W: torch.Tensor, density: float):
-    x = 1.0 / math.sqrt(W.shape[0])
-    x /= density  # compensate for the sparsity
-    mask = torch.zeros_like(W)
-
-    for i in range(mask.size(0)):
-        for j in range(mask.size(1)):
-            if np.random.uniform(0.0, 1.0) < density:
-                mask[i, j] = np.random.uniform(-x, x)
-    return mask
+    def info(self):
+        for i, layer in enumerate(self.layers):
+            pp(f'W{i}', layer.weight)
+            pp(f'b{i}', layer.bias)
 
 
 # Alternative version that uses a more direct way of masking
@@ -126,7 +114,7 @@ class MLP1a(nn.Module):
             if density == 1.0:
                 self.masks.append(None)
             else:
-                self.masks.append(create_mask(layer.weight, density))
+                self.masks.append(create_mask(layer.weight, int(density * layer.weight.numel())))
 
     def apply_masks(self):
         for layer, mask in zip(self.layers, self.masks):
@@ -134,8 +122,8 @@ class MLP1a(nn.Module):
                 layer.weight.data = layer.weight.data * mask
 
     def optimize(self):
+        self.apply_masks()  # N.B. This seems to be the correct order
         self.optimizer.step()
-        self.apply_masks()
 
     def forward(self, x):
         for i in range(len(self.layers) - 1):

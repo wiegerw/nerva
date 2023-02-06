@@ -4,8 +4,8 @@ from unittest import TestCase
 
 import torch
 
-from testing.datasets import create_cifar10_dataloaders, extract_tensors_from_dataloader, save_data_to_npz, \
-    load_data_from_npz
+from testing.datasets import create_cifar10_dataloaders, extract_tensors_from_dataloader, save_train_test_data_to_npz, \
+    load_train_test_data_from_npz
 from testing.numpy_utils import pp
 
 
@@ -23,8 +23,8 @@ class TestNPZ(TestCase):
         pp('Xtest', Xtest)
         pp('Ttest', Ttest)
 
-        save_data_to_npz(filename, Xtrain, Ttrain, Xtest, Ttest)
-        Xtrain1, Ttrain1, Xtest1, Ttest1 = load_data_from_npz(filename)
+        save_train_test_data_to_npz(filename, Xtrain, Ttrain, Xtest, Ttest)
+        Xtrain1, Ttrain1, Xtest1, Ttest1 = load_train_test_data_from_npz(filename)
 
         pp('Xtrain1', Xtrain1)
         pp('Ttrain1', Ttrain1)

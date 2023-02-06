@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 import torch
@@ -157,7 +157,7 @@ def create_npz_dataloaders(filename: str, batch_size: int) -> Tuple[TorchDataLoa
     if not path.exists():
         raise RuntimeError(f"Could not load file '{path}'")
 
-    Xtrain, Ttrain, Xtest, Ttest = load_data_from_npz(filename)
+    Xtrain, Ttrain, Xtest, Ttest = load_train_test_data_from_npz(filename)
     train_loader = TorchDataLoader(Xtrain, Ttrain, batch_size)
     test_loader = TorchDataLoader(Xtest, Ttest, batch_size)
     return train_loader, test_loader
@@ -175,24 +175,33 @@ def from_eigen(x: np.ndarray) -> np.ndarray:
     return x
 
 
-# save data to file in a format readable in C++
-def save_data_to_npz(filename, Xtrain: torch.Tensor, Ttrain: torch.Tensor, Xtest: torch.Tensor, Ttest: torch.Tensor):
+# save data to .npz file in a format readable in C++
+def save_dict_to_npz(filename, data: dict[str, torch.Tensor]):
     print(f'Saving data to {filename}')
+    data = {key: to_eigen(value.detach().numpy()) for key, value in data.items()}
     with open(filename, "wb") as f:
-        np.savez_compressed(f,
-                            Xtrain=to_eigen(Xtrain.detach().numpy()),
-                            Ttrain=to_eigen(Ttrain.detach().numpy()),
-                            Xtest=to_eigen(Xtest.detach().numpy()),
-                            Ttest=to_eigen(Ttest.detach().numpy())
-                            )
+        np.savez_compressed(f, **data)
+
+
+# load dict from .npz file in a format readable in C++
+def load_dict_from_npz(filename):
+    def make_tensor(x: np.ndarray) -> Union[torch.Tensor, torch.LongTensor]:
+        if np.issubdtype(x.dtype, np.integer):
+            return torch.LongTensor(x)
+        return torch.Tensor(x)
+
+    print(f'Loading data from {filename}')
+    data = dict(np.load(filename, allow_pickle=True))
+    data = {key: make_tensor(from_eigen(value)) for key, value in data.items()}
+    return data
+
+
+# save data to file in a format readable in C++
+def save_train_test_data_to_npz(filename, Xtrain: torch.Tensor, Ttrain: torch.Tensor, Xtest: torch.Tensor, Ttest: torch.Tensor):
+    save_dict_to_npz(filename, {'Xtrain': Xtrain, 'Ttrain': Ttrain, 'Xtest': Xtest, 'Ttest': Ttest})
 
 
 # load data from file in a format readable in C++
-def load_data_from_npz(filename):
-    print(f'Loading data from {filename}')
-    d = np.load(filename, allow_pickle=True)
-    Xtrain = torch.Tensor(from_eigen(d['Xtrain']))
-    Ttrain = torch.LongTensor(from_eigen(d['Ttrain']))
-    Xtest = torch.Tensor(from_eigen(d['Xtest']))
-    Ttest = torch.LongTensor(from_eigen(d['Ttest']))
-    return Xtrain, Ttrain, Xtest, Ttest
+def load_train_test_data_from_npz(filename):
+    data = load_dict_from_npz(filename)
+    return data['Xtrain'], data['Ttrain'], data['Xtest'], data['Ttest']

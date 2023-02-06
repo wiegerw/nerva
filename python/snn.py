@@ -29,6 +29,9 @@ def make_torch_model_new(args, sizes, densities):
     M1.optimizer = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
     M1.loss = nn.CrossEntropyLoss()
     M1.learning_rate = make_torch_scheduler(args, M1.optimizer)
+    for layer in M1.layers:
+        nn.init.xavier_uniform_(layer.weight)
+    M1.apply_masks()
     return M1
 
 
@@ -73,6 +76,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--nerva", help="Train using a Nerva model", action="store_true")
     cmdline_parser.add_argument("--torch", help="Train using a PyTorch model", action="store_true")
     cmdline_parser.add_argument("--scheduler", type=str, help="the learning rate scheduler (constant,multistep)", default="multistep")
+    cmdline_parser.add_argument('--export-weights', type=str, help='Export weights to a file in .npy format')
     cmdline_parser.add_argument('--import-weights', type=str, help='Import weights from a file in .npy format')
     cmdline_parser.add_argument("--custom-masking", help="Use a custom variant of masking in the PyTorch models", action="store_true")
     return cmdline_parser
@@ -132,6 +136,12 @@ def main():
         print(M1.loss)
         print(M1.learning_rate)
 
+        if args.export_weights:
+            M1.export_weights(args.export_weights)
+
+        if args.import_weights:
+            M1.import_weights(args.import_weights)
+
         print('\n=== Training PyTorch model ===')
         if args.preprocessed:
             train_torch_preprocessed(M1, args.preprocessed, args.epochs, args.batch_size, args.show)
@@ -143,6 +153,12 @@ def main():
         print(M2)
         print(M2.loss)
         print(M2.learning_rate)
+
+        if args.export_weights:
+            M2.export_weights(args.export_weights)
+
+        if args.import_weights:
+            M2.import_weights(args.import_weights)
 
         print('\n=== Training Nerva model ===')
         if args.preprocessed:
