@@ -1,0 +1,241 @@
+loading dataset cifar10
+read slice "../data/cifar-10-batches-bin/data_batch_1.bin"
+read slice "../data/cifar-10-batches-bin/data_batch_2.bin"
+read slice "../data/cifar-10-batches-bin/data_batch_3.bin"
+read slice "../data/cifar-10-batches-bin/data_batch_4.bin"
+read slice "../data/cifar-10-batches-bin/data_batch_5.bin"
+read slice "../data/cifar-10-batches-bin/test_batch.bin"
+normalizing data
+number of examples: 50000
+number of features: 3072
+number of outputs: 10
+epochs = 100
+batch size = 100
+shuffle = true
+statistics = true
+debug = false
+algorithm = minibatch
+dataset = cifar10
+dataset size = 50000
+normalize data = false
+learning rate scheduler = multistep_lr(0.03;50,75;0.1)
+loss function = softmax-cross-entropy
+architecture = RRL
+sizes = [3072, 1024, 512, 10]
+weights initialization = xxx
+optimizer = nesterov(0.9)
+dropout = 0
+density = 0.05
+densities = [0.0412995, 0.0929239, 1]
+seed = 3
+precision = 4
+threads = 4
+number type = float
+
+Sparse(units=1024, density=0.041336376, optimizer=Nesterov(0.90000), activation=ReLU())
+Sparse(units=512, density=0.09272766, optimizer=Nesterov(0.90000), activation=ReLU())
+Dense(units=10, optimizer=Nesterov(0.90000), activation=NoActivation())
+
+Loading data from file ./cifar3/epoch0.npz
+epoch   0 lr: 0.03000000  loss: 2.30277120  train accuracy: 0.10480000  test accuracy: 0.10200000 time: 0.00000000s
+epoch   1 lr: 0.03000000  loss: 1.72725104  train accuracy: 0.38450000  test accuracy: 0.40940000 time: 4.88106346s
+Loading data from file ./cifar3/epoch1.npz
+epoch   2 lr: 0.03000000  loss: 1.57148866  train accuracy: 0.44024000  test accuracy: 0.45820000 time: 4.88548374s
+Loading data from file ./cifar3/epoch2.npz
+epoch   3 lr: 0.03000000  loss: 1.51303296  train accuracy: 0.46078000  test accuracy: 0.47360000 time: 4.89576721s
+Loading data from file ./cifar3/epoch3.npz
+epoch   4 lr: 0.03000000  loss: 1.46703355  train accuracy: 0.48412000  test accuracy: 0.48880000 time: 4.89674664s
+Loading data from file ./cifar3/epoch4.npz
+epoch   5 lr: 0.03000000  loss: 1.42950872  train accuracy: 0.49410000  test accuracy: 0.50350000 time: 4.89817524s
+Loading data from file ./cifar3/epoch5.npz
+epoch   6 lr: 0.03000000  loss: 1.39616758  train accuracy: 0.50816000  test accuracy: 0.50680000 time: 4.88509512s
+Loading data from file ./cifar3/epoch6.npz
+epoch   7 lr: 0.03000000  loss: 1.36754399  train accuracy: 0.51380000  test accuracy: 0.51470000 time: 4.87086153s
+Loading data from file ./cifar3/epoch7.npz
+epoch   8 lr: 0.03000000  loss: 1.34351851  train accuracy: 0.52448000  test accuracy: 0.51800000 time: 4.95794582s
+Loading data from file ./cifar3/epoch8.npz
+epoch   9 lr: 0.03000000  loss: 1.31638656  train accuracy: 0.53498000  test accuracy: 0.52970000 time: 5.16111708s
+Loading data from file ./cifar3/epoch9.npz
+epoch  10 lr: 0.03000000  loss: 1.30229760  train accuracy: 0.54554000  test accuracy: 0.53290000 time: 4.88377380s
+Loading data from file ./cifar3/epoch10.npz
+epoch  11 lr: 0.03000000  loss: 1.27549820  train accuracy: 0.54734000  test accuracy: 0.54110000 time: 4.87719250s
+Loading data from file ./cifar3/epoch11.npz
+epoch  12 lr: 0.03000000  loss: 1.27747006  train accuracy: 0.54536000  test accuracy: 0.53670000 time: 4.94148540s
+Loading data from file ./cifar3/epoch12.npz
+epoch  13 lr: 0.03000000  loss: 1.25699802  train accuracy: 0.55354000  test accuracy: 0.53670000 time: 4.87510777s
+Loading data from file ./cifar3/epoch13.npz
+epoch  14 lr: 0.03000000  loss: 1.23908833  train accuracy: 0.56384000  test accuracy: 0.54990000 time: 4.93358755s
+Loading data from file ./cifar3/epoch14.npz
+epoch  15 lr: 0.03000000  loss: 1.23657919  train accuracy: 0.56086000  test accuracy: 0.54650000 time: 4.89301634s
+Loading data from file ./cifar3/epoch15.npz
+epoch  16 lr: 0.03000000  loss: 1.21931519  train accuracy: 0.56708000  test accuracy: 0.54490000 time: 4.89327002s
+Loading data from file ./cifar3/epoch16.npz
+epoch  17 lr: 0.03000000  loss: 1.22578657  train accuracy: 0.56442000  test accuracy: 0.54130000 time: 4.90713358s
+Loading data from file ./cifar3/epoch17.npz
+epoch  18 lr: 0.03000000  loss: 1.20061465  train accuracy: 0.57590000  test accuracy: 0.55430000 time: 4.88071060s
+Loading data from file ./cifar3/epoch18.npz
+epoch  19 lr: 0.03000000  loss: 1.18180090  train accuracy: 0.58480000  test accuracy: 0.55550000 time: 5.06677008s
+Loading data from file ./cifar3/epoch19.npz
+epoch  20 lr: 0.03000000  loss: 1.18783110  train accuracy: 0.57714000  test accuracy: 0.55040000 time: 4.87086105s
+Loading data from file ./cifar3/epoch20.npz
+epoch  21 lr: 0.03000000  loss: 1.18051123  train accuracy: 0.58456000  test accuracy: 0.55850000 time: 4.90106583s
+Loading data from file ./cifar3/epoch21.npz
+epoch  22 lr: 0.03000000  loss: 1.17185046  train accuracy: 0.58838000  test accuracy: 0.55550000 time: 4.88433599s
+Loading data from file ./cifar3/epoch22.npz
+epoch  23 lr: 0.03000000  loss: 1.15940273  train accuracy: 0.59044000  test accuracy: 0.56130000 time: 4.91519022s
+Loading data from file ./cifar3/epoch23.npz
+epoch  24 lr: 0.03000000  loss: 1.16997021  train accuracy: 0.59012000  test accuracy: 0.55350000 time: 4.93586063s
+Loading data from file ./cifar3/epoch24.npz
+epoch  25 lr: 0.03000000  loss: 1.15449426  train accuracy: 0.59538000  test accuracy: 0.56110000 time: 4.87608576s
+Loading data from file ./cifar3/epoch25.npz
+epoch  26 lr: 0.03000000  loss: 1.14079709  train accuracy: 0.59626000  test accuracy: 0.56350000 time: 4.87763262s
+Loading data from file ./cifar3/epoch26.npz
+epoch  27 lr: 0.03000000  loss: 1.12899777  train accuracy: 0.60426000  test accuracy: 0.56460000 time: 4.88822508s
+Loading data from file ./cifar3/epoch27.npz
+epoch  28 lr: 0.03000000  loss: 1.13810022  train accuracy: 0.59848000  test accuracy: 0.56120000 time: 4.88661957s
+Loading data from file ./cifar3/epoch28.npz
+epoch  29 lr: 0.03000000  loss: 1.12188040  train accuracy: 0.60754000  test accuracy: 0.57070000 time: 4.93478012s
+Loading data from file ./cifar3/epoch29.npz
+epoch  30 lr: 0.03000000  loss: 1.12312588  train accuracy: 0.60318000  test accuracy: 0.56230000 time: 5.10206175s
+Loading data from file ./cifar3/epoch30.npz
+epoch  31 lr: 0.03000000  loss: 1.12774881  train accuracy: 0.60202000  test accuracy: 0.56150000 time: 4.93143177s
+Loading data from file ./cifar3/epoch31.npz
+epoch  32 lr: 0.03000000  loss: 1.11546311  train accuracy: 0.60912000  test accuracy: 0.56680000 time: 4.90382481s
+Loading data from file ./cifar3/epoch32.npz
+epoch  33 lr: 0.03000000  loss: 1.11242666  train accuracy: 0.61146000  test accuracy: 0.57270000 time: 4.88289165s
+Loading data from file ./cifar3/epoch33.npz
+epoch  34 lr: 0.03000000  loss: 1.11925018  train accuracy: 0.60784000  test accuracy: 0.56110000 time: 4.92823124s
+Loading data from file ./cifar3/epoch34.npz
+epoch  35 lr: 0.03000000  loss: 1.11633394  train accuracy: 0.60614000  test accuracy: 0.56230000 time: 5.04190207s
+Loading data from file ./cifar3/epoch35.npz
+epoch  36 lr: 0.03000000  loss: 1.09283658  train accuracy: 0.61980000  test accuracy: 0.56320000 time: 4.87633467s
+Loading data from file ./cifar3/epoch36.npz
+epoch  37 lr: 0.03000000  loss: 1.10521047  train accuracy: 0.61280000  test accuracy: 0.56320000 time: 4.91885376s
+Loading data from file ./cifar3/epoch37.npz
+epoch  38 lr: 0.03000000  loss: 1.09869985  train accuracy: 0.60996000  test accuracy: 0.56620000 time: 4.92531443s
+Loading data from file ./cifar3/epoch38.npz
+epoch  39 lr: 0.03000000  loss: 1.08948940  train accuracy: 0.61856000  test accuracy: 0.56830000 time: 4.88450289s
+Loading data from file ./cifar3/epoch39.npz
+epoch  40 lr: 0.03000000  loss: 1.09310743  train accuracy: 0.61366000  test accuracy: 0.56390000 time: 4.91422796s
+Loading data from file ./cifar3/epoch40.npz
+epoch  41 lr: 0.03000000  loss: 1.08226265  train accuracy: 0.61906000  test accuracy: 0.56610000 time: 4.89953423s
+Loading data from file ./cifar3/epoch41.npz
+epoch  42 lr: 0.03000000  loss: 1.07788443  train accuracy: 0.62214000  test accuracy: 0.57270000 time: 4.89442587s
+Loading data from file ./cifar3/epoch42.npz
+epoch  43 lr: 0.03000000  loss: 1.07505176  train accuracy: 0.62130000  test accuracy: 0.57460000 time: 4.91344929s
+Loading data from file ./cifar3/epoch43.npz
+epoch  44 lr: 0.03000000  loss: 1.07207315  train accuracy: 0.62280000  test accuracy: 0.57380000 time: 4.89571953s
+Loading data from file ./cifar3/epoch44.npz
+epoch  45 lr: 0.03000000  loss: 1.07228341  train accuracy: 0.62402000  test accuracy: 0.57090000 time: 4.88898659s
+Loading data from file ./cifar3/epoch45.npz
+epoch  46 lr: 0.03000000  loss: 1.06794866  train accuracy: 0.62488000  test accuracy: 0.57710000 time: 4.90308094s
+Loading data from file ./cifar3/epoch46.npz
+epoch  47 lr: 0.03000000  loss: 1.06499366  train accuracy: 0.62168000  test accuracy: 0.57820000 time: 4.89929104s
+Loading data from file ./cifar3/epoch47.npz
+epoch  48 lr: 0.03000000  loss: 1.06739817  train accuracy: 0.62602000  test accuracy: 0.57680000 time: 4.92308617s
+Loading data from file ./cifar3/epoch48.npz
+epoch  49 lr: 0.03000000  loss: 1.05945569  train accuracy: 0.62934000  test accuracy: 0.57520000 time: 4.89725828s
+Loading data from file ./cifar3/epoch49.npz
+epoch  50 lr: 0.03000000  loss: 1.06516612  train accuracy: 0.62358000  test accuracy: 0.57060000 time: 4.89027882s
+Loading data from file ./cifar3/epoch50.npz
+epoch  51 lr: 0.00300000  loss: 1.12968720  train accuracy: 0.60072000  test accuracy: 0.58910000 time: 4.92816591s
+Loading data from file ./cifar3/epoch51.npz
+epoch  52 lr: 0.00300000  loss: 1.11054562  train accuracy: 0.60848000  test accuracy: 0.59230000 time: 4.93259573s
+Loading data from file ./cifar3/epoch52.npz
+epoch  53 lr: 0.00300000  loss: 1.09620869  train accuracy: 0.61120000  test accuracy: 0.59500000 time: 4.91245794s
+Loading data from file ./cifar3/epoch53.npz
+epoch  54 lr: 0.00300000  loss: 1.09325991  train accuracy: 0.61176000  test accuracy: 0.59650000 time: 4.93088484s
+Loading data from file ./cifar3/epoch54.npz
+epoch  55 lr: 0.00300000  loss: 1.08715181  train accuracy: 0.61528000  test accuracy: 0.59520000 time: 4.92445755s
+Loading data from file ./cifar3/epoch55.npz
+epoch  56 lr: 0.00300000  loss: 1.08905168  train accuracy: 0.61740000  test accuracy: 0.59990000 time: 4.93253088s
+Loading data from file ./cifar3/epoch56.npz
+epoch  57 lr: 0.00300000  loss: 1.07461441  train accuracy: 0.61998000  test accuracy: 0.60040000 time: 4.96429348s
+Loading data from file ./cifar3/epoch57.npz
+epoch  58 lr: 0.00300000  loss: 1.07678952  train accuracy: 0.61864000  test accuracy: 0.60250000 time: 4.89304304s
+Loading data from file ./cifar3/epoch58.npz
+epoch  59 lr: 0.00300000  loss: 1.06882383  train accuracy: 0.62150000  test accuracy: 0.60260000 time: 4.91115379s
+Loading data from file ./cifar3/epoch59.npz
+epoch  60 lr: 0.00300000  loss: 1.06694781  train accuracy: 0.61972000  test accuracy: 0.60640000 time: 5.00238991s
+Loading data from file ./cifar3/epoch60.npz
+epoch  61 lr: 0.00300000  loss: 1.06879009  train accuracy: 0.62030000  test accuracy: 0.60500000 time: 5.69385815s
+Loading data from file ./cifar3/epoch61.npz
+epoch  62 lr: 0.00300000  loss: 1.06420348  train accuracy: 0.62556000  test accuracy: 0.60280000 time: 4.90653038s
+Loading data from file ./cifar3/epoch62.npz
+epoch  63 lr: 0.00300000  loss: 1.06235066  train accuracy: 0.62586000  test accuracy: 0.60480000 time: 4.89453411s
+Loading data from file ./cifar3/epoch63.npz
+epoch  64 lr: 0.00300000  loss: 1.06079794  train accuracy: 0.62708000  test accuracy: 0.60530000 time: 4.91274452s
+Loading data from file ./cifar3/epoch64.npz
+epoch  65 lr: 0.00300000  loss: 1.05858345  train accuracy: 0.62458000  test accuracy: 0.60770000 time: 4.91497564s
+Loading data from file ./cifar3/epoch65.npz
+epoch  66 lr: 0.00300000  loss: 1.05879077  train accuracy: 0.62550000  test accuracy: 0.60320000 time: 4.91257954s
+Loading data from file ./cifar3/epoch66.npz
+epoch  67 lr: 0.00300000  loss: 1.05603938  train accuracy: 0.62754000  test accuracy: 0.60780000 time: 4.90716410s
+Loading data from file ./cifar3/epoch67.npz
+epoch  68 lr: 0.00300000  loss: 1.04977021  train accuracy: 0.63012000  test accuracy: 0.60380000 time: 4.87717772s
+Loading data from file ./cifar3/epoch68.npz
+epoch  69 lr: 0.00300000  loss: 1.05215630  train accuracy: 0.63100000  test accuracy: 0.60600000 time: 4.88799953s
+Loading data from file ./cifar3/epoch69.npz
+epoch  70 lr: 0.00300000  loss: 1.05130555  train accuracy: 0.62724000  test accuracy: 0.60640000 time: 4.89475203s
+Loading data from file ./cifar3/epoch70.npz
+epoch  71 lr: 0.00300000  loss: 1.04896257  train accuracy: 0.63190000  test accuracy: 0.60840000 time: 4.90846252s
+Loading data from file ./cifar3/epoch71.npz
+epoch  72 lr: 0.00300000  loss: 1.04457450  train accuracy: 0.63156000  test accuracy: 0.60570000 time: 4.95047331s
+Loading data from file ./cifar3/epoch72.npz
+epoch  73 lr: 0.00300000  loss: 1.04466016  train accuracy: 0.63144000  test accuracy: 0.60710000 time: 4.89066362s
+Loading data from file ./cifar3/epoch73.npz
+epoch  74 lr: 0.00300000  loss: 1.03744371  train accuracy: 0.63178000  test accuracy: 0.60930000 time: 4.90214205s
+Loading data from file ./cifar3/epoch74.npz
+epoch  75 lr: 0.00300000  loss: 1.04209543  train accuracy: 0.63356000  test accuracy: 0.61000000 time: 4.88319111s
+Loading data from file ./cifar3/epoch75.npz
+epoch  76 lr: 0.00030000  loss: 1.07450641  train accuracy: 0.62194000  test accuracy: 0.61170000 time: 4.90581083s
+Loading data from file ./cifar3/epoch76.npz
+epoch  77 lr: 0.00030000  loss: 1.08004684  train accuracy: 0.61670000  test accuracy: 0.61130000 time: 4.87198162s
+Loading data from file ./cifar3/epoch77.npz
+epoch  78 lr: 0.00030000  loss: 1.07740067  train accuracy: 0.61902000  test accuracy: 0.61130000 time: 4.89628458s
+Loading data from file ./cifar3/epoch78.npz
+epoch  79 lr: 0.00030000  loss: 1.07442390  train accuracy: 0.61940000  test accuracy: 0.61090000 time: 4.89634991s
+Loading data from file ./cifar3/epoch79.npz
+epoch  80 lr: 0.00030000  loss: 1.07072268  train accuracy: 0.62090000  test accuracy: 0.61100000 time: 4.88138199s
+Loading data from file ./cifar3/epoch80.npz
+epoch  81 lr: 0.00030000  loss: 1.07808725  train accuracy: 0.62126000  test accuracy: 0.61170000 time: 4.87908888s
+Loading data from file ./cifar3/epoch81.npz
+epoch  82 lr: 0.00030000  loss: 1.07620370  train accuracy: 0.61676000  test accuracy: 0.61110000 time: 4.93467712s
+Loading data from file ./cifar3/epoch82.npz
+epoch  83 lr: 0.00030000  loss: 1.07610002  train accuracy: 0.61940000  test accuracy: 0.61130000 time: 4.88582802s
+Loading data from file ./cifar3/epoch83.npz
+epoch  84 lr: 0.00030000  loss: 1.07710213  train accuracy: 0.61644000  test accuracy: 0.61280000 time: 4.88475180s
+Loading data from file ./cifar3/epoch84.npz
+epoch  85 lr: 0.00030000  loss: 1.07275700  train accuracy: 0.62120000  test accuracy: 0.61090000 time: 4.88331604s
+Loading data from file ./cifar3/epoch85.npz
+epoch  86 lr: 0.00030000  loss: 1.07099410  train accuracy: 0.62034000  test accuracy: 0.61150000 time: 4.97738314s
+Loading data from file ./cifar3/epoch86.npz
+epoch  87 lr: 0.00030000  loss: 1.07326942  train accuracy: 0.62010000  test accuracy: 0.61160000 time: 4.88294649s
+Loading data from file ./cifar3/epoch87.npz
+epoch  88 lr: 0.00030000  loss: 1.07200323  train accuracy: 0.62136000  test accuracy: 0.61250000 time: 4.93860674s
+Loading data from file ./cifar3/epoch88.npz
+epoch  89 lr: 0.00030000  loss: 1.07140999  train accuracy: 0.61972000  test accuracy: 0.61110000 time: 4.92084312s
+Loading data from file ./cifar3/epoch89.npz
+epoch  90 lr: 0.00030000  loss: 1.06788954  train accuracy: 0.62312000  test accuracy: 0.61220000 time: 4.88732719s
+Loading data from file ./cifar3/epoch90.npz
+epoch  91 lr: 0.00030000  loss: 1.06517871  train accuracy: 0.62394000  test accuracy: 0.61100000 time: 4.96316624s
+Loading data from file ./cifar3/epoch91.npz
+epoch  92 lr: 0.00030000  loss: 1.07228788  train accuracy: 0.62216000  test accuracy: 0.61130000 time: 4.89838552s
+Loading data from file ./cifar3/epoch92.npz
+epoch  93 lr: 0.00030000  loss: 1.07182663  train accuracy: 0.62326000  test accuracy: 0.60980000 time: 4.87889814s
+Loading data from file ./cifar3/epoch93.npz
+epoch  94 lr: 0.00030000  loss: 1.07323998  train accuracy: 0.61984000  test accuracy: 0.61100000 time: 4.86712933s
+Loading data from file ./cifar3/epoch94.npz
+epoch  95 lr: 0.00030000  loss: 1.07370091  train accuracy: 0.61866000  test accuracy: 0.61060000 time: 4.89070702s
+Loading data from file ./cifar3/epoch95.npz
+epoch  96 lr: 0.00030000  loss: 1.06936336  train accuracy: 0.61882000  test accuracy: 0.61020000 time: 4.87916517s
+Loading data from file ./cifar3/epoch96.npz
+epoch  97 lr: 0.00030000  loss: 1.06958248  train accuracy: 0.62248000  test accuracy: 0.61150000 time: 4.88110828s
+Loading data from file ./cifar3/epoch97.npz
+epoch  98 lr: 0.00030000  loss: 1.06301465  train accuracy: 0.62404000  test accuracy: 0.61050000 time: 4.87289762s
+Loading data from file ./cifar3/epoch98.npz
+epoch  99 lr: 0.00030000  loss: 1.06753713  train accuracy: 0.62136000  test accuracy: 0.61060000 time: 4.86711693s
+Loading data from file ./cifar3/epoch99.npz
+epoch 100 lr: 0.00030000  loss: 1.07022208  train accuracy: 0.62028000  test accuracy: 0.61020000 time: 4.87592173s
+Accuracy of the network on the 10000 test examples: 61.02%
+Total training time for the 100 epochs: 491.83994165s
