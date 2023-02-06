@@ -284,6 +284,8 @@ void import_weights_from_npz(multilayer_perceptron& M, const std::string& filena
   auto np = py::module::import("numpy");
 
   py::dict data = np.attr("load")(filename);
+  eigen::print_dict(data);
+
   unsigned int index = 1;
 
   auto name = [&](const std::string& name)
@@ -295,13 +297,14 @@ void import_weights_from_npz(multilayer_perceptron& M, const std::string& filena
   {
     if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
-      dlayer->W = eigen::load_float_matrix_from_dict(data, name("W"));
+      dlayer->W = eigen::load_float_matrix_from_dict(data, name("W")).transpose();
       dlayer->b = eigen::load_float_vector_from_dict(data, name("b"));
       index++;
     }
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
-      slayer->W = mkl::to_csr(eigen::load_float_matrix_from_dict(data, name("W")));
+      eigen::matrix W = eigen::load_float_matrix_from_dict(data, name("W")).transpose();
+      slayer->W = mkl::to_csr(W);
       slayer->b = eigen::load_float_vector_from_dict(data, name("b"));
       index++;
     }

@@ -8,27 +8,11 @@
 namespace py = pybind11;
 using namespace nerva;
 
-void print_dict(const py::dict& data)
-{
-  for (const auto& item: data)
-  {
-    std::string key = item.first.cast<std::string>();
-    if (key[0] == 'W')
-    {
-      eigen::print_numpy_matrix(key, eigen::load_float_matrix_from_dict(data, key).transpose());
-    }
-    else if (key[0] == 'b')
-    {
-      eigen::print_numpy_matrix(key, eigen::load_float_vector_from_dict(data, key).transpose());
-    }
-  }
-}
-
 void load_npz(const std::string& filename)
 {
   auto np = py::module::import("numpy");
-  py::dict d = np.attr("load")(filename);
-  print_dict(d);
+  py::dict data = np.attr("load")(filename);
+  eigen::print_dict(data);
 }
 
 int main(int argc, char *argv[])

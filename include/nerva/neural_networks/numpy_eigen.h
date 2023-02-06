@@ -97,6 +97,27 @@ Eigen::Matrix<long, Eigen::Dynamic, 1, default_matrix_layout> load_long_vector_f
   return nerva::eigen::from_numpy_1d(data[key.c_str()].cast<py::array_t<long>>());
 }
 
+inline
+void print_dict(const py::dict& data)
+{
+  for (const auto& item: data)
+  {
+    std::string key = item.first.cast<std::string>();
+    if (key[0] == 'W' || key == "Xtrain" || key == "Xtest")
+    {
+      eigen::print_numpy_matrix(key, eigen::load_float_matrix_from_dict(data, key).transpose());
+    }
+    else if (key[0] == 'b')
+    {
+      eigen::print_numpy_vector(key, eigen::load_float_vector_from_dict(data, key).transpose());
+    }
+    else if (key == "Ttrain" || key == "Ttest")
+    {
+      eigen::print_numpy_vector(key, eigen::load_long_vector_from_dict(data, key));
+    }
+  }
+}
+
 } // namespace nerva::eigen
 
 #endif // NERVA_NEURAL_NETWORKS_NUMPY_EIGEN_H

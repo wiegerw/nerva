@@ -166,7 +166,7 @@ struct matrix_row
 template <typename Matrix>
 void print_numpy_matrix(const std::string& name, const Matrix& x, long edgeitems=3)
 {
-  std::cout << name << "= " << x.rows() << "x" << x.cols() << "\n";
+  std::cout << name << "= " << x.rows() << "x" << x.cols() << " norm = " << x.template lpNorm<Eigen::Infinity>() << "\n";
   long m = x.rows();
   long top = m;
   long bottom = m;
