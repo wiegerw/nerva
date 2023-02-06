@@ -330,28 +330,29 @@ class tool: public command_line_tool
       if (!import_weights_npz.empty())
       {
         import_weights_from_npz(M, import_weights_npz);
+        print_model_info(M);
       }
-      if (!import_weights_npy.empty())
-      {
-        import_weights_from_npy(M, import_weights_npz);
-      }
-      if (!import_bias_npy.empty())
-      {
-        import_bias_from_npy(M, import_bias_npy);
-      }
+//      if (!import_weights_npy.empty())
+//      {
+//        import_weights_from_npy(M, import_weights_npz);
+//      }
+//      if (!import_bias_npy.empty())
+//      {
+//        import_bias_from_npy(M, import_bias_npy);
+//      }
 
       if (!export_weights_npz.empty())
       {
         export_weights_to_npz(M, export_weights_npz);
       }
-      if (!export_weights_npy.empty())
-      {
-        export_weights_to_npy(M, import_weights_npz);
-      }
-      if (!export_bias_npy.empty())
-      {
-        export_bias_to_npy(M, import_bias_npy);
-      }
+//      if (!export_weights_npy.empty())
+//      {
+//        export_weights_to_npy(M, import_weights_npz);
+//      }
+//      if (!export_bias_npy.empty())
+//      {
+//        export_bias_to_npy(M, import_bias_npy);
+//      }
 
       if (info)
       {

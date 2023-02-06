@@ -73,13 +73,20 @@ py::array_t<Scalar> load_numpy_array(const std::string& filename)
 }
 
 inline
-eigen::matrix load_float_matrix_from_dict(const py::dict& data, const std::string& key)  // TODO: use const py::dict& data
+eigen::matrix load_float_matrix_from_dict(const py::dict& data, const std::string& key, bool transposed=true)
 {
-  return nerva::eigen::from_numpy(data[key.c_str()].cast<py::array_t<scalar>>()).transpose();
+  if (transposed)
+  {
+    return nerva::eigen::from_numpy(data[key.c_str()].cast<py::array_t<scalar>>()).transpose();
+  }
+  else
+  {
+    return nerva::eigen::from_numpy(data[key.c_str()].cast<py::array_t<scalar>>());
+  }
 }
 
 inline
-eigen::vector load_float_vector_from_dict(const py::dict& data, const std::string& key)  // TODO: use const py::dict& data
+eigen::vector load_float_vector_from_dict(const py::dict& data, const std::string& key)
 {
   return nerva::eigen::from_numpy<scalar, Eigen::Dynamic, 1>(data[key.c_str()].cast<py::array_t<scalar>>()).transpose();
 }

@@ -31,8 +31,8 @@ def make_torch_model_new(args, sizes, densities):
     M1.learning_rate = make_torch_scheduler(args, M1.optimizer)
     for layer in M1.layers:
         nn.init.xavier_uniform_(layer.weight)
-    M1.print_masks()
     M1.apply_masks()
+    M1.print_masks()
     return M1
 
 

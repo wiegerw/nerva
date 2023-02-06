@@ -33,9 +33,8 @@ function train_sparse_torch()
                     --datadir="$datadir" \
                     --preprocessed=./cifar$seed \
                     --precision=8 \
-                    #--debug \
-                    --export-weights-npz="weights-$density.npz" \
                     --custom-masking \
+                    --export-weights-npz="weights-$density.npz" \
                     2>&1 | tee $logfile
 }
 
@@ -63,8 +62,8 @@ function train_sparse_nerva()
                      --no-shuffle \
                      --verbose \
                      --preprocessed=./cifar$seed \
-                     #--debug \
-                     #--import-weights-npz="weights-$density.npz" \
+		     --no-shuffle \
+                     --import-weights-npz="weights-$density.npz" \
                      2>&1 | tee $logfile
 }
 
