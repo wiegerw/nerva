@@ -52,6 +52,7 @@ function run
                      --loss="softmax-cross-entropy" \
                      --algorithm=minibatch \
                      --threads=4 \
+                     --no-shuffle \
                      --datadir="$datadir" \
                      -v \
                      2>&1 | tee $logfile
@@ -59,21 +60,25 @@ function run
 
 function run_all()
 {
-  run "1024"                                              "RL"          "xx"
-  run "1024,1024"                                         "RRL"         "xxx"
-  run "1024,1024,1024"                                    "RRRL"        "xxxx"
-  run "1024,1024,1024,1024"                               "RRRRL"       "xxxxx"
-  run "1024,1024,1024,1024,1024"                          "RRRRRL"      "xxxxxx"
-  run "1024,1024,1024,1024,1024,1024"                     "RRRRRRL"     "xxxxxxx"
-  run "1024,1024,1024,1024,1024,1024,1024"                "RRRRRRRL"    "xxxxxxxx"
-  run "1024,1024,1024,1024,1024,1024,1024,1024"           "RRRRRRRRL"   "xxxxxxxxx"
-  run "1024,1024,1024,1024,1024,1024,1024,1024,1024"      "RRRRRRRRRL"  "xxxxxxxxxx"
-  run "1024,1024,1024,1024,1024,1024,1024,1024,1024,1024" "RRRRRRRRRRL" "xxxxxxxxxxx"
-  run "2048,2048,2048"                                    "RRRL"        "xxxx"
-  run "4096,4096,4096"                                    "RRRL"        "xxxx"
-  run "8192,8192,8192"                                    "RRRL"        "xxxx"
-  run "16384,16384,16384"                                 "RRRL"        "xxxx"
-  run "32768,32768,32768"                                 "RRRL"        "xxxx"
+    for value in 1 2 3 4 5
+    do
+        seed=$value
+        run "1024"                                              "RL"          "xx"
+        run "1024,1024"                                         "RRL"         "xxx"
+        run "1024,1024,1024"                                    "RRRL"        "xxxx"
+        run "1024,1024,1024,1024"                               "RRRRL"       "xxxxx"
+        run "1024,1024,1024,1024,1024"                          "RRRRRL"      "xxxxxx"
+        run "1024,1024,1024,1024,1024,1024"                     "RRRRRRL"     "xxxxxxx"
+        run "1024,1024,1024,1024,1024,1024,1024"                "RRRRRRRL"    "xxxxxxxx"
+        run "1024,1024,1024,1024,1024,1024,1024,1024"           "RRRRRRRRL"   "xxxxxxxxx"
+        run "1024,1024,1024,1024,1024,1024,1024,1024,1024"      "RRRRRRRRRL"  "xxxxxxxxxx"
+        run "1024,1024,1024,1024,1024,1024,1024,1024,1024,1024" "RRRRRRRRRRL" "xxxxxxxxxxx"
+        run "2048,2048,2048"                                    "RRRL"        "xxxx"
+        run "4096,4096,4096"                                    "RRRL"        "xxxx"
+        run "8192,8192,8192"                                    "RRRL"        "xxxx"
+        run "16384,16384,16384"                                 "RRRL"        "xxxx"
+        run "32768,32768,32768"                                 "RRRL"        "xxxx"
+    done
 }
 
 run_all
