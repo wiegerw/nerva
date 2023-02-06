@@ -5,7 +5,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import argparse
-
+import torch
 from testing.datasets import load_dict_from_npz
 from testing.numpy_utils import pp
 
@@ -21,6 +21,7 @@ def main():
     cmdline_parser = argparse.ArgumentParser()
     cmdline_parser.add_argument('filename', metavar='FILE', type=str, help='an .npz file containing a dictionary')
     args = cmdline_parser.parse_args()
+    torch.set_printoptions(precision=8, edgeitems=3, threshold=5, sci_mode=False, linewidth=160)
     inspect_npz_file(args.filename)
 
 

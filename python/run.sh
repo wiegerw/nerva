@@ -32,6 +32,10 @@ function train_sparse_torch()
                     --custom-masking \
                     --datadir="$datadir" \
                     --preprocessed=./cifar$seed \
+                    --precision=8 \
+                    #--debug \
+                    --export-weights-npz="weights-$density.npz" \
+                    --custom-masking \
                     2>&1 | tee $logfile
 }
 
@@ -56,8 +60,11 @@ function train_sparse_nerva()
                      --loss="softmax-cross-entropy" \
                      --algorithm=minibatch \
                      --threads=4 \
+                     --no-shuffle \
                      --verbose \
                      --preprocessed=./cifar$seed \
+                     #--debug \
+                     #--import-weights-npz="weights-$density.npz" \
                      2>&1 | tee $logfile
 }
 
@@ -112,21 +119,27 @@ function train_all()
     for seed in 1 2 3 4 5
     do
         train_sparse_torch $seed 0.1  0.001
-        train_sparse_torch $seed 0.1  0.005
-        train_sparse_torch $seed 0.1  0.01
-        train_sparse_torch $seed 0.03 0.05
-        train_sparse_torch $seed 0.03 0.1
-        train_sparse_torch $seed 0.01 0.2
-        train_sparse_torch $seed 0.01 0.5
-        train_dense_torch  $seed 0.01
-
         train_sparse_nerva $seed 0.1  0.001
+
+        train_sparse_torch $seed 0.1  0.005
         train_sparse_nerva $seed 0.1  0.005
+
+        train_sparse_torch $seed 0.1  0.01
         train_sparse_nerva $seed 0.1  0.01
+
+        train_sparse_torch $seed 0.03 0.05
         train_sparse_nerva $seed 0.03 0.05
+
+        train_sparse_torch $seed 0.03 0.1
         train_sparse_nerva $seed 0.03 0.1
+
+        train_sparse_torch $seed 0.01 0.2
         train_sparse_nerva $seed 0.01 0.2
+
+        train_sparse_torch $seed 0.01 0.5
         train_sparse_nerva $seed 0.01 0.5
+
+        train_dense_torch  $seed 0.01
         train_dense_nerva  $seed 0.01
     done
 }

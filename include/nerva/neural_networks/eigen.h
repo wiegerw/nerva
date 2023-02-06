@@ -72,7 +72,7 @@ void print_numpy_row_full(const Matrix& x, long i)
     {
       std::cout << ", ";
     }
-    std::cout << fmt::format("{:7.4f}", x(i, j));
+    std::cout << fmt::format("{:11.8f}", x(i, j));
   }
   std::cout << "]\n";
 }
@@ -90,7 +90,7 @@ void print_numpy_row(const Row& x, long edgeitems=3)
     }
     else
     {
-      std::cout << fmt::format("{:7.4f}", x);
+      std::cout << fmt::format("{:11.8f}", x);
     }
   };
 
