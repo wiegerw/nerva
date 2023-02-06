@@ -297,15 +297,14 @@ void import_weights_from_npz(multilayer_perceptron& M, const std::string& filena
   {
     if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
-      dlayer->W = eigen::load_float_matrix_from_dict(data, name("W")).transpose();
-      dlayer->b = eigen::load_float_vector_from_dict(data, name("b"));
+      dlayer->import_weights_and_bias(eigen::load_float_matrix_from_dict(data, name("W")).transpose(),
+                                      eigen::load_float_vector_from_dict(data, name("b")));
       index++;
     }
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
-      eigen::matrix W = eigen::load_float_matrix_from_dict(data, name("W")).transpose();
-      slayer->W = mkl::to_csr(W);
-      slayer->b = eigen::load_float_vector_from_dict(data, name("b"));
+      slayer->import_weights_and_bias(eigen::load_float_matrix_from_dict(data, name("W")).transpose(),
+                                      eigen::load_float_vector_from_dict(data, name("b")));
       index++;
     }
   }

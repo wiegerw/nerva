@@ -145,6 +145,23 @@ struct linear_layer: public neural_network_layer
     }
     print_numpy_matrix("b" + i, b);
   }
+
+  void import_weights_and_bias(const eigen::matrix& W, const eigen::vector& b)
+  {
+    if constexpr (IsSparse)
+    {
+      this->W = mkl::to_csr(W);
+      this->DW = this->W;
+      this->DW = scalar(0);
+      this->b = b;
+      this->optimizer->import_weights(W);
+    }
+    else
+    {
+      this->W = W;
+      this->b = b;
+    }
+  }
 };
 
 template <typename Scalar>
