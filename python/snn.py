@@ -14,6 +14,7 @@ import nerva.learning_rate
 import nerva.loss
 import nerva.optimizers
 import nerva.random
+import nervalib
 from testing.datasets import create_cifar10_augmented_dataloaders, custom_load_cifar10_data, TorchDataLoader, \
     create_cifar10_dataloaders
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
@@ -76,11 +77,8 @@ def make_argument_parser():
     cmdline_parser.add_argument("--copy", help="copy weights and biases from the PyTorch model to the Nerva model", action="store_true")
     cmdline_parser.add_argument("--nerva", help="Train using a Nerva model", action="store_true")
     cmdline_parser.add_argument("--torch", help="Train using a PyTorch model", action="store_true")
+    cmdline_parser.add_argument("--save-model-npy", type=str, help="Save the model in .npy format (N.B. this is only used for measuring disk sizes!)")
     cmdline_parser.add_argument("--scheduler", type=str, help="the learning rate scheduler (constant,multistep)", default="multistep")
-    # cmdline_parser.add_argument('--export-weights-npy', type=str, help='Export weights to a file in .npy format')
-    # cmdline_parser.add_argument('--import-weights-npy', type=str, help='Import weights from a file in .npy format')
-    # cmdline_parser.add_argument('--export-bias-npy', type=str, help='Export bias to a file in .npy format')
-    # cmdline_parser.add_argument('--import-bias-npy', type=str, help='Import bias from a file in .npy format')
     cmdline_parser.add_argument('--export-weights-npz', type=str, help='Export weights to a file in .npz format')
     cmdline_parser.add_argument('--import-weights-npz', type=str, help='Import weights from a file in .npz format')
     cmdline_parser.add_argument("--custom-masking", help="Use a custom variant of masking in the PyTorch models", action="store_true")
@@ -167,8 +165,10 @@ def main():
         else:
             train_nerva(M2, train_loader, test_loader, args.epochs, args.debug)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_nerva(M2, test_loader):.3f} %')
+    elif args.save_model_npy:
+        print(M2)
+        nervalib.save_model_weights_to_npy(args.save_model_npy, M2.compiled_model)
     else:
-        #copy_weights_and_biases(M1, M2)
         print_model_info(M1)
         print_model_info(M2)
         compute_weight_difference(M1, M2)
