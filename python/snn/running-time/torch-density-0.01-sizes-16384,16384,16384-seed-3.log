@@ -1,0 +1,30 @@
+=== Command line arguments ===
+Namespace(debug=False, batch_size=100, seed=3, precision=4, edgeitems=3, density=0.01, sizes='3072,16384,16384,16384,10', epochs=1, lr=0.1, momentum=0.9, gamma=0.1, nesterov=True, datadir='./data', augmented=False, preprocessed=None, copy=False, nerva=False, torch=True, scheduler='multistep', export_weights_npz=None, import_weights_npz=None, custom_masking=False)
+Setting gamma to 1.0
+Files already downloaded and verified
+initialize by ER
+Overall sparsity 0.01
+Total Model parameters: 587366400
+Total parameters under sparsity level of 0.01: 0.009997202768152894
+initialize by ER
+Overall sparsity 0.01
+Total Model parameters: 1174732800
+Total parameters under sparsity level of 0.01: 0.00039805477466875873
+
+=== PyTorch model ===
+MLP1(
+  (layers): ModuleList(
+    (0): Linear(in_features=3072, out_features=16384, bias=True)
+    (1): Linear(in_features=16384, out_features=16384, bias=True)
+    (2): Linear(in_features=16384, out_features=16384, bias=True)
+    (3): Linear(in_features=16384, out_features=10, bias=True)
+  )
+  (loss): CrossEntropyLoss()
+)
+CrossEntropyLoss()
+<torch.optim.lr_scheduler.MultiStepLR object at 0x7f757efa8610>
+
+=== Training PyTorch model ===
+epoch   0  lr: 0.10000000  loss: 2.30260515  train accuracy: 0.10000000  test accuracy: 0.10000000  time: 0.00000000s
+epoch   1  lr: 0.10000000  loss: 2.30495620  train accuracy: 0.10000000  test accuracy: 0.10000000  time: 1865.87729283s
+Accuracy of the network on the 10000 test images: 10.000 %

@@ -1,0 +1,33 @@
+Unrecognized token: --datadir=./data
+epochs = 1
+batch size = 100
+shuffle = false
+statistics = true
+debug = false
+algorithm = minibatch
+dataset = cifar10
+dataset size = 50000
+normalize data = false
+learning rate scheduler = multistep_lr(0.1;50,75;0.1)
+loss function = softmax-cross-entropy
+architecture = RRRL
+sizes = [3072, 1024, 1024, 1024, 10]
+weights initialization = xxxx
+optimizer = nesterov(0.9)
+dropout = 0
+density = 0.01
+densities = [0.00741352, 0.0111203, 0.0111203, 0.574919]
+seed = 1
+precision = 4
+threads = 4
+number type = float
+
+Sparse(units=1024, density=0.007404963, optimizer=Nesterov(0.90000), activation=ReLU())
+Sparse(units=1024, density=0.011133194, optimizer=Nesterov(0.90000), activation=ReLU())
+Sparse(units=1024, density=0.010994911, optimizer=Nesterov(0.90000), activation=ReLU())
+Sparse(units=10, density=0.5792969, optimizer=Nesterov(0.90000), activation=NoActivation())
+
+epoch   0 lr: 0.10000000  loss: 2.30258492  train accuracy: 0.08440000  test accuracy: 0.08540000 time: 0.00000000s
+epoch   1 lr: 0.10000000  loss: 2.30258112  train accuracy: 0.16438000  test accuracy: 0.16490000 time: 4.19598055s
+Accuracy of the network on the 10000 test examples: 16.49%
+Total training time for the 1 epochs: 4.19598037s

@@ -1,0 +1,39 @@
+Unrecognized token: --datadir=./data
+epochs = 1
+batch size = 100
+shuffle = false
+statistics = true
+debug = false
+algorithm = minibatch
+dataset = cifar10
+dataset size = 50000
+normalize data = false
+learning rate scheduler = multistep_lr(0.1;50,75;0.1)
+loss function = softmax-cross-entropy
+architecture = RRRRRRRRRL
+sizes = [3072, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 10]
+weights initialization = xxxxxxxxxx
+optimizer = nesterov(0.9)
+dropout = 0
+density = 0.01
+densities = [0.00698667, 0.01048, 0.01048, 0.01048, 0.01048, 0.01048, 0.01048, 0.01048, 0.01048, 0.541816]
+seed = 3
+precision = 4
+threads = 4
+number type = float
+
+Sparse(units=1024, density=0.007010142, optimizer=Nesterov(0.90000), activation=ReLU())
+Sparse(units=1024, density=0.010375977, optimizer=Nesterov(0.90000), activation=ReLU())
+Sparse(units=1024, density=0.010437965, optimizer=Nesterov(0.90000), activation=ReLU())
+Sparse(units=1024, density=0.010369301, optimizer=Nesterov(0.90000), activation=ReLU())
+Sparse(units=1024, density=0.010547638, optimizer=Nesterov(0.90000), activation=ReLU())
+Sparse(units=1024, density=0.010558128, optimizer=Nesterov(0.90000), activation=ReLU())
+Sparse(units=1024, density=0.01034832, optimizer=Nesterov(0.90000), activation=ReLU())
+Sparse(units=1024, density=0.0104112625, optimizer=Nesterov(0.90000), activation=ReLU())
+Sparse(units=1024, density=0.010294914, optimizer=Nesterov(0.90000), activation=ReLU())
+Sparse(units=10, density=0.54404294, optimizer=Nesterov(0.90000), activation=NoActivation())
+
+epoch   0 lr: 0.10000000  loss: 2.30258286  train accuracy: 0.10304000  test accuracy: 0.10080000 time: 0.00000000s
+epoch   1 lr: 0.10000000  loss: 2.30258286  train accuracy: 0.10304000  test accuracy: 0.10080000 time: 9.57246590s
+Accuracy of the network on the 10000 test examples: 10.08%
+Total training time for the 1 epochs: 9.57246627s
