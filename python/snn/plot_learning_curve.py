@@ -42,20 +42,22 @@ def parse_logfile(path: pathlib.Path) -> pd.DataFrame:
                          'time': time})
 
 
-def make_plot(df_data, sparsity=None, labels=None):
+def make_plot(df_data, sparsity=None, labels=None, ax=None):
 
     palette = sns.color_palette()
     frameworks = {'nerva': {'label': 'Nerva ', 'color': palette[0]},
                   'torch': {'label': 'PyTorch ', 'color': palette[1]}}
 
     # for fw in frameworks:
-    ii = 0
+    # ii = 0
     for fw in frameworks:
         data = df_data[df_data['framework'] == fw]
         for lb in labels:
             label = frameworks[fw]['label'] + lb
-            sns.lineplot(data=data[lb], label=label, color=palette[ii])
-            ii += 1
+            if lb == 'train accuracy':
+                ax = sns.lineplot(data=data[lb], label=label, color=frameworks[fw]['color'], linestyle='--')
+            else:
+                ax = sns.lineplot(data=data[lb], label=label, color=frameworks[fw]['color'])
 
 
     # ax.set_ylim([0.85, 1.01])
@@ -63,15 +65,26 @@ def make_plot(df_data, sparsity=None, labels=None):
     # plt.xticks(fontsize=12)
     # plt.yticks(fontsize=12)
 
-    label_l = ['Loss' if 'loss' in labels[0] else 'Accuracy']
+    sparsity_l = ['Sparsity: {}'.format(sparsity) if sparsity>0.0 else 'dense']
 
+    if 'loss' in labels[0]:
+        label_l = 'Loss'
+        ax.set_ylim(bottom=0, top=3)
+    else:
+        label_l = 'Accuracy'
+        ax.set_ylim(bottom=0, top=0.8)
+
+    # ax.set_aspect(aspect=40)
+    leg = ax.legend(fontsize=6)
+    ax.grid(zorder=-10)
     plt.xlabel('Epoch')
-    plt.ylabel('{}'.format(label_l[0]))
-    plt.title('{} vs Epoch (Sparsity: {})'.format(label_l[0], sparsity))
+    plt.ylabel('{}'.format(label_l))
+    plt.title('{} vs Epoch ({})'.format(label_l, sparsity_l[0]))
+    plt.subplots_adjust(hspace=0.8)
+    plt.subplots_adjust(wspace=0.4)
+
 
     # Add a legend to the plot
-    plt.savefig('./pics/three-nerva-runs/{}.png'.format(str(1)))
-    plt.close()
 
 def make_df_acc(df: pd.DataFrame):
     # make a new df with the best test accuracy for each framework and density and seed
@@ -82,30 +95,39 @@ def make_df_acc(df: pd.DataFrame):
 
 def main():
 
-    path_lc_logs = './pics/three-nerva-runs'
-    labels = ['train accuracy', 'test accuracy']
-    # labels = ['loss']
+    path_lc_logs = './pics/seed123/'
+    # labels = ['train accuracy', 'test accuracy']
+    labels = ['loss']
 
-    df = pd.DataFrame()
-    for path in pathlib.Path(path_lc_logs).glob('*-sparse-0.1-augmented-seed*.log'):
-        data = parse_logfile(path)
+    density_l = ['dense', 0.5, 0.2, 0.1, 0.05, 0.01, 0.005, 0.001]
+    plt.figure(figsize=(8, 10))
+    for i, d in enumerate(density_l):
+        plt.subplot(4, 2, i+1)
+        df = pd.DataFrame()
 
-        framework = path.name.split('-')[0]
-        seed = int(path.name.split('-')[-1].split('.')[0].replace('seed', ''))
-        if 'dense' in path.name:
-            density = 1.0
-        else:
-            density = float(path.name.split('-')[2])
+        d_label = ['sparse-{}'.format(d) if 'dense' not in str(d) else 'dense']
+        for path in pathlib.Path(path_lc_logs).glob('*-{}-augmented-seed*.log'.format(d_label[0])):
+            data = parse_logfile(path)
 
-        data['framework'] = framework
-        data['density'] = density
-        data['seed'] = seed
+            framework = path.name.split('-')[0]
+            seed = int(path.name.split('-')[-1].split('.')[0].replace('seed', ''))
+            if 'dense' in path.name:
+                density = 1.0
+            else:
+                density = float(path.name.split('-')[2])
 
-        df = pd.concat([df, data])
+            data['framework'] = framework
+            data['density'] = density
+            data['seed'] = seed
 
+            df = pd.concat([df, data])
 
-    df_acc = make_df_acc(df)
-    make_plot(df_acc, sparsity=1-density, labels=labels)
+        df_acc = make_df_acc(df)
+        make_plot(df_acc, sparsity=1-density, labels=labels, ax=None)
+
+    label_l = ['Loss' if 'loss' in labels[0] else 'Accuracy']
+    plt.savefig('./pics/seed123/{}.pdf'.format(str(label_l[0])))
+    plt.close()
 
 
 if __name__ == '__main__':
