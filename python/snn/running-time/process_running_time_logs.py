@@ -9,7 +9,9 @@ from typing import Union
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# N.B. This scripts assumes there are logs for 3 seeds
+
+SEEDCOUNT = 1
+
 
 def round_(x: Union[float, str]) -> str:
     if isinstance(x, str):
@@ -39,8 +41,8 @@ def create_width_table(model, width, size, time):
         if isinstance(item['nervatime'], float) and isinstance(item['torchtime'], float):
             item['factor'] = item['torchtime'] / item['nervatime']
         width_.append(w)
-        nervatime.append(round_(item['nervatime'] / 3))
-        torchtime.append(round_(item['torchtime'] / 3))
+        nervatime.append(round_(item['nervatime'] / SEEDCOUNT))
+        torchtime.append(round_(item['torchtime'] / SEEDCOUNT))
         factor.append(round_(item['factor']))
 
     print(width_)
@@ -76,8 +78,8 @@ def create_size_table(model, width, size, time):
         if isinstance(item['nervatime'], float) and isinstance(item['torchtime'], float):
             item['factor'] = item['torchtime'] / item['nervatime']
         size_.append(s)
-        nervatime.append(round_(item['nervatime'] / 3))
-        torchtime.append(round_(item['torchtime'] / 3))
+        nervatime.append(round_(item['nervatime'] / SEEDCOUNT))
+        torchtime.append(round_(item['torchtime'] / SEEDCOUNT))
         factor.append(round_(item['factor']))
 
     df = pd.DataFrame({'size': size_,

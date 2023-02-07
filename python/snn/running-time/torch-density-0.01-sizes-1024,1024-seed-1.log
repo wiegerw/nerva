@@ -1,5 +1,5 @@
 === Command line arguments ===
-Namespace(debug=False, batch_size=100, seed=1, precision=4, edgeitems=3, density=0.01, sizes='3072,1024,1024,10', epochs=1, lr=0.1, momentum=0.9, gamma=0.1, nesterov=True, datadir='./data', augmented=False, preprocessed=None, copy=False, nerva=False, torch=True, scheduler='multistep', export_weights_npz=None, import_weights_npz=None, custom_masking=False)
+Namespace(debug=False, batch_size=100, seed=1, precision=4, edgeitems=3, density=0.01, sizes='3072,1024,1024,10', epochs=1, lr=0.1, momentum=0.9, gamma=0.1, nesterov=True, datadir='./data', augmented=False, preprocessed=None, copy=False, nerva=False, torch=True, scheduler='multistep', export_weights_npz=None, import_weights_npz=None, custom_masking=True)
 Setting gamma to 1.0
 Files already downloaded and verified
 initialize by ER
@@ -10,9 +10,36 @@ initialize by ER
 Overall sparsity 0.01
 Total Model parameters: 8409088
 Total parameters under sparsity level of 0.01: 0.0009240003196541646
+Use MLP1 variant with custom masking
+Setting masks with densities [0.0076270084517507195, 0.01144051267762608, 0.5914745054332684]
+--- masks ---
+mask1 (1024x3072)
+tensor([[0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0],
+        ...,
+        [0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0]], dtype=torch.int32)
+mask2 (1024x1024)
+tensor([[0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0],
+        ...,
+        [1, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0]], dtype=torch.int32)
+mask3 (10x1024)
+tensor([[1, 1, 1,  ..., 1, 1, 1],
+        [1, 1, 0,  ..., 1, 1, 1],
+        [0, 1, 1,  ..., 1, 1, 1],
+        ...,
+        [1, 0, 1,  ..., 1, 0, 1],
+        [1, 1, 1,  ..., 0, 0, 1],
+        [0, 0, 0,  ..., 1, 1, 1]], dtype=torch.int32)
 
 === PyTorch model ===
-MLP1(
+MLP1a(
   (layers): ModuleList(
     (0): Linear(in_features=3072, out_features=1024, bias=True)
     (1): Linear(in_features=1024, out_features=1024, bias=True)
@@ -21,9 +48,9 @@ MLP1(
   (loss): CrossEntropyLoss()
 )
 CrossEntropyLoss()
-<torch.optim.lr_scheduler.MultiStepLR object at 0x7f24ba8b0610>
+<torch.optim.lr_scheduler.MultiStepLR object at 0x7f8961ba40d0>
 
 === Training PyTorch model ===
-epoch   0  lr: 0.10000000  loss: 2.30271792  train accuracy: 0.10000000  test accuracy: 0.10000000  time: 0.00000000s
-epoch   1  lr: 0.10000000  loss: 1.92398942  train accuracy: 0.29822000  test accuracy: 0.30250000  time: 15.64883768s
-Accuracy of the network on the 10000 test images: 30.250 %
+epoch   0  lr: 0.10000000  loss: 2.30223179  train accuracy: 0.08860000  test accuracy: 0.09420000  time: 0.00000000s
+epoch   1  lr: 0.10000000  loss: 1.81806517  train accuracy: 0.34226000  test accuracy: 0.33940000  time: 13.92225202s
+Accuracy of the network on the 10000 test images: 33.940 %

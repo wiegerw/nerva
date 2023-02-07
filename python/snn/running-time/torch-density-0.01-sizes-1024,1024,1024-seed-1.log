@@ -1,5 +1,5 @@
 === Command line arguments ===
-Namespace(debug=False, batch_size=100, seed=1, precision=4, edgeitems=3, density=0.01, sizes='3072,1024,1024,1024,10', epochs=1, lr=0.1, momentum=0.9, gamma=0.1, nesterov=True, datadir='./data', augmented=False, preprocessed=None, copy=False, nerva=False, torch=True, scheduler='multistep', export_weights_npz=None, import_weights_npz=None, custom_masking=False)
+Namespace(debug=False, batch_size=100, seed=1, precision=4, edgeitems=3, density=0.01, sizes='3072,1024,1024,1024,10', epochs=1, lr=0.1, momentum=0.9, gamma=0.1, nesterov=True, datadir='./data', augmented=False, preprocessed=None, copy=False, nerva=False, torch=True, scheduler='multistep', export_weights_npz=None, import_weights_npz=None, custom_masking=True)
 Setting gamma to 1.0
 Files already downloaded and verified
 initialize by ER
@@ -10,9 +10,44 @@ initialize by ER
 Overall sparsity 0.01
 Total Model parameters: 10506240
 Total parameters under sparsity level of 0.01: 0.0007083409478557505
+Use MLP1 variant with custom masking
+Setting masks with densities [0.007413830479080859, 0.011120745718621289, 0.011120745718621289, 0.5749425536527206]
+--- masks ---
+mask1 (1024x3072)
+tensor([[0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0],
+        ...,
+        [0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0]], dtype=torch.int32)
+mask2 (1024x1024)
+tensor([[0, 0, 0,  ..., 0, 0, 1],
+        [0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0],
+        ...,
+        [0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0]], dtype=torch.int32)
+mask3 (1024x1024)
+tensor([[0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0],
+        ...,
+        [0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0],
+        [0, 0, 0,  ..., 0, 0, 0]], dtype=torch.int32)
+mask4 (10x1024)
+tensor([[0, 0, 1,  ..., 0, 0, 1],
+        [1, 1, 0,  ..., 0, 1, 1],
+        [1, 1, 0,  ..., 0, 1, 0],
+        ...,
+        [1, 1, 0,  ..., 0, 1, 0],
+        [1, 1, 0,  ..., 1, 0, 1],
+        [1, 0, 1,  ..., 0, 0, 1]], dtype=torch.int32)
 
 === PyTorch model ===
-MLP1(
+MLP1a(
   (layers): ModuleList(
     (0): Linear(in_features=3072, out_features=1024, bias=True)
     (1): Linear(in_features=1024, out_features=1024, bias=True)
@@ -22,9 +57,9 @@ MLP1(
   (loss): CrossEntropyLoss()
 )
 CrossEntropyLoss()
-<torch.optim.lr_scheduler.MultiStepLR object at 0x7f59fefb0700>
+<torch.optim.lr_scheduler.MultiStepLR object at 0x7fa9c40a8040>
 
 === Training PyTorch model ===
-epoch   0  lr: 0.10000000  loss: 2.30276203  train accuracy: 0.10000000  test accuracy: 0.10000000  time: 0.00000000s
-epoch   1  lr: 0.10000000  loss: 2.30303597  train accuracy: 0.10000000  test accuracy: 0.10000000  time: 19.76387251s
-Accuracy of the network on the 10000 test images: 10.000 %
+epoch   0  lr: 0.10000000  loss: 2.30289292  train accuracy: 0.10000000  test accuracy: 0.10000000  time: 0.00000000s
+epoch   1  lr: 0.10000000  loss: 1.96052599  train accuracy: 0.28596000  test accuracy: 0.29620000  time: 17.57650164s
+Accuracy of the network on the 10000 test images: 29.620 %
