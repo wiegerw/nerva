@@ -417,6 +417,20 @@ std::vector<std::pair<long, long>> sparse_linear_layer_sizes(multilayer_perceptr
   return result;
 }
 
+template <typename EigenVector, typename T>
+EigenVector convert_to_eigen(const std::vector<T>& x)
+{
+  typedef typename EigenVector::Scalar Scalar;
+
+  unsigned int size = x.size();
+  EigenVector result(size);
+  for (unsigned int i = 0; i < size; i++)
+  {
+    result[i] = static_cast<Scalar>(x[i]);
+  }
+  return result;
+}
+
 inline
 void save_model_weights_to_npy(const std::string& filename, const multilayer_perceptron& M)
 {
@@ -427,17 +441,6 @@ void save_model_weights_to_npy(const std::string& filename, const multilayer_per
   auto io = py::module::import("io");
   auto file = io.attr("open")(filename, "wb");
 
-  auto to_int_vector = [](const auto& x)
-  {
-    unsigned int size = x.size();
-    Eigen::VectorXi result(size);
-    for (unsigned int i = 0; i < size; i++)
-    {
-      result[i] = static_cast<int>(x[i]);
-    }
-    return result;
-  };
-
   for (auto& layer: M.layers)
   {
     if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
@@ -447,9 +450,9 @@ void save_model_weights_to_npy(const std::string& filename, const multilayer_per
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
       const auto& W = slayer->W;
-      Eigen::VectorXf values = Eigen::Map<Eigen::VectorXf>(const_cast<float*>(W.values.data()), W.values.size());
-      Eigen::VectorXi columns = to_int_vector(W.columns);
-      Eigen::VectorXi row_index = to_int_vector(W.row_index);
+      auto values = convert_to_eigen<Eigen::VectorXf>(W.values); // TODO use a direct cast
+      auto columns = convert_to_eigen<Eigen::VectorXi>(W.columns);
+      auto row_index = convert_to_eigen<Eigen::VectorXi>(W.row_index);
       np.attr("save")(file, eigen::to_numpy<float>(values));
       np.attr("save")(file, eigen::to_numpy<int>(columns));
       np.attr("save")(file, eigen::to_numpy<int>(row_index));

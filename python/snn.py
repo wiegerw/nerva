@@ -170,8 +170,8 @@ def main():
         print(M2)
         nervalib.save_model_weights_to_npy(args.save_model_npy, M2.compiled_model)
     elif args.inference:
-        measure_inference_time_torch(M1, train_loader, args.density, repetitions=5)
-        measure_inference_time_nerva(M2, train_loader, args.density, repetitions=5)
+        measure_inference_time_torch(M1, train_loader, args.density, repetitions=10)
+        measure_inference_time_nerva(M2, train_loader, args.density, repetitions=10)
     else:
         print_model_info(M1)
         print_model_info(M2)
