@@ -33,6 +33,7 @@ function run
                  --momentum=$momentum \
                  --nesterov \
                  --datadir="$datadir" \
+                 --custom-masking \
                  2>&1 | tee $logfile
 
   logfile="snn/running-time/nerva-density-$density-sizes-$sizes-seed-$seed.log"
