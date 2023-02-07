@@ -18,16 +18,14 @@ namespace nerva::eigen {
 
 namespace py = pybind11;
 
-template <typename Scalar, int Rows, int Cols, int MatrixLayout>
-py::array_t<Scalar> to_numpy(const Eigen::Matrix<Scalar, Rows, Cols, MatrixLayout>& A)
+template <typename Scalar=scalar, typename Matrix>
+py::array_t<Scalar> to_numpy(const Matrix& A)
 {
-  using matrix_t = Eigen::Matrix<Scalar, Rows, Cols, MatrixLayout>;
-
   // Create an empty array result of the correct size
   py::array_t<Scalar> result({A.rows(), A.cols()});
 
   // Copy A to result
-  Eigen::Map<matrix_t>(result.mutable_data(), A.rows(), A.cols()) = A;
+  Eigen::Map<Matrix>(result.mutable_data(), A.rows(), A.cols()) = A;
 
   return result;
 }

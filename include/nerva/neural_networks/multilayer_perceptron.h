@@ -417,6 +417,35 @@ std::vector<std::pair<long, long>> sparse_linear_layer_sizes(multilayer_perceptr
   return result;
 }
 
+inline
+void save_model_weights_to_npy(const std::string& filename, const multilayer_perceptron& M)
+{
+  std::cout << "Saving model weights to " << filename << std::endl;
+//
+//  namespace py = pybind11;
+//  auto np = py::module::import("numpy");
+//  auto io = py::module::import("io");
+//  auto file = io.attr("open")(filename, "wb");
+//
+//  for (auto& layer: M.layers)
+//  {
+//    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
+//    {
+//      np.attr("save")(file, eigen::to_numpy(dlayer->W));
+//    }
+//    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
+//    {
+//      const auto& W = slayer->W;
+//      Eigen::VectorXf  values = Eigen::Map<Eigen::VectorXf>(const_cast<float*>(W.values.data()), W.values.size());
+//      Eigen::VectorXi columns = Eigen::Map<Eigen::Matrix<MKL_INT, Eigen::Dynamic, 1>>(const_cast<MKL_INT*>(W.columns.data()), W.columns.size());
+//      Eigen::VectorXi row_index = Eigen::Map<Eigen::Matrix<MKL_INT, Eigen::Dynamic, 1>>(const_cast<MKL_INT*>(W.row_index.data()), W.row_index.size());
+//      np.attr("save")(file, eigen::to_numpy<float>(values));
+//      np.attr("save")(file, eigen::to_numpy<int>(columns));
+//      np.attr("save")(file, eigen::to_numpy<int>(row_index));
+//    }
+//  }
+}
+
 } // namespace nerva
 
 #endif // NERVA_NEURAL_NETWORKS_MULTILAYER_PERCEPTRON_H
