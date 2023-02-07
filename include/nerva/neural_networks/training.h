@@ -338,6 +338,7 @@ std::pair<double, double> minibatch_gradient_descent(
       if (options.debug)
       {
         std::cout << "epoch: " << epoch << " batch: " << k << std::endl;
+        print_model_info(M);
         eigen::print_numpy_matrix("X", X.transpose());
         eigen::print_numpy_matrix("Y", Y.transpose());
       }
@@ -383,7 +384,6 @@ std::pair<double, double> minibatch_gradient_descent_preprocessed(
 
   // read the first dataset
   data.import_cifar10_from_npz(path / "epoch0.npz");
-  // data.info();
 
   double total_training_time = 0;
   long N = data.Xtrain.cols(); // the number of examples
@@ -422,6 +422,7 @@ std::pair<double, double> minibatch_gradient_descent_preprocessed(
       if (options.debug)
       {
         std::cout << "epoch: " << epoch << " batch: " << k << std::endl;
+        print_model_info(M);
         eigen::print_numpy_matrix("X", X.transpose());
         eigen::print_numpy_matrix("Y", Y.transpose());
       }

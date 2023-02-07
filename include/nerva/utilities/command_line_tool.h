@@ -74,6 +74,16 @@ class command_line_tool
       }
       return EXIT_FAILURE;
     }
+
+    bool is_verbose() const
+    {
+      return m_verbose;
+    }
+
+    bool is_debug() const
+    {
+      return m_debug;
+    }
 };
 
 } // namespace nerva

@@ -124,13 +124,15 @@ def make_acc_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str =
     plt.close()
 
 
-def make_time_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str = 'density', log_scale: bool = False):
+def make_time_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str = 'density', log_scale: bool = False, with50: bool = True):
     palette = sns.color_palette()
     frameworks = {'nerva': {'label': 'Nerva', 'color': palette[0]},
                   'torch': {'label': 'PyTorch', 'color': palette[1]}}
     for fw in frameworks:
-        # remove sparsity=0 from df
-        runs = (df['framework'] == fw) & (df['sparsity'] != 0)  # & (df['sparsity'] != 0.5)
+        if with50:
+            runs = (df['framework'] == fw) & (df['sparsity'] != 0)
+        else:
+            runs = (df['framework'] == fw) & (df['sparsity'] != 0) & (df['sparsity'] != 0.5)
         sns.lineplot(x=x_axis, y='time', data=df[runs], marker='o',
                      label=frameworks[fw]['label'], color=frameworks[fw]['color'])
 
@@ -138,7 +140,10 @@ def make_time_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str 
         runs = (df['framework'] == fw) & (df['density'] == 1.0)
         tmp_df = df[runs].copy(deep=True)
         tmp_df = pd.concat([tmp_df, tmp_df], ignore_index=True)
-        tmp_df.loc[:int(len(tmp_df)/2)-1, 'sparsity'] = 0.5
+        if with50:
+            tmp_df.loc[:int(len(tmp_df)/2)-1, 'sparsity'] = 0.5
+        else:
+            tmp_df.loc[:int(len(tmp_df)/2)-1, 'sparsity'] = 0.8
         tmp_df.loc[int(len(tmp_df)/2):, 'sparsity'] = 0.999
         sns.lineplot(data=tmp_df, x=x_axis, y='time', linestyle='--',
                      label=f"{frameworks[fw]['label']} dense", color=frameworks[fw]['color'])
@@ -162,18 +167,20 @@ def make_time_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str 
 
 def main():
     # folder = pathlib.Path('./logs')
-    folder = pathlib.Path('./seed12')
+    folder = pathlib.Path('./seed123')
     df = get_full_dataframe(folder)
 
     df_time = make_df_time(df)
     df_acc = make_df_acc(df)
 
+    with50 = False
+    name50 = 'with50' if with50 else 'without50'
 
     x_axis = 'sparsity'
     # x_axis = 'density'
 
-    # make_time_vs_density_plot(df_time, pathlib.Path(f'./seed12_plots/time-vs-{x_axis}.pdf'), x_axis)  # log_scale=True)
-    make_acc_vs_density_plot(df_acc, pathlib.Path(f'./seed12_plots/accuracy-vs-{x_axis}.pdf'), x_axis, log_scale=True)
+    make_time_vs_density_plot(df_time, pathlib.Path(f'./seed123_plots/time-vs-{x_axis}_{name50}.pdf'), x_axis, with50=with50)  # log_scale=True)
+    # make_acc_vs_density_plot(df_acc, pathlib.Path(f'./seed123_plots/accuracy-vs-{x_axis}.pdf'), x_axis, log_scale=True)
 
 
 

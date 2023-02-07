@@ -18,28 +18,33 @@ namespace nerva::eigen {
 
 namespace py = pybind11;
 
-template <typename Scalar, int Rows, int Cols, int MatrixLayout>
-py::array_t<Scalar> to_numpy(const Eigen::Matrix<Scalar, Rows, Cols, MatrixLayout>& A)
+template <typename Scalar=scalar, typename Matrix>
+py::array_t<Scalar> to_numpy(const Matrix& A)
 {
-  using matrix_t = Eigen::Matrix<Scalar, Rows, Cols, MatrixLayout>;
-
   // Create an empty array result of the correct size
   py::array_t<Scalar> result({A.rows(), A.cols()});
 
   // Copy A to result
-  Eigen::Map<matrix_t>(result.mutable_data(), A.rows(), A.cols()) = A;
+  Eigen::Map<Matrix>(result.mutable_data(), A.rows(), A.cols()) = A;
 
   return result;
 }
 
+// load a float tensor
 template <typename Scalar = double, int Rows = Eigen::Dynamic, int Cols = Eigen::Dynamic, int MatrixLayout = Eigen::ColMajor>
 Eigen::Matrix<Scalar, Rows, Cols, MatrixLayout> from_numpy(const py::array_t<Scalar>& A)
 {
   using matrix_t = Eigen::Matrix<Scalar, Rows, Cols, MatrixLayout>;
 
-  assert(A.ndim() == 2);
   auto shape = A.shape();
-  return Eigen::Map<matrix_t>(const_cast<Scalar*>(A.data()), shape[0], shape[1]);
+  if constexpr (Cols == 1)
+  {
+    return Eigen::Map<matrix_t>(const_cast<Scalar*>(A.data()), shape[0]);
+  }
+  else
+  {
+    return Eigen::Map<matrix_t>(const_cast<Scalar*>(A.data()), shape[0], shape[1]);
+  }
 }
 
 template <typename Scalar = double, int Rows = Eigen::Dynamic, int Cols = Eigen::Dynamic>
@@ -63,6 +68,52 @@ template <typename Scalar = double>
 py::array_t<Scalar> load_numpy_array(const std::string& filename)
 {
   return py::module::import("numpy").attr("load")(filename);
+}
+
+inline
+eigen::matrix load_float_matrix_from_dict(const py::dict& data, const std::string& key, bool transposed=true)
+{
+  if (transposed)
+  {
+    return nerva::eigen::from_numpy(data[key.c_str()].cast<py::array_t<scalar>>()).transpose();
+  }
+  else
+  {
+    return nerva::eigen::from_numpy(data[key.c_str()].cast<py::array_t<scalar>>());
+  }
+}
+
+inline
+eigen::vector load_float_vector_from_dict(const py::dict& data, const std::string& key)
+{
+  return nerva::eigen::from_numpy<scalar, Eigen::Dynamic, 1>(data[key.c_str()].cast<py::array_t<scalar>>()).transpose();
+}
+
+inline
+Eigen::Matrix<long, Eigen::Dynamic, 1, default_matrix_layout> load_long_vector_from_dict(const py::dict& data, const std::string& key)
+{
+  return nerva::eigen::from_numpy_1d(data[key.c_str()].cast<py::array_t<long>>());
+}
+
+inline
+void print_dict(const py::dict& data)
+{
+  for (const auto& item: data)
+  {
+    std::string key = item.first.cast<std::string>();
+    if (key[0] == 'W' || key == "Xtrain" || key == "Xtest")
+    {
+      eigen::print_numpy_matrix(key, eigen::load_float_matrix_from_dict(data, key).transpose());
+    }
+    else if (key[0] == 'b')
+    {
+      eigen::print_numpy_vector(key, eigen::load_float_vector_from_dict(data, key).transpose());
+    }
+    else if (key == "Ttrain" || key == "Ttest")
+    {
+      eigen::print_numpy_vector(key, eigen::load_long_vector_from_dict(data, key));
+    }
+  }
 }
 
 } // namespace nerva::eigen

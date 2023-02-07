@@ -76,10 +76,10 @@ struct dataset
 
     py::dict data = np.attr("load")(filename);
 
-    Xtrain = nerva::eigen::from_numpy(data["Xtrain"].cast<py::array_t<scalar>>()).transpose();
-    auto ttrain = nerva::eigen::from_numpy_1d(data["Ttrain"].cast<py::array_t<long>>());
-    Xtest = nerva::eigen::from_numpy(data["Xtest"].cast<py::array_t<scalar>>()).transpose();
-    auto ttest  = nerva::eigen::from_numpy_1d(data["Ttest"].cast<py::array_t<long>>());
+    Xtrain = eigen::load_float_matrix_from_dict(data, "Xtrain");
+    auto ttrain = eigen::load_long_vector_from_dict(data, "Ttrain");
+    Xtest = eigen::load_float_matrix_from_dict(data, "Xtest");
+    auto ttest = eigen::load_long_vector_from_dict(data, "Ttest");
 
     eigen::to_one_hot(ttrain, Ttrain);
     eigen::to_one_hot(ttest, Ttest);

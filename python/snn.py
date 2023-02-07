@@ -14,13 +14,15 @@ import nerva.learning_rate
 import nerva.loss
 import nerva.optimizers
 import nerva.random
+import nervalib
 from testing.datasets import create_cifar10_augmented_dataloaders, custom_load_cifar10_data, TorchDataLoader, \
     create_cifar10_dataloaders
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
 from testing.torch_models import make_torch_mask, make_torch_scheduler
 from testing.models import MLP1, MLP1a, MLP2, copy_weights_and_biases, print_model_info
 from testing.training import train_nerva, train_torch, compute_accuracy_torch, compute_accuracy_nerva, \
-    compute_densities, train_torch_preprocessed, train_nerva_preprocessed, train_both, compute_weight_difference
+    compute_densities, train_torch_preprocessed, train_nerva_preprocessed, train_both, compute_weight_difference, \
+    measure_inference_time_nerva, measure_inference_time_torch
 
 
 def make_torch_model_new(args, sizes, densities):
@@ -29,6 +31,9 @@ def make_torch_model_new(args, sizes, densities):
     M1.optimizer = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
     M1.loss = nn.CrossEntropyLoss()
     M1.learning_rate = make_torch_scheduler(args, M1.optimizer)
+    for layer in M1.layers:
+        nn.init.xavier_uniform_(layer.weight)
+    M1.apply_masks()
     return M1
 
 
@@ -54,7 +59,7 @@ def make_nerva_model(args, sizes, densities):
 
 def make_argument_parser():
     cmdline_parser = argparse.ArgumentParser()
-    cmdline_parser.add_argument("--show", help="Show data and intermediate results", action="store_true")
+    cmdline_parser.add_argument("--debug", help="Show data and intermediate results", action="store_true")
     cmdline_parser.add_argument("--batch-size", help="The batch size", type=int, default=1)
     cmdline_parser.add_argument("--seed", help="The initial seed of the random generator", type=int)
     cmdline_parser.add_argument("--precision", help="The precision used for printing", type=int, default=4)
@@ -72,8 +77,11 @@ def make_argument_parser():
     cmdline_parser.add_argument("--copy", help="copy weights and biases from the PyTorch model to the Nerva model", action="store_true")
     cmdline_parser.add_argument("--nerva", help="Train using a Nerva model", action="store_true")
     cmdline_parser.add_argument("--torch", help="Train using a PyTorch model", action="store_true")
+    cmdline_parser.add_argument("--inference", help="Estimate inference time", action="store_true")
+    cmdline_parser.add_argument("--save-model-npy", type=str, help="Save the model in .npy format (N.B. this is only used for measuring disk sizes!)")
     cmdline_parser.add_argument("--scheduler", type=str, help="the learning rate scheduler (constant,multistep)", default="multistep")
-    cmdline_parser.add_argument('--import-weights', type=str, help='Import weights from a file in .npy format')
+    cmdline_parser.add_argument('--export-weights-npz', type=str, help='Export weights to a file in .npz format')
+    cmdline_parser.add_argument('--import-weights-npz', type=str, help='Import weights from a file in .npz format')
     cmdline_parser.add_argument("--custom-masking", help="Use a custom variant of masking in the PyTorch models", action="store_true")
     return cmdline_parser
 
@@ -83,7 +91,7 @@ def initialize_frameworks(args):
         torch.manual_seed(args.seed)
         nerva.random.manual_seed(args.seed)
 
-    torch.set_printoptions(precision=args.precision, edgeitems=args.edgeitems, threshold=5, sci_mode=False, linewidth=120)
+    torch.set_printoptions(precision=args.precision, edgeitems=args.edgeitems, threshold=5, sci_mode=False, linewidth=160)
 
     # avoid 'Too many open files' error when using data loaders
     torch.multiprocessing.set_sharing_strategy('file_system')
@@ -122,21 +130,23 @@ def main():
     if args.copy:
         copy_weights_and_biases(M1, M2)
 
-    if args.import_weights:
-        M1.import_weights(args.import_weights)
-        M2.import_weights(args.import_weights)
-
     if args.torch:
         print('\n=== PyTorch model ===')
         print(M1)
         print(M1.loss)
         print(M1.learning_rate)
 
+        if args.export_weights_npz:
+            M1.export_weights_npz(args.export_weights_npz)
+
+        if args.import_weights_npz:
+            M1.import_weights_npz(args.import_weights)
+
         print('\n=== Training PyTorch model ===')
         if args.preprocessed:
-            train_torch_preprocessed(M1, args.preprocessed, args.epochs, args.batch_size, args.show)
+            train_torch_preprocessed(M1, args.preprocessed, args.epochs, args.batch_size, args.debug)
         else:
-            train_torch(M1, train_loader, test_loader, args.epochs, args.show)
+            train_torch(M1, train_loader, test_loader, args.epochs, args.debug)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_torch(M1, test_loader):.3f} %')
     elif args.nerva:
         print('\n=== Nerva model ===')
@@ -144,18 +154,29 @@ def main():
         print(M2.loss)
         print(M2.learning_rate)
 
+        if args.export_weights_npz:
+            M2.export_weights_npz(args.export_weights_npz)
+
+        if args.import_weights_npz:
+            M2.import_weights_npz(args.import_weights_npz)
+
         print('\n=== Training Nerva model ===')
         if args.preprocessed:
-            train_nerva_preprocessed(M2, args.preprocessed, args.epochs, args.batch_size, args.show)
+            train_nerva_preprocessed(M2, args.preprocessed, args.epochs, args.batch_size, args.debug)
         else:
-            train_nerva(M2, train_loader, test_loader, args.epochs, args.show)
+            train_nerva(M2, train_loader, test_loader, args.epochs, args.debug)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_nerva(M2, test_loader):.3f} %')
+    elif args.save_model_npy:
+        print(M2)
+        nervalib.save_model_weights_to_npy(args.save_model_npy, M2.compiled_model)
+    elif args.inference:
+        measure_inference_time_torch(M1, train_loader, args.density, repetitions=10)
+        measure_inference_time_nerva(M2, train_loader, args.density, repetitions=10)
     else:
-        #copy_weights_and_biases(M1, M2)
         print_model_info(M1)
         print_model_info(M2)
         compute_weight_difference(M1, M2)
-        train_both(M1, M2, train_loader, test_loader, args.epochs, args.show)
+        train_both(M1, M2, train_loader, test_loader, args.epochs, args.debug)
 
 
 if __name__ == '__main__':
