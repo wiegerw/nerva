@@ -72,6 +72,40 @@ def print_epoch(epoch, lr, loss, train_accuracy, test_accuracy, elapsed):
          )
 
 
+def measure_inference_time_torch(M, train_loader, density, repetitions=100):
+    M.train()  # Set model in training mode
+    batch_size = len(train_loader.dataset) // len(train_loader)
+
+    total_time = 0.0
+    for k, (X, T) in enumerate(train_loader):
+        start = timer()
+        Y = M(X)
+        elapsed = (timer() - start)
+        total_time += elapsed
+        print(f'batch {k} took {elapsed:.8f} seconds')
+        if k == repetitions:
+            break
+    print(f'Average PyTorch inference time for density={density} batch_size={batch_size}: {total_time/repetitions:.4f}s')
+
+
+def measure_inference_time_nerva(M, train_loader, density, repetitions=100):
+    batch_size = len(train_loader.dataset) // len(train_loader)
+    n_classes = M.sizes[-1]
+
+    total_time = 0.0
+    for k, (X, T) in enumerate(train_loader):
+        X = to_numpy(X)
+        T = to_one_hot_numpy(T, n_classes)
+        start = timer()
+        Y = M.feedforward(X)
+        elapsed = (timer() - start)
+        total_time += elapsed
+        print(f'batch {k} took {elapsed:.8f} seconds')
+        if k == repetitions:
+            break
+    print(f'Average Nerva inference time for density={density} batch_size={batch_size}: {total_time/repetitions:.4f}s')
+
+
 def train_torch(M, train_loader, test_loader, epochs, debug: bool):
     M.train()  # Set model in training mode
 
@@ -109,22 +143,6 @@ def train_torch(M, train_loader, test_loader, epochs, debug: bool):
                     elapsed=elapsed)
 
         M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
-
-
-def measure_inference_time_torch(M, train_loader, repetitions=10):
-    M.train()  # Set model in training mode
-    batch_size = len(train_loader.dataset) // len(train_loader)
-
-    total_time = 0.0
-    for k, (X, T) in enumerate(train_loader):
-        start = timer()
-        Y = M(X)
-        elapsed = (timer() - start)
-        total_time += elapsed
-        print(f'batch {k} took {elapsed} seconds')
-        if k == repetitions:
-            break
-    print(f'Average PyTorch inference time for batch_size {batch_size}: {1000*total_time/repetitions}ms')
 
 
 # At every epoch a new dataset in .npz format is read from datadir.
@@ -209,21 +227,6 @@ def train_nerva(M, train_loader, test_loader, epochs, debug: bool):
                     train_accuracy=compute_accuracy_nerva(M, train_loader),
                     test_accuracy=compute_accuracy_nerva(M, test_loader),
                     elapsed=elapsed)
-
-
-def measure_inference_time_nerva(M, train_loader, repetitions=10):
-    batch_size = len(train_loader.dataset) // len(train_loader)
-
-    total_time = 0.0
-    for k, (X, T) in enumerate(train_loader):
-        start = timer()
-        Y = M.feedforward(X)
-        elapsed = (timer() - start)
-        total_time += elapsed
-        print(f'batch {k} took {elapsed} seconds')
-        if k == repetitions:
-            break
-    print(f'Average Nerva inference time for batch_size {batch_size}: {1000*total_time/repetitions}ms')
 
 
 # TODO: use classes to reuse code

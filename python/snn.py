@@ -21,7 +21,8 @@ from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
 from testing.torch_models import make_torch_mask, make_torch_scheduler
 from testing.models import MLP1, MLP1a, MLP2, copy_weights_and_biases, print_model_info
 from testing.training import train_nerva, train_torch, compute_accuracy_torch, compute_accuracy_nerva, \
-    compute_densities, train_torch_preprocessed, train_nerva_preprocessed, train_both, compute_weight_difference
+    compute_densities, train_torch_preprocessed, train_nerva_preprocessed, train_both, compute_weight_difference, \
+    measure_inference_time_nerva, measure_inference_time_torch
 
 
 def make_torch_model_new(args, sizes, densities):
@@ -33,7 +34,6 @@ def make_torch_model_new(args, sizes, densities):
     for layer in M1.layers:
         nn.init.xavier_uniform_(layer.weight)
     M1.apply_masks()
-    M1.print_masks()
     return M1
 
 
@@ -77,6 +77,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--copy", help="copy weights and biases from the PyTorch model to the Nerva model", action="store_true")
     cmdline_parser.add_argument("--nerva", help="Train using a Nerva model", action="store_true")
     cmdline_parser.add_argument("--torch", help="Train using a PyTorch model", action="store_true")
+    cmdline_parser.add_argument("--inference", help="Estimate inference time", action="store_true")
     cmdline_parser.add_argument("--save-model-npy", type=str, help="Save the model in .npy format (N.B. this is only used for measuring disk sizes!)")
     cmdline_parser.add_argument("--scheduler", type=str, help="the learning rate scheduler (constant,multistep)", default="multistep")
     cmdline_parser.add_argument('--export-weights-npz', type=str, help='Export weights to a file in .npz format')
@@ -168,6 +169,9 @@ def main():
     elif args.save_model_npy:
         print(M2)
         nervalib.save_model_weights_to_npy(args.save_model_npy, M2.compiled_model)
+    elif args.inference:
+        measure_inference_time_torch(M1, train_loader, args.density, repetitions=5)
+        measure_inference_time_nerva(M2, train_loader, args.density, repetitions=5)
     else:
         print_model_info(M1)
         print_model_info(M2)
