@@ -4,6 +4,8 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
+# This file contains the example code that was used in the SNN submission
+
 import random
 import numpy as np
 from keras.datasets import cifar10
