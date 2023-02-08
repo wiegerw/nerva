@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+# N.B. The PyTorch training was done with the existing implementation of masking.
+# It turns out that the new implementation of masking produces better results.
+# This can be enabled using the flag --custom-masking.
 
 epochs=100
 batchsize=100
@@ -33,7 +37,6 @@ function train_sparse_torch()
                     --datadir="$datadir" \
                     --preprocessed=./cifar$seed \
                     --precision=8 \
-                    --custom-masking \
                     --export-weights-npz="weights-$density.npz" \
                     2>&1 | tee $logfile
 }
