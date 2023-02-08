@@ -1,0 +1,37 @@
+=== Command line arguments ===
+Namespace(debug=False, batch_size=100, seed=None, precision=4, edgeitems=3, density=0.01, sizes='3072,1024,512,10', epochs=100, lr=0.1, momentum=0.9, gamma=0.1, nesterov=False, datadir='./data', augmented=False, preprocessed=None, copy=False, nerva=False, torch=False, inference=True, save_model_npy=None, scheduler='multistep', export_weights_npz=None, import_weights_npz=None, custom_masking=True)
+Files already downloaded and verified
+initialize by ER
+Overall sparsity 0.01
+Total Model parameters: 3675136
+Total parameters under sparsity level of 0.01: 0.010057042786988019
+initialize by ER
+Overall sparsity 0.01
+Total Model parameters: 7350272
+Total parameters under sparsity level of 0.01: 0.0006201131060183895
+Use MLP1 variant with custom masking
+Setting masks with densities [0.007775972267359981, 0.017495937601559958, 0.6088586285342866]
+batch 0 took 0.00867061 seconds
+batch 1 took 0.03035519 seconds
+batch 2 took 0.00758807 seconds
+batch 3 took 0.01034025 seconds
+batch 4 took 0.00657022 seconds
+batch 5 took 0.00652724 seconds
+batch 6 took 0.02310250 seconds
+batch 7 took 0.00727946 seconds
+batch 8 took 0.00709354 seconds
+batch 9 took 0.00750107 seconds
+batch 10 took 0.00732060 seconds
+Average PyTorch inference time for density=0.01 batch_size=100: 11.3678ms
+batch 0 took 0.03988901 seconds
+batch 1 took 0.01936221 seconds
+batch 2 took 0.00121725 seconds
+batch 3 took 0.00156294 seconds
+batch 4 took 0.00141088 seconds
+batch 5 took 0.00319212 seconds
+batch 6 took 0.00248738 seconds
+batch 7 took 0.00151142 seconds
+batch 8 took 0.02376333 seconds
+batch 9 took 0.00382065 seconds
+batch 10 took 0.00139193 seconds
+Average Nerva inference time for density=0.01 batch_size=100: 5.9720ms
