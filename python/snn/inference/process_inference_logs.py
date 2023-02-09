@@ -2,6 +2,7 @@
 
 import pathlib
 import re
+import sys
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -103,7 +104,8 @@ def make_time_vs_density_plot(df: pd.DataFrame, filename: str):
 
 
 if __name__ == '__main__':
-    df = parse_results('seed123/results')
+    result_file = sys.argv[1]
+    df = parse_results(result_file)
 
     # drop the batch size 100 results
     df = df[df.batch_size == 1]
