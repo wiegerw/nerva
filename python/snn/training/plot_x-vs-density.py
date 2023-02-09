@@ -2,6 +2,7 @@
 
 import pathlib
 import re
+import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -165,9 +166,7 @@ def make_time_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str 
 
 
 
-def main():
-    # folder = pathlib.Path('./logs')
-    folder = pathlib.Path('./new')
+def main(folder):
     df = get_full_dataframe(folder)
 
     df_time = make_df_time(df)
@@ -183,6 +182,7 @@ def main():
     make_acc_vs_density_plot(df_acc, pathlib.Path(f'./accuracy-vs-{x_axis}.pdf'), x_axis, log_scale=True)
 
 
-
 if __name__ == '__main__':
-    main()
+    folder = pathlib.Path(sys.argv[1])
+    main(folder)
+

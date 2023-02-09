@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -7,6 +9,7 @@ import seaborn as sns
 import matplotlib.cm as cm
 import shutil
 import os
+import sys
 
 import pathlib
 import matplotlib.pyplot as plt
@@ -93,12 +96,7 @@ def make_df_acc(df: pd.DataFrame):
 
     return df_acc
 
-def main():
-
-    path_lc_logs = './pics/seed123/'
-    # labels = ['train accuracy', 'test accuracy']
-    labels = ['loss']
-
+def run(path_lc_logs, labels):
     density_l = ['dense', 0.5, 0.2, 0.1, 0.05, 0.01, 0.005, 0.001]
     plt.figure(figsize=(8, 10))
     for i, d in enumerate(density_l):
@@ -126,10 +124,12 @@ def main():
         make_plot(df_acc, sparsity=1-density, labels=labels, ax=None)
 
     label_l = ['Loss' if 'loss' in labels[0] else 'Accuracy']
-    plt.savefig('./pics/seed123/{}.pdf'.format(str(label_l[0])))
+    plt.savefig(f'{path_lc_logs}-{label_l[0]}.pdf')
     plt.close()
 
 
 if __name__ == '__main__':
+    folder = sys.argv[1]
+    run(folder, labels=['loss'])
+    run(folder, labels=['train accuracy', 'test accuracy'])
 
-    main()

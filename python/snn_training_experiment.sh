@@ -24,7 +24,7 @@ function train_sparse_torch()
   local lr=$2
   local density=$3
 
-  logfile="snn/torch-sparse-$density-augmented-seed$seed.log"
+  logfile="snn/training/torch-sparse-$density-augmented-seed$seed.log"
 
   python3 -u snn.py --torch --seed=$seed \
                     --density=$density \
@@ -47,7 +47,7 @@ function train_sparse_nerva()
   local lr=$2
   local density=$3
 
-  logfile="snn/nerva-sparse-$density-augmented-seed$seed.log"
+  logfile="snn/training/nerva-sparse-$density-augmented-seed$seed.log"
 
   ../tools/dist/mlpf --seed=$seed \
                      --density=$density \
@@ -75,7 +75,7 @@ function train_dense_torch()
   local seed=$1
   local lr=$2
 
-  logfile="snn/torch-dense-augmented-seed$seed.log"
+  logfile="snn/training/torch-dense-augmented-seed$seed.log"
 
   python3 -u snn.py --torch \
                     --seed=$seed \
@@ -96,7 +96,7 @@ function train_dense_nerva()
   local seed=$1
   local lr=$2
 
-  logfile="snn/nerva-dense-augmented-seed$seed.log"
+  logfile="snn/training/nerva-dense-augmented-seed$seed.log"
 
   ../tools/dist/mlpf --seed=$seed \
                      --hidden="$densesizes" \
