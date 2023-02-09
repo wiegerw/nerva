@@ -167,7 +167,7 @@ def make_time_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str 
 
 def main():
     # folder = pathlib.Path('./logs')
-    folder = pathlib.Path('./seed123')
+    folder = pathlib.Path('./new')
     df = get_full_dataframe(folder)
 
     df_time = make_df_time(df)
@@ -179,8 +179,8 @@ def main():
     x_axis = 'sparsity'
     # x_axis = 'density'
 
-    make_time_vs_density_plot(df_time, pathlib.Path(f'./seed123_plots/time-vs-{x_axis}_{name50}.pdf'), x_axis, with50=with50)  # log_scale=True)
-    # make_acc_vs_density_plot(df_acc, pathlib.Path(f'./seed123_plots/accuracy-vs-{x_axis}.pdf'), x_axis, log_scale=True)
+    make_time_vs_density_plot(df_time, pathlib.Path(f'./time-vs-{x_axis}_{name50}.pdf'), x_axis, with50=with50)  # log_scale=True)
+    make_acc_vs_density_plot(df_acc, pathlib.Path(f'./accuracy-vs-{x_axis}.pdf'), x_axis, log_scale=True)
 
 
 
