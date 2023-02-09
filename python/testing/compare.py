@@ -1,19 +1,22 @@
 import pathlib
 import tempfile
-from typing import Union
 
 from nerva.utilities import StopWatch
-from testing.models import MLP1, MLP1a, MLP2
+from testing.models import MLP1a, MLP2
 from testing.numpy_utils import pp, to_numpy, to_one_hot_numpy
 from testing.training import compute_weight_difference, compute_matrix_difference, print_epoch, compute_loss_torch, \
     compute_accuracy_torch, compute_loss_nerva, compute_accuracy_nerva
 
 
-def compare_pytorch_nerva(M1: Union[MLP1, MLP1a], M2: MLP2, train_loader, test_loader, epochs, debug: bool):
+def copy_weights_and_bias(M1: MLP1a, M2: MLP2):
     filename = tempfile.NamedTemporaryFile().name + '.npz'
     M1.export_weights_npz(filename)
     M2.import_weights_npz(filename)
     pathlib.Path(filename).unlink()
+
+
+def compare_pytorch_nerva(M1: MLP1a, M2: MLP2, train_loader, test_loader, epochs: int, debug: bool):
+    copy_weights_and_bias(M1, M2)
     compute_weight_difference(M1, M2)
 
     M1.train()  # Set model in training mode

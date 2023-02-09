@@ -57,7 +57,6 @@ def make_nerva_model(args, sizes, densities):
 
 def make_argument_parser():
     cmdline_parser = argparse.ArgumentParser()
-    cmdline_parser.add_argument("--debug", help="Show data and intermediate results", action="store_true")
     cmdline_parser.add_argument("--batch-size", help="The batch size", type=int, default=1)
     cmdline_parser.add_argument("--seed", help="The initial seed of the random generator", type=int)
     cmdline_parser.add_argument("--precision", help="The precision used for printing", type=int, default=4)
@@ -135,9 +134,9 @@ def main():
 
         print('\n=== Training PyTorch model ===')
         if args.preprocessed:
-            train_torch_preprocessed(M1, args.preprocessed, args.epochs, args.batch_size, args.debug)
+            train_torch_preprocessed(M1, args.preprocessed, args.epochs, args.batch_size)
         else:
-            train_torch(M1, train_loader, test_loader, args.epochs, args.debug)
+            train_torch(M1, train_loader, test_loader, args.epochs)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_torch(M1, test_loader):.3f} %')
     elif args.nerva:
         print('\n=== Nerva model ===')
@@ -150,9 +149,9 @@ def main():
 
         print('\n=== Training Nerva model ===')
         if args.preprocessed:
-            train_nerva_preprocessed(M2, args.preprocessed, args.epochs, args.batch_size, args.debug)
+            train_nerva_preprocessed(M2, args.preprocessed, args.epochs, args.batch_size)
         else:
-            train_nerva(M2, train_loader, test_loader, args.epochs, args.debug)
+            train_nerva(M2, train_loader, test_loader, args.epochs)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_nerva(M2, test_loader):.3f} %')
     elif args.inference:
         measure_inference_time_torch(M1, train_loader, args.density, repetitions=10)

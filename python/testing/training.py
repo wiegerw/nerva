@@ -109,7 +109,7 @@ def measure_inference_time_nerva(M, train_loader, density, repetitions=100):
     print(f'Average Nerva inference time for density={density} batch_size={batch_size}: {1000.0 * total_time/repetitions:.4f}ms')
 
 
-def train_torch(M, train_loader, test_loader, epochs, debug: bool):
+def train_torch(M, train_loader, test_loader, epochs):
     M.train()  # Set model in training mode
     watch = StopWatch()
 
@@ -132,13 +132,6 @@ def train_torch(M, train_loader, test_loader, epochs, debug: bool):
             M.optimize()
             elapsed += watch.seconds()
 
-            if debug:
-                print(f'epoch: {epoch} batch: {k}')
-                print_model_info(M)
-                pp('X', X)
-                pp('Y', Y)
-                #pp('DY', Y.grad.detach())
-
         print_epoch(epoch=epoch + 1,
                     lr=M.optimizer.param_groups[0]["lr"],
                     loss=compute_loss_torch(M, train_loader),
@@ -150,7 +143,7 @@ def train_torch(M, train_loader, test_loader, epochs, debug: bool):
 
 
 # At every epoch a new dataset in .npz format is read from datadir.
-def train_torch_preprocessed(M, datadir, epochs, batch_size, debug: bool):
+def train_torch_preprocessed(M, datadir, epochs, batch_size):
     M.train()  # Set model in training mode
     watch = StopWatch()
 
@@ -172,18 +165,10 @@ def train_torch_preprocessed(M, datadir, epochs, batch_size, debug: bool):
             watch.reset()
             M.optimizer.zero_grad()
             Y = M(X)
-            # Y.retain_grad()
             loss = M.loss(Y, T)
             loss.backward()
             M.optimize()
             elapsed += watch.seconds()
-
-            if debug:
-                print(f'epoch: {epoch} batch: {k}')
-                print_model_info(M)
-                pp('X', X)
-                pp('Y', Y)
-                # pp('DY', Y.grad.detach())
 
         print_epoch(epoch=epoch + 1,
                     lr=M.optimizer.param_groups[0]["lr"],
@@ -195,7 +180,7 @@ def train_torch_preprocessed(M, datadir, epochs, batch_size, debug: bool):
         M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
 
 
-def train_nerva(M, train_loader, test_loader, epochs, debug: bool):
+def train_nerva(M, train_loader, test_loader, epochs):
     n_classes = M.sizes[-1]
     batch_size = len(train_loader.dataset) // len(train_loader)
     watch = StopWatch()
@@ -219,13 +204,6 @@ def train_nerva(M, train_loader, test_loader, epochs, debug: bool):
             M.backpropagate(Y, DY)
             M.optimize(lr)
             elapsed += watch.seconds()
-
-            if debug:
-                print(f'epoch: {epoch} batch: {k}')
-                print_model_info(M)
-                pp('X', X)
-                pp('Y', Y)
-                # pp('DY', DY)
 
         print_epoch(epoch=epoch + 1,
                     lr=lr,
@@ -237,7 +215,7 @@ def train_nerva(M, train_loader, test_loader, epochs, debug: bool):
 
 # TODO: use classes to reuse code
 # At every epoch a new dataset in .npz format is read from datadir.
-def train_nerva_preprocessed(M, datadir, epochs, batch_size, debug: bool):
+def train_nerva_preprocessed(M, datadir, epochs, batch_size):
     train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch0.npz', batch_size=batch_size)
 
     n_classes = M.sizes[-1]
@@ -266,13 +244,6 @@ def train_nerva_preprocessed(M, datadir, epochs, batch_size, debug: bool):
             M.backpropagate(Y, DY)
             M.optimize(lr)
             elapsed += watch.seconds()
-
-            if debug:
-                print(f'epoch: {epoch} batch: {k}')
-                print_model_info(M)
-                pp('X', X)
-                pp('Y', Y)
-                # pp('DY', DY)
 
         print_epoch(epoch=epoch + 1,
                     lr=lr,

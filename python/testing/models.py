@@ -223,24 +223,6 @@ class MLP2(nerva.layers.Sequential):
         self.compiled_model.import_weights_npz(filename)
 
 
-def copy_weights_and_biases(model1: Union[MLP1, MLP1a, MLP2], model2: Union[MLP1, MLP2]):
-    """
-    Copies models and weights from model1 to model2
-    :param model1:
-    :param model2:
-    :return:
-    """
-    name = tempfile.NamedTemporaryFile().name
-    filename1 = name + '_weights.npy'
-    filename2 = name + '_bias.npy'
-    model1.export_weights(filename1)
-    model2.import_weights(filename1)
-    model1.export_bias(filename2)
-    model2.import_bias(filename2)
-    pathlib.Path(filename1).unlink(True)
-    pathlib.Path(filename2).unlink(True)
-
-
 def print_model_info(M):
     W = M.weights()
     b = M.bias()
