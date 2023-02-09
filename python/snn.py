@@ -5,6 +5,8 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import argparse
+import pathlib
+import tempfile
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -173,9 +175,6 @@ def main():
         measure_inference_time_torch(M1, train_loader, args.density, repetitions=10)
         measure_inference_time_nerva(M2, train_loader, args.density, repetitions=10)
     else:
-        print_model_info(M1)
-        print_model_info(M2)
-        compute_weight_difference(M1, M2)
         train_both(M1, M2, train_loader, test_loader, args.epochs, args.debug)
 
 

@@ -1,4 +1,7 @@
+import pathlib
+import tempfile
 from typing import List, Union
+
 import numpy as np
 
 from nerva.utilities import StopWatch
@@ -281,14 +284,18 @@ def train_nerva_preprocessed(M, datadir, epochs, batch_size, debug: bool):
                     elapsed=elapsed)
 
 
-def train_both(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs, debug: bool):
+def train_both(M1: Union[MLP1, MLP1a], M2: MLP2, train_loader, test_loader, epochs, debug: bool):
+    filename = tempfile.NamedTemporaryFile().name + '.npz'
+    M1.export_weights_npz(filename)
+    M2.import_weights_npz(filename)
+    pathlib.Path(filename).unlink()
+    compute_weight_difference(M1, M2)
+
     M1.train()  # Set model in training mode
     watch = StopWatch()
 
     n_classes = M2.sizes[-1]
     batch_size = len(train_loader.dataset) // len(train_loader)
-
-    compute_weight_difference(M1, M2)
 
     for epoch in range(epochs):
         watch.reset()
@@ -304,8 +311,8 @@ def train_both(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs, debug: boo
 
             if debug:
                 print(f'epoch: {epoch} batch: {k}')
-                pp('Y', Y1)
-                pp('DY', Y1.grad.detach())
+                pp('Y1', Y1)
+                pp('DY1', Y1.grad.detach())
 
             X2 = to_numpy(X1)
             T2 = to_one_hot_numpy(T1, n_classes)
@@ -316,8 +323,8 @@ def train_both(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs, debug: boo
 
             if debug:
                 print(f'epoch: {epoch} batch: {k}')
-                pp('Y', Y2)
-                pp('DY', DY2)
+                pp('Y2', Y2.T)
+                pp('DY2', DY2.T)
 
             if debug:
                 print(f'epoch: {epoch} batch: {k}')
@@ -351,9 +358,8 @@ def compute_densities(density: float, sizes: List[int], erk_power_scale: float =
     if density == 1.0:
         return [1.0] * n
 
-    total_params = sum(rows * columns for (rows, columns) in layer_shapes)
-
     dense_layers = set()
+
     while True:
         divisor = 0
         rhs = 0
@@ -374,7 +380,6 @@ def compute_densities(density: float, sizes: List[int], erk_power_scale: float =
         if max_prob_one > 1:
             for j, mask_raw_prob in enumerate(raw_probabilities):
                 if mask_raw_prob == max_prob:
-                    #print(f"Sparsity of layer:{j} had to be set to 0.")
                     dense_layers.add(j)
         else:
             break
@@ -389,7 +394,6 @@ def compute_densities(density: float, sizes: List[int], erk_power_scale: float =
         else:
             probability_one = epsilon * raw_probabilities[i]
             densities[i] = probability_one
-        #print(f"layer: {i}, shape: {(rows,columns)}, density: {densities[i]}")
         total_nonzero += densities[i] * n_param
-    #print(f"Overall sparsity {total_nonzero / total_params:.4f}")
+
     return densities

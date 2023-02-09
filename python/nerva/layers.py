@@ -284,10 +284,11 @@ class Sequential(object):
         self.compiled_model.info('M')
 
     def import_weights(self, filename: str):
-        self.compiled_model.import_weights(filename)
+        self.compiled_model.import_weights_npz(filename)
 
-    def export_weights(self, filename: str):
-        self.compiled_model.export_weights(filename)
+    # TODO: Currently unsupported, because of limitations at the C++ side
+    # def export_weights(self, filename: str):
+    #     self.compiled_model.export_weights(filename)
 
     def import_bias(self, filename: str):
         self.compiled_model.import_bias(filename)

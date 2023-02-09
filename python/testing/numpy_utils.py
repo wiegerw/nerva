@@ -64,10 +64,14 @@ def normalize_image_data(X: np.array, mean=None, std=None):
     return (X  - mean) / std
 
 
+def torch_inf_norm(x: torch.Tensor):
+    return torch.abs(x).max().item()
+
+
 def pp(name: str, x: Union[torch.Tensor, np.ndarray]):
     if isinstance(x, np.ndarray):
         x = torch.Tensor(x)
     if len(x.shape) == 1:
-        print(f'{name} ({x.shape[0]})\n{x.data}')
+        print(f'{name} ({x.shape[0]}) norm = {torch_inf_norm(x)}\n{x.data}')
     else:
-        print(f'{name} ({x.shape[0]}x{x.shape[1]})\n{x.data}')
+        print(f'{name} ({x.shape[0]}x{x.shape[1]}) norm = {torch_inf_norm(x)}\n{x.data}')

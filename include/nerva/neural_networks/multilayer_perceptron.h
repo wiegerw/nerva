@@ -183,6 +183,42 @@ void print_model_info(const multilayer_perceptron& M)
   }
 }
 
+inline
+std::vector<eigen::matrix> mlp_weights(const multilayer_perceptron& M)
+{
+  std::vector<eigen::matrix> result;
+  for (auto& layer: M.layers)
+  {
+    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
+    {
+      result.push_back(dlayer->W);
+    }
+    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
+    {
+      result.push_back(mkl::to_eigen(slayer->W));
+    }
+  }
+  return result;
+}
+
+inline
+std::vector<eigen::matrix> mlp_bias(const multilayer_perceptron& M)
+{
+  std::vector<eigen::matrix> result;
+  for (auto& layer: M.layers)
+  {
+    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
+    {
+      result.push_back(dlayer->b);
+    }
+    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
+    {
+      result.push_back(slayer->b);
+    }
+  }
+  return result;
+}
+
 // Precondition: the python interpreter must be running.
 // This can be enforced using `py::scoped_interpreter guard{};`
 inline

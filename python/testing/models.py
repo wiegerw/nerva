@@ -195,6 +195,7 @@ class MLP1a(nn.Module):
             pp(f'W{i + 1}', layer.weight)
             pp(f'b{i + 1}', layer.bias)
 
+
 class MLP2(nerva.layers.Sequential):
     def __init__(self, sizes, densities, optimizer, batch_size):
         super().__init__()
@@ -213,25 +214,13 @@ class MLP2(nerva.layers.Sequential):
         self.compile(sizes[0], batch_size)
 
     def weights(self) -> List[np.ndarray]:
-        filename = tempfile.NamedTemporaryFile().name + '_weights.npy'
-        self.export_weights(filename)
-        result = load_numpy_arrays_from_npy_file(filename)
-        pathlib.Path(filename).unlink(True)
-        return result
+        return self.compiled_model.weights()
 
     def bias(self) -> List[np.ndarray]:
-        def flatten(x: np.ndarray):
-            if len(x.shape) == 2 and x.shape[1] == 1:
-                return x.reshape(x.shape[0])
-            else:
-                return x
+        return [b.reshape((b.shape[0])) for b in self.compiled_model.bias()]
 
-        filename = tempfile.NamedTemporaryFile().name + '_bias.npy'
-        self.export_bias(filename)
-        bias = load_numpy_arrays_from_npy_file(filename)
-        pathlib.Path(filename).unlink(True)
-        # N.B. The shape of the bias can be (128,1), in which case we flatten it to (128).
-        return [flatten(b) for b in bias]
+    def import_weights_npz(self, filename: str):
+        self.compiled_model.import_weights_npz(filename)
 
 
 def copy_weights_and_biases(model1: Union[MLP1, MLP1a, MLP2], model2: Union[MLP1, MLP2]):
