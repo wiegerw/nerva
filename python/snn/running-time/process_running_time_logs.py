@@ -3,6 +3,7 @@
 import math
 import pathlib
 import re
+import sys
 from collections import defaultdict
 from typing import Union
 
@@ -92,8 +93,8 @@ def create_size_table(model, width, size, time):
 
 
 # torch-density-0.01-sizes-2048,2048,2048-seed-12345.log:epoch   1  lr: 0.10000000  loss: 2.30671000  train accuracy: 0.10000000  test accuracy: 0.10000000  time: 55.98063940s
-def parse_results() -> None:
-    text = pathlib.Path('results').read_text()
+def parse_results(filename: str) -> None:
+    text = pathlib.Path(filename).read_text()
     lines = list(filter(None, text.split('\n')))
     pattern = re.compile(r'(\w+)-density-([\d.]+)-sizes-([\d,]+)-seed-(\d+).log.*time:\s* ([\d.]*)s\s*$')
 
@@ -130,4 +131,5 @@ def parse_results() -> None:
 
 
 if __name__ == '__main__':
-    parse_results()
+    result_file = sys.argv[1]
+    parse_results(result_file)
