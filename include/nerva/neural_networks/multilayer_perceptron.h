@@ -320,7 +320,7 @@ void import_weights_from_npz(multilayer_perceptron& M, const std::string& filena
   auto np = py::module::import("numpy");
 
   py::dict data = np.attr("load")(filename);
-  eigen::print_dict(data);
+  // eigen::print_dict(data);
 
   unsigned int index = 1;
 

@@ -52,11 +52,15 @@ def compute_loss_nerva(M: MLP2, data_loader):
 
 
 def compute_weight_difference(M1, M2):
-    wdiff = [l1_norm(W1 - W2) for W1, W2 in zip(M1.weights(), M2.weights())]
-    bdiff = [l1_norm(b1 - b2) for b1, b2 in zip(M1.bias(), M2.bias())]
-    w1 = [l1_norm(W) for W in M1.weights()]
-    w2 = [l1_norm(W) for W in M2.weights()]
-    print(f'weight differences: {wdiff} bias differences: {bdiff} |W1|={w1} |W2|={w2}')
+    weights1 = M1.weights()
+    weights2 = M2.weights()
+    bias1 = M1.bias()
+    bias2 = M2.bias()
+    weightdiff = [l1_norm(W1 - W2) for W1, W2 in zip(weights1, weights2)]
+    biasdiff = [l1_norm(b1 - b2) for b1, b2 in zip(bias1, bias2)]
+    weightnorm1 = [l1_norm(W) for W in weights1]
+    weightnorm2 = [l1_norm(W) for W in weights2]
+    return weightdiff, biasdiff, weightnorm1, weightnorm2
 
 
 def compute_matrix_difference(name, X1: np.ndarray, X2: np.ndarray):

@@ -5,6 +5,9 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import argparse
+import shlex
+import sys
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -19,7 +22,7 @@ from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
 from testing.torch_models import make_torch_scheduler
 from testing.models import MLP1a, MLP2
 from testing.training import compute_densities
-from testing.compare import compare_pytorch_nerva
+from testing.compare import compare_pytorch_nerva, CompareOptions, copy_weights_and_bias
 
 
 def make_torch_model(args, sizes, densities):
@@ -43,29 +46,59 @@ def make_nerva_model(args, sizes, densities):
 
 def make_argument_parser():
     cmdline_parser = argparse.ArgumentParser()
-    cmdline_parser.add_argument("--debug", help="Show data and intermediate results", action="store_true")
-    cmdline_parser.add_argument("--batch-size", help="The batch size", type=int, default=1)
+
+    # randomness
     cmdline_parser.add_argument("--seed", help="The initial seed of the random generator", type=int)
-    cmdline_parser.add_argument("--precision", help="The precision used for printing", type=int, default=4)
-    cmdline_parser.add_argument("--edgeitems", help="The edgeitems used for printing matrices", type=int, default=3)
-    cmdline_parser.add_argument('--density', type=float, default=1.0, help='The density of the overall sparse network.')
+
+    # model parameters
     cmdline_parser.add_argument('--sizes', type=str, default='3072,128,64,10', help='A comma separated list of layer sizes, e.g. "3072,128,64,10".')
-    cmdline_parser.add_argument("--epochs", help="The number of epochs", type=int, default=100)
-    cmdline_parser.add_argument("--lr", help="The learning rate", type=float, default=0.1)
+    cmdline_parser.add_argument('--densities', type=str, help='A comma separated list of layer densities, e.g. "0.05,0.05,1.0".')
+    cmdline_parser.add_argument('--overall-density', type=float, default=1.0, help='The overall density of the layers.')
+
+    # optimizer
     cmdline_parser.add_argument('--momentum', type=float, default=0.9, help='the momentum value (default: off)')
-    cmdline_parser.add_argument('--gamma', type=float, default=0.1, help='the learning rate decay (default: 0.1)')
     cmdline_parser.add_argument("--nesterov", help="apply nesterov", action="store_true")
+
+    # learning rate
+    cmdline_parser.add_argument("--lr", help="The initial learning rate", type=float, default=0.1)
+    cmdline_parser.add_argument("--scheduler", type=str, help="The learning rate scheduler (constant,multistep)", default="multistep")
+    cmdline_parser.add_argument('--gamma', type=float, default=0.1, help='The learning rate decay (default: 0.1)')
+
+    # training
+    cmdline_parser.add_argument("--epochs", help="The number of epochs", type=int, default=100)
+    cmdline_parser.add_argument("--batch-size", help="The batch size", type=int, default=1)
+    cmdline_parser.add_argument("--batch-limit", help="The maximum number of batches per epoch", type=int, default=sys.maxsize)
+
+    # dataset
     cmdline_parser.add_argument('--datadir', type=str, default='./data', help='the data directory (default: ./data)')
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
-    cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
-    cmdline_parser.add_argument("--nerva", help="Train using a Nerva model", action="store_true")
-    cmdline_parser.add_argument("--torch", help="Train using a PyTorch model", action="store_true")
-    cmdline_parser.add_argument("--inference", help="Estimate inference time", action="store_true")
-    cmdline_parser.add_argument("--save-model-npy", type=str, help="Save the model in .npy format (N.B. this is only used for measuring disk sizes!)")
-    cmdline_parser.add_argument("--scheduler", type=str, help="the learning rate scheduler (constant,multistep)", default="multistep")
-    cmdline_parser.add_argument('--export-weights-npz', type=str, help='Export weights to a file in .npz format')
-    cmdline_parser.add_argument('--import-weights-npz', type=str, help='Import weights from a file in .npz format')
+
+    # output
+    cmdline_parser.add_argument("--weight-info", help="Print weight differences between the models", action="store_true")
+    cmdline_parser.add_argument("--weight-norm-info", help="Print norms of the weight matrices", action="store_true")
+    cmdline_parser.add_argument("--batch-info", help="Print detailed info about the batch computations", action="store_true")
+
+    # print options
+    cmdline_parser.add_argument("--precision", help="The precision used for printing matrices", type=int, default=8)
+    cmdline_parser.add_argument("--edgeitems", help="The edgeitems used for printing matrices", type=int, default=3)
+
     return cmdline_parser
+
+
+def check_command_line_arguments(args):
+    if args.augmented and args.preprocessed:
+        raise RuntimeError('the combination of --augmented and --preprocessed is unsupported')
+
+    if args.densities and args.overall_density:
+        raise RuntimeError('the options --densities and --overall-density cannot be used simultaneously')
+
+
+def print_command_line_arguments(args):
+    print('=== Command line arguments ===')
+    print("command = python3 " + " ".join(shlex.quote(arg) if " " in arg else arg for arg in sys.argv))
+    for key, value in vars(args).items():
+        print(f'{key} = {value}')
+    print('==============================\n')
 
 
 def initialize_frameworks(args):
@@ -82,13 +115,12 @@ def initialize_frameworks(args):
 def main():
     cmdline_parser = make_argument_parser()
     args = cmdline_parser.parse_args()
-
-    print('=== Command line arguments ===')
-    print(args)
+    check_command_line_arguments(args)
+    print_command_line_arguments(args)
 
     initialize_frameworks(args)
 
-    if args.epochs <= 10:
+    if args.scheduler == 'multistep' and args.epochs <= 10:
         print('Setting gamma to 1.0')
         args.gamma = 1.0
 
@@ -98,15 +130,24 @@ def main():
         train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
 
     sizes = [int(s) for s in args.sizes.split(',')]
-    densities = compute_densities(args.density, sizes)
+
+    if args.densities:
+        densities = list(float(d) for d in args.densities.split(','))
+    elif args.overall_density:
+        densities = compute_densities(args.overall_density, sizes)
+    else:
+        densities = [1.0] * (len(sizes) - 1)
+
+    CompareOptions.print_weight_info = args.weight_info
+    CompareOptions.print_weight_norm_info = args.weight_norm_info
+    CompareOptions.print_batch_info = args.batch_info
+    CompareOptions.batch_limit = args.batch_limit
 
     M1 = make_torch_model(args, sizes, densities)
     M2 = make_nerva_model(args, sizes, densities)
+    copy_weights_and_bias(M1, M2)
 
-    if args.augmented and args.preprocessed:
-        raise RuntimeError('the combination of --augmented and --preprocessed is unsupported')
-
-    compare_pytorch_nerva(M1, M2, train_loader, test_loader, args.epochs, args.debug)
+    compare_pytorch_nerva(M1, M2, train_loader, test_loader, args.epochs)
 
 
 if __name__ == '__main__':
