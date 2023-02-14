@@ -10,7 +10,7 @@ from torch.nn import functional as F
 import nerva.layers
 from testing.datasets import save_dict_to_npz, load_dict_from_npz
 from testing.masking import create_mask
-from testing.numpy_utils import load_numpy_arrays_from_npy_file, pp, save_eigen_array, load_eigen_array, l1_norm
+from testing.numpy_utils import pp, l1_norm
 
 
 class MLP1(nn.Module):
@@ -56,28 +56,6 @@ class MLP1(nn.Module):
         for i, layer in enumerate(self.layers):
             layer.weight.data = data[f'W{i + 1}']
             layer.bias.data = data[f'b{i + 1}']
-
-    def export_weights_npy(self, filename: str):
-        with open(filename, "wb") as f:
-            for layer in self.layers:
-                save_eigen_array(f, layer.weight.detach().numpy())
-
-    def import_weights_npy(self, filename: str):
-        print(f'Importing weights from {filename}')
-        with open(filename, "rb") as f:
-            for layer in self.layers:
-                layer.weight.data = torch.Tensor(load_eigen_array(f))
-
-    def export_bias_npy(self, filename: str):
-        with open(filename, "wb") as f:
-            for layer in self.layers:
-                save_eigen_array(f, layer.bias.detach().numpy())
-
-    def import_bias_npy(self, filename: str):
-        print(f'Importing bias from {filename}')
-        with open(filename, "rb") as f:
-            for layer in self.layers:
-                layer.bias.data = torch.Tensor(load_eigen_array(f))
 
     def print_weight_info(self):
         for i, layer in enumerate(self.layers):
@@ -159,28 +137,6 @@ class MLP1a(nn.Module):
             layer.weight.data = data[f'W{i + 1}']
             layer.bias.data = data[f'b{i + 1}']
 
-    def export_weights_npy(self, filename: str):
-        with open(filename, "wb") as f:
-            for layer in self.layers:
-                save_eigen_array(f, layer.weight.detach().numpy())
-
-    def import_weights_npy(self, filename: str):
-        print(f'Importing weights from {filename}')
-        with open(filename, "rb") as f:
-            for layer in self.layers:
-                layer.weight.data = torch.Tensor(load_eigen_array(f))
-
-    def export_bias_npy(self, filename: str):
-        with open(filename, "wb") as f:
-            for layer in self.layers:
-                save_eigen_array(f, layer.bias.detach().numpy())
-
-    def import_bias_npy(self, filename: str):
-        print(f'Importing bias from {filename}')
-        with open(filename, "rb") as f:
-            for layer in self.layers:
-                layer.bias.data = torch.Tensor(load_eigen_array(f))
-
     def print_weight_info(self):
         for i, layer in enumerate(self.layers):
             print(f'|w{i + 1}| = {l1_norm(layer.weight.detach().numpy())}')
@@ -218,6 +174,9 @@ class MLP2(nerva.layers.Sequential):
 
     def bias(self) -> List[np.ndarray]:
         return [b.reshape((b.shape[0])) for b in self.compiled_model.bias()]
+
+    def export_weights_npz(self, filename: str):
+        self.compiled_model.export_weights_npz(filename)
 
     def import_weights_npz(self, filename: str):
         self.compiled_model.import_weights_npz(filename)

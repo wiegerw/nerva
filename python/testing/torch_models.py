@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 from sparselearning.core import Masking
-from testing.numpy_utils import to_numpy
 
 
 def flatten_torch(x: torch.Tensor) -> torch.Tensor:

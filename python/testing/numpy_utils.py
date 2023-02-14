@@ -1,38 +1,7 @@
-from typing import List, Union
+from typing import Union
 
-import io
 import numpy as np
 import torch
-
-
-def save_eigen_array(f: io.IOBase, x: np.ndarray):
-    def to_eigen(x: np.ndarray):
-        if len(x.shape) == 2:
-            return x.reshape(x.shape[1], x.shape[0], order='F').T
-        return x
-
-    np.save(f, to_eigen(x), allow_pickle=True)
-
-
-def load_eigen_array(f: io.IOBase) -> np.ndarray:
-    def from_eigen(x: np.ndarray):
-        if len(x.shape) == 2:
-            return x.reshape(x.shape[1], x.shape[0], order='C').T
-        return x
-
-    return from_eigen(np.load(f, allow_pickle=True))
-
-
-# Loads a number of Numpy arrays from an .npy file and returns them in a list
-def load_numpy_arrays_from_npy_file(filename: str) -> List[np.ndarray]:
-    arrays = []
-    try:
-        with open(filename, "rb") as f:
-            while True:
-                arrays.append(load_eigen_array(f))
-    except IOError:
-        pass
-    return arrays
 
 
 def to_numpy(x: torch.Tensor) -> np.ndarray:

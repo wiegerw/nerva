@@ -199,10 +199,6 @@ class tool: public command_line_tool
 {
   protected:
     mlp_options options;
-    std::string import_bias_npy;
-    std::string export_bias_npy;
-    std::string import_weights_npy;
-    std::string export_weights_npy;
     std::string import_weights_npz;
     std::string export_weights_npz;
     std::string hidden_layer_sizes_text;
@@ -234,10 +230,6 @@ class tool: public command_line_tool
       cli |= lyra::opt(no_statistics)["--no-statistics"]("Do not compute statistics during training.");
       cli |= lyra::opt(options.threads, "value")["--threads"]("The number of threads used by Eigen.");
       cli |= lyra::opt(preprocessed_dir, "value")["--preprocessed"]("A directory containing the files epoch<nnn>.npz");
-      cli |= lyra::opt(import_bias_npy, "value")["--import-bias-npy"]("Loads the bias from a file in .npy format");
-      cli |= lyra::opt(export_bias_npy, "value")["--export-bias-npy"]("Exports the bias to a file in .npy format");
-      cli |= lyra::opt(import_weights_npy, "value")["--import-weights-npy"]("Loads the weights from a file in .npy format");
-      cli |= lyra::opt(export_weights_npy, "value")["--export-weights-npy"]("Exports the weights to a file in .npy format");
       cli |= lyra::opt(import_weights_npz, "value")["--import-weights-npz"]("Loads the weights from a file in .npz format");
       cli |= lyra::opt(export_weights_npz, "value")["--export-weights-npz"]("Exports the weights to a file in .npz format");
       cli |= lyra::opt(options.precision, "value")["--precision"]("The precision that is used for printing.");
@@ -322,37 +314,16 @@ class tool: public command_line_tool
       std::shared_ptr<loss_function> loss = parse_loss_function(options.loss_function);
       std::shared_ptr<learning_rate_scheduler> learning_rate = parse_learning_rate_scheduler(options.learning_rate_scheduler);
 
-      if (import_weights_npy.empty() && import_weights_npz.empty())
-      {
-        set_weights(M, options.weights_initialization, options.architecture, rng);
-      }
-
       if (!import_weights_npz.empty())
       {
         import_weights_from_npz(M, import_weights_npz);
         print_model_info(M);
       }
-//      if (!import_weights_npy.empty())
-//      {
-//        import_weights_from_npy(M, import_weights_npz);
-//      }
-//      if (!import_bias_npy.empty())
-//      {
-//        import_bias_from_npy(M, import_bias_npy);
-//      }
 
       if (!export_weights_npz.empty())
       {
         export_weights_to_npz(M, export_weights_npz);
       }
-//      if (!export_weights_npy.empty())
-//      {
-//        export_weights_to_npy(M, import_weights_npz);
-//      }
-//      if (!export_bias_npy.empty())
-//      {
-//        export_bias_to_npy(M, import_bias_npy);
-//      }
 
       if (info)
       {

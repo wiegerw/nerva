@@ -28,6 +28,28 @@ template <typename Matrix> struct linear_layer;
 template <typename Matrix> struct dropout_layer;
 template <typename Matrix> struct batch_normalization_layer;
 
+inline
+void compare_sizes(const eigen::matrix& W1, const eigen::matrix& W2)
+{
+  if (W1.rows() != W2.rows() || W1.cols() != W2.cols())
+  {
+    eigen::print_numpy_matrix("W", W1);
+    eigen::print_numpy_matrix("W", W2);
+    throw std::runtime_error("matrix sizes do not match");
+  }
+}
+
+inline
+void compare_sizes(const mkl::sparse_matrix_csr<scalar>& W1, const eigen::matrix& W2)
+{
+  if (W1.rows() != W2.rows() || W1.cols() != W2.cols())
+  {
+    eigen::print_numpy_matrix("W", mkl::to_eigen(W1));
+    eigen::print_numpy_matrix("W", W2);
+    throw std::runtime_error("matrix sizes do not match");
+  }
+}
+
 struct neural_network_layer
 {
   eigen::matrix X;  // the input
@@ -150,6 +172,7 @@ struct linear_layer: public neural_network_layer
   {
     if constexpr (IsSparse)
     {
+      compare_sizes(this->W, W);
       this->W = mkl::to_csr(W);
       this->DW = this->W;
       this->DW = scalar(0);
@@ -158,6 +181,7 @@ struct linear_layer: public neural_network_layer
     }
     else
     {
+      compare_sizes(this->W, W);
       this->W = W;
       this->b = b;
     }
