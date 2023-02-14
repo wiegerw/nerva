@@ -163,22 +163,10 @@ def create_npz_dataloaders(filename: str, batch_size: int) -> Tuple[TorchDataLoa
     return train_loader, test_loader
 
 
-def to_eigen(x: np.ndarray) -> np.ndarray:
-    if len(x.shape) == 2:
-        return x.reshape(x.shape[1], x.shape[0], order='F').T
-    return x
-
-
-def from_eigen(x: np.ndarray) -> np.ndarray:
-    if len(x.shape) == 2:
-        return x.reshape(x.shape[1], x.shape[0], order='C').T
-    return x
-
-
 # save data to .npz file in a format readable in C++
 def save_dict_to_npz(filename, data: dict[str, torch.Tensor]):
     print(f'Saving data to {filename}')
-    data = {key: to_eigen(value.detach().numpy()) for key, value in data.items()}
+    data = {key: value.detach().numpy() for key, value in data.items()}
     with open(filename, "wb") as f:
         np.savez_compressed(f, **data)
 
@@ -192,7 +180,7 @@ def load_dict_from_npz(filename):
 
     print(f'Loading data from {filename}')
     data = dict(np.load(filename, allow_pickle=True))
-    data = {key: make_tensor(from_eigen(value)) for key, value in data.items()}
+    data = {key: make_tensor(value) for key, value in data.items()}
     return data
 
 

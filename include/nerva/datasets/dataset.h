@@ -65,24 +65,19 @@ struct dataset
   void import_cifar10_from_npz(const std::string& filename)
   {
     std::cout << "Loading data from file " << filename << std::endl;
-    namespace py = pybind11;
-    auto np = py::module::import("numpy");
-    auto io = py::module::import("io");
 
     if (!std::filesystem::exists(std::filesystem::path(filename)))
     {
       throw std::runtime_error("Could not load file '" + filename + "'");
     }
 
-    py::dict data = np.attr("load")(filename);
-
-    Xtrain = eigen::load_float_matrix_from_dict(data, "Xtrain");
-    auto ttrain = eigen::load_long_vector_from_dict(data, "Ttrain");
-    Xtest = eigen::load_float_matrix_from_dict(data, "Xtest");
-    auto ttest = eigen::load_long_vector_from_dict(data, "Ttest");
-
-    eigen::to_one_hot(ttrain, Ttrain);
-    eigen::to_one_hot(ttest, Ttest);
+    pybind11::dict data = pybind11::module::import("numpy").attr("load")(filename);
+    Xtrain = eigen::extract_matrix(data, "Xtrain").transpose();
+    Xtest = eigen::extract_matrix(data, "Xtest").transpose();
+    auto Ttrain_ = eigen::extract_vector<long>(data, "Ttrain");
+    auto Ttest_ = eigen::extract_vector<long>(data, "Ttest");
+    eigen::to_one_hot(Ttrain_, Ttrain);
+    eigen::to_one_hot(Ttest_, Ttest);
   }
 };
 

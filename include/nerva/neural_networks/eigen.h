@@ -24,6 +24,20 @@
 
 namespace nerva::eigen {
 
+// Column Major = Fortran,
+// Row Major = C
+// Default Eigen: Column Major
+// Default Numpy: Row Major
+
+// Eigen matrices are by default stored in column-major order, meaning that the
+// last index of the matrix changes the fastest. In other words, matrices are
+// stored in a column-major order, which is the reverse of the default row-
+// major order for NumPy arrays. This means that if you have a matrix, the
+// elements are stored in a contiguous block of memory, with the elements of
+// each column stored one after the other. In general, column-major order is
+// the default storage format for many numerical libraries, including LAPACK
+// and BLAS, as well as many high-level languages like Fortran.
+
 static constexpr Eigen::StorageOptions default_matrix_layout = Eigen::ColMajor;
 using vector = Eigen::Matrix<scalar, Eigen::Dynamic, 1>;
 using matrix = Eigen::Matrix<scalar, Eigen::Dynamic, Eigen::Dynamic, default_matrix_layout>;

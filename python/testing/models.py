@@ -8,7 +8,7 @@ from torch import nn as nn
 from torch.nn import functional as F
 
 import nerva.layers
-from testing.datasets import to_eigen, from_eigen, save_dict_to_npz, load_dict_from_npz
+from testing.datasets import save_dict_to_npz, load_dict_from_npz
 from testing.masking import create_mask
 from testing.numpy_utils import load_numpy_arrays_from_npy_file, pp, save_eigen_array, load_eigen_array, l1_norm
 
@@ -236,8 +236,8 @@ def save_weights_to_npz(filename, weights: List[torch.Tensor], bias: List[torch.
     print(f'Saving weights and biases to {filename}')
     data = {}
     for i, (W, b) in enumerate(zip(weights, bias)):
-        data[f'W{i}'] = to_eigen(W.detach().numpy())
-        data[f'b{i}'] = to_eigen(b.detach().numpy())
+        data[f'W{i}'] = W.detach().numpy()
+        data[f'b{i}'] = b.detach().numpy()
     with open(filename, "wb") as f:
         np.savez_compressed(f, data)
 
@@ -247,6 +247,6 @@ def load_weights_from_npz(filename):
     print(f'Loading data from {filename}')
     data = np.load(filename, allow_pickle=True)
     n = len(data) // 2
-    weights = [torch.Tensor(from_eigen(data[f'W{i}'])) for i in range(n)]
-    bias = [torch.Tensor(from_eigen(data[f'b{i}'])) for i in range(n)]
+    weights = [torch.Tensor(data[f'W{i}']) for i in range(n)]
+    bias = [torch.Tensor(data[f'b{i}']) for i in range(n)]
     return weights, bias

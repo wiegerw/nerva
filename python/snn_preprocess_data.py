@@ -11,7 +11,7 @@ import sys
 import numpy as np
 import torch
 from testing.datasets import create_cifar10_augmented_datasets, create_dataloaders, custom_load_cifar10_data, \
-    create_cifar10_augmented_dataloaders, extract_tensors_from_dataloader, save_train_test_data_to_npz, from_eigen, to_eigen
+    create_cifar10_augmented_dataloaders, extract_tensors_from_dataloader, save_train_test_data_to_npz
 from testing.numpy_utils import pp
 
 
@@ -28,7 +28,7 @@ def inspect_data(outputdir, epochs):
         print(f'--- epoch {epoch} ---')
         path = pathlib.Path(outputdir) / f'epoch{epoch}.npz'
         d = np.load(path)
-        Xtrain = from_eigen(d['Xtrain'])
+        Xtrain = d['Xtrain']
         pp(f'Xtrain', Xtrain)
 
 
@@ -48,16 +48,16 @@ def check(datadir):
     print(f'Saving data to file {filename}')
     with open(filename, "wb") as f:
         np.savez_compressed(f,
-                            Xtrain=to_eigen(Xtrain.detach().numpy()),
-                            Ttrain=to_eigen(Ttrain.detach().numpy()),
-                            Xtest=to_eigen(Xtest.detach().numpy()),
-                            Ttest=to_eigen(Ttest.detach().numpy())
+                            Xtrain=Xtrain.detach().numpy(),
+                            Ttrain=Ttrain.detach().numpy(),
+                            Xtest=Xtest.detach().numpy(),
+                            Ttest=Ttest.detach().numpy()
                             )
 
     # load the .npz data
     print(f'Loading data from file {filename}')
     d = np.load(filename)
-    Xtrain_new = from_eigen(d['Xtrain'])
+    Xtrain_new = d['Xtrain']
     pp(f'Xtrain_new', Xtrain_new)
 
     print(f'Loading data to c++ data_set {filename}')

@@ -222,67 +222,10 @@ std::vector<eigen::matrix> mlp_bias(const multilayer_perceptron& M)
 // Precondition: the python interpreter must be running.
 // This can be enforced using `py::scoped_interpreter guard{};`
 inline
-void export_weights_to_npy(const multilayer_perceptron& M, const std::string& filename)
-{
-  namespace py = pybind11;
-  NERVA_LOG(log::verbose) << "exporting weights in '.npy' format to file " << filename << std::endl;
-
-  auto np = py::module::import("numpy");
-  auto io = py::module::import("io");
-  auto file = io.attr("open")(filename, "wb");
-
-  for (auto& layer: M.layers)
-  {
-    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
-    {
-      np.attr("save")(file, eigen::to_numpy(dlayer->W));
-    }
-    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
-    {
-      np.attr("save")(file, eigen::to_numpy(mkl::to_eigen(slayer->W)));
-    }
-  }
-
-  file.attr("close")();
-}
-
-// Precondition: the python interpreter must be running.
-// This can be enforced using `py::scoped_interpreter guard{};`
-inline
-void import_weights_from_npy(multilayer_perceptron& M, const std::string& filename)
-{
-  namespace py = pybind11;
-  NERVA_LOG(log::verbose) << "importing weights in '.npy' format from file " << filename << std::endl;
-
-  auto np = py::module::import("numpy");
-  auto io = py::module::import("io");
-  auto file = io.attr("open")(filename, "rb");
-
-  for (auto& layer: M.layers)
-  {
-    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
-    {
-      dlayer->W = eigen::from_numpy<scalar, Eigen::Dynamic, Eigen::Dynamic>(np.attr("load")(file).cast<py::array_t<scalar>>());
-    }
-    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
-    {
-      slayer->W = mkl::to_csr(eigen::from_numpy(np.attr("load")(file).cast<py::array_t<scalar>>()));
-    }
-  }
-
-  file.attr("close")();
-}
-
-// Precondition: the python interpreter must be running.
-// This can be enforced using `py::scoped_interpreter guard{};`
-inline
 void export_weights_to_npz(const multilayer_perceptron& M, const std::string& filename)
 {
   namespace py = pybind11;
   NERVA_LOG(log::verbose) << "Saving weights and bias to file " << filename << std::endl;
-
-  auto np = py::module::import("numpy");
-  auto io = py::module::import("io");
 
   py::dict data;
   unsigned int index = 1;
@@ -291,22 +234,26 @@ void export_weights_to_npz(const multilayer_perceptron& M, const std::string& fi
   {
     return name + std::to_string(index);
   };
-  
+
   for (auto& layer: M.layers)
   {
     if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
-      data[name("W").c_str()] = eigen::to_numpy(dlayer->W);
-      data[name("b").c_str()] = eigen::to_numpy(dlayer->b);
+      auto W = dlayer->W.transpose();
+      auto b = dlayer->b.reshaped().transpose();
+      data[name("W").c_str()] = py::array_t<scalar, py::array::f_style>({W.rows(), W.cols()}, W.data());
+      data[name("b").c_str()] = py::array_t<scalar, py::array::f_style>(b.size(), b.data());
     }
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
-      data[name("W").c_str()] = eigen::to_numpy(mkl::to_eigen(slayer->W));
-      data[name("b").c_str()] = eigen::to_numpy(slayer->b);
+      auto W = mkl::to_eigen(slayer->W).transpose();
+      auto b = dlayer->b.reshaped().transpose();
+      data[name("W").c_str()] = py::array_t<scalar, py::array::f_style>({W.rows(), W.cols()}, W.data());
+      data[name("b").c_str()] = py::array_t<scalar, py::array::f_style>(b.size(), b.data());
     }
   }
 
-  np.attr("savez")(filename, data);
+  py::module::import("numpy").attr("savez_compressed")(filename, data);
 }
 
 // Precondition: the python interpreter must be running.
@@ -317,11 +264,7 @@ void import_weights_from_npz(multilayer_perceptron& M, const std::string& filena
   namespace py = pybind11;
   NERVA_LOG(log::verbose) << "Loading weights and bias from file " << filename << std::endl;
 
-  auto np = py::module::import("numpy");
-
-  py::dict data = np.attr("load")(filename);
-  // eigen::print_dict(data);
-
+  py::dict data = py::module::import("numpy").attr("load")(filename);
   unsigned int index = 1;
 
   auto name = [&](const std::string& name)
@@ -333,71 +276,17 @@ void import_weights_from_npz(multilayer_perceptron& M, const std::string& filena
   {
     if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
-      dlayer->import_weights_and_bias(eigen::load_float_matrix_from_dict(data, name("W")).transpose(),
-                                      eigen::load_float_vector_from_dict(data, name("b")));
+      dlayer->import_weights_and_bias(eigen::extract_matrix(data, name("W")).transpose(),
+                                      eigen::extract_vector<scalar>(data, name("b")));
       index++;
     }
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
-      slayer->import_weights_and_bias(eigen::load_float_matrix_from_dict(data, name("W")).transpose(),
-                                      eigen::load_float_vector_from_dict(data, name("b")));
+      slayer->import_weights_and_bias(eigen::extract_matrix(data, name("W")).transpose(),
+                                      eigen::extract_vector<scalar>(data, name("b")));
       index++;
     }
   }
-}
-
-// Precondition: the python interpreter must be running.
-// This can be enforced using `py::scoped_interpreter guard{};`
-inline
-void export_bias_to_npy(const multilayer_perceptron& M, const std::string& filename)
-{
-  namespace py = pybind11;
-  NERVA_LOG(log::verbose) << "exporting bias in '.npy' format to file " << filename << std::endl;
-
-  auto np = py::module::import("numpy");
-  auto io = py::module::import("io");
-  auto file = io.attr("open")(filename, "wb");
-
-  for (auto& layer: M.layers)
-  {
-    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
-    {
-      np.attr("save")(file, eigen::to_numpy(dlayer->b));
-    }
-    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
-    {
-      np.attr("save")(file, eigen::to_numpy(slayer->b));
-    }
-  }
-
-  file.attr("close")();
-}
-
-// Precondition: the python interpreter must be running.
-// This can be enforced using `py::scoped_interpreter guard{};`
-inline
-void import_bias_from_npy(multilayer_perceptron& M, const std::string& filename)
-{
-  namespace py = pybind11;
-  NERVA_LOG(log::verbose) << "importing weights in '.npy' format from file " << filename << std::endl;
-
-  auto np = py::module::import("numpy");
-  auto io = py::module::import("io");
-  auto file = io.attr("open")(filename, "rb");
-
-  for (auto& layer: M.layers)
-  {
-    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
-    {
-      dlayer->b = eigen::from_numpy(np.attr("load")(file).cast<py::array_t<scalar>>());
-    }
-    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
-    {
-      slayer->b = eigen::from_numpy(np.attr("load")(file).cast<py::array_t<scalar>>());
-    }
-  }
-
-  file.attr("close")();
 }
 
 class mlp_masking
@@ -481,17 +370,15 @@ void save_model_weights_to_npy(const std::string& filename, const multilayer_per
   {
     if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
-      np.attr("save")(file, eigen::to_numpy(dlayer->W));
+      const auto& W = dlayer->W;
+      np.attr("save")(file, py::array_t<scalar, py::array::f_style>({W.rows(), W.cols()}, W.data()));
     }
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
       const auto& W = slayer->W;
-      auto values = convert_to_eigen<Eigen::VectorXf>(W.values); // TODO use a direct cast
-      auto columns = convert_to_eigen<Eigen::VectorXi>(W.columns);
-      auto row_index = convert_to_eigen<Eigen::VectorXi>(W.row_index);
-      np.attr("save")(file, eigen::to_numpy<float>(values));
-      np.attr("save")(file, eigen::to_numpy<int>(columns));
-      np.attr("save")(file, eigen::to_numpy<int>(row_index));
+      np.attr("save")(file, py::array_t<scalar>(W.values.size(), W.values.data()));
+      np.attr("save")(file, py::array_t<MKL_INT>(W.columns.size(), W.columns.data()));
+      np.attr("save")(file, py::array_t<MKL_INT>(W.row_index.size(), W.row_index.data()));
     }
   }
 }

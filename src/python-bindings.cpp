@@ -25,49 +25,6 @@
 namespace py = pybind11;
 using namespace nerva;
 
-// Precondition: the python interpreter must be running.
-// This can be enforced using `py::scoped_interpreter guard{};`
-inline
-void export_matrix_to_numpy(const std::string& filename, const eigen::matrix& A)
-{
-  namespace py = pybind11;
-  auto np = py::module::import("numpy");
-  auto io = py::module::import("io");
-  auto file = io.attr("open")(filename, "wb");
-
-  np.attr("save")(file, eigen::to_numpy(A));
-  file.attr("close")();
-  print_numpy_matrix("export to " + filename, A);
-}
-
-// Precondition: the python interpreter must be running.
-// This can be enforced using `py::scoped_interpreter guard{};`
-inline
-void export_default_matrices_to_numpy(const std::string& filename1, const std::string& filename2)
-{
-  eigen::matrix A {
-    {1, 2, 3},
-    {4, 5, 6}
-  };
-  export_matrix_to_numpy(filename1, A);
-  export_matrix_to_numpy(filename2, A.transpose());
-}
-
-// Precondition: the python interpreter must be running.
-// This can be enforced using `py::scoped_interpreter guard{};`
-inline
-void import_matrix_from_numpy(const std::string& filename)
-{
-  namespace py = pybind11;
-  auto np = py::module::import("numpy");
-  auto io = py::module::import("io");
-  auto file = io.attr("open")(filename, "rb");
-
-  eigen::matrix A = eigen::from_numpy(np.attr("load")(file).cast<py::array_t<float>>());
-  file.attr("close")();
-  print_numpy_matrix("import from " + filename, A);
-}
-
 PYBIND11_MODULE(nervalib, m)
 {
   m.doc() = R"pbdoc(
@@ -461,14 +418,6 @@ PYBIND11_MODULE(nervalib, m)
   /////////////////////////////////////////////////////////////////////////
 
   m.def("manual_seed", manual_seed);
-
-  /////////////////////////////////////////////////////////////////////////
-  //                       testing
-  /////////////////////////////////////////////////////////////////////////
-
-  m.def("export_matrix_to_numpy", export_matrix_to_numpy);
-  m.def("import_matrix_from_numpy", import_matrix_from_numpy);
-  m.def("export_default_matrices_to_numpy", export_default_matrices_to_numpy);
 
   m.attr("__version__") = "0.12";
 }

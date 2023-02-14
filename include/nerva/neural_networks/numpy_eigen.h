@@ -18,17 +18,17 @@ namespace nerva::eigen {
 
 namespace py = pybind11;
 
-template <typename Scalar=scalar, typename Matrix>
-py::array_t<Scalar> to_numpy(const Matrix& A)
-{
-  // Create an empty array result of the correct size
-  py::array_t<Scalar> result({A.rows(), A.cols()});
-
-  // Copy A to result
-  Eigen::Map<Matrix>(result.mutable_data(), A.rows(), A.cols()) = A;
-
-  return result;
-}
+//template <typename Scalar=scalar, typename Matrix>
+//py::array_t<Scalar> to_numpy(const Matrix& A)
+//{
+//  // Create an empty array result of the correct size
+//  py::array_t<Scalar> result({A.rows(), A.cols()});
+//
+//  // Copy A to result
+//  Eigen::Map<Matrix>(result.mutable_data(), A.rows(), A.cols()) = A;
+//
+//  return result;
+//}
 
 // load a float tensor
 template <typename Scalar = double, int Rows = Eigen::Dynamic, int Cols = Eigen::Dynamic, int MatrixLayout = Eigen::ColMajor>
@@ -89,6 +89,35 @@ eigen::vector load_float_vector_from_dict(const py::dict& data, const std::strin
   return nerva::eigen::from_numpy<scalar, Eigen::Dynamic, 1>(data[key.c_str()].cast<py::array_t<scalar>>()).transpose();
 }
 
+template <typename Scalar>
+bool is_row_major(const pybind11::array_t<Scalar> &x)
+{
+  return (x.flags() & py::array::c_style) != 0;
+}
+
+template <typename Scalar = scalar, int MatrixLayout = default_matrix_layout>
+Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> extract_matrix(const py::dict& data, const std::string& key)
+{
+  const auto& x = data[key.c_str()].cast<py::array_t<Scalar>>();
+  assert(x.ndim() == 2);
+  auto shape = x.shape();
+  if (is_row_major(x))
+  {
+    return Eigen::Map<const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>>(x.data(), shape[1], shape[0]).transpose();
+  }
+  else
+  {
+    return Eigen::Map<const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(x.data(), shape[1], shape[0]).transpose();
+  }
+}
+
+template <typename Scalar = scalar>
+Eigen::Matrix<Scalar, Eigen::Dynamic, 1> extract_vector(const py::dict& data, const std::string& key)
+{
+  const auto& x = data[key.c_str()].cast<py::array_t<Scalar>>();
+  return Eigen::Map<const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>>(x.data(), x.size());
+}
+
 inline
 Eigen::Matrix<long, Eigen::Dynamic, 1, default_matrix_layout> load_long_vector_from_dict(const py::dict& data, const std::string& key)
 {
@@ -114,6 +143,65 @@ void print_dict(const py::dict& data)
       eigen::print_numpy_vector(key, eigen::load_long_vector_from_dict(data, key));
     }
   }
+}
+
+template <typename Scalar, int MatrixLayout>
+void print_dict(const std::map<std::string, Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>>& data)
+{
+  for (const auto& [key, value]: data)
+  {
+    eigen::print_numpy_matrix(key, value);
+  }
+}
+
+template <typename Scalar = scalar, int MatrixLayout = default_matrix_layout>
+Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> to_eigen(const py::array_t<Scalar> &x)
+{
+  auto shape = x.shape();
+  if (is_row_major(x))
+  {
+    return Eigen::Map<const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>>(x.data(), shape[1], shape[0]).transpose();
+  }
+  else
+  {
+    return Eigen::Map<const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(x.data(), shape[1], shape[0]).transpose();
+  }
+}
+
+template <typename Scalar = scalar, int MatrixLayout = default_matrix_layout>
+std::map<std::string, Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>> load_npz(const std::string& filename)
+{
+  std::cout << "C++: loading data from " << filename << std::endl;
+  std::map<std::string, Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>> result;
+  py::dict data = py::module::import("numpy").attr("load")(filename);
+
+  for (const auto& [key, value]: data)
+  {
+    result[key.template cast<std::string>()] = to_eigen<Scalar, MatrixLayout>(value.template cast<py::array_t<Scalar>>());
+  }
+  return result;
+}
+
+template <typename Scalar = scalar, int MatrixLayout = default_matrix_layout>
+void save_npz(const std::string& filename, const std::map<std::string, Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>>& data)
+{
+  std::cout << "C++ saving data to " << filename << std::endl;
+  py::dict result;
+  for (const auto& [key, A]: data)
+  {
+    std::vector<size_t> shape = {static_cast<unsigned long>(A.rows()), static_cast<unsigned long>(A.cols())};
+    if constexpr (MatrixLayout == Eigen::ColMajor)
+    {
+      py::array_t<Scalar, py::array::f_style> array(shape, A.data());
+      result[key.c_str()] = array;
+    }
+    else
+    {
+      py::array_t<Scalar, py::array::c_style> array(shape, A.data());
+      result[key.c_str()] = array;
+    }
+  }
+  py::module::import("numpy").attr("savez_compressed")(filename, **result);
 }
 
 } // namespace nerva::eigen
