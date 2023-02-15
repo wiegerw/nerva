@@ -72,8 +72,8 @@ struct dataset
     }
 
     pybind11::dict data = pybind11::module::import("numpy").attr("load")(filename);
-    Xtrain = eigen::extract_matrix(data, "Xtrain").transpose();
-    Xtest = eigen::extract_matrix(data, "Xtest").transpose();
+    Xtrain = eigen::extract_matrix<scalar>(data, "Xtrain").transpose();
+    Xtest = eigen::extract_matrix<scalar>(data, "Xtest").transpose();
     auto Ttrain_ = eigen::extract_vector<long>(data, "Ttrain");
     auto Ttest_ = eigen::extract_vector<long>(data, "Ttest");
     eigen::to_one_hot(Ttrain_, Ttrain);

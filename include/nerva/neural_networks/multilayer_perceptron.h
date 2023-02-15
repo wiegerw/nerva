@@ -239,15 +239,15 @@ void export_weights_to_npz(const multilayer_perceptron& M, const std::string& fi
   {
     if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
-      auto W = dlayer->W.transpose();
-      auto b = dlayer->b.reshaped().transpose();
+      eigen::matrix W = dlayer->W.transpose();
+      eigen::vector b = dlayer->b.reshaped().transpose();
       data[name("W").c_str()] = py::array_t<scalar, py::array::f_style>({W.rows(), W.cols()}, W.data());
       data[name("b").c_str()] = py::array_t<scalar, py::array::f_style>(b.size(), b.data());
     }
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
-      auto W = mkl::to_eigen(slayer->W).transpose();
-      auto b = dlayer->b.reshaped().transpose();
+      eigen::matrix W = mkl::to_eigen(slayer->W).transpose();
+      eigen::vector b = dlayer->b.reshaped().transpose();
       data[name("W").c_str()] = py::array_t<scalar, py::array::f_style>({W.rows(), W.cols()}, W.data());
       data[name("b").c_str()] = py::array_t<scalar, py::array::f_style>(b.size(), b.data());
     }
@@ -276,14 +276,14 @@ void import_weights_from_npz(multilayer_perceptron& M, const std::string& filena
   {
     if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
-      dlayer->import_weights_and_bias(eigen::extract_matrix(data, name("W")),
-                                      eigen::extract_vector<scalar>(data, name("b")));
+      dlayer->import_weights(eigen::extract_matrix<scalar>(data, name("W")));
+      dlayer->b = eigen::extract_vector<scalar>(data, name("b"));
       index++;
     }
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
-      slayer->import_weights_and_bias(eigen::extract_matrix(data, name("W")),
-                                      eigen::extract_vector<scalar>(data, name("b")));
+      slayer->import_weights(eigen::extract_matrix<scalar>(data, name("W")));
+      dlayer->b = eigen::extract_vector<scalar>(data, name("b"));
       index++;
     }
   }
