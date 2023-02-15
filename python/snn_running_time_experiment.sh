@@ -41,7 +41,7 @@ function run
   echo "Creating $logfile"
   ../tools/dist/mlpf --seed=$seed \
                      --overall-density=$density \
-                     --hidden="$sizes" \
+                     --sizes="3072,$sizes,10" \
                      --batch-size=$batchsize \
                      --epochs=$epochs \
                      --learning-rate="multistep_lr($lr;50,75;0.1)" \
@@ -54,7 +54,6 @@ function run
                      --algorithm=minibatch \
                      --threads=4 \
                      --no-shuffle \
-                     --datadir="$datadir" \
                      -v \
                      2>&1 | tee $logfile
 }

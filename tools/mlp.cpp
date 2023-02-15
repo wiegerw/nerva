@@ -141,16 +141,19 @@ std::vector<scalar> compute_densities(const std::string& architecture, const std
 // D is the input size of the neural network
 // K is the output size of the neural network
 inline
-std::vector<std::size_t> compute_sizes(std::size_t D, std::size_t K, const std::vector<std::size_t>& hidden_layer_sizes, const std::string& architecture)
+std::vector<std::size_t> compute_sizes(const std::vector<std::size_t>& layer_sizes, const std::string& architecture)
 {
+  std::size_t D = layer_sizes.front(); // the number of features
+  std::size_t K = layer_sizes.back(); // the number of outputs
   auto B_count = std::count(architecture.begin(), architecture.end(), 'B');
-  if (hidden_layer_sizes.size() != architecture.size() - B_count - 1)
+
+  if (layer_sizes.size() != architecture.size() - B_count + 1)
   {
-    throw std::runtime_error("The number of hidden layer sizes does not match with the given architecture.");
+    throw std::runtime_error("The number of layer sizes does not match with the given architecture.");
   }
 
   std::vector<std::size_t> sizes = { D };
-  int index = 0;
+  int index = 1;
   for (char ch: architecture.substr(0, architecture.size() - 1))
   {
     if (ch == 'B')
@@ -159,7 +162,7 @@ std::vector<std::size_t> compute_sizes(std::size_t D, std::size_t K, const std::
     }
     else
     {
-      sizes.push_back(hidden_layer_sizes[index++]);
+      sizes.push_back(layer_sizes[index++]);
     }
   }
   sizes.push_back(K);
@@ -168,7 +171,7 @@ std::vector<std::size_t> compute_sizes(std::size_t D, std::size_t K, const std::
 }
 
 inline
-void check_options(const mlp_options& options, const std::vector<std::size_t>& hidden_layer_sizes)
+void check_options(const mlp_options& options, const std::vector<std::size_t>& layer_sizes)
 {
   if (options.architecture.empty())
   {
@@ -181,7 +184,7 @@ void check_options(const mlp_options& options, const std::vector<std::size_t>& h
   }
 
   auto B_count = std::count(options.architecture.begin(), options.architecture.end(), 'B');
-  if (hidden_layer_sizes.size() != options.architecture.size() - B_count - 1)
+  if (layer_sizes.size() != options.architecture.size() - B_count + 1)
   {
     throw std::runtime_error("The number of hidden layer sizes does not match with the given architecture.");
   }
@@ -201,7 +204,7 @@ class tool: public command_line_tool
     mlp_options options;
     std::string import_weights_npz;
     std::string export_weights_npz;
-    std::string hidden_layer_sizes_text;
+    std::string layer_sizes_text;
     std::string densities_text;
     std::string preprocessed_dir;  // a directory containing a dataset for every epoch
     bool no_shuffle = false;
@@ -220,7 +223,7 @@ class tool: public command_line_tool
       cli |= lyra::opt(options.weights_initialization, "value")["--weights"]("The weight initialization (default, he, uniform, xavier, normalized_xavier, uniform)");
       cli |= lyra::opt(options.loss_function, "value")["--loss"]("The loss function (squared-error, cross-entropy, logistic-cross-entropy)");
       cli |= lyra::opt(options.architecture, "value")["--architecture"]("The architecture of the multilayer perceptron e.g. RRL,\nwhere R=ReLU, S=Sigmoid, L=Linear, B=Batchnorm, Z=Softmax");
-      cli |= lyra::opt(hidden_layer_sizes_text, "value")["--hidden"]("A comma separated list of the hidden layer sizes");
+      cli |= lyra::opt(layer_sizes_text, "value")["--sizes"]("A comma separated list of layer sizes");
       cli |= lyra::opt(options.dropout, "value")["--dropout"]("The dropout rate for the weights of the layers");
       cli |= lyra::opt(options.density, "value")["--overall-density"]("The overall density level of the sparse layers");
       cli |= lyra::opt(densities_text, "value")["--densities"]("A comma separated list of sparse layer densities");
@@ -254,22 +257,20 @@ class tool: public command_line_tool
       {
         options.statistics = false;
       }
-      std::vector<std::size_t> hidden_layer_sizes = parse_comma_separated_numbers(hidden_layer_sizes_text);
+      std::vector<std::size_t> layer_sizes = parse_comma_separated_numbers(layer_sizes_text);
       std::vector<scalar> densities = parse_comma_separated_real_numbers(densities_text);
-      check_options(options, hidden_layer_sizes);
+      check_options(options, layer_sizes);
 
       std::mt19937 rng{options.seed};
-      NERVA_LOG(log::verbose) << "loading dataset " << options.dataset << std::endl;
-      // TODO: loading the dataset should be avoided when the flag --preprocessed is set.
-      // The input and output size should be added to the sizes array.
-      datasets::dataset data = datasets::make_dataset(options.dataset, options.dataset_size, rng);
-      std::size_t D = data.Xtrain.rows(); // the number of features
-      std::size_t K = data.Ttrain.rows(); // the number of outputs
-      NERVA_LOG(log::verbose) << "number of examples: " << data.Xtrain.cols() << std::endl;
-      NERVA_LOG(log::verbose) << "number of features: " << D << std::endl;
-      NERVA_LOG(log::verbose) << "number of outputs: " << K << std::endl;
 
-      options.sizes = compute_sizes(D, K, hidden_layer_sizes, options.architecture);
+      datasets::dataset data;
+      if (!options.dataset.empty())
+      {
+        NERVA_LOG(log::verbose) << "loading dataset " << options.dataset << std::endl;
+        data = datasets::make_dataset(options.dataset, options.dataset_size, rng);
+      }
+
+      options.sizes = compute_sizes(layer_sizes, options.architecture);
 
       if (densities.empty())
       {

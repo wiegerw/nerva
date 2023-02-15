@@ -8,13 +8,9 @@ epochs=100
 batchsize=100
 momentum=0.9
 
-densesizes="1024,512"
-densearchitecture=RRL
-denseweights=XXX
-
-sparsesizes="1024,512"
-sparsearchitecture=RRL
-sparseweights=XXX
+sizes="1024,512"
+architecture=RRL
+weights=XXX
 
 datadir="./data"
 
@@ -28,7 +24,7 @@ function train_sparse_torch()
 
   python3 -u snn.py --torch --seed=$seed \
                     --overall-density=$density \
-                    --lr=$lr --sizes="3072,$sparsesizes,10" \
+                    --lr=$lr --sizes="3072,$sizes,10" \
                     --batch-size=$batchsize \
                     --epochs=$epochs \
                     --momentum=$momentum \
@@ -51,13 +47,13 @@ function train_sparse_nerva()
 
   ../tools/dist/mlpf --seed=$seed \
                      --overall-density=$density \
-                     --hidden="$sparsesizes" \
+                     --sizes="$sizes" \
                      --batch-size=$batchsize \
                      --epochs=$epochs \
                      --learning-rate="multistep_lr($lr;50,75;0.1)" \
                      --optimizer="nesterov($momentum)" \
-                     --architecture=$sparsearchitecture \
-                     --weights=$sparseweights \
+                     --architecture=$architecture \
+                     --weights=$weights \
                      --dataset=cifar10 --size=50000 \
                      --loss="softmax-cross-entropy" \
                      --algorithm=minibatch \
@@ -80,7 +76,7 @@ function train_dense_torch()
   python3 -u snn.py --torch \
                     --seed=$seed \
                     --lr=$lr \
-                    --sizes="3072,$densesizes,10" \
+                    --sizes="3072,$sizes,10" \
                     --batch-size=$batchsize \
                     --epochs=$epochs \
                     --momentum=$momentum \
@@ -99,13 +95,13 @@ function train_dense_nerva()
   logfile="snn/training/nerva-dense-augmented-seed$seed.log"
 
   ../tools/dist/mlpf --seed=$seed \
-                     --hidden="$densesizes" \
+                     --sizes="$sizes" \
                      --batch-size=$batchsize \
                      --epochs=$epochs \
                      --learning-rate="multistep_lr($lr;50,75;0.1)" \
                      --optimizer="nesterov($momentum)"  \
-                     --architecture=$densearchitecture \
-                     --weights=$denseweights \
+                     --architecture=$architecture \
+                     --weights=$weights \
                      --dataset=cifar10 \
                      --size=50000 \
                      --loss="softmax-cross-entropy" \
