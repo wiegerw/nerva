@@ -27,7 +27,7 @@ function train_sparse_torch()
   logfile="snn/training/torch-sparse-$density-augmented-seed$seed.log"
 
   python3 -u snn.py --torch --seed=$seed \
-                    --density=$density \
+                    --overall-density=$density \
                     --lr=$lr --sizes="3072,$sparsesizes,10" \
                     --batch-size=$batchsize \
                     --epochs=$epochs \
@@ -50,7 +50,7 @@ function train_sparse_nerva()
   logfile="snn/training/nerva-sparse-$density-augmented-seed$seed.log"
 
   ../tools/dist/mlpf --seed=$seed \
-                     --density=$density \
+                     --overall-density=$density \
                      --hidden="$sparsesizes" \
                      --batch-size=$batchsize \
                      --epochs=$epochs \
@@ -65,7 +65,7 @@ function train_sparse_nerva()
                      --no-shuffle \
                      --verbose \
                      --preprocessed=./cifar$seed \
-		     --no-shuffle \
+                     --no-shuffle \
                      --import-weights-npz="weights-$density.npz" \
                      2>&1 | tee $logfile
 }

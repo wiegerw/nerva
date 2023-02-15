@@ -33,5 +33,6 @@ pybind11_add_module(nerva src/python-bindings.cpp)
 target_link_libraries(nerva LINK_PUBLIC nervalib MKL::MKL Eigen3::Eigen)
 
 enable_testing()
+add_subdirectory(examples)
 add_subdirectory(tests)
 add_subdirectory(tools)

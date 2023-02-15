@@ -130,7 +130,6 @@ def train_torch(M, train_loader, test_loader, epochs):
             watch.reset()
             M.optimizer.zero_grad()
             Y = M(X)
-            # Y.retain_grad()
             loss = M.loss(Y, T)
             loss.backward()
             M.optimize()
@@ -217,7 +216,6 @@ def train_nerva(M, train_loader, test_loader, epochs):
                     elapsed=elapsed)
 
 
-# TODO: use classes to reuse code
 # At every epoch a new dataset in .npz format is read from datadir.
 def train_nerva_preprocessed(M, datadir, epochs, batch_size):
     train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch0.npz', batch_size=batch_size)
@@ -257,11 +255,11 @@ def train_nerva_preprocessed(M, datadir, epochs, batch_size):
                     elapsed=elapsed)
 
 
-def compute_densities(density: float, sizes: List[int], erk_power_scale: float = 1.0) -> List[float]:
+def compute_densities(overall_density: float, sizes: List[int], erk_power_scale: float = 1.0) -> List[float]:
     layer_shapes = [(sizes[i], sizes[i+1]) for i in range(len(sizes) - 1)]
     n = len(layer_shapes)  # the number of layers
 
-    if density == 1.0:
+    if overall_density == 1.0:
         return [1.0] * n
 
     dense_layers = set()
@@ -272,8 +270,8 @@ def compute_densities(density: float, sizes: List[int], erk_power_scale: float =
         raw_probabilities = [0.0] * n
         for i, (rows, columns) in enumerate(layer_shapes):
             n_param = rows * columns
-            n_zeros = n_param * (1 - density)
-            n_ones = n_param * density
+            n_zeros = n_param * (1 - overall_density)
+            n_ones = n_param * overall_density
             if i in dense_layers:
                 rhs -= n_zeros
             else:

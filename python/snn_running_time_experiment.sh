@@ -1,7 +1,6 @@
 #!/bin/bash
 
 #--- fixed settings ---#
-seed=12345
 epochs=1
 batchsize=100
 momentum=0.9
@@ -10,6 +9,7 @@ density=0.01
 datadir="./data"
 
 #--- variable settings ---#
+seed=1
 sizes="1024,512"
 architecture=RRL
 weights=xxx
@@ -25,7 +25,7 @@ function run
   echo "Creating $logfile"
   python3 snn.py --torch \
                  --seed=$seed \
-                 --density=$density \
+                 --overall-density=$density \
                  --lr=$lr \
                  --sizes="3072,$sizes,10" \
                  --batch-size=$batchsize \
@@ -40,7 +40,7 @@ function run
 
   echo "Creating $logfile"
   ../tools/dist/mlpf --seed=$seed \
-                     --density=$density \
+                     --overall-density=$density \
                      --hidden="$sizes" \
                      --batch-size=$batchsize \
                      --epochs=$epochs \
@@ -61,9 +61,8 @@ function run
 
 function run_all()
 {
-    for value in 1 2 3 4 5
+    for seed in 1
     do
-        seed=$value
         run "1024"                                              "RL"          "xx"
         run "1024,1024"                                         "RRL"         "xxx"
         run "1024,1024,1024"                                    "RRRL"        "xxxx"

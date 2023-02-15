@@ -222,7 +222,7 @@ class tool: public command_line_tool
       cli |= lyra::opt(options.architecture, "value")["--architecture"]("The architecture of the multilayer perceptron e.g. RRL,\nwhere R=ReLU, S=Sigmoid, L=Linear, B=Batchnorm, Z=Softmax");
       cli |= lyra::opt(hidden_layer_sizes_text, "value")["--hidden"]("A comma separated list of the hidden layer sizes");
       cli |= lyra::opt(options.dropout, "value")["--dropout"]("The dropout rate for the weights of the layers");
-      cli |= lyra::opt(options.density, "value")["--density"]("The density rate of the sparse layers");
+      cli |= lyra::opt(options.density, "value")["--overall-density"]("The overall density level of the sparse layers");
       cli |= lyra::opt(densities_text, "value")["--densities"]("A comma separated list of sparse layer densities");
       cli |= lyra::opt(options.optimizer, "value")["--optimizer"]("The optimizer (gradient-descent, momentum(<mu>), nesterov(<mu>))");
       cli |= lyra::opt(options.seed, "value")["--seed"]("A seed value for the random generator.");
@@ -314,7 +314,11 @@ class tool: public command_line_tool
       std::shared_ptr<loss_function> loss = parse_loss_function(options.loss_function);
       std::shared_ptr<learning_rate_scheduler> learning_rate = parse_learning_rate_scheduler(options.learning_rate_scheduler);
 
-      if (!import_weights_npz.empty())
+      if (import_weights_npz.empty())
+      {
+        set_weights(M, options.weights_initialization, options.architecture, rng);
+      }
+      else
       {
         import_weights_from_npz(M, import_weights_npz);
         print_model_info(M);
