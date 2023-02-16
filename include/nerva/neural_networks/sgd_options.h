@@ -35,7 +35,7 @@ struct sgd_options
 struct mlp_options: public sgd_options
 {
   std::string algorithm = "sgd";
-  std::string dataset = "chessboard";
+  std::string dataset;
   std::size_t dataset_size = 2000;
   bool normalize_data = false;
   std::string learning_rate_scheduler = "constant(0.0001)";

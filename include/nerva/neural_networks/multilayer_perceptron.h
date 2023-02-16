@@ -277,13 +277,13 @@ void import_weights_from_npz(multilayer_perceptron& M, const std::string& filena
     if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
       dlayer->import_weights(eigen::extract_matrix<scalar>(data, name("W")));
-      dlayer->b = eigen::extract_vector<scalar>(data, name("b"));
+      dlayer->b = eigen::extract_vector<scalar>(data, name("b")).transpose();
       index++;
     }
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
       slayer->import_weights(eigen::extract_matrix<scalar>(data, name("W")));
-      dlayer->b = eigen::extract_vector<scalar>(data, name("b"));
+      slayer->b = eigen::extract_vector<scalar>(data, name("b")).transpose();
       index++;
     }
   }
