@@ -70,17 +70,23 @@ std::ostream& operator<<(std::ostream& out, const mlp_options& options)
 {
   out << static_cast<const sgd_options&>(options);
   out << "algorithm = " << options.algorithm << std::endl;
-  out << "dataset = " << options.dataset << std::endl;
-  out << "dataset size = " << options.dataset_size << std::endl;
-  out << "normalize data = " << std::boolalpha << options.normalize_data << std::endl;
+  if (!options.dataset.empty())
+  {
+    out << "dataset = " << options.dataset << std::endl;
+    out << "dataset size = " << options.dataset_size << std::endl;
+    out << "normalize data = " << std::boolalpha << options.normalize_data << std::endl;
+  }
   out << "learning rate scheduler = " << options.learning_rate_scheduler << std::endl;
   out << "loss function = " << options.loss_function << std::endl;
   out << "architecture = " << options.architecture << std::endl;
   out << "sizes = " << print_list(options.sizes) << std::endl;
   out << "weights initialization = " << options.weights_initialization << std::endl;
   out << "optimizer = " << options.optimizer << std::endl;
-  out << "dropout = " << options.dropout << std::endl;
-  out << "density = " << options.density << std::endl;
+  if (options.dropout > 0)
+  {
+    out << "dropout = " << options.dropout << std::endl;
+  }
+  out << "overall density = " << options.density << std::endl;
   out << "densities = " << print_list(options.densities) << std::endl;
   out << "seed = " << options.seed << std::endl;
   out << "precision = " << options.precision << std::endl;

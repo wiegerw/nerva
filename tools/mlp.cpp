@@ -322,7 +322,6 @@ class tool: public command_line_tool
       else
       {
         import_weights_from_npz(M, import_weights_npz);
-        print_model_info(M);
       }
 
       if (!export_weights_npz.empty())
