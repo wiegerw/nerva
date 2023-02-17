@@ -339,7 +339,11 @@ class tool: public command_line_tool
       CALLGRIND_START_INSTRUMENTATION;
 #endif
 
-      std::cout << M.to_string() << std::endl;
+      std::cout << "=== Nerva c++ model ===" << "\n";
+      std::cout << M.to_string();
+      std::cout << "loss = " << loss->to_string() << "\n";
+      std::cout << "scheduler = " << learning_rate->to_string() << "\n";
+      std::cout << "layer densities: " << layer_density_info(M) << "\n\n";
 
       if (options.algorithm == "sgd")
       {

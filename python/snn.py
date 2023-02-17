@@ -28,7 +28,6 @@ from testing.training import train_nerva, train_torch, compute_accuracy_torch, c
 
 
 def make_torch_model(args, sizes, densities):
-    print('Use MLP1 variant with custom masking')
     M1 = MLP1(sizes, densities)
     M1.optimizer = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
     M1.loss = nn.CrossEntropyLoss()
@@ -151,11 +150,8 @@ def main():
         raise RuntimeError('the combination of --augmented and --preprocessed is unsupported')
 
     if args.torch:
-        print('\n=== PyTorch model ===')
         M1 = make_torch_model(args, sizes, densities)
-        print(M1)
-        print(M1.loss)
-        print(M1.learning_rate)
+        M1.info()
 
         if args.export_weights_npz:
             M1.export_weights_npz(args.export_weights_npz)
@@ -167,11 +163,8 @@ def main():
             train_torch(M1, train_loader, test_loader, args.epochs)
         print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_torch(M1, test_loader):.3f} %')
     elif args.nerva:
-        print('\n=== Nerva model ===')
         M2 = make_nerva_model(args, sizes, densities)
-        print(M2)
-        print(M2.loss)
-        print(M2.learning_rate)
+        M2.info()
 
         if args.import_weights_npz:
             M2.import_weights_npz(args.import_weights_npz)

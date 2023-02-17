@@ -21,7 +21,7 @@ def reservoir_sample(k: int, n: int) -> List[int]:
     return reservoir
 
 
-def create_mask(W: torch.Tensor, non_zero_count: int):
+def create_mask(W: torch.Tensor, non_zero_count: int) -> torch.Tensor:
     """
     Creates a boolean matrix with the same shape as W, and with exactly non_zero_count positions equal to 1
     :param W:

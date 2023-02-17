@@ -15,6 +15,7 @@
 #include <memory>
 #include <regex>
 #include <utility>
+#include "fmt/format.h"
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/utilities/parse_numbers.h"
 #include "nerva/utilities/string_utility.h"
@@ -25,6 +26,8 @@ struct learning_rate_scheduler
 {
   // Returns the learning rate at iteration i
   virtual scalar operator()(unsigned int i) = 0;
+
+  [[nodiscard]] virtual std::string to_string() const = 0;
 
   virtual ~learning_rate_scheduler() = default;
 };
@@ -40,6 +43,11 @@ struct constant_scheduler: public learning_rate_scheduler
   scalar operator()(unsigned int i) override
   {
     return lr;
+  }
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("ConstantScheduler(lr={})", lr);
   }
 };
 
@@ -57,6 +65,11 @@ struct time_based_scheduler: public learning_rate_scheduler
     lr = lr / (1 + decay * scalar(i));
     return lr;
   }
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("TimeBasedScheduler(lr={}, decay={})", lr, decay);
+  }
 };
 
 struct step_based_scheduler: public learning_rate_scheduler
@@ -72,6 +85,11 @@ struct step_based_scheduler: public learning_rate_scheduler
   scalar operator()(unsigned int i) override
   {
     return lr * std::pow(drop_rate, std::floor((1.0 + i) / change_rate));
+  }
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("StepBasedScheduler(lr={}, drop_rate={}, change_rate={})", lr, drop_rate, change_rate);
   }
 };
 
@@ -101,6 +119,11 @@ struct multi_step_lr_scheduler: public learning_rate_scheduler
     }
     return eta;
   }
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("MultiStepLRScheduler(lr={}, milestones={}, gamma={})", lr, print_list(milestones), gamma);
+  }
 };
 
 struct exponential_scheduler: public learning_rate_scheduler
@@ -115,6 +138,11 @@ struct exponential_scheduler: public learning_rate_scheduler
   scalar operator()(unsigned int i) override
   {
     return lr * std::exp(-change_rate * scalar(i));
+  }
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("ExponentialScheduler(lr={}, change_rate={})", lr, change_rate);
   }
 };
 

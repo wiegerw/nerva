@@ -26,7 +26,6 @@ from testing.training import train_nerva, train_torch, compute_accuracy_torch, c
 
 
 def make_torch_model(args, sizes, densities):
-    print('Use MLP1 variant with custom masking')
     M1 = MLP1(sizes, densities)
     M1.optimizer = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
     M1.loss = nn.CrossEntropyLoss()

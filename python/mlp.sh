@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # PyTorch
-python3 snn.py --torch --seed=1 --overall-density=0.05 --lr=0.1 --sizes=3072,1024,512,10 --batch-size=100 --epochs=1 --momentum=0.9 --nesterov --datadir=./data --custom-masking
+python3 snn.py --torch --seed=1 --overall-density=0.05 --lr=0.1 --sizes=3072,1024,512,10 --batch-size=100 --epochs=1 --momentum=0.9 --nesterov --datadir=./data
 
 # PyTorch preprocessed
-python3 snn.py --torch --seed=1 --overall-density=0.05 --lr=0.1 --sizes=3072,1024,512,10 --batch-size=100 --epochs=1 --momentum=0.9 --nesterov --preprocessed=./cifar1 --custom-masking
+python3 snn.py --torch --seed=1 --overall-density=0.05 --lr=0.1 --sizes=3072,1024,512,10 --batch-size=100 --epochs=1 --momentum=0.9 --nesterov --preprocessed=./cifar1
 
 # Nerva-python
 python3 mlp.py --nerva --seed=1 --overall-density=0.05 --lr=0.1 --sizes=3072,1024,512,10 --batch-size=100 --epochs=1 --momentum=0.9 --nesterov --datadir=./data

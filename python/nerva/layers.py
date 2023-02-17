@@ -38,9 +38,14 @@ class Dense(Layer):
         self.optimizer = optimizer
         self.weight_initializer = weight_initializer
         self.input_size = -1
+        self._layer = None
 
     def __str__(self):
         return f'Dense(units={self.units}, activation={self.activation}, optimizer={self.optimizer}, weight_initializer={self.weight_initializer})'
+
+    def density_info(self) -> str:
+        N = self._layer.W.size
+        return f'{N}/{N} (100%)'
 
     def compile(self, batch_size: int, dropout_rate: float=0.0):
         """
@@ -89,7 +94,7 @@ class Dense(Layer):
             raise RuntimeError('Unsupported layer type')
 
         layer.initialize_weights(self.weight_initializer.compile())
-
+        self._layer = layer
         return layer
 
 
@@ -118,6 +123,10 @@ class Sparse(Layer):
 
     def __str__(self):
         return f'Sparse(units={self.units}, density={self.density}, activation={self.activation}, optimizer={self.optimizer}, weight_initializer={self.weight_initializer})'
+
+    def density_info(self) -> str:
+        n, N = self._layer.W.nonzero_count()
+        return f'{n}/{N} ({100 * n / N:.3f}%)'
 
     def compile(self, batch_size: int, dropout_rate: float=0.0):
         """

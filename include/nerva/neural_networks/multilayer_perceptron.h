@@ -22,6 +22,7 @@
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
 #include "nerva/utilities/stopwatch.h"
+#include "fmt/format.h"
 #include <pybind11/embed.h>
 #include <cmath>
 #include <functional>
@@ -181,6 +182,27 @@ void print_model_info(const multilayer_perceptron& M)
       index++;
     }
   }
+}
+
+inline
+std::string layer_density_info(const multilayer_perceptron& M)
+{
+  std::vector<std::string> v;
+  for (auto& layer: M.layers)
+  {
+    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
+    {
+      auto N = dlayer->W.size();
+      v.push_back(fmt::format("{}/{} (100%)", N, N));
+    }
+    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
+    {
+      auto n = slayer->W.values.size();
+      auto N = slayer->W.rows() * slayer->W.cols();
+      v.push_back(fmt::format("{}/{} ({:.3f}%)", n, N, (100.0 * n) / N));
+    }
+  }
+  return fmt::format("{}", fmt::join(v, ", "));
 }
 
 inline

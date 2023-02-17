@@ -11,6 +11,7 @@ from testing.masking import create_mask
 from testing.numpy_utils import pp, l1_norm
 
 
+# This PyTorch model supports sparse layers using binary masks
 class MLP1(nn.Module):
     """ Multi-Layer Perceptron """
     def __init__(self, sizes, densities):
@@ -25,7 +26,6 @@ class MLP1(nn.Module):
         self.set_masks(densities)
 
     def set_masks(self, densities):
-        print(f'Setting masks with densities {densities}')
         self.masks = []
         for layer, density in zip(self.layers, densities):
             if density == 1.0:
@@ -85,9 +85,18 @@ class MLP1(nn.Module):
             layer.weight.data *= factor
 
     def info(self):
-        for i, layer in enumerate(self.layers):
-            pp(f'W{i + 1}', layer.weight)
-            pp(f'b{i + 1}', layer.bias)
+        def density_info(layer, mask: torch.Tensor):
+            if mask is not None:
+                n, N = torch.count_nonzero(mask), mask.numel()
+            else:
+                n, N = layer.weight.numel(), layer.weight.numel()
+            return f'{n}/{N} ({100 * n / N:.3f}%)'
+
+        print('=== PyTorch model ===')
+        print(self)
+        print(f'scheduler = {self.learning_rate}')
+        density_info = [density_info(layer, mask) for layer, mask in zip(self.layers, self.masks)]
+        print(f'layer densities: {", ".join(density_info)}\n')
 
 
 class MLP2(nerva.layers.Sequential):
@@ -118,6 +127,14 @@ class MLP2(nerva.layers.Sequential):
 
     def import_weights_npz(self, filename: str):
         self.compiled_model.import_weights_npz(filename)
+
+    def info(self):
+        print('=== Nerva python model ===')
+        print(self)
+        print(f'loss = {self.loss}')
+        print(f'scheduler = {self.learning_rate}')
+        density_info = [layer.density_info() for layer in self.layers]
+        print(f'layer densities: {", ".join(density_info)}\n')
 
 
 def print_model_info(M):

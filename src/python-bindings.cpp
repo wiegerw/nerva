@@ -238,6 +238,11 @@ PYBIND11_MODULE(nervalib, m)
     ;
 
   //--- sparse layers ---//
+  py::class_<mkl::sparse_matrix_csr<scalar>, std::shared_ptr<mkl::sparse_matrix_csr<scalar>>>(m, "sparse_matrix_csr")
+    .def(py::init<>(), py::return_value_policy::copy)
+    .def("nonzero_count", [](const mkl::sparse_matrix_csr<scalar>& x) { return std::make_pair<long, long>(x.values.size(), x.rows() * x.cols()); })
+    ;
+
   py::class_<sparse_linear_layer, neural_network_layer, std::shared_ptr<linear_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_linear_layer")
     .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar sparsity)
                   {

@@ -24,6 +24,8 @@ struct loss_function
 
   [[nodiscard]] virtual eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const = 0;
 
+  [[nodiscard]] virtual std::string to_string() const = 0;
+
   virtual ~loss_function() = default;
 };
 
@@ -61,6 +63,11 @@ struct squared_error_loss: public loss_function
   [[nodiscard]] eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
     return Y - T;
+  }
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return "SquaredErrorLoss()";
   }
 };
 
@@ -105,6 +112,11 @@ struct cross_entropy_loss: public loss_function
     auto one_div_Y = Y.unaryExpr([](scalar x) { return scalar(1.0) / x; });
     return -T.cwiseProduct(one_div_Y);
   }
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return "CrossEntropyLoss()";
+  }
 };
 
 struct softmax_cross_entropy_loss: public loss_function
@@ -145,6 +157,11 @@ struct softmax_cross_entropy_loss: public loss_function
   [[nodiscard]] eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
     return softmax()(Y) - T;
+  }
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return "SoftmaxCrossEntropyLoss()";
   }
 };
 
@@ -188,6 +205,11 @@ struct logistic_cross_entropy_loss: public loss_function
   {
     auto one_minus_sigmoid_Y = Y.unaryExpr([](scalar x) { return scalar(1.0) - sigmoid()(x); });
     return -T.cwiseProduct(one_minus_sigmoid_Y);
+  }
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return "LogisticCrossEntropyLoss()";
   }
 };
 
