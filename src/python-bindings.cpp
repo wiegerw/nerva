@@ -102,22 +102,33 @@ PYBIND11_MODULE(nervalib, m)
 
   py::class_<constant_scheduler, learning_rate_scheduler, std::shared_ptr<constant_scheduler>>(m, "constant_scheduler")
     .def(py::init<scalar>(), py::return_value_policy::copy)
+    .def_readwrite("lr", &constant_scheduler::lr, py::return_value_policy::reference_internal)
     ;
 
   py::class_<time_based_scheduler, learning_rate_scheduler, std::shared_ptr<time_based_scheduler>>(m, "time_based_scheduler")
     .def(py::init<scalar, scalar>(), py::return_value_policy::copy)
+    .def_readwrite("lr", &time_based_scheduler::lr, py::return_value_policy::reference_internal)
+    .def_readwrite("decay", &time_based_scheduler::decay, py::return_value_policy::reference_internal)
     ;
 
   py::class_<step_based_scheduler, learning_rate_scheduler, std::shared_ptr<step_based_scheduler>>(m, "step_based_scheduler")
     .def(py::init<scalar, scalar, scalar>(), py::return_value_policy::copy)
+    .def_readwrite("lr", &step_based_scheduler::lr, py::return_value_policy::reference_internal)
+    .def_readwrite("drop_rate", &step_based_scheduler::drop_rate, py::return_value_policy::reference_internal)
+    .def_readwrite("change_rate", &step_based_scheduler::change_rate, py::return_value_policy::reference_internal)
     ;
 
   py::class_<multi_step_lr_scheduler, learning_rate_scheduler, std::shared_ptr<multi_step_lr_scheduler>>(m, "multi_step_lr_scheduler")
     .def(py::init<scalar, std::vector<unsigned int>, scalar>(), py::return_value_policy::copy)
+    .def_readwrite("lr", &multi_step_lr_scheduler::lr, py::return_value_policy::reference_internal)
+    .def_readwrite("milestones", &multi_step_lr_scheduler::milestones, py::return_value_policy::reference_internal)
+    .def_readwrite("gamma", &multi_step_lr_scheduler::gamma, py::return_value_policy::reference_internal)
     ;
 
   py::class_<exponential_scheduler, learning_rate_scheduler, std::shared_ptr<exponential_scheduler>>(m, "exponential_scheduler")
     .def(py::init<scalar, scalar>(), py::return_value_policy::copy)
+    .def_readwrite("lr", &exponential_scheduler::lr, py::return_value_policy::reference_internal)
+    .def_readwrite("change_rate", &exponential_scheduler::change_rate, py::return_value_policy::reference_internal)
     ;
 
   /////////////////////////////////////////////////////////////////////////
@@ -343,10 +354,6 @@ PYBIND11_MODULE(nervalib, m)
     .def("regrow", &multilayer_perceptron::regrow)
     .def("append_layer", [](multilayer_perceptron& M, const std::shared_ptr<neural_network_layer>& layer) { M.layers.push_back(layer); })
     .def("info", &multilayer_perceptron::info)
-//    .def("export_weights_npy", [](const multilayer_perceptron& M, const std::string& filename) { export_weights_to_npy(M, filename); })
-//    .def("import_weights_npy", [](multilayer_perceptron& M, const std::string& filename) { import_weights_from_npy(M, filename); })
-//    .def("export_bias_npy", [](const multilayer_perceptron& M, const std::string& filename) { export_bias_to_npy(M, filename); })
-//    .def("import_bias_npy", [](multilayer_perceptron& M, const std::string& filename) { import_bias_from_npy(M, filename); })
     .def("export_weights_npz", [](const multilayer_perceptron& M, const std::string& filename) { export_weights_to_npz(M, filename); })
     .def("import_weights_npz", [](multilayer_perceptron& M, const std::string& filename) { import_weights_from_npz(M, filename); })
     .def("weights", [](multilayer_perceptron& M) { return mlp_weights(M); })

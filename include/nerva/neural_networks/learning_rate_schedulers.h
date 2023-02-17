@@ -31,63 +31,63 @@ struct learning_rate_scheduler
 
 struct constant_scheduler: public learning_rate_scheduler
 {
-  scalar eta; // the learning rate
+  scalar lr; // the learning rate
 
-  explicit constant_scheduler(scalar eta_)
-      : eta(eta_)
+  explicit constant_scheduler(scalar lr_)
+      : lr(lr_)
   {}
 
   scalar operator()(unsigned int i) override
   {
-    return eta;
+    return lr;
   }
 };
 
 struct time_based_scheduler: public learning_rate_scheduler
 {
-  scalar eta; // the current value of the learning rate
+  scalar lr; // the current value of the learning rate
   scalar decay;
 
-  explicit time_based_scheduler(scalar eta_, scalar decay_)
-   : eta(eta_), decay(decay_)
+  explicit time_based_scheduler(scalar lr_, scalar decay_)
+   : lr(lr_), decay(decay_)
   {}
 
   scalar operator()(unsigned int i) override
   {
-    eta = eta / (1 + decay * scalar(i));
-    return eta;
+    lr = lr / (1 + decay * scalar(i));
+    return lr;
   }
 };
 
 struct step_based_scheduler: public learning_rate_scheduler
 {
-  scalar eta0; // the initial value of the learning rate
-  scalar d;    // the change rate
-  scalar r;    // the drop rate
+  scalar lr; // the initial value of the learning rate
+  scalar drop_rate;
+  scalar change_rate;
 
-  explicit step_based_scheduler(scalar eta, scalar drop_rate, scalar change_rate)
-      : eta0(eta), d(drop_rate), r(change_rate)
+  explicit step_based_scheduler(scalar lr_, scalar drop_rate_, scalar change_rate_)
+      : lr(lr_), drop_rate(drop_rate_), change_rate(change_rate_)
   {}
 
   scalar operator()(unsigned int i) override
   {
-    return eta0 * std::pow(d, std::floor((1.0 + i) / r));
+    return lr * std::pow(drop_rate, std::floor((1.0 + i) / change_rate));
   }
 };
 
 struct multi_step_lr_scheduler: public learning_rate_scheduler
 {
-  scalar eta0; // the initial value of the learning rate
+  scalar lr; // the initial value of the learning rate
   std::vector<unsigned int> milestones; // an increasing list of epoch indices
   scalar gamma; // the multiplicative factor of the decay
 
-  explicit multi_step_lr_scheduler(scalar eta, std::vector<unsigned int> milestones_, scalar gamma_)
-   : eta0(eta), milestones(std::move(milestones_)), gamma(gamma_)
+  explicit multi_step_lr_scheduler(scalar lr_, std::vector<unsigned int> milestones_, scalar gamma_)
+   : lr(lr_), milestones(std::move(milestones_)), gamma(gamma_)
   {}
 
   scalar operator()(unsigned int i) override
   {
-    scalar eta = eta0;
+    scalar eta = lr;
     for (unsigned int milestone: milestones)
     {
       if (i >= milestone)
@@ -105,16 +105,16 @@ struct multi_step_lr_scheduler: public learning_rate_scheduler
 
 struct exponential_scheduler: public learning_rate_scheduler
 {
-  scalar eta0; // the initial value of the learning rate
-  scalar d;    // the change rate
+  scalar lr;           // the initial value of the learning rate
+  scalar change_rate;
 
-  explicit exponential_scheduler(scalar eta, scalar change_rate)
-      : eta0(eta), d(change_rate)
+  exponential_scheduler(scalar lr_, scalar change_rate_)
+      : lr(lr_), change_rate(change_rate_)
   {}
 
   scalar operator()(unsigned int i) override
   {
-    return eta0 * std::exp(-d * scalar(i));
+    return lr * std::exp(-change_rate * scalar(i));
   }
 };
 
@@ -142,10 +142,10 @@ std::shared_ptr<learning_rate_scheduler> parse_multistep_lr_scheduler(const std:
   {
     throw std::runtime_error("Error: could not parse learning scheduler '" + text + "'");
   }
-  scalar eta = parse_scalar(m[1]);
+  scalar lr = parse_scalar(m[1]);
   std::vector<unsigned int> milestones = parse_comma_separated_numbers<unsigned int>(m[2]);
   scalar gamma = parse_scalar(m[3]);
-  return std::make_shared<multi_step_lr_scheduler>(eta, milestones, gamma);
+  return std::make_shared<multi_step_lr_scheduler>(lr, milestones, gamma);
 }
 
 inline
@@ -158,9 +158,9 @@ std::shared_ptr<learning_rate_scheduler> parse_time_based_scheduler(const std::s
   {
     throw std::runtime_error("Error: could not parse learning scheduler '" + text + "'");
   }
-  scalar eta = parse_scalar(m[1]);
+  scalar lr = parse_scalar(m[1]);
   scalar decay = parse_scalar(m[2]);
-  return std::make_shared<time_based_scheduler>(eta, decay);
+  return std::make_shared<time_based_scheduler>(lr, decay);
 }
 
 inline
@@ -173,10 +173,10 @@ std::shared_ptr<learning_rate_scheduler> parse_step_based_scheduler(const std::s
   {
     throw std::runtime_error("Error: could not parse learning scheduler '" + text + "'");
   }
-  scalar eta = parse_scalar(m[1]);
+  scalar lr = parse_scalar(m[1]);
   scalar drop_rate = parse_scalar(m[2]);
   scalar change_rate = parse_scalar(m[3]);
-  return std::make_shared<step_based_scheduler>(eta, drop_rate, change_rate);
+  return std::make_shared<step_based_scheduler>(lr, drop_rate, change_rate);
 }
 
 inline
@@ -189,9 +189,9 @@ std::shared_ptr<learning_rate_scheduler> parse_exponential_scheduler(const std::
   {
     throw std::runtime_error("Error: could not parse learning scheduler '" + text + "'");
   }
-  scalar eta = parse_scalar(m[1]);
+  scalar lr = parse_scalar(m[1]);
   scalar change_rate = parse_scalar(m[2]);
-  return std::make_shared<exponential_scheduler>(eta, change_rate);
+  return std::make_shared<exponential_scheduler>(lr, change_rate);
 }
 
 inline
