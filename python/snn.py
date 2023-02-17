@@ -80,8 +80,8 @@ def make_argument_parser():
     cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
 
     # import/export weights
-    cmdline_parser.add_argument('--export-weights-npz', type=str, help='Export weights to a file in .npz format')
-    cmdline_parser.add_argument('--import-weights-npz', type=str, help='Import weights from a file in .npz format')
+    cmdline_parser.add_argument('--export-weights', type=str, help='Export weights to a file in .npz format')
+    cmdline_parser.add_argument('--import-weights', type=str, help='Import weights from a file in .npz format')
 
     # print options
     cmdline_parser.add_argument("--precision", help="The precision used for printing matrices", type=int, default=8)
@@ -153,8 +153,8 @@ def main():
         M1 = make_torch_model(args, sizes, densities)
         M1.info()
 
-        if args.export_weights_npz:
-            M1.export_weights_npz(args.export_weights_npz)
+        if args.export_weights:
+            M1.export_weights(args.export_weights)
 
         print('\n=== Training PyTorch model ===')
         if args.preprocessed:
@@ -166,8 +166,8 @@ def main():
         M2 = make_nerva_model(args, sizes, densities)
         M2.info()
 
-        if args.import_weights_npz:
-            M2.import_weights_npz(args.import_weights_npz)
+        if args.import_weights:
+            M2.import_weights(args.import_weights)
 
         print('\n=== Training Nerva model ===')
         if args.preprocessed:

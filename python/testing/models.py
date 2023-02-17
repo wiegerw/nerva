@@ -61,7 +61,7 @@ class MLP1(nn.Module):
     def bias(self) -> List[torch.Tensor]:
         return [layer.bias.detach().numpy() for layer in self.layers]
 
-    def export_weights_npz(self, filename: str):
+    def export_weights(self, filename: str):
         print(f'Exporting weights to {filename}')
         data = {}
         for i, layer in enumerate(self.layers):
@@ -69,7 +69,7 @@ class MLP1(nn.Module):
             data[f'b{i + 1}'] = layer.bias.data
         save_dict_to_npz(filename, data)
 
-    def import_weights_npz(self, filename: str):
+    def import_weights(self, filename: str):
         data = load_dict_from_npz(filename)
         for i, layer in enumerate(self.layers):
             layer.weight.data = data[f'W{i + 1}']
@@ -122,11 +122,11 @@ class MLP2(nerva.layers.Sequential):
     def bias(self) -> List[np.ndarray]:
         return [b.reshape((b.shape[0])) for b in self.compiled_model.bias()]
 
-    def export_weights_npz(self, filename: str):
-        self.compiled_model.export_weights_npz(filename)
+    def export_weights(self, filename: str):
+        self.compiled_model.export_weights(filename)
 
-    def import_weights_npz(self, filename: str):
-        self.compiled_model.import_weights_npz(filename)
+    def import_weights(self, filename: str):
+        self.compiled_model.import_weights(filename)
 
     def info(self):
         print('=== Nerva python model ===')

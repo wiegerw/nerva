@@ -48,7 +48,7 @@ function train_sparse()
                         --nesterov \
                         --preprocessed=./cifar$seed \
                         --precision=8 \
-                        --export-weights-npz="weights-$density.npz" \
+                        --export-weights="weights-$density.npz" \
                         2>&1 | tee $logfile
   elif [ $framework == 'nerva' ]; then
       python3 -u snn.py --nerva \
@@ -61,7 +61,7 @@ function train_sparse()
                         --nesterov \
                         --preprocessed=./cifar$seed \
                         --precision=8 \
-                        --import-weights-npz="weights-$density.npz" \
+                        --import-weights="weights-$density.npz" \
                         2>&1 | tee $logfile
   elif [ $framework == 'nervacpp' ]; then
       ../tools/dist/mlpf --seed=$seed \
@@ -79,7 +79,7 @@ function train_sparse()
                          --no-shuffle \
                          --verbose \
                          --preprocessed=./cifar$seed \
-                         --import-weights-npz="weights-$density.npz" \
+                         --import-weights="weights-$density.npz" \
                          2>&1 | tee $logfile
   fi
   echo ''
@@ -113,7 +113,7 @@ function train_dense()
                         --nesterov \
                         --preprocessed=./cifar$seed \
                         --precision=8 \
-                        --export-weights-npz="weights-$density.npz" \
+                        --export-weights="weights-$density.npz" \
                         2>&1 | tee $logfile
   elif [ $framework == 'nerva' ]; then
       python3 -u snn.py --nerva \
@@ -125,7 +125,7 @@ function train_dense()
                         --nesterov \
                         --preprocessed=./cifar$seed \
                         --precision=8 \
-                        --import-weights-npz="weights-$density.npz" \
+                        --import-weights="weights-$density.npz" \
                         2>&1 | tee $logfile
   elif [ $framework == 'nervacpp' ]; then
       ../tools/dist/mlpf --seed=$seed \
@@ -141,7 +141,7 @@ function train_dense()
                          --threads=4 \
                          --verbose \
                          --preprocessed=./cifar$seed \
-                         --import-weights-npz="weights-$density.npz" \
+                         --import-weights="weights-$density.npz" \
                          2>&1 | tee $logfile
   fi
   echo ''

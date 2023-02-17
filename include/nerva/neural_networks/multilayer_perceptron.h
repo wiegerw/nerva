@@ -244,7 +244,7 @@ std::vector<eigen::matrix> mlp_bias(const multilayer_perceptron& M)
 // Precondition: the python interpreter must be running.
 // This can be enforced using `py::scoped_interpreter guard{};`
 inline
-void export_weights_to_npz(const multilayer_perceptron& M, const std::string& filename)
+void export_weights(const multilayer_perceptron& M, const std::string& filename)
 {
   namespace py = pybind11;
   NERVA_LOG(log::verbose) << "Saving weights and bias to file " << filename << std::endl;
@@ -281,7 +281,7 @@ void export_weights_to_npz(const multilayer_perceptron& M, const std::string& fi
 // Precondition: the python interpreter must be running.
 // This can be enforced using `py::scoped_interpreter guard{};`
 inline
-void import_weights_from_npz(multilayer_perceptron& M, const std::string& filename)
+void import_weights(multilayer_perceptron& M, const std::string& filename)
 {
   namespace py = pybind11;
   NERVA_LOG(log::verbose) << "Loading weights and bias from file " << filename << std::endl;

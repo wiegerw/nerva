@@ -38,8 +38,8 @@ def print_batch_info(epoch, k, Y1, Y2, DY2):
 
 def copy_weights_and_bias(M1: MLP1, M2: MLP2):
     filename = tempfile.NamedTemporaryFile().name + '.npz'
-    M1.export_weights_npz(filename)
-    M2.import_weights_npz(filename)
+    M1.export_weights(filename)
+    M2.import_weights(filename)
     pathlib.Path(filename).unlink()
 
 
