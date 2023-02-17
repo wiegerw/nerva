@@ -1,6 +1,4 @@
-import pathlib
-import tempfile
-from typing import List, Union
+from typing import List
 
 import numpy as np
 import torch
@@ -14,66 +12,6 @@ from testing.numpy_utils import pp, l1_norm
 
 
 class MLP1(nn.Module):
-    """ Multi-Layer Perceptron """
-    def __init__(self, sizes):
-        super().__init__()
-        self.sizes = sizes
-        self.optimizer = None
-        self.mask = None
-        n = len(sizes) - 1  # the number of layers
-        self.layers = nn.ModuleList()
-        for i in range(n):
-            self.layers.append(nn.Linear(sizes[i], sizes[i + 1]))
-
-    def forward(self, x):
-        for i in range(len(self.layers) - 1):
-            x = F.relu(self.layers[i](x))
-        x = self.layers[-1](x)  # output layer does not have an activation function
-        return x
-
-    def optimize(self):
-        if self.mask is not None:
-            self.mask.step()
-        else:
-            self.optimizer.step()
-
-    def weights(self) -> List[torch.Tensor]:
-        return [layer.weight.detach().numpy() for layer in self.layers]
-
-    def bias(self) -> List[torch.Tensor]:
-        return [layer.bias.detach().numpy() for layer in self.layers]
-
-    def export_weights_npz(self, filename: str):
-        print(f'Exporting weights to {filename}')
-        data = {}
-        for i, layer in enumerate(self.layers):
-            data[f'W{i + 1}'] = layer.weight.data
-            data[f'b{i + 1}'] = layer.bias.data
-        save_dict_to_npz(filename, data)
-
-    def import_weights_npz(self, filename: str):
-        data = load_dict_from_npz(filename)
-        for i, layer in enumerate(self.layers):
-            layer.weight.data = data[f'W{i + 1}']
-            layer.bias.data = data[f'b{i + 1}']
-
-    def print_weight_info(self):
-        for i, layer in enumerate(self.layers):
-            print(f'|w{i + 1}| = {l1_norm(layer.weight.detach().numpy())}')
-
-    def scale_weights(self, factor):
-        print(f'Scale weights with factor {factor}')
-        for layer in self.layers:
-            layer.weight.data *= factor
-
-    def info(self):
-        for i, layer in enumerate(self.layers):
-            pp(f'W{i + 1}', layer.weight)
-            pp(f'b{i + 1}', layer.bias)
-
-
-# Alternative version that uses a more direct way of masking
-class MLP1a(nn.Module):
     """ Multi-Layer Perceptron """
     def __init__(self, sizes, densities):
         super().__init__()
@@ -188,24 +126,3 @@ def print_model_info(M):
     for i in range(len(W)):
         pp(f'W{i + 1}', W[i])
         pp(f'b{i + 1}', b[i])
-
-
-# Save weights and biases to a file in a format readable in C++
-def save_weights_to_npz(filename, weights: List[torch.Tensor], bias: List[torch.Tensor]):
-    print(f'Saving weights and biases to {filename}')
-    data = {}
-    for i, (W, b) in enumerate(zip(weights, bias)):
-        data[f'W{i}'] = W.detach().numpy()
-        data[f'b{i}'] = b.detach().numpy()
-    with open(filename, "wb") as f:
-        np.savez_compressed(f, data)
-
-
-# load weights and biases from a file in a format readable in C++
-def load_weights_from_npz(filename):
-    print(f'Loading data from {filename}')
-    data = np.load(filename, allow_pickle=True)
-    n = len(data) // 2
-    weights = [torch.Tensor(data[f'W{i}']) for i in range(n)]
-    bias = [torch.Tensor(data[f'b{i}']) for i in range(n)]
-    return weights, bias

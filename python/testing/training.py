@@ -5,10 +5,10 @@ import numpy as np
 from nerva.utilities import StopWatch
 from testing.datasets import create_npz_dataloaders
 from testing.numpy_utils import to_numpy, to_one_hot_numpy, l1_norm, pp
-from testing.models import MLP1, MLP1a, MLP2, print_model_info
+from testing.models import MLP1, MLP2
 
 
-def compute_accuracy_torch(M: Union[MLP1, MLP1a], data_loader):
+def compute_accuracy_torch(M: MLP1, data_loader):
     N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
     for X, T in data_loader:
@@ -18,7 +18,7 @@ def compute_accuracy_torch(M: Union[MLP1, MLP1a], data_loader):
     return total_correct / N
 
 
-def compute_loss_torch(M: Union[MLP1, MLP1a], data_loader):
+def compute_loss_torch(M: MLP1, data_loader):
     N = len(data_loader.dataset)  # N is the number of examples
     batch_size = N // len(data_loader)
     total_loss = 0.0

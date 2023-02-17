@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-from sparselearning.core import Masking
 
 
 def flatten_torch(x: torch.Tensor) -> torch.Tensor:
@@ -21,18 +20,3 @@ def make_torch_scheduler(args, optimizer):
     else:
         raise RuntimeError(f'Unknown scheduler {args.scheduler}')
 
-
-def make_torch_mask(model: torch.nn.Module,
-                    density,
-                    sparse_init='ER',
-                    ) -> Masking:
-    mask = Masking(model.optimizer,
-                   prune_rate=0.5,
-                   prune_mode='none',
-                   prune_rate_decay=None,
-                   prune_interval=0,
-                   growth_mode='random',
-                   redistribution_mode='none',
-                   )
-    mask.add_module(model, sparse_init=sparse_init, density=density)
-    return mask
