@@ -590,14 +590,14 @@ void set_optimizer(linear_layer<Matrix>& layer, const std::string& text)
 }
 
 template <typename Scalar>
-std::vector<Scalar> compute_sparse_layer_densities(Scalar density,
+std::vector<Scalar> compute_sparse_layer_densities(Scalar overall_density,
                                                    const std::vector<std::pair<long, long>>& layer_shapes,
                                                    Scalar erk_power_scale = Scalar(1)
                                                   )
 {
   long n = layer_shapes.size(); // the number of layers
 
-  if (density == Scalar(1))
+  if (overall_density == Scalar(1))
   {
     return std::vector<Scalar>(n, Scalar(1));
   }
@@ -621,8 +621,8 @@ std::vector<Scalar> compute_sparse_layer_densities(Scalar density,
     {
       auto [rows, columns] = layer_shapes[i];
       long n_param = rows * columns;
-      long n_zeros = n_param * (Scalar(1) - density);
-      long n_ones = n_param * density;
+      long n_zeros = n_param * (Scalar(1) - overall_density);
+      long n_ones = n_param * overall_density;
       if (dense_layers.count(i))
       {
         rhs -= n_zeros;
@@ -643,7 +643,6 @@ std::vector<Scalar> compute_sparse_layer_densities(Scalar density,
       {
         if (raw_probabilities[j] == max_prob)
         {
-          // std::cout << "Sparsity of layer:" << j << " had to be set to 0." << std::endl;
           dense_layers.insert(j);
         }
       }
@@ -671,10 +670,8 @@ std::vector<Scalar> compute_sparse_layer_densities(Scalar density,
       Scalar probability_one = epsilon * raw_probabilities[i];
       densities[i] = probability_one;
     }
-    // std::cout << "layer: " << i << ", shape: " << "(" << rows << "," << columns << ")" << ", density: " << densities[i] << std::endl;
     total_nonzero += densities[i] * n_param;
   }
-  // std::cout << "Overall sparsity " << total_nonzero / total_params << std::endl;
   return densities;
 }
 

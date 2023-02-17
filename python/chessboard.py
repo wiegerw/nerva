@@ -14,7 +14,7 @@ from nerva.learning_rate import ConstantScheduler
 from nerva.loss import SoftmaxCrossEntropyLoss, SquaredErrorLoss
 from nerva.optimizers import GradientDescent
 from nerva.random import manual_seed
-from nerva.training import minibatch_gradient_descent, minibatch_gradient_descent_python, SGDOptions, compute_accuracy, compute_statistics
+from nerva.training import stochastic_gradient_descent, stochastic_gradient_descent_python, SGDOptions, compute_accuracy, compute_statistics
 from nerva.utilities import set_num_threads, StopWatch
 from nerva.weights import Xavier
 from regrow import regrow_weights
@@ -52,7 +52,7 @@ def create_model(density: float):
     return model
 
 
-def minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, weights_initializer=Xavier()):
+def stochastic_gradient_descent_with_regrow(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, weights_initializer=Xavier()):
     M = model.compiled_model
     N = dataset.Xtrain.shape[1]  # the number of examples
     I = list(range(N))
@@ -97,7 +97,7 @@ def train_sparse_model_with_regrow(dataset, density):
     batch_size = 100
     model = create_model(density)
     model.compile(input_size, batch_size)
-    minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=batch_size, shuffle=True, statistics=True, zeta=0.1, weights_initializer=Xavier())
+    stochastic_gradient_descent_with_regrow(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=batch_size, shuffle=True, statistics=True, zeta=0.1, weights_initializer=Xavier())
     print('')
 
 

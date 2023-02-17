@@ -213,7 +213,7 @@ class tool: public command_line_tool
 
     void add_options(lyra::cli& cli) override
     {
-      cli |= lyra::opt(options.algorithm, "value")["--algorithm"]("The algorithm (sgd, minibatch, minibatch_sgd)");
+      cli |= lyra::opt(options.algorithm, "value")["--algorithm"]("The algorithm (sgd)");
       cli |= lyra::opt(options.dataset, "value")["--dataset"]("The dataset (chessboard, spirals, square, sincos)");
       cli |= lyra::opt(options.dataset_size, "value")["--size"]("The size of the dataset (default: 1000)");
       cli |= lyra::opt(options.normalize_data)["--normalize"]("Normalize the data");
@@ -343,17 +343,13 @@ class tool: public command_line_tool
 
       if (options.algorithm == "sgd")
       {
-        stochastic_gradient_descent(M, loss, data, options, learning_rate, rng);
-      }
-      else if (options.algorithm == "minibatch")
-      {
         if (!preprocessed_dir.empty())
         {
-          minibatch_gradient_descent_preprocessed(M, loss, preprocessed_dir, options, learning_rate, rng);
+          stochastic_gradient_descent_preprocessed(M, loss, preprocessed_dir, options, learning_rate, rng);
         }
         else
         {
-          minibatch_gradient_descent(M, loss, data, options, learning_rate, rng);
+          stochastic_gradient_descent(M, loss, data, options, learning_rate, rng);
         }
       }
       else

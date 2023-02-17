@@ -16,7 +16,7 @@ from nerva.learning_rate import ConstantScheduler
 from nerva.loss import SoftmaxCrossEntropyLoss
 from nerva.optimizers import GradientDescent
 from nerva.random import manual_seed
-from nerva.training import minibatch_gradient_descent, minibatch_gradient_descent_python, SGDOptions, compute_accuracy, compute_statistics
+from nerva.training import stochastic_gradient_descent, stochastic_gradient_descent_python, SGDOptions, compute_accuracy, compute_statistics
 from nerva.utilities import set_num_threads, StopWatch
 from nerva.weights import WeightInitializer, Xavier, Zero
 import regrow
@@ -81,7 +81,7 @@ def create_sparse_model(density: float):
 
 # Uses a data generator to generate batches.
 # The parameter dataset is only used for computing statistics.
-def minibatch_gradient_descent_with_augmentation(model, dataset, datagen, loss, learning_rate, epochs, batch_size, statistics=True):
+def stochastic_gradient_descent_with_augmentation(model, dataset, datagen, loss, learning_rate, epochs, batch_size, statistics=True):
     N = dataset.Xtrain.shape[1]  # the number of examples
     K = N // batch_size  # the number of batches
     M = model.compiled_model
@@ -121,11 +121,11 @@ def train_dense_model(dataset):
     batch_size = 100
     model = create_dense_model()
     model.compile(input_size, batch_size)
-    minibatch_gradient_descent_python(model, dataset, loss, learning_rate_scheduler, epochs=10, batch_size=100, shuffle=True, statistics=True)
+    stochastic_gradient_descent_python(model, dataset, loss, learning_rate_scheduler, epochs=10, batch_size=100, shuffle=True, statistics=True)
     print('')
 
 
-# Use the c++ version of minibatch_gradient_descent, which is slightly faster
+# Use the c++ version of stochastic_gradient_descent, which is slightly faster
 def train_dense_model_cpp(dataset):
     loss = SoftmaxCrossEntropyLoss()
     learning_rate_scheduler = ConstantScheduler(0.01)
@@ -135,7 +135,7 @@ def train_dense_model_cpp(dataset):
     model.compile(input_size, batch_size)
     M = model.compiled_model
     options = make_sgd_options()
-    minibatch_gradient_descent(M, loss, dataset, options, learning_rate_scheduler)
+    stochastic_gradient_descent(M, loss, dataset, options, learning_rate_scheduler)
     print('')
 
 
@@ -147,7 +147,7 @@ def train_sparse_model(dataset):
     density = 0.5
     model = create_sparse_model(density)
     model.compile(input_size, batch_size)
-    minibatch_gradient_descent_python(model, dataset, loss, learning_rate_scheduler, epochs=10, batch_size=100, shuffle=True, statistics=True)
+    stochastic_gradient_descent_python(model, dataset, loss, learning_rate_scheduler, epochs=10, batch_size=100, shuffle=True, statistics=True)
     print('')
 
 
@@ -182,11 +182,11 @@ def train_dense_model_with_augmentation(x_train, x_test, y_train, y_test):
     input_size = 3072
     batch_size = 100
     model.compile(input_size, batch_size)
-    minibatch_gradient_descent_with_augmentation(model, dataset, datagen, loss, learning_rate_scheduler, epochs=10, batch_size=100, statistics=True)
+    stochastic_gradient_descent_with_augmentation(model, dataset, datagen, loss, learning_rate_scheduler, epochs=10, batch_size=100, statistics=True)
     print('')
 
 
-def minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, regrow_weights: WeightInitializer=Zero()):
+def stochastic_gradient_descent_with_regrow(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, regrow_weights: WeightInitializer=Zero()):
     M = model.compiled_model
     N = dataset.Xtrain.shape[1]  # the number of examples
     I = list(range(N))
@@ -234,7 +234,7 @@ def train_sparse_model_with_regrow(dataset):
     density = 0.5
     model = create_sparse_model(density)
     model.compile(input_size, batch_size)
-    minibatch_gradient_descent_with_regrow(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=100, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Xavier())
+    stochastic_gradient_descent_with_regrow(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=100, shuffle=True, statistics=True, zeta=0.3, regrow_weights=Xavier())
     print('')
 
 

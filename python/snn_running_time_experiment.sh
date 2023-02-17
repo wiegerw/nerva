@@ -51,7 +51,7 @@ function run
                      --dataset=cifar10 \
                      --size=50000 \
                      --loss="softmax-cross-entropy" \
-                     --algorithm=minibatch \
+                     --algorithm=sgd \
                      --threads=4 \
                      --no-shuffle \
                      -v \

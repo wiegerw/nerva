@@ -74,7 +74,7 @@ function train_sparse()
                          --architecture=$architecture \
                          --weights=$weights \
                          --loss="softmax-cross-entropy" \
-                         --algorithm=minibatch \
+                         --algorithm=sgd \
                          --threads=4 \
                          --no-shuffle \
                          --verbose \
@@ -137,7 +137,7 @@ function train_dense()
                          --architecture=$architecture \
                          --weights=$weights \
                          --loss="softmax-cross-entropy" \
-                         --algorithm=minibatch \
+                         --algorithm=sgd \
                          --threads=4 \
                          --verbose \
                          --preprocessed=./cifar$seed \

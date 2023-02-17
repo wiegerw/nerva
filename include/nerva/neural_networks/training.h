@@ -175,130 +175,9 @@ void compute_statistics_batch(MultilayerPerceptron& M,
   std::cout << std::endl;
 }
 
-template <typename MultilayerPerceptron, typename DataSet, typename RandomNumberGenerator>
-void stochastic_gradient_descent(
-         MultilayerPerceptron& M,
-         const std::shared_ptr<loss_function>& loss,
-         const DataSet& data,
-         const sgd_options& options,
-         const std::shared_ptr<learning_rate_scheduler>& learning_rate,
-         RandomNumberGenerator rng
-  )
-{
-  std::cout << std::setprecision(4);
-  long N = data.Xtrain.cols(); // the number of examples
-  long D = data.Xtrain.rows(); // the number of features
-  std::vector<long> I(N);
-  std::iota(I.begin(), I.end(), 0);
-  eigen::matrix y(D, 1);
-  eigen::matrix dy(D, 1);
-  utilities::stopwatch watch;
-  scalar eta = learning_rate->operator()(0);
-
-  compute_statistics(M, eta, loss, data, -1, options.statistics, 0.0);
-
-  for (unsigned int epoch = 0; epoch < options.epochs; ++epoch)
-  {
-    watch.reset();
-    if (options.shuffle)
-    {
-      std::shuffle(I.begin(), I.end(), rng);   // shuffle the examples at the start of each epoch
-    }
-    M.renew_dropout_mask(rng);
-    eta = learning_rate->operator()(epoch);       // update the learning at the start of each epoch
-
-    for (auto i: I)
-    {
-      NERVA_LOG(log::debug) << "--- sample " << i << std::endl;
-      const auto& x = data.Xtrain.col(i);
-      const auto& t = data.Ttrain.col(i);
-      M.feedforward(x, y);
-      dy = loss->gradient(y, t);
-      if (options.check_gradients)
-      {
-        auto f = [&loss, &y, &t]() { return loss->value(y, t); };
-        check_gradient("dy", f, y, dy, options.check_gradients_step);
-      }
-      M.backpropagate(y, dy);
-      if (options.check_gradients)
-      {
-        M.check_gradients(loss, t, options.check_gradients_step);
-      }
-      M.optimize(eta);
-    }
-
-    compute_statistics(M, eta, loss, data, epoch, options.statistics, watch.seconds());
-  }
-  std::cout << "Accuracy of the network on the " << data.Xtest.cols() << " test images: " << std::setw(10) << (100.0 * compute_accuracy(M, data.Xtest, data.Ttest)) << "%" << std::endl;
-}
-
-template <typename MultilayerPerceptron, typename DataSet, typename RandomNumberGenerator>
-void minibatch_stochastic_gradient_descent(
-  MultilayerPerceptron& M,
-  const std::shared_ptr<loss_function>& loss,
-  const DataSet& data,
-  const sgd_options& options,
-  const std::shared_ptr<learning_rate_scheduler>& learning_rate,
-  RandomNumberGenerator rng
-  )
-{
-  std::cout << std::setprecision(4);
-  long N = data.Xtrain.cols(); // the number of examples
-  long L = data.Ttrain.rows(); // the number of outputs
-
-  std::vector<long> I(N);
-  std::iota(I.begin(), I.end(), 0);
-  eigen::matrix y(L, options.batch_size);
-  eigen::matrix dy(L, options.batch_size);
-  long K = N / options.batch_size; // the number of batches
-  utilities::stopwatch watch;
-  scalar eta = learning_rate->operator()(0);
-
-  compute_statistics(M, eta, loss, data, -1, options.statistics, 0.0);
-
-  typename MultilayerPerceptron::gradient_type dWdb(M);
-
-  for (unsigned int epoch = 0; epoch < options.epochs; ++epoch)
-  {
-    watch.reset();
-    if (options.shuffle)
-    {
-      std::shuffle(I.begin(), I.end(), rng);// shuffle the examples at the start of each epoch
-    }
-    M.renew_dropout_mask(rng);
-    eta = learning_rate->operator()(epoch);       // update the learning at the start of each epoch
-
-    for (long k = 0; k < K; k++)
-    {
-      dWdb.wipe();
-      for (long i = k * options.batch_size; i < k * options.batch_size + options.batch_size; i++)
-      {
-        const auto& x = data.Xtrain.col(I[i]);
-        const auto& t = data.Ttrain.col(I[i]);
-        M.feedforward(x, y);
-        dy = loss->gradient(y, t);
-        M.backpropagate(y, dy);
-        if (options.check_gradients)
-        {
-          M.check_gradients(loss, t, options.check_gradients_step);
-        }
-        dWdb.add(M);
-      }
-      dWdb.set(M);
-      M.optimize(eta);
-    }
-
-    if (options.statistics)
-    {
-      compute_statistics(M, eta, loss, data, epoch, options.statistics, watch.seconds());
-    }
-  }
-  std::cout << "Accuracy of the network on the " << data.Xtest.cols() << " test images: " << std::setw(10) << (100.0 * compute_accuracy(M, data.Xtest, data.Ttest)) << "%" << std::endl;
-}
-
 // Returns the test accuracy and the total training time
 template <typename MultilayerPerceptron, typename DataSet, typename RandomNumberGenerator>
-std::pair<double, double> minibatch_gradient_descent(
+std::pair<double, double> stochastic_gradient_descent(
   MultilayerPerceptron& M,
   const std::shared_ptr<loss_function>& loss,
   const DataSet& data,
@@ -371,7 +250,7 @@ std::pair<double, double> minibatch_gradient_descent(
 
 // Loads a new dataset at every epoch from the directory datadir
 template <typename MultilayerPerceptron, typename RandomNumberGenerator>
-std::pair<double, double> minibatch_gradient_descent_preprocessed(
+std::pair<double, double> stochastic_gradient_descent_preprocessed(
   MultilayerPerceptron& M,
   const std::shared_ptr<loss_function>& loss,
   const std::string& datadir,

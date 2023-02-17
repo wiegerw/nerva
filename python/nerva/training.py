@@ -3,11 +3,11 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import random
-from nervalib import compute_statistics, compute_accuracy, minibatch_gradient_descent, SGDOptions
+from nervalib import compute_statistics, compute_accuracy, stochastic_gradient_descent, SGDOptions
 from nerva.utilities import StopWatch
 
 
-def minibatch_gradient_descent_python(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True):
+def stochastic_gradient_descent_python(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True):
     M = model.compiled_model
     N = dataset.Xtrain.shape[1]  # the number of examples
     I = list(range(N))
