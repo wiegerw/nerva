@@ -73,7 +73,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--batch-size", help="The batch size", type=int, default=1)
 
     # dataset
-    cmdline_parser.add_argument('--datadir', type=str, default='./data', help='the data directory (default: ./data)')
+    cmdline_parser.add_argument('--datadir', type=str, default='', help='the data directory (default: ./data)')
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
     cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
 

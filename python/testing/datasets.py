@@ -165,7 +165,6 @@ def create_npz_dataloaders(filename: str, batch_size: int) -> Tuple[TorchDataLoa
 
 # save data to .npz file in a format readable in C++
 def save_dict_to_npz(filename, data: dict[str, torch.Tensor]):
-    print(f'Saving data to {filename}')
     data = {key: value.detach().numpy() for key, value in data.items()}
     with open(filename, "wb") as f:
         np.savez_compressed(f, **data)
@@ -178,7 +177,6 @@ def load_dict_from_npz(filename):
             return torch.LongTensor(x)
         return torch.Tensor(x)
 
-    print(f'Loading data from {filename}')
     data = dict(np.load(filename, allow_pickle=True))
     data = {key: make_tensor(value) for key, value in data.items()}
     return data

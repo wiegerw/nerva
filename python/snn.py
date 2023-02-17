@@ -75,7 +75,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--batch-size", help="The batch size", type=int, default=1)
 
     # dataset
-    cmdline_parser.add_argument('--datadir', type=str, default='./data', help='the data directory (default: ./data)')
+    cmdline_parser.add_argument('--datadir', type=str, default='', help='the data directory (default: ./data)')
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
     cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
 
@@ -100,6 +100,12 @@ def check_command_line_arguments(args):
 
     if args.densities and args.overall_density:
         raise RuntimeError('the options --densities and --overall-density cannot be used simultaneously')
+
+    if args.inference and args.preprocessed:
+        raise RuntimeError('the options --inference and --preprocessed cannot be used simultaneously')
+
+    if not args.datadir and not args.preprocessed:
+        raise RuntimeError('at least one of the options --datadir and --preprocessed must be set')
 
 
 def print_command_line_arguments(args):
@@ -132,10 +138,11 @@ def main():
         print('Setting gamma to 1.0')
         args.gamma = 1.0
 
-    if args.augmented:
-        train_loader, test_loader = create_cifar10_augmented_dataloaders(args.batch_size, args.batch_size, args.datadir)
-    else:
-        train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
+    if args.datadir:
+        if args.augmented:
+            train_loader, test_loader = create_cifar10_augmented_dataloaders(args.batch_size, args.batch_size, args.datadir)
+        else:
+            train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
 
     sizes = [int(s) for s in args.sizes.split(',')]
 
@@ -145,9 +152,6 @@ def main():
         densities = compute_densities(args.overall_density, sizes)
     else:
         densities = [1.0] * (len(sizes) - 1)
-
-    if args.augmented and args.preprocessed:
-        raise RuntimeError('the combination of --augmented and --preprocessed is unsupported')
 
     if args.torch:
         M1 = make_torch_model(args, sizes, densities)
@@ -161,7 +165,6 @@ def main():
             train_torch_preprocessed(M1, args.preprocessed, args.epochs, args.batch_size)
         else:
             train_torch(M1, train_loader, test_loader, args.epochs)
-        print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_torch(M1, test_loader):.3f} %')
     elif args.nerva:
         M2 = make_nerva_model(args, sizes, densities)
         M2.info()
@@ -174,7 +177,6 @@ def main():
             train_nerva_preprocessed(M2, args.preprocessed, args.epochs, args.batch_size)
         else:
             train_nerva(M2, train_loader, test_loader, args.epochs)
-        print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_nerva(M2, test_loader):.3f} %')
     elif args.inference:
         M1 = make_torch_model(args, sizes, densities)
         M2 = make_nerva_model(args, sizes, densities)
