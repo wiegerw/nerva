@@ -45,10 +45,10 @@ TEST_CASE("test_linear_layer1")
   long D = 2;
   long N = 2;
   long K = 2;
-  scalar sparsity = 0;
+  scalar density = 1;
 
   linear_layer<mkl::sparse_matrix_csr<scalar>> layer(D, K, N);
-  initialize_sparse_weights<scalar>(layer, sparsity, rng);
+  initialize_sparse_weights<scalar>(layer, density, rng);
 
   // N.B. THIS DOES NOT WORK
   // initialize_weights(weight_initialization::xavier, layer.W, layer.b, rng);
@@ -93,10 +93,10 @@ TEST_CASE("test_linear_layer2")
   long D = 2;
   long N = 2;
   long K = 2;
-  scalar sparsity = 0;
+  scalar density = 1;
 
   linear_layer<mkl::sparse_matrix_csr<scalar>> layer(D, K, N);
-  initialize_sparse_weights<scalar>(layer, sparsity, rng);
+  initialize_sparse_weights<scalar>(layer, density, rng);
   initialize_weights(weight_initialization::xavier, layer.W, layer.b, rng);
 
   std::cout << "layer.W =\n" << layer.W.to_string() << std::endl;
@@ -161,7 +161,7 @@ void test_layers(const eigen::matrix& W, const eigen::vector& b, const eigen::ma
   test_backpropagate(linear_layer1, linear_layer2, Y, DY);
 
   linear_layer<mkl::sparse_matrix_csr<scalar>> linear_layer3(D, K, N);
-  initialize_sparse_weights<scalar>(linear_layer3, scalar(0), rng);
+  initialize_sparse_weights<scalar>(linear_layer3, scalar(1), rng);
 
   linear_layer<eigen::matrix> linear_layer4(D, K, N);
   linear_layer4.W = mkl::to_eigen<scalar>(linear_layer3.W);

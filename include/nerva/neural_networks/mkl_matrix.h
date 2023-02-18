@@ -12,6 +12,7 @@
 
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/utilities/print.h"
+#include "nerva/utilities/random.h"
 #include "nerva/utilities/stopwatch.h"
 #include <mkl.h>
 #include <mkl_spblas.h>
@@ -27,12 +28,12 @@ struct matrix
   int n; // number of columns
   Scalar* values;
 
-  int rows() const
+  [[nodiscard]] int rows() const
   {
     return m;
   }
 
-  int cols() const
+  [[nodiscard]] int cols() const
   {
     return n;
   }
@@ -52,8 +53,8 @@ struct sparse_matrix_csr
   sparse_matrix_t csr{nullptr};
   matrix_descr descr{SPARSE_MATRIX_TYPE_GENERAL, SPARSE_FILL_MODE_FULL, SPARSE_DIAG_NON_UNIT};
 
-  int m{}; // number of rows
-  int n{}; // number of columns
+  long m{}; // number of rows
+  long n{}; // number of columns
 
   void check() const
   {
@@ -102,15 +103,15 @@ struct sparse_matrix_csr
     }
   }
 
-  explicit sparse_matrix_csr(int rows = 0, int columns = 0)
+  explicit sparse_matrix_csr(long rows = 0, long columns = 0)
     : m(rows), n(columns)
   {
     // N.B. This brings the matrix in an unusable state.
     // TODO: find out if MKL allows a useful default initialization
   }
 
-  sparse_matrix_csr(int rows,
-                    int cols,
+  sparse_matrix_csr(long rows,
+                    long cols,
                     std::vector<MKL_INT> row_index_,
                     std::vector<MKL_INT> columns_,
                     std::vector<Scalar> values_
@@ -121,24 +122,33 @@ struct sparse_matrix_csr
     check();
   }
 
-  sparse_matrix_csr(int rows, int cols, Scalar density, std::mt19937& rng, Scalar value = 0)
-   : m(rows), n(cols)
+  sparse_matrix_csr(long rows, long cols, Scalar density, std::mt19937& rng, Scalar value = 0)
+    : m(rows), n(cols)
   {
+    long nonzero_count = std::lround(density * rows * cols);
+    assert(0 < nonzero_count && nonzero_count <= rows * cols);
+    values.reserve(nonzero_count);
+    columns.reserve(nonzero_count);
     row_index.push_back(0);
-    int count = 0; // the number of nonzero elements
-    std::bernoulli_distribution dist(density);
+
+    long remaining = rows * cols;  // the remaining number of positions
+    long nonzero = nonzero_count;  // the remaining number of nonzero positions
+
     for (auto i = 0; i < m; i++)
     {
+      long row_count = 0;
       for (auto j = 0; j < n; j++)
       {
-        if (dist(rng))
+        if ((random_real<float>(0, 1, rng) < static_cast<float>(nonzero) / remaining) || (remaining == nonzero))
         {
-          count++;
-          columns.push_back(static_cast<int>(j));
+          columns.push_back(static_cast<long>(j));
           values.push_back(value);
+          row_count++;
+          nonzero--;
         }
+        remaining--;
       }
-      row_index.push_back(count);
+      row_index.push_back(row_index.back() + row_count);
     }
 
     if (auto status = construct_csr() != SPARSE_STATUS_SUCCESS)
@@ -201,12 +211,12 @@ struct sparse_matrix_csr
     destruct_csr();
   }
 
-  int rows() const
+  [[nodiscard]] long rows() const
   {
     return m;
   }
 
-  int cols() const
+  [[nodiscard]] long cols() const
   {
     return n;
   }
@@ -236,7 +246,7 @@ struct sparse_matrix_csr
     return out.str();
   }
 
-  scalar density() const
+  [[nodiscard]] scalar density() const
   {
     return scalar(values.size()) / (m * n);
   }
@@ -245,7 +255,8 @@ struct sparse_matrix_csr
 template <typename Scalar>
 void fill_matrix(sparse_matrix_csr<Scalar>& A, Scalar density, std::mt19937& rng, Scalar value = 0)
 {
-  A = sparse_matrix_csr<Scalar>(A.cols(), A.rows(), density, rng, value);
+  long nonzero_count = std::lround(density * A.rows() * A.cols());
+  A = sparse_matrix_csr<Scalar>(A.cols(), A.rows(), nonzero_count, rng, value);
 }
 
 template <typename Scalar, typename Function>

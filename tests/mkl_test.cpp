@@ -702,10 +702,10 @@ TEST_CASE("test_csr2")
 // A is a sparse m x k matrix
 // B is a dense  k x n matrix
 // C is a dense  m x n matrix
-// 0 <= sparsity <= 1 is the sparsity of A
-void test_matrix_multiplication(long m, long k, long n, scalar sparsity)
+// 0 <= density <= 1 is the density of A
+void test_matrix_multiplication(long m, long k, long n, scalar density)
 {
-  std::cout << "--- test multiplication m = " << m << " k = " << k << " n = " << n << " sparsity = " << sparsity << std::endl;
+  std::cout << "--- test multiplication m = " << m << " k = " << k << " n = " << n << " density = " << density << std::endl;
   scalar a = -10;
   scalar b = 10;
 
@@ -713,7 +713,7 @@ void test_matrix_multiplication(long m, long k, long n, scalar sparsity)
   std::mt19937 rng{seed};
 
   eigen::matrix A(m, k);
-  eigen::fill_matrix_random(A, sparsity, a, b, rng);
+  eigen::fill_matrix_random(A, density, a, b, rng);
 
   eigen::matrix B(k, n);
   eigen::fill_matrix_random(B, 1, a, b, rng);
@@ -748,10 +748,10 @@ void test_matrix_multiplication(long m, long k, long n, scalar sparsity)
 // Compute C = alpha * A + B, where
 // A is a sparse m x n matrix
 // B is a dense  m x n matrix
-// 0 <= sparsity <= 1 is the sparsity of A
-void test_matrix_addition(long m, long k, long n, scalar sparsity)
+// 0 <= density <= 1 is the density of A
+void test_matrix_addition(long m, long k, long n, scalar density)
 {
-  std::cout << "--- test addition m = " << m << " k = " << k << " n = " << n << " sparsity = " << sparsity << std::endl;
+  std::cout << "--- test addition m = " << m << " k = " << k << " n = " << n << " density = " << density << std::endl;
   scalar a = -10;
   scalar b = 10;
 
@@ -759,7 +759,7 @@ void test_matrix_addition(long m, long k, long n, scalar sparsity)
   std::mt19937 rng{seed};
 
   eigen::matrix A(m, n);
-  eigen::fill_matrix_random(A, sparsity, a, b, rng);
+  eigen::fill_matrix_random(A, density, a, b, rng);
 
   eigen::matrix B = A;
 
@@ -820,19 +820,19 @@ TEST_CASE("test_fill_matrix")
   long D = 4;   // input size
   long K = 6;   // output size
   long Q = 2;   // batch size
-  scalar sparsity = 0; // sparsity
+  scalar density = 1;
 
-  mkl::sparse_matrix_csr<scalar> W(6, 4, sparsity, rng, scalar(2));
+  mkl::sparse_matrix_csr<scalar> W(6, 4, density, rng, scalar(2));
   mkl::sparse_matrix_csr<scalar> W1 = W;
 
   mkl::sparse_matrix_csr<scalar> W2;
   W2 = W;
 
   mkl::sparse_matrix_csr<scalar> X(6, 4);
-  X = mkl::sparse_matrix_csr<scalar>(6, 4, sparsity, rng, scalar(2));
+  X = mkl::sparse_matrix_csr<scalar>(6, 4, density, rng, scalar(2));
 
   sparse_linear_layer layer(D, K, Q);
-  initialize_sparse_weights<scalar>(layer, sparsity, rng);
+  initialize_sparse_weights<scalar>(layer, density, rng);
 }
 
 struct counter
@@ -914,10 +914,10 @@ TEST_CASE("test_assign_matrix_product")
 
   long m = B.rows();
   long n = C.cols();
-  float sparsity = 0.0;
+  float density = 1.0;
   auto seed = std::random_device{}();
   std::mt19937 rng{seed};
-  mkl::sparse_matrix_csr<scalar> A1(m, n, sparsity, rng);
+  mkl::sparse_matrix_csr<scalar> A1(m, n, density, rng);
   mkl::assign_matrix_product_batch(A1, B, C, 2);
 
   eigen::print_cpp_matrix("A", A);
