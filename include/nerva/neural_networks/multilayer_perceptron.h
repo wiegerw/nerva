@@ -101,14 +101,14 @@ struct multilayer_perceptron
     }
   }
 
-  void regrow(scalar zeta, weight_initialization w, bool separate_positive_negative, std::mt19937& rng)
+  void regrow(scalar zeta, weight_initialization init, bool separate_positive_negative, std::mt19937& rng)
   {
     for (auto& layer: layers)
     {
       auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get());
       if (slayer)
       {
-        nerva::regrow(slayer->W, zeta, w, separate_positive_negative, rng);
+        nerva::regrow(slayer->W, init, zeta, separate_positive_negative, rng);
       }
     }
   }

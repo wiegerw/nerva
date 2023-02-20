@@ -168,7 +168,7 @@ class Sparse(Layer):
         :param zeta: The fraction of weights that is regrown
         """
         assert self._layer
-        nervalib.regrow_sparse_layer(self._layer, weight_initializer.compile(), zeta)
+        self._layer.regrow(zeta, False, weight_initializer.compile())
 
 
 class Dropout(Layer):
@@ -210,6 +210,7 @@ class AffineTransform(Layer):
 
     def __str__(self):
         return 'AffineTransform()'
+
 
 # neural networks
 class Sequential(object):
@@ -266,7 +267,7 @@ class Sequential(object):
                 M.append_layer(cpp_layer)
         self.compiled_model = M
 
-    def regrow(self, weight_initializer: WeightInitializer, zeta: float):
+    def regrow(self, weight_initializer: WeightInitializer, zeta: float, separate_posneg=False):
         """Prunes and regrows the weights of the sparse layers
 
         :param weight_initializer: A weight initializer
@@ -274,7 +275,7 @@ class Sequential(object):
         """
         for layer in self.layers:
             if isinstance(layer, Sparse):
-                layer.regrow(weight_initializer.compile(), zeta)
+                layer.regrow(weight_initializer, zeta, separate_posneg)
 
     def feedforward(self, X):
         return self.compiled_model.feedforward(X)

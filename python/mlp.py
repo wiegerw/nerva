@@ -17,6 +17,7 @@ import nerva.learning_rate
 import nerva.loss
 import nerva.optimizers
 import nerva.random
+import nervalib
 from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
 from testing.torch_models import make_torch_scheduler
@@ -72,6 +73,10 @@ def make_argument_parser():
     cmdline_parser.add_argument("--epochs", help="The number of epochs", type=int, default=100)
     cmdline_parser.add_argument("--batch-size", help="The batch size", type=int, default=1)
 
+    # regrow
+    cmdline_parser.add_argument("--zeta", help="The regrow factor, use 0 for no regrow", type=float, default=0)
+    cmdline_parser.add_argument("--separate", help="Separate negative and positive values for regrow", action="store_true")
+
     # dataset
     cmdline_parser.add_argument('--datadir', type=str, default='', help='the data directory (default: ./data)')
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
@@ -95,13 +100,15 @@ def check_command_line_arguments(args):
     if args.densities and args.overall_density:
         raise RuntimeError('the options --densities and --overall-density cannot be used simultaneously')
 
+    if not args.datadir and not args.preprocessed:
+        raise RuntimeError('at least one of the options --datadir and --preprocessed must be set')
+
 
 def print_command_line_arguments(args):
-    print('=== Command line arguments ===')
     print("command = python3 " + " ".join(shlex.quote(arg) if " " in arg else arg for arg in sys.argv))
     for key, value in vars(args).items():
         print(f'{key} = {value}')
-    print('==============================\n')
+    print('\n')
 
 
 def initialize_frameworks(args):
@@ -127,10 +134,11 @@ def main():
         print('Setting gamma to 1.0')
         args.gamma = 1.0
 
-    if args.augmented:
-        train_loader, test_loader = create_cifar10_augmented_dataloaders(args.batch_size, args.batch_size, args.datadir)
-    else:
-        train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
+    if args.datadir:
+        if args.augmented:
+            train_loader, test_loader = create_cifar10_augmented_dataloaders(args.batch_size, args.batch_size, args.datadir)
+        else:
+            train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
 
     sizes = [int(s) for s in args.sizes.split(',')]
 
@@ -141,15 +149,9 @@ def main():
     else:
         densities = [1.0] * (len(sizes) - 1)
 
-    if args.augmented and args.preprocessed:
-        raise RuntimeError('the combination of --augmented and --preprocessed is unsupported')
-
     if args.torch:
-        print('\n=== PyTorch model ===')
         M1 = make_torch_model(args, sizes, densities)
-        print(M1)
-        print(M1.loss)
-        print(M1.learning_rate)
+        M1.info()
 
         if args.export_weights:
             M1.export_weights(args.export_weights)
@@ -159,13 +161,9 @@ def main():
             train_torch_preprocessed(M1, args.preprocessed, args.epochs, args.batch_size)
         else:
             train_torch(M1, train_loader, test_loader, args.epochs)
-        print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_torch(M1, test_loader):.3f} %')
     elif args.nerva:
-        print('\n=== Nerva model ===')
         M2 = make_nerva_model(args, sizes, densities)
-        print(M2)
-        print(M2.loss)
-        print(M2.learning_rate)
+        M2.info()
 
         if args.import_weights:
             M2.import_weights(args.import_weights)
@@ -174,8 +172,7 @@ def main():
         if args.preprocessed:
             train_nerva_preprocessed(M2, args.preprocessed, args.epochs, args.batch_size)
         else:
-            train_nerva(M2, train_loader, test_loader, args.epochs)
-        print(f'Accuracy of the network on the 10000 test images: {100 * compute_accuracy_nerva(M2, test_loader):.3f} %')
+            train_nerva(M2, train_loader, test_loader, args.epochs, args.zeta, args.separate)
 
 
 if __name__ == '__main__':

@@ -75,7 +75,7 @@ TEST_CASE("test1")
   eigen::print_matrix("A", A);
 
   std::mt19937 rng{std::random_device{}()};
-  auto f = std::make_shared<ten_weight_initializer>(rng);
+  auto init = std::make_shared<ten_weight_initializer>(rng);
 
   long k = 4; // consider the 5 smallest nonzero elements
   scalar threshold;
@@ -92,7 +92,7 @@ TEST_CASE("test1")
   CHECK_EQ(5, prune_count);
 
   auto A_grow = A_pruned;
-  grow(A_grow, prune_count, f, rng);
+  grow(A_grow, init, prune_count, rng);
   eigen::print_matrix("A_grow", A_grow);
 
   long m = A.rows();
@@ -123,7 +123,7 @@ TEST_CASE("test1")
     std::cout << "=== regrow_threshold count = " << count << " ===" << std::endl;
     auto B = A;
     eigen::print_matrix("A", A);
-    regrow_threshold(B, count, f, rng);
+    regrow_threshold(B, init, count, rng);
     eigen::print_matrix("B", B);
     CHECK_EQ((B.array() == 10).count(), count);
     CHECK_EQ((B.array() == 0).count(), (A.array() == 0).count());
@@ -179,8 +179,8 @@ TEST_CASE("test2")
       eigen::print_matrix("A", A);
       auto B = A;
       std::mt19937 rng{std::random_device{}()};
-      auto f = std::make_shared<ten_weight_initializer>(rng);
-      regrow_interval(B, negative_count, positive_count, f, rng);
+      auto init = std::make_shared<ten_weight_initializer>(rng);
+      regrow_interval(B, init, negative_count, positive_count, rng);
       eigen::print_matrix("B", B);
       CHECK_EQ((B.array() == 10).count(), negative_count + positive_count);
       CHECK_EQ((B.array() == 0).count(), (A.array() == 0).count());

@@ -2,9 +2,10 @@ from typing import List, Union
 
 import numpy as np
 
+import nerva.weights
 from nerva.utilities import StopWatch
 from testing.datasets import create_npz_dataloaders
-from testing.numpy_utils import to_numpy, to_one_hot_numpy, l1_norm, pp
+from testing.numpy_utils import to_numpy, to_one_hot_numpy, l1_norm
 from testing.models import MLP1, MLP2
 
 
@@ -183,7 +184,7 @@ def train_torch_preprocessed(M, datadir, epochs, batch_size):
         M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
 
 
-def train_nerva(M, train_loader, test_loader, epochs):
+def train_nerva(M, train_loader, test_loader, epochs, zeta=0, separate_posneg=False):
     n_classes = M.sizes[-1]
     batch_size = len(train_loader.dataset) // len(train_loader)
     watch = StopWatch()
@@ -196,6 +197,10 @@ def train_nerva(M, train_loader, test_loader, epochs):
                 elapsed=0)
 
     for epoch in range(epochs):
+        if epoch > 0 and zeta > 0:
+            print('regrow')
+            M.regrow(nerva.weights.Xavier(), zeta, separate_posneg)
+
         lr = M.learning_rate(epoch)
         elapsed = 0.0
         for k, (X, T) in enumerate(train_loader):
@@ -217,7 +222,7 @@ def train_nerva(M, train_loader, test_loader, epochs):
 
 
 # At every epoch a new dataset in .npz format is read from datadir.
-def train_nerva_preprocessed(M, datadir, epochs, batch_size):
+def train_nerva_preprocessed(M, datadir, epochs, batch_size, zeta=0, separate_posneg=False):
     train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch0.npz', batch_size=batch_size)
 
     n_classes = M.sizes[-1]
@@ -234,6 +239,10 @@ def train_nerva_preprocessed(M, datadir, epochs, batch_size):
     for epoch in range(epochs):
         if epoch > 0:
             train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch{epoch}.npz', batch_size)
+
+        if epoch > 0 and zeta > 0:
+            print('regrow')
+            M.regrow(nerva.weights.Xavier(), zeta, separate_posneg)
 
         lr = M.learning_rate(epoch)
         elapsed = 0.0
