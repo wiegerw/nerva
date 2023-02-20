@@ -76,10 +76,13 @@ TEST_CASE("test1")
 
   std::mt19937 rng{std::random_device{}()};
   auto f = std::make_shared<ten_weight_initializer>(rng);
-  long k = 5;
 
-  auto threshold = find_k_smallest_absolute_value(A, k);
+  long k = 4; // consider the 5 smallest nonzero elements
+  scalar threshold;
+  unsigned int num_copies;
+  std::tie(threshold, num_copies) = nth_element(A, k, accept_nonzero(), compare_less_absolute());
   CHECK_EQ(3, threshold);
+  CHECK_EQ(1, num_copies);
 
   auto A_pruned = A;
   auto accept = [threshold](scalar x) { return x != 0 && std::fabs(x) <= threshold; };
@@ -109,11 +112,17 @@ TEST_CASE("test1")
   CHECK_EQ((A_grow.array() == 10).count(), prune_count);
   CHECK_EQ((A_grow.array() == 0).count(), (A.array() == 0).count());
 
-  auto B = A;
-  regrow_threshold(B, k, f, rng);
-  eigen::print_matrix("B", B);
-  CHECK_EQ((B.array() == 10).count(), prune_count);
-  CHECK_EQ((B.array() == 0).count(), (A.array() == 0).count());
+  long nonzero_count = eigen::nonzero_count(A);
+  for (long count = 1; count <= nonzero_count; count++)
+  {
+    std::cout << "=== regrow_threshold count = " << count << " ===" << std::endl;
+    auto B = A;
+    eigen::print_matrix("A", A);
+    regrow_threshold(B, count, f, rng);
+    eigen::print_matrix("B", B);
+    CHECK_EQ((B.array() == 10).count(), count);
+    CHECK_EQ((B.array() == 0).count(), (A.array() == 0).count());
+  }
 }
 
 TEST_CASE("test2")
@@ -157,6 +166,6 @@ TEST_CASE("test2")
   auto f = std::make_shared<ten_weight_initializer>(rng);
   regrow_interval(B, k_negative, k_positive, f, rng);
   eigen::print_matrix("B", B);
-  CHECK_EQ((B.array() == 10).count(), prune_count);
+  CHECK_EQ((B.array() == 10).count(), k_negative + k_positive);
   CHECK_EQ((B.array() == 0).count(), (A.array() == 0).count());
 }
