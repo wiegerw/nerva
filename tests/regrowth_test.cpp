@@ -112,9 +112,14 @@ TEST_CASE("test1")
   CHECK_EQ((A_grow.array() == 10).count(), prune_count);
   CHECK_EQ((A_grow.array() == 0).count(), (A.array() == 0).count());
 
-  long nonzero_count = eigen::nonzero_count(A);
+  long zero_count = (A.array() == 0).count();
+  long nonzero_count = (A.array() != 0).count();
   for (long count = 1; count <= nonzero_count; count++)
   {
+    if (count > zero_count)
+    {
+      continue;
+    }
     std::cout << "=== regrow_threshold count = " << count << " ===" << std::endl;
     auto B = A;
     eigen::print_matrix("A", A);
@@ -159,13 +164,26 @@ TEST_CASE("test2")
   CHECK_EQ(A_pruned_expected, A_pruned);
   CHECK_EQ(7, prune_count);
 
-  auto B = A;
-  long k_negative = 3;
-  long k_positive = 4;
-  std::mt19937 rng{std::random_device{}()};
-  auto f = std::make_shared<ten_weight_initializer>(rng);
-  regrow_interval(B, k_negative, k_positive, f, rng);
-  eigen::print_matrix("B", B);
-  CHECK_EQ((B.array() == 10).count(), k_negative + k_positive);
-  CHECK_EQ((B.array() == 0).count(), (A.array() == 0).count());
+  long max_negative_count = (A.array() < 0).count();
+  long max_positive_count = (A.array() > 0).count();
+  long zero_count = (A.array() == 0).count();
+  for (long negative_count = 1; negative_count <= max_negative_count; negative_count++)
+  {
+    for (long positive_count = 1; positive_count <= max_positive_count; positive_count++)
+    {
+      if (negative_count + positive_count > zero_count)
+      {
+        continue;
+      }
+      std::cout << "=== regrow_interval negative_count = " << negative_count << " positive_count = " << positive_count << " ===" << std::endl;
+      eigen::print_matrix("A", A);
+      auto B = A;
+      std::mt19937 rng{std::random_device{}()};
+      auto f = std::make_shared<ten_weight_initializer>(rng);
+      regrow_interval(B, negative_count, positive_count, f, rng);
+      eigen::print_matrix("B", B);
+      CHECK_EQ((B.array() == 10).count(), negative_count + positive_count);
+      CHECK_EQ((B.array() == 0).count(), (A.array() == 0).count());
+    }
+  }
 }
