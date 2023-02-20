@@ -161,14 +161,14 @@ class Sparse(Layer):
         self._layer = layer
         return layer
 
-    def regrow(self, weight_initializer: WeightInitializer, zeta: float):
+    def regrow(self, weight_initializer: WeightInitializer, zeta: float, separate_posneg: bool):
         """Prunes and regrows the weights
 
         :param weight_initializer: A weight initializer
         :param zeta: The fraction of weights that is regrown
         """
         assert self._layer
-        self._layer.regrow(zeta, False, weight_initializer.compile())
+        self._layer.regrow(weight_initializer.compile(), zeta, separate_posneg)
 
 
 class Dropout(Layer):

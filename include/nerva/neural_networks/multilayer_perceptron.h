@@ -108,7 +108,7 @@ struct multilayer_perceptron
       auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get());
       if (slayer)
       {
-        nerva::regrow(slayer->W, init, zeta, separate_positive_negative, rng);
+        nerva::regrow(*slayer, init, zeta, separate_positive_negative, rng);
       }
     }
   }

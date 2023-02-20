@@ -269,7 +269,7 @@ PYBIND11_MODULE(nervalib, m)
     .def("set_optimizer", [](sparse_linear_layer& layer, const std::string& text) { set_optimizer(layer, text); })
     .def("regrow", [](sparse_linear_layer& layer, weight_initialization init, scalar zeta, bool separate_positive_negative)
         {
-          regrow(layer.W, init, zeta, separate_positive_negative, nerva_rng);
+          regrow(layer, init, zeta, separate_positive_negative, nerva_rng);
         })
     ;
 

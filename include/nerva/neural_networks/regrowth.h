@@ -339,17 +339,18 @@ std::shared_ptr<weight_initializer> create_weight_initializer(const Matrix& W, w
 /// \param zeta The fraction of positive and negative entries in \a W that will get a new value
 /// \param rng A random number generator
 template <typename Scalar = scalar>
-void regrow(mkl::sparse_matrix_csr<Scalar>& W, weight_initialization w, scalar zeta, bool separate_positive_negative, std::mt19937& rng)
+void regrow(sparse_linear_layer& layer, weight_initialization w, scalar zeta, bool separate_positive_negative, std::mt19937& rng)
 {
-  auto init = create_weight_initializer(W, w, rng);
+  auto init = create_weight_initializer(layer.W, w, rng);
   if (separate_positive_negative)
   {
-    regrow_interval(W, init, zeta, rng);
+    regrow_interval(layer.W, init, zeta, rng);
   }
   else
   {
-    regrow_threshold(W, init, zeta, rng);
+    regrow_threshold(layer.W, init, zeta, rng);
   }
+  layer.reset_stencil();
 }
 
 } // namespace nerva

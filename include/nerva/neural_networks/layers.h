@@ -168,15 +168,23 @@ struct linear_layer: public neural_network_layer
     print_numpy_matrix("b" + i, b);
   }
 
+  void reset_stencil()
+  {
+    if constexpr (IsSparse)
+    {
+      this->DW = this->W;
+      this->DW = scalar(0);
+      this->optimizer->reset_stencil(this->W);
+    }
+  }
+
   void import_weights(const eigen::matrix& W)
   {
     if constexpr (IsSparse)
     {
       compare_sizes(this->W, W);
       this->W = mkl::to_csr(W);
-      this->DW = this->W;
-      this->DW = scalar(0);
-      this->optimizer->import_weights(W);
+      reset_stencil();
     }
     else
     {
