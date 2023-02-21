@@ -170,7 +170,7 @@ def main():
 
         print('\n=== Training Nerva model ===')
         if args.preprocessed:
-            train_nerva_preprocessed(M2, args.preprocessed, args.epochs, args.batch_size)
+            train_nerva_preprocessed(M2, args.preprocessed, args.epochs, args.batch_size, args.zeta, args.separate)
         else:
             train_nerva(M2, train_loader, test_loader, args.epochs, args.zeta, args.separate)
 
