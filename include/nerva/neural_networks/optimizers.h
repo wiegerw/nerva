@@ -26,7 +26,7 @@ struct layer_optimizer
 
   // If the layer is sparse, the nonzero entries of the weight matrices in the
   // optimizer need to be updated
-  virtual void reset_stencil(const mkl::sparse_matrix_csr<scalar>& W)
+  virtual void reset_support(const mkl::sparse_matrix_csr<scalar>& W)
   { }
 
   virtual ~layer_optimizer() = default;
@@ -116,12 +116,11 @@ struct momentum_optimizer: public gradient_descent_optimizer<Matrix>
     b += delta_b;
   }
 
-  void reset_stencil(const mkl::sparse_matrix_csr<scalar>& W) override
+  void reset_support(const mkl::sparse_matrix_csr<scalar>& W) override
   {
     if constexpr (IsSparse)
     {
-      delta_W = W;
-      delta_W = scalar(0);
+      delta_W.reset_support(W);
     }
   }
 };
@@ -189,14 +188,12 @@ struct nesterov_optimizer: public gradient_descent_optimizer<Matrix>
     b += (-mu * delta_b_prev + (scalar(1) + mu) * delta_b);
   }
 
-  void reset_stencil(const mkl::sparse_matrix_csr<scalar>& W) override
+  void reset_support(const mkl::sparse_matrix_csr<scalar>& W) override
   {
     if constexpr (IsSparse)
     {
-      delta_W = W;
-      delta_W = scalar(0);
-      delta_W_prev = W;
-      delta_W_prev = scalar(0);
+      delta_W.reset_support(W);
+      delta_W_prev.reset_support(W);
     }
   }
 };

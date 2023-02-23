@@ -149,9 +149,10 @@ def main():
     if args.densities:
         densities = list(float(d) for d in args.densities.split(','))
     elif args.overall_density:
-        densities = compute_densities(args.overall_density, sizes)
+        densities = nerva.layers.compute_sparse_layer_densities(args.overall_density, sizes)
     else:
         densities = [1.0] * (len(sizes) - 1)
+    print(f'densities: {densities}')
 
     if args.torch:
         M1 = make_torch_model(args, sizes, densities)

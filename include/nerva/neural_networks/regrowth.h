@@ -350,7 +350,7 @@ void regrow(sparse_linear_layer& layer, weight_initialization w, scalar zeta, bo
   {
     regrow_threshold(layer.W, init, zeta, rng);
   }
-  layer.reset_stencil();
+  layer.reset_support();
 }
 
 } // namespace nerva

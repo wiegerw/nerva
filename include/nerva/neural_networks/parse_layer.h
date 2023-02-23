@@ -75,7 +75,7 @@ std::shared_ptr<neural_network_layer> parse_dense_layer(char c, std::size_t D, s
 }
 
 inline
-std::shared_ptr<neural_network_layer> parse_sparse_layer(char c, std::size_t D, std::size_t K, scalar density, const mlp_options& options, std::mt19937& rng)
+std::shared_ptr<neural_network_layer> parse_sparse_layer(char c, std::size_t D, std::size_t K, double density, const mlp_options& options, std::mt19937& rng)
 {
   if (c == 'L')
   {

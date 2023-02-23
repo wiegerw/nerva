@@ -46,7 +46,7 @@ struct mlp_options: public sgd_options
   std::string optimizer = "gradient-descent";
   scalar dropout = 0;
   scalar density = 1;
-  std::vector<scalar> densities;
+  std::vector<double> densities;
   std::size_t seed = std::random_device{}();
   int precision = 4;
   int threads = 1;

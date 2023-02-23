@@ -349,6 +349,8 @@ PYBIND11_MODULE(nervalib, m)
     .def(py::init<std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
 
+  m.def("compute_sparse_layer_densities", compute_sparse_layer_densities);
+
   /////////////////////////////////////////////////////////////////////////
   //                       multilayer perceptron
   /////////////////////////////////////////////////////////////////////////

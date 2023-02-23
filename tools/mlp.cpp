@@ -92,27 +92,27 @@ void set_weights(multilayer_perceptron& M, std::string weights_initialization, c
 }
 
 inline
-std::vector<scalar> parse_comma_separated_real_numbers(const std::string& text)
+std::vector<double> parse_comma_separated_real_numbers(const std::string& text)
 {
-  std::vector<scalar> result;
+  std::vector<double> result;
   for (const std::string& word: utilities::regex_split(text, ","))
   {
-    result.push_back(static_cast<scalar>(parse_double(word)));
+    result.push_back(static_cast<double>(parse_double(word)));
   }
   return result;
 }
 
 inline
-std::vector<scalar> compute_densities(const std::string& architecture, const std::vector<std::size_t>& sizes, scalar density)
+std::vector<double> compute_densities(const std::string& architecture, const std::vector<std::size_t>& sizes, double density)
 {
   if (architecture.size() + 1 != sizes.size())
   {
     throw std::runtime_error("Unexpected number of sizes in compute_densities");
   }
 
-  std::vector<scalar> densities;
+  std::vector<double> densities;
 
-  if (density == scalar(1))
+  if (density == 1)
   {
     for (char a: architecture)
     {
@@ -124,16 +124,7 @@ std::vector<scalar> compute_densities(const std::string& architecture, const std
   }
   else
   {
-    std::vector<std::pair<long, long>> sparse_linear_layer_shapes;
-    for (std::size_t i = 0; i < architecture.size(); i++)
-    {
-      char a = architecture[i];
-      if (is_linear_layer(a))
-      {
-        sparse_linear_layer_shapes.emplace_back(sizes[i], sizes[i+1]);
-      }
-    }
-    densities = compute_sparse_layer_densities(density, sparse_linear_layer_shapes);
+    densities = compute_sparse_layer_densities(density, sizes);
   }
   return densities;
 }
@@ -258,7 +249,7 @@ class tool: public command_line_tool
         options.statistics = false;
       }
       std::vector<std::size_t> layer_sizes = parse_comma_separated_numbers(layer_sizes_text);
-      std::vector<scalar> densities = parse_comma_separated_real_numbers(densities_text);
+      std::vector<double> densities = parse_comma_separated_real_numbers(densities_text);
       check_options(options, layer_sizes);
 
       std::mt19937 rng{options.seed};

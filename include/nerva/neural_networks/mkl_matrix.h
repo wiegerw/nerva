@@ -21,6 +21,11 @@
 
 namespace nerva::mkl {
 
+// prototype declarations
+template <typename Scalar> struct sparse_matrix_csr;
+void compare_sizes(const mkl::sparse_matrix_csr<scalar>& A, const mkl::sparse_matrix_csr<scalar>& B);
+
+// dense matrix
 template <typename Scalar>
 struct matrix
 {
@@ -122,7 +127,7 @@ struct sparse_matrix_csr
     check();
   }
 
-  sparse_matrix_csr(long rows, long cols, Scalar density, std::mt19937& rng, Scalar value = 0)
+  sparse_matrix_csr(long rows, long cols, double density, std::mt19937& rng, Scalar value = 0)
     : m(rows), n(cols)
   {
     long nonzero_count = std::lround(density * rows * cols);
@@ -139,7 +144,7 @@ struct sparse_matrix_csr
       long row_count = 0;
       for (auto j = 0; j < n; j++)
       {
-        if ((random_real<float>(0, 1, rng) < static_cast<float>(nonzero) / remaining) || (remaining == nonzero))
+        if ((random_real<double>(0, 1, rng) < static_cast<double>(nonzero) / remaining) || (remaining == nonzero))
         {
           columns.push_back(static_cast<long>(j));
           values.push_back(value);
@@ -211,6 +216,24 @@ struct sparse_matrix_csr
     destruct_csr();
   }
 
+  // Copies the support set of other and sets all values to 0.
+  // The support size must match.
+  void reset_support(const sparse_matrix_csr& other)
+  {
+    compare_sizes(*this, other);
+    if (values.size() == other.values.size())
+    {
+      std::fill(values.begin(), values.end(), 0);
+      std::copy(other.columns.begin(), other.columns.end(), columns.begin());
+      std::copy(other.row_index.begin(), other.row_index.end(), row_index.begin());
+    }
+    else
+    {
+      std::cout << "reset_support |values| = " + std::to_string(values.size()) + " |values'| = " + std::to_string(other.values.size()) << std::endl;
+      assign(other, 0);
+    }
+  }
+
   [[nodiscard]] long rows() const
   {
     return m;
@@ -251,6 +274,15 @@ struct sparse_matrix_csr
     return scalar(values.size()) / (m * n);
   }
 };
+
+inline
+void compare_sizes(const mkl::sparse_matrix_csr<scalar>& A, const mkl::sparse_matrix_csr<scalar>& B)
+{
+  if (A.rows() != B.rows() || A.cols() != B.cols())
+  {
+    throw std::runtime_error("matrix sizes do not match");
+  }
+}
 
 template <typename Scalar>
 void fill_matrix(sparse_matrix_csr<Scalar>& A, Scalar density, std::mt19937& rng, Scalar value = 0)

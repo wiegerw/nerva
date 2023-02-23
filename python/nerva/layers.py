@@ -305,3 +305,7 @@ class Sequential(object):
 
     def export_bias(self, filename: str):
         self.compiled_model.export_bias(filename)
+
+
+def compute_sparse_layer_densities(overall_density: float, layer_sizes: List[int], erk_power_scale: float=1) -> List[float]:
+    return nervalib.compute_sparse_layer_densities(overall_density, layer_sizes, erk_power_scale)

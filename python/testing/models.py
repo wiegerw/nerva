@@ -31,7 +31,7 @@ class MLP1(nn.Module):
             if density == 1.0:
                 self.masks.append(None)
             else:
-                self.masks.append(create_mask(layer.weight, int(density * layer.weight.numel())))
+                self.masks.append(create_mask(layer.weight, round(density * layer.weight.numel())))
 
     def apply_masks(self):
         for layer, mask in zip(self.layers, self.masks):
@@ -90,7 +90,7 @@ class MLP1(nn.Module):
                 n, N = torch.count_nonzero(mask), mask.numel()
             else:
                 n, N = layer.weight.numel(), layer.weight.numel()
-            return f'{n}/{N} ({100 * n / N:.3f}%)'
+            return f'{n}/{N} ({100 * n / N:.8f}%)'
 
         print('=== PyTorch model ===')
         print(self)
