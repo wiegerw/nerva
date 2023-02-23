@@ -251,7 +251,7 @@ inline
 void export_weights(const multilayer_perceptron& M, const std::string& filename)
 {
   namespace py = pybind11;
-  NERVA_LOG(log::verbose) << "Saving weights and bias to file " << filename << std::endl;
+  NERVA_LOG(log::verbose) << "Exporting weights and bias to file " << filename << std::endl;
 
   py::dict data;
   unsigned int index = 1;
@@ -265,21 +265,23 @@ void export_weights(const multilayer_perceptron& M, const std::string& filename)
   {
     if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
-      eigen::matrix W = dlayer->W.transpose();
+      eigen::matrix W = dlayer->W;
       eigen::vector b = dlayer->b.reshaped().transpose();
       data[name("W").c_str()] = py::array_t<scalar, py::array::f_style>({W.rows(), W.cols()}, W.data());
       data[name("b").c_str()] = py::array_t<scalar, py::array::f_style>(b.size(), b.data());
+      index++;
     }
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
-      eigen::matrix W = mkl::to_eigen(slayer->W).transpose();
-      eigen::vector b = dlayer->b.reshaped().transpose();
+      eigen::matrix W = mkl::to_eigen(slayer->W);
+      eigen::vector b = slayer->b.reshaped().transpose();
       data[name("W").c_str()] = py::array_t<scalar, py::array::f_style>({W.rows(), W.cols()}, W.data());
       data[name("b").c_str()] = py::array_t<scalar, py::array::f_style>(b.size(), b.data());
+      index++;
     }
   }
 
-  py::module::import("numpy").attr("savez_compressed")(filename, data);
+  py::module::import("numpy").attr("savez_compressed")(filename, **data);
 }
 
 // Precondition: the python interpreter must be running.
@@ -288,7 +290,7 @@ inline
 void import_weights(multilayer_perceptron& M, const std::string& filename)
 {
   namespace py = pybind11;
-  NERVA_LOG(log::verbose) << "Loading weights and bias from file " << filename << std::endl;
+  NERVA_LOG(log::verbose) << "Importing weights and bias from file " << filename << std::endl;
 
   py::dict data = py::module::import("numpy").attr("load")(filename);
   unsigned int index = 1;
