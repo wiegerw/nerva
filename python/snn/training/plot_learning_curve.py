@@ -97,6 +97,10 @@ def make_df_acc(df: pd.DataFrame):
     return df_acc
 
 def run(path_lc_logs, labels):
+    label_l = 'loss' if 'loss' in labels[0] else 'accuracy'
+    filename = f'{path_lc_logs}-{label_l}.pdf'
+    print(f'Creating {filename}')
+
     density_l = ['dense', 0.5, 0.2, 0.1, 0.05, 0.01, 0.005, 0.001]
     plt.figure(figsize=(8, 10))
     for i, d in enumerate(density_l):
@@ -123,8 +127,7 @@ def run(path_lc_logs, labels):
         df_acc = make_df_acc(df)
         make_plot(df_acc, sparsity=1-density, labels=labels, ax=None)
 
-    label_l = ['Loss' if 'loss' in labels[0] else 'Accuracy']
-    plt.savefig(f'{path_lc_logs}-{label_l[0]}.pdf')
+    plt.savefig(filename)
     plt.close()
 
 

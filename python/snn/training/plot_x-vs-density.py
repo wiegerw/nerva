@@ -166,7 +166,7 @@ def make_time_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str 
 
 
 
-def main(folder):
+def main(folder, x_axis):
     df = get_full_dataframe(folder)
 
     df_time = make_df_time(df)
@@ -175,14 +175,18 @@ def main(folder):
     with50 = False
     name50 = 'with50' if with50 else 'without50'
 
-    x_axis = 'sparsity'
-    # x_axis = 'density'
+    filename = f'./{folder}-time-vs-{x_axis}_{name50}.pdf'
+    print(f'Creating {filename}')
+    make_time_vs_density_plot(df_time, pathlib.Path(filename), x_axis, with50=with50)  # log_scale=True)
 
-    make_time_vs_density_plot(df_time, pathlib.Path(f'./time-vs-{x_axis}_{name50}.pdf'), x_axis, with50=with50)  # log_scale=True)
-    make_acc_vs_density_plot(df_acc, pathlib.Path(f'./accuracy-vs-{x_axis}.pdf'), x_axis, log_scale=True)
+    filename = f'./{folder}-accuracy-vs-{x_axis}.pdf'
+    print(f'Creating {filename}')
+    make_acc_vs_density_plot(df_acc, pathlib.Path(filename), x_axis, log_scale=True)
 
 
 if __name__ == '__main__':
+    x_axis = 'sparsity'
+    # x_axis = 'density'
     folder = pathlib.Path(sys.argv[1])
-    main(folder)
+    main(folder, x_axis)
 
