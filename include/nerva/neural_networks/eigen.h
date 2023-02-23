@@ -94,7 +94,7 @@ void print_numpy_row_full(const Matrix& x, long i)
 template <typename Row>
 void print_numpy_row(const Row& x, long edgeitems=3)
 {
-  typedef typename Row::Scalar Scalar;
+  using Scalar = typename Row::Scalar;
 
   auto print = [](auto x)
   {
@@ -157,7 +157,7 @@ void print_numpy_vector(const std::string& name, const Vector& x, long edgeitems
 template <typename Matrix>
 struct matrix_row
 {
-  typedef typename Matrix::Scalar Scalar;
+  using Scalar = typename Matrix::Scalar;
 
   const Matrix& x;
   long i;
@@ -171,7 +171,7 @@ struct matrix_row
     return x(i, j);
   }
 
-  long size() const
+  [[nodiscard]] long size() const
   {
     return x.cols();
   }
@@ -252,7 +252,7 @@ class eigen_slice
         : m_first(first), m_size(size)
     {}
 
-    Eigen::Index size() const
+    [[nodiscard]] Eigen::Index size() const
     {
       return m_size;
     }

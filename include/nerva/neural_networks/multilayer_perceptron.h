@@ -29,6 +29,10 @@
 #include <memory>
 #include <sstream>
 
+#ifdef NERVA_TIMING
+inline std::size_t timing_index = 0;
+#endif
+
 namespace nerva {
 
 struct multilayer_perceptron
@@ -62,7 +66,7 @@ struct multilayer_perceptron
     layers.front()->X = X;
     feedforward(result);
 #ifdef NERVA_TIMING
-    auto seconds = watch.seconds(); std::cout << "feedforward " << seconds << std::endl;
+    auto seconds = watch.seconds(); std::cout << " feedforward" << timing_index++ << " " << seconds << std::endl;
 #endif
   }
 
@@ -77,7 +81,7 @@ struct multilayer_perceptron
       layers[i]->backpropagate(layers[i + 1]->X, layers[i + 1]->DX);
     }
 #ifdef NERVA_TIMING
-    auto seconds = watch.seconds(); std::cout << "backpropagate " << seconds << std::endl;
+    auto seconds = watch.seconds(); std::cout << "backpropagate" << timing_index++ << " " << seconds << std::endl;
 #endif
   }
 
@@ -145,7 +149,7 @@ struct multilayer_perceptron
     }
   }
 
-  void info(const std::string& name) const
+  void info(const std::string& name = "") const
   {
     std::cout << "==================================\n";
     std::cout << " MLP " << name << "\n";

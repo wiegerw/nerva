@@ -85,7 +85,7 @@ struct momentum_optimizer: public gradient_descent_optimizer<Matrix>
   {
     if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
     {
-      delta_W.assign(W, scalar(0)); // copy the stencil of W and fill the matrix with zeroes
+      delta_W.assign(W, scalar(0)); // copy the support of W and fill the matrix with zeroes
     }
     else
     {
@@ -151,8 +151,8 @@ struct nesterov_optimizer: public gradient_descent_optimizer<Matrix>
   {
     if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
     {
-      delta_W.assign(W, scalar(0)); // copy the stencil of W and fill the matrix with zeroes
-      delta_W_prev.assign(W, scalar(0)); // copy the stencil of W and fill the matrix with zeroes
+      delta_W.assign(W, scalar(0)); // copy the support of W and fill the matrix with zeroes
+      delta_W_prev.assign(W, scalar(0)); // copy the support of W and fill the matrix with zeroes
     }
     else
     {

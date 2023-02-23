@@ -42,11 +42,13 @@ Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> to_eigen(con
 
 // returns a boolean matrix with the non-zero entries of A
 template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
-Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> stencil(const mkl::sparse_matrix_csr<Scalar>& A)
+Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> support(const mkl::sparse_matrix_csr<Scalar>& A)
 {
+  using int_matrix = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>;
+
   int m = A.rows();
   int n = A.cols();
-  Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> result = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>::Zero(m, n);
+  int_matrix result = int_matrix::Zero(m, n);
 
   long count = 0;
   for (long i = 0; i < m; i++)
@@ -55,7 +57,7 @@ Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> stencil(cons
     {
       long j = A.columns[count];
       count++;
-      result(i, j) = Scalar(1);
+      result(i, j) = 1;
     }
   }
 
@@ -327,7 +329,7 @@ void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
 }
 
 // Does the assignment A := alpha * A + beta * B + gamma * C, with A, B, C sparse.
-// A, B and C must have the same stencil
+// A, B and C must have the same support
 template <typename Scalar = scalar>
 void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
                        const mkl::sparse_matrix_csr<Scalar>& B,

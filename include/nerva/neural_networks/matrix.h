@@ -34,11 +34,12 @@ void initialize_matrix(Matrix& A, Function f)
 template <typename Matrix>
 void print_cpp_matrix(const std::string& name, const Matrix& A)
 {
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+  using Scalar = typename Matrix::Scalar;
+  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<Scalar>>::value;
 
   if constexpr (IsSparse)
   {
-    eigen::print_cpp_matrix(name, mkl::to_eigen<scalar>(A));
+    eigen::print_cpp_matrix(name, mkl::to_eigen<Scalar>(A));
   }
   else
   {
@@ -50,11 +51,12 @@ void print_cpp_matrix(const std::string& name, const Matrix& A)
 template <typename Matrix>
 void print_numpy_matrix(const std::string& name, const Matrix& A)
 {
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+  using Scalar = typename Matrix::Scalar;
+  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<Scalar>>::value;
 
   if constexpr (IsSparse)
   {
-    eigen::print_numpy_matrix(name, mkl::to_eigen<scalar>(A));
+    eigen::print_numpy_matrix(name, mkl::to_eigen<Scalar>(A));
   }
   else
   {

@@ -163,7 +163,7 @@ struct linear_layer: public neural_network_layer
     print_numpy_matrix("W" + i, W);
     if constexpr (IsSparse)
     {
-      print_numpy_matrix("stencil", mkl::stencil(W));
+      print_numpy_matrix("support", mkl::support(W));
     }
     print_numpy_matrix("b" + i, b);
   }
@@ -652,7 +652,7 @@ std::vector<double> compute_sparse_layer_densities(double overall_density,
     double max_prob_one = max_prob * epsilon;
     if (max_prob_one > 1)
     {
-      for (auto j = 0; j < n; j++)
+      for (std::size_t j = 0; j < n; j++)
       {
         if (raw_probabilities[j] == max_prob)
         {
