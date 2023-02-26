@@ -24,85 +24,98 @@ enum matrix_layout
 };
 
 // This class can be used to wrap an Eigen matrix (or NumPy etc.)
-template <typename Scalar, int MatrixLayout>
+template <typename Scalar>
 class dense_matrix_view
 {
   protected:
-    Scalar* values;
-    long m; // number of rows
-    long n; // number of columns
+    Scalar* m_data;
+    long m_rows;
+    long m_columns;
+    int m_layout;
 
   public:
-    dense_matrix_view(Scalar* values_, long m_, long n_)
-      : values(values_), m(m_), n(n_)
+    dense_matrix_view(Scalar* data, long rows, long columns, int layout)
+      : m_data(data), m_rows(rows), m_columns(columns), m_layout(layout)
     {}
 
     [[nodiscard]] long rows() const
     {
-      return m;
+      return m_rows;
     }
 
     [[nodiscard]] long cols() const
     {
-      return n;
+      return m_columns;
     }
 
     Scalar* data()
     {
-      return values;
+      return m_data;
     }
 
     const Scalar* data() const
     {
-      return values;
+      return m_data;
+    }
+
+    [[nodiscard]] int layout() const
+    {
+      return m_layout;
     }
 };
 
-template <typename Scalar, int MatrixLayout>
+template <typename Scalar>
 class dense_matrix
 {
   protected:
-    std::vector<Scalar> values;
-    long m; // number of rows
-    long n; // number of columns
+    std::vector<Scalar> m_data;
+    long m_rows;
+    long m_columns;
+    int m_layout;  // TODO: use the type matrix_layout
 
   public:
-    dense_matrix(long m_, long n_)
-      : values(m_ * n_, 0), m(m_), n(n_)
+    dense_matrix(long rows, long columns, int layout)
+      : m_data(rows * columns, 0), m_rows(rows), m_columns(columns), m_layout(layout)
     {}
 
     [[nodiscard]] long rows() const
     {
-      return m;
+      return m_rows;
     }
 
     [[nodiscard]] long cols() const
     {
-      return n;
+      return m_columns;
     }
 
     Scalar* data()
     {
-      return values.data();
+      return m_data.data();
     }
 
     const Scalar* data() const
     {
-      return values.data();
+      return m_data.data();
+    }
+
+    [[nodiscard]] int layout() const
+    {
+      return m_layout;
     }
 };
 
 // Computes the matrix product C = A * B
-template <typename Scalar, int MatrixLayout, template <typename, int> class Matrix1, template <typename, int> class Matrix2>
-dense_matrix<Scalar, MatrixLayout> matrix_product(const Matrix1<Scalar, MatrixLayout>& A, const Matrix2<Scalar, MatrixLayout>& B)
+template <typename Scalar, template <typename> class Matrix1, template <typename> class Matrix2>
+dense_matrix<Scalar> matrix_product(const Matrix1<Scalar>& A, const Matrix2<Scalar>& B)
 {
   assert(A.cols() == B.rows());
-  dense_matrix<Scalar, MatrixLayout> C(A.rows(), B.cols());
+  assert(A.layout() == B.layout());
+  dense_matrix<Scalar> C(A.rows(), B.cols(), A.layout());
 
   CBLAS_TRANSPOSE transA = CblasNoTrans;
   CBLAS_TRANSPOSE transB = CblasNoTrans;
 
-  if constexpr (MatrixLayout == column_major)
+  if (A.layout() == column_major)
   {
     int lda = A.rows();
     int ldb = B.rows();

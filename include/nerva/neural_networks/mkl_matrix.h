@@ -83,9 +83,9 @@ void assign_matrix(sparse_matrix_csr<Scalar>& A, const sparse_matrix_csr<Scalar>
 //
 // operation_B determines whether op(B) = B or op(B) = B^T
 template <typename Scalar, matrix_layout layout>
-void assign_matrix_product(dense_matrix_view<Scalar, layout>& A,
+void assign_matrix_product(dense_matrix_view<Scalar>& A,
                            const mkl::sparse_matrix_csr<Scalar>& B,
-                           const dense_matrix_view<const Scalar, layout>& C,
+                           const dense_matrix_view<Scalar>& C,
                            Scalar alpha = 0,
                            Scalar beta = 1,
                            sparse_operation_t operation_B = SPARSE_OPERATION_NON_TRANSPOSE

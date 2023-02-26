@@ -27,14 +27,15 @@ long nonzero_count(const matrix& A)
 }
 
 template <typename Scalar, int MatrixLayout>
-mkl::dense_matrix_view<Scalar, MatrixLayout> make_view(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A)
+mkl::dense_matrix_view<Scalar> make_view(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A)
 {
-  return mkl::dense_matrix_view<Scalar, MatrixLayout>(const_cast<Scalar*>(A.data()), A.rows(), A.cols());
+  return mkl::dense_matrix_view<Scalar>(const_cast<Scalar*>(A.data()), A.rows(), A.cols(), MatrixLayout);
 }
 
-template <typename Scalar, int MatrixLayout>
-Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>> to_eigen(mkl::dense_matrix<Scalar, MatrixLayout>& A)
+template <int MatrixLayout = Eigen::ColMajor, typename Scalar>
+Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>> to_eigen(mkl::dense_matrix<Scalar>& A)
 {
+  assert(A.layout() == MatrixLayout);
   return { A.data(), A.rows(), A.cols() };
 }
 
@@ -50,7 +51,7 @@ void test_dense_dense_multiplication(const Eigen::Matrix<Scalar, Eigen::Dynamic,
   scalar epsilon = std::is_same<Scalar, double>::value ? 1e-10 : 1e-5;
 
   std::cout << "--- test_dense_dense_multiplication ---" << std::endl;
-  CHECK_LE((C - to_eigen(C1)).squaredNorm(), epsilon);
+  CHECK_LE((C - to_eigen<MatrixLayout>(C1)).squaredNorm(), epsilon);
 }
 
 void test_dense_dense_multiplication(long m, long k, long n)
