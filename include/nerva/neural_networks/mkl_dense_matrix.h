@@ -32,10 +32,11 @@ class dense_matrix_view
     long m_rows;
     long m_columns;
     int m_layout;
+    bool m_transposed;
 
   public:
-    dense_matrix_view(Scalar* data, long rows, long columns, int layout)
-      : m_data(data), m_rows(rows), m_columns(columns), m_layout(layout)
+    dense_matrix_view(Scalar* data, long rows, long columns, int layout, bool transposed = false)
+      : m_data(data), m_rows(rows), m_columns(columns), m_layout(layout), m_transposed(transposed)
     {}
 
     [[nodiscard]] long rows() const
@@ -61,6 +62,11 @@ class dense_matrix_view
     [[nodiscard]] int layout() const
     {
       return m_layout;
+    }
+
+    [[nodiscard]] bool transposed() const
+    {
+      return m_transposed;
     }
 };
 
@@ -72,10 +78,11 @@ class dense_matrix
     long m_rows;
     long m_columns;
     int m_layout;  // TODO: use the type matrix_layout
+    bool m_transposed;
 
   public:
-    dense_matrix(long rows, long columns, int layout)
-      : m_data(rows * columns, 0), m_rows(rows), m_columns(columns), m_layout(layout)
+    dense_matrix(long rows, long columns, int layout, bool transposed = false)
+      : m_data(rows * columns, 0), m_rows(rows), m_columns(columns), m_layout(layout), m_transposed(transposed)
     {}
 
     [[nodiscard]] long rows() const
@@ -102,6 +109,11 @@ class dense_matrix
     {
       return m_layout;
     }
+
+    [[nodiscard]] bool transposed() const
+    {
+      return m_transposed;
+    }
 };
 
 // Computes the matrix product C = A * B
@@ -112,8 +124,8 @@ dense_matrix<Scalar> matrix_product(const Matrix1<Scalar>& A, const Matrix2<Scal
   assert(A.layout() == B.layout());
   dense_matrix<Scalar> C(A.rows(), B.cols(), A.layout());
 
-  CBLAS_TRANSPOSE transA = CblasNoTrans;
-  CBLAS_TRANSPOSE transB = CblasNoTrans;
+  CBLAS_TRANSPOSE transA = A.transposed() ? CblasTrans : CblasNoTrans;
+  CBLAS_TRANSPOSE transB = B.transposed() ? CblasTrans : CblasNoTrans;
 
   if (A.layout() == column_major)
   {
