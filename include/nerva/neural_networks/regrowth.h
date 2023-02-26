@@ -11,6 +11,7 @@
 #define NERVA_NEURAL_NETWORKS_REGROWTH_H
 
 #include "nerva/neural_networks/mkl_matrix.h"
+#include "nerva/neural_networks/layers.h"
 #include "nerva/neural_networks/weights.h"
 #include <algorithm>
 #include <memory>

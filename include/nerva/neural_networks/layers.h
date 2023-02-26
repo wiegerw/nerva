@@ -615,12 +615,6 @@ std::vector<double> compute_sparse_layer_densities(double overall_density,
     return std::vector<double>(n, 1);
   }
 
-  std::size_t total_params = 0;
-  for (const auto& [rows, columns]: layer_shapes)
-  {
-    total_params += rows * columns;
-  }
-
   std::set<std::size_t> dense_layers;
   std::vector<double> raw_probabilities(n, double(0));
   double epsilon;
@@ -633,18 +627,18 @@ std::vector<double> compute_sparse_layer_densities(double overall_density,
     for (std::size_t i = 0; i < n; i++)
     {
       auto [rows, columns] = layer_shapes[i];
-      auto n_param = rows * columns;
-      auto n_zeros = n_param * (double(1) - overall_density);
-      auto n_ones = n_param * overall_density;
+      auto N = rows * columns;
+      auto num_ones = N * overall_density;
+      auto num_zeros = N - num_ones;
       if (dense_layers.count(i))
       {
-        rhs -= n_zeros;
+        rhs -= num_zeros;
       }
       else
       {
-        rhs += n_ones;
+        rhs += num_ones;
         raw_probabilities[i] = ((rows + columns) / (double)(rows * columns)) * std::pow(erk_power_scale, double(1));
-        divisor += raw_probabilities[i] * n_param;
+        divisor += raw_probabilities[i] * N;
       }
     }
     epsilon = rhs / divisor;
@@ -668,12 +662,8 @@ std::vector<double> compute_sparse_layer_densities(double overall_density,
 
   // Compute the densities
   std::vector<double> densities(n, 0);
-  double total_nonzero = 0;
-  for (auto i = 0; i < n; i++)
+  for (std::size_t i = 0; i < n; i++)
   {
-    auto rows = layer_shapes[i].first;
-    auto columns = layer_shapes[i].second;
-    auto n_param = rows * columns;
     if (dense_layers.count(i))
     {
       densities[i] = 1;
@@ -683,7 +673,6 @@ std::vector<double> compute_sparse_layer_densities(double overall_density,
       double probability_one = epsilon * raw_probabilities[i];
       densities[i] = probability_one;
     }
-    total_nonzero += densities[i] * n_param;
   }
   return densities;
 }

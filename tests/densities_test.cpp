@@ -15,10 +15,10 @@
 
 TEST_CASE("test_densities")
 {
-  std::vector<std::pair<long, long>> layer_shapes = {{3072, 1024}, {1024, 512}, {512, 10}};
+  std::vector<std::size_t> layer_sizes = {3072, 1024, 512, 10};
   float density = 0.05;
-  std::vector<float> densities = nerva::compute_sparse_layer_densities(density, layer_shapes);
-  std::vector<float> expected_densities = {0.041299715909090914, 0.09292436079545456, 1.0};
+  std::vector<double> densities = nerva::compute_sparse_layer_densities(density, layer_sizes);
+  std::vector<double> expected_densities = {0.041299715909090914, 0.09292436079545456, 1.0};
   float diff = 0;
   for (std::size_t i = 0; i < densities.size(); i++)
   {

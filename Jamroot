@@ -12,11 +12,11 @@ project nerva
        <include>include
        <include>/usr/include/eigen3
        <include>/usr/include/python3.10  # TODO: find a better way for this
+       <cxxflags>-std=c++17
        <define>FMT_HEADER_ONLY
 
        <define>EIGEN_USE_MKL_ALL
        <include>$(MKLROOT)/include
-       <cxxflags>-std=c++17
        <linkflags>-L$(MKLROOT)/lib/intel64
        <linkflags>"-Wl,--start-group -lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -Wl,--end-group"
        <linkflags>-liomp5
@@ -25,10 +25,9 @@ project nerva
        <linkflags>-ldl
        <linkflags>-ltbb  # it seems MKL requires this now...
 
-       <toolset>clang-5:<cxxflags>"-std=c++1z" <warnings>all
-       <toolset>clang:<cxxflags>"-std=c++17" <warnings>all
        <toolset>clang:<cxxflags>-fopenmp=libomp
-       <toolset>clang:<cxxflags>-DMKL_LP64
+       <toolset>clang:<cxxflags>-DMKL_ILP64
+       #<toolset>clang:<cxxflags>-m64
 
        <toolset>gcc:<cxxflags>-march=native
        <toolset>gcc:<cxxflags>-m64
