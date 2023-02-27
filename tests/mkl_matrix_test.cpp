@@ -27,12 +27,6 @@ long nonzero_count(const matrix& A)
   return (A.array() == 0.0).count();
 }
 
-template <typename Scalar, int MatrixLayout>
-mkl::dense_matrix_view<Scalar> make_view(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A)
-{
-  return mkl::dense_matrix_view<Scalar>(const_cast<Scalar*>(A.data()), A.rows(), A.cols(), MatrixLayout);
-}
-
 template <int MatrixLayout = Eigen::ColMajor, typename Scalar>
 Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>> to_eigen(mkl::dense_matrix<Scalar>& A)
 {
@@ -45,8 +39,8 @@ void test_dense_dense_multiplication(const Eigen::Matrix<Scalar, Eigen::Dynamic,
                                      const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& B)
 {
   Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> C = A * B;
-  auto A1 = make_view(A);
-  auto B1 = make_view(B);
+  auto A1 = mkl::make_dense_matrix_view(A);
+  auto B1 = mkl::make_dense_matrix_view(B);
   auto C1 = mkl::matrix_product(A1, B1);
 
   scalar epsilon = std::is_same<Scalar, double>::value ? 1e-10 : 1e-5;

@@ -271,6 +271,12 @@ struct sparse_matrix_csr
   }
 };
 
+template <typename Scalar, int MatrixLayout>
+mkl::dense_matrix_view<Scalar> make_dense_matrix_view(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A)
+{
+  return mkl::dense_matrix_view<Scalar>(const_cast<Scalar*>(A.data()), A.rows(), A.cols(), MatrixLayout);
+}
+
 // Does the assignment A := alpha * A + beta * B, with A, B sparse.
 // A and B must have the same non-zero mask
 template <typename Scalar>
@@ -321,7 +327,7 @@ void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
 // Does the assignment A := alpha * A + beta * op(B) * C with B sparse and A, C dense
 //
 // operation_B determines whether op(B) = B or op(B) = B^T
-template <typename Scalar, matrix_layout layout>
+template <typename Scalar>
 void assign_matrix_product(dense_matrix_view<Scalar>& A,
                            const mkl::sparse_matrix_csr<Scalar>& B,
                            const dense_matrix_view<Scalar>& C,
@@ -333,11 +339,12 @@ void assign_matrix_product(dense_matrix_view<Scalar>& A,
   assert(A.rows() == (operation_B == SPARSE_OPERATION_NON_TRANSPOSE ? B.rows() : B.cols()));
   assert(A.cols() == C.cols());
   assert((operation_B == SPARSE_OPERATION_NON_TRANSPOSE ? B.cols() : B.rows()) == C.rows());
+  assert(A.layout() == C.layout());
 
   sparse_status_t status;
   if constexpr (std::is_same<Scalar, double>::value)
   {
-    if constexpr (layout == matrix_layout::column_major)
+    if (A.layout() == matrix_layout::column_major)
     {
       status = mkl_sparse_d_mm(operation_B, beta, B.csr, B.descr, SPARSE_LAYOUT_COLUMN_MAJOR, C.data(), A.cols(), C.rows(), alpha, A.data(), A.rows());
     }
@@ -348,7 +355,7 @@ void assign_matrix_product(dense_matrix_view<Scalar>& A,
   }
   else
   {
-    if constexpr (layout == matrix_layout::column_major)
+    if (A.layout() == matrix_layout::column_major)
     {
       status = mkl_sparse_s_mm(operation_B, beta, B.csr, B.descr, SPARSE_LAYOUT_COLUMN_MAJOR, C.data(), A.cols(), C.rows(), alpha, A.data(), A.rows());
     }
