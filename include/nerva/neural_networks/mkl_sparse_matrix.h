@@ -26,6 +26,10 @@
 
 namespace nerva::mkl {
 
+// prototype declarations
+template <typename Scalar> struct sparse_matrix_csr;
+template <typename Scalar> void compare_sizes(const mkl::sparse_matrix_csr<Scalar>& A, const mkl::sparse_matrix_csr<Scalar>& B);
+
 inline
 std::string sparse_status_message(sparse_status_t status)
 {
@@ -271,59 +275,6 @@ struct sparse_matrix_csr
   }
 };
 
-template <typename Scalar, int MatrixLayout>
-mkl::dense_matrix_view<Scalar> make_dense_matrix_view(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A)
-{
-  return mkl::dense_matrix_view<Scalar>(const_cast<Scalar*>(A.data()), A.rows(), A.cols(), MatrixLayout);
-}
-
-// Does the assignment A := alpha * A + beta * B, with A, B sparse.
-// A and B must have the same non-zero mask
-template <typename Scalar>
-void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
-                       const mkl::sparse_matrix_csr<Scalar>& B,
-                       Scalar alpha = 0.0,
-                       Scalar beta = 1.0
-)
-{
-  assert(A.rows() == B.rows());
-  assert(A.cols() == B.cols());
-  assert(A.columns == B.columns);
-  assert(A.row_index == B.row_index);
-
-  eigen::vector_map<Scalar> A1(const_cast<Scalar*>(A.values.data()), A.values.size());
-  eigen::vector_map<Scalar> B1(const_cast<Scalar*>(B.values.data()), B.values.size());
-
-  A1 = alpha * A1 + beta * B1;
-  A.construct_csr();
-}
-
-// Does the assignment A := alpha * A + beta * B + gamma * C, with A, B, C sparse.
-// A, B and C must have the same support
-template <typename Scalar>
-void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
-                       const mkl::sparse_matrix_csr<Scalar>& B,
-                       const mkl::sparse_matrix_csr<Scalar>& C,
-                       Scalar alpha = 1.0,
-                       Scalar beta = 1.0,
-                       Scalar gamma = 0.0
-)
-{
-  assert(A.rows() == B.rows());
-  assert(A.rows() == C.rows());
-  assert(A.cols() == B.cols());
-  assert(A.cols() == C.cols());
-  assert(A.values.size() == B.values.size());
-  assert(A.values.size() == C.values.size());
-
-  eigen::vector_map<Scalar> A1(const_cast<Scalar*>(A.values.data()), A.values.size());
-  eigen::vector_map<Scalar> B1(const_cast<Scalar*>(B.values.data()), B.values.size());
-  eigen::vector_map<Scalar> C1(const_cast<Scalar*>(C.values.data()), C.values.size());
-
-  A1 = alpha * A1 + beta * B1 + gamma * C1;
-  A.construct_csr();
-}
-
 // Does the assignment A := alpha * A + beta * op(B) * C with B sparse and A, C dense
 //
 // operation_B determines whether op(B) = B or op(B) = B^T
@@ -377,6 +328,25 @@ void assign_matrix(sparse_matrix_csr<Scalar>& A, const sparse_matrix_csr<Scalar>
 {
   std::copy(B.values.begin(), B.values.end(), A.values.begin());
   A.construct_csr();
+}
+
+template <typename Scalar, typename Function>
+void initialize_matrix(sparse_matrix_csr<Scalar>& A, Function f)
+{
+  for (auto& value: A.values)
+  {
+    value = f();
+  }
+  A.construct_csr();
+}
+
+template <typename Scalar>
+void compare_sizes(const mkl::sparse_matrix_csr<Scalar>& A, const mkl::sparse_matrix_csr<Scalar>& B)
+{
+  if (A.rows() != B.rows() || A.cols() != B.cols())
+  {
+    throw std::runtime_error("matrix sizes do not match");
+  }
 }
 
 } // namespace nerva::mkl

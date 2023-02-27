@@ -12,7 +12,7 @@
 
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/neural_networks/matrix.h"
-#include "nerva/neural_networks/mkl_matrix.h"
+#include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/utilities/parse_numbers.h"
 #include "fmt/format.h"
 

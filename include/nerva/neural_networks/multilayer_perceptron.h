@@ -76,9 +76,9 @@ struct multilayer_perceptron
     utilities::stopwatch watch;
 #endif
     layers.back()->backpropagate(Y, DY);
-    for (int i = layers.size() - 2; i >= 0; i--)
+    for (auto i = layers.size() - 1; i > 0; i--)
     {
-      layers[i]->backpropagate(layers[i + 1]->X, layers[i + 1]->DX);
+      layers[i - 1]->backpropagate(layers[i]->X, layers[i]->DX);
     }
 #ifdef NERVA_TIMING
     auto seconds = watch.seconds(); std::cout << "backpropagate" << timing_index++ << " " << seconds << std::endl;

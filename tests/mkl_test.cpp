@@ -15,7 +15,7 @@
 #include "nerva/neural_networks/mkl_eigen.h"
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/neural_networks/layers.h"
-#include "nerva/neural_networks/mkl_matrix.h"
+#include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/utilities/stopwatch.h"
 #include <mkl.h>
 #include <mkl_spblas.h>

@@ -11,7 +11,7 @@
 
 #include "doctest/doctest.h"
 #include <Eigen/Dense>
-#include "nerva/neural_networks/mkl_matrix.h"
+#include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/neural_networks/mkl_eigen.h"
 #include <iostream>
 

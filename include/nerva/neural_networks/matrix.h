@@ -64,36 +64,6 @@ void print_numpy_matrix(const std::string& name, const Matrix& A)
   }
 }
 
-template <typename Matrix>
-void load_matrix(const std::string& filename, Matrix& A)
-{
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
-
-  if constexpr (IsSparse)
-  {
-    mkl::load_matrix(filename, A);
-  }
-  else
-  {
-    eigen::load_matrix(filename, A);
-  }
-}
-
-template <typename Matrix>
-void save_matrix(const std::string& filename, const Matrix& A)
-{
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
-
-  if constexpr (IsSparse)
-  {
-    mkl::save_matrix(filename, A);
-  }
-  else
-  {
-    eigen::save_matrix(filename, A);
-  }
-}
-
 } // namespace nerva
 
 #endif // NERVA_NEURAL_NETWORKS_MATRIX_H

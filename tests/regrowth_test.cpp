@@ -10,7 +10,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 
 #include "doctest/doctest.h"
-#include "nerva/neural_networks/mkl_matrix.h"
+#include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/neural_networks/regrowth.h"
 #include <algorithm>
 
