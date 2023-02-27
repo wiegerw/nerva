@@ -140,7 +140,7 @@ struct sparse_matrix_csr
                     std::vector<MKL_INT> columns_,
                     std::vector<T> values_
   )
-    : m(rows), n(cols), row_index(std::move(row_index_)), columns(std::move(columns_)), values(std::move(values_))
+    : row_index(std::move(row_index_)), columns(std::move(columns_)), values(std::move(values_)), m(rows), n(cols)
   {
     construct_csr();
   }
@@ -275,6 +275,53 @@ struct sparse_matrix_csr
     return Scalar(values.size()) / (m * n);
   }
 };
+
+// Does the assignment A := alpha * A + beta * B, with A, B sparse.
+// A and B must have the same non-zero mask
+template <typename Scalar = scalar>
+void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
+                       const mkl::sparse_matrix_csr<Scalar>& B,
+                       Scalar alpha = 0.0,
+                       Scalar beta = 1.0
+)
+{
+  assert(A.rows() == B.rows());
+  assert(A.cols() == B.cols());
+  assert(A.columns == B.columns);
+  assert(A.row_index == B.row_index);
+
+  eigen::vector_map<Scalar> A1(const_cast<Scalar*>(A.values.data()), A.values.size());
+  eigen::vector_map<Scalar> B1(const_cast<Scalar*>(B.values.data()), B.values.size());
+
+  A1 = alpha * A1 + beta * B1;
+  A.construct_csr();
+}
+
+// Does the assignment A := alpha * A + beta * B + gamma * C, with A, B, C sparse.
+// A, B and C must have the same support
+template <typename Scalar = scalar>
+void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
+                       const mkl::sparse_matrix_csr<Scalar>& B,
+                       const mkl::sparse_matrix_csr<Scalar>& C,
+                       Scalar alpha = 1.0,
+                       Scalar beta = 1.0,
+                       Scalar gamma = 0.0
+)
+{
+  assert(A.rows() == B.rows());
+  assert(A.rows() == C.rows());
+  assert(A.cols() == B.cols());
+  assert(A.cols() == C.cols());
+  assert(A.values.size() == B.values.size());
+  assert(A.values.size() == C.values.size());
+
+  eigen::vector_map<Scalar> A1(const_cast<Scalar*>(A.values.data()), A.values.size());
+  eigen::vector_map<Scalar> B1(const_cast<Scalar*>(B.values.data()), B.values.size());
+  eigen::vector_map<Scalar> C1(const_cast<Scalar*>(C.values.data()), C.values.size());
+
+  A1 = alpha * A1 + beta * B1 + gamma * C1;
+  A.construct_csr();
+}
 
 } // namespace nerva::mkl
 

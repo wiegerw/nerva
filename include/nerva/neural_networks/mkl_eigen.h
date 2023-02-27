@@ -130,6 +130,7 @@ void assign_matrix_product_for_loop_eigen_dot(mkl::sparse_matrix_csr<Scalar>& A,
       *values++ = B.row(i).dot(C.col(j));
     }
   }
+  A.construct_csr();
 }
 
 // Performs the assignment A := B * C, with A sparse and B, C dense.
@@ -170,6 +171,7 @@ void assign_matrix_product_for_loop_mkl_dot(mkl::sparse_matrix_csr<Scalar>& A,
       }
     }
   }
+  A.construct_csr();
 }
 
 // Performs the assignment A := B * C, with A sparse and B, C dense.
@@ -207,6 +209,7 @@ void assign_matrix_product_batch(mkl::sparse_matrix_csr<Scalar>& A,
     }
     i_first = i_last;
   }
+  A.construct_csr();
 }
 
 // Performs the assignment A := B * C, with A sparse and B, C dense.
@@ -251,6 +254,7 @@ void assign_matrix_product_batch_omp_parallel_assignment(mkl::sparse_matrix_csr<
     std::cout << fmt::format("assign: {:6.6f}\n", watch.seconds());
     i_first = i_last;
   }
+  A.construct_csr();
 }
 
 // Does the assignment A := alpha * A + beta * op(B) * C with B sparse and A, C dense
@@ -302,51 +306,6 @@ void assign_matrix_product(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic,
   {
     throw std::runtime_error("mkl_sparse_dense_mat_mult reported status " + std::to_string(status));
   }
-}
-
-// Does the assignment A := alpha * A + beta * B, with A, B sparse.
-// A and B must have the same non-zero mask
-template <typename Scalar = scalar>
-void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
-                       const mkl::sparse_matrix_csr<Scalar>& B,
-                       Scalar alpha = 0.0,
-                       Scalar beta = 1.0
-)
-{
-  assert(A.rows() == B.rows());
-  assert(A.cols() == B.cols());
-  assert(A.columns == B.columns);
-  assert(A.row_index == B.row_index);
-
-  eigen::vector_map<Scalar> A1(const_cast<Scalar*>(A.values.data()), A.values.size());
-  eigen::vector_map<Scalar> B1(const_cast<Scalar*>(B.values.data()), B.values.size());
-
-  A1 = alpha * A1 + beta * B1;
-}
-
-// Does the assignment A := alpha * A + beta * B + gamma * C, with A, B, C sparse.
-// A, B and C must have the same support
-template <typename Scalar = scalar>
-void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
-                       const mkl::sparse_matrix_csr<Scalar>& B,
-                       const mkl::sparse_matrix_csr<Scalar>& C,
-                       Scalar alpha = 1.0,
-                       Scalar beta = 1.0,
-                       Scalar gamma = 0.0
-)
-{
-  assert(A.rows() == B.rows());
-  assert(A.rows() == C.rows());
-  assert(A.cols() == B.cols());
-  assert(A.cols() == C.cols());
-  assert(A.values.size() == B.values.size());
-  assert(A.values.size() == C.values.size());
-
-  eigen::vector_map<Scalar> A1(const_cast<Scalar*>(A.values.data()), A.values.size());
-  eigen::vector_map<Scalar> B1(const_cast<Scalar*>(B.values.data()), B.values.size());
-  eigen::vector_map<Scalar> C1(const_cast<Scalar*>(C.values.data()), C.values.size());
-
-  A1 = alpha * A1 + beta * B1 + gamma * C1;
 }
 
 // returns the L2 norm of (B - A)
