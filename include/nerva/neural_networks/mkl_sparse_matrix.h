@@ -15,6 +15,7 @@
 #include <mkl.h>
 #include <mkl_spblas.h>
 #include <cassert>
+#include <cstdlib>
 #include <iostream>
 #include <random>
 #include <sstream>
@@ -23,6 +24,22 @@
 #include <vector>
 
 namespace nerva::mkl {
+
+inline
+std::string sparse_status_message(sparse_status_t status)
+{
+  switch(status)
+  {
+    case SPARSE_STATUS_SUCCESS: return "The operation was successful.";
+    case SPARSE_STATUS_NOT_INITIALIZED: return "The routine encountered an empty handle or matrix array.";
+    case SPARSE_STATUS_ALLOC_FAILED: return "Internal memory allocation failed.";
+    case SPARSE_STATUS_INVALID_VALUE: return "The input parameters contain an invalid value.";
+    case SPARSE_STATUS_EXECUTION_FAILED: return "Execution failed.";
+    case SPARSE_STATUS_INTERNAL_ERROR: return "An error in algorithm implementation occurred.";
+    case SPARSE_STATUS_NOT_SUPPORTED: return "The requested operation is not supported.";
+  }
+  throw std::runtime_error("unknown sparse_status_t value " + std::to_string(status));
+}
 
 // https://www.intel.com/content/www/us/en/develop/documentation/onemkl-developer-reference-c/top/appendix-a-linear-solvers-basics/sparse-matrix-storage-formats/sparse-blas-csr-matrix-storage-format.html
 template <typename T>
@@ -33,6 +50,13 @@ struct sparse_matrix_csr
   std::vector<MKL_INT> row_index;
   std::vector<MKL_INT> columns;
   std::vector<T> values;
+
+  // The sparse_matrix_t type used by the Intel MKL library is an opaque type,
+  // which means that its internal structure is not exposed to the user. This
+  // type is used to represent sparse matrices in the MKL library and is used as
+  // a handle for various sparse matrix operations. Whenever the content of the
+  // attributes row_index, columns or values is changed, the csr object needs to
+  // be recreated(!!!).
   sparse_matrix_t csr{nullptr};
   matrix_descr descr{SPARSE_MATRIX_TYPE_GENERAL, SPARSE_FILL_MODE_FULL, SPARSE_DIAG_NON_UNIT};
 
@@ -48,9 +72,17 @@ struct sparse_matrix_csr
     }
   }
 
-  sparse_status_t construct_csr()
+  void destruct_csr()
   {
-    // std::cout << "construct " << &csr << std::endl;
+    if (csr)
+    {
+      mkl_sparse_destroy(csr);
+    }
+  }
+
+  void construct_csr(bool throw_on_error = true)
+  {
+    destruct_csr();
     sparse_status_t status;
     if constexpr (std::is_same<T, double>::value)
     {
@@ -74,16 +106,25 @@ struct sparse_matrix_csr
                                        columns.data(),
                                        values.data());
     }
-    return status;
-  }
-
-  void destruct_csr()
-  {
-    if (csr)
+    if (status != SPARSE_STATUS_SUCCESS)
     {
-      // std::cout << "destruct " << &csr << std::endl;
-      mkl_sparse_destroy(csr); // TODO: How does MKL know that it should not destroy the row_index, columns and values arrays?
+      std::cout << "rows = " << m << std::endl;
+      std::cout << "columns = " << n << std::endl;
+      std::cout << "|row_index| = " << row_index.size() << std::endl;
+      std::cout << "|columns| = " << columns.size() << std::endl;
+      std::cout << "|values| = " << values.size() << std::endl;
+      std::string error_message = "mkl_sparse_?_create_csr: " + sparse_status_message(status);
+      if (throw_on_error)
+      {
+        throw std::runtime_error(error_message);
+      }
+      else
+      {
+        std::cout << "Error: " + error_message << std::endl;
+        std::exit(1);
+      }
     }
+    check();
   }
 
   explicit sparse_matrix_csr(long rows = 0, long columns = 0)
@@ -102,7 +143,6 @@ struct sparse_matrix_csr
     : m(rows), n(cols), row_index(std::move(row_index_)), columns(std::move(columns_)), values(std::move(values_))
   {
     construct_csr();
-    check();
   }
 
   sparse_matrix_csr(long rows, long cols, double density, std::mt19937& rng, T value = 0)
@@ -133,12 +173,7 @@ struct sparse_matrix_csr
       }
       row_index.push_back(row_index.back() + row_count);
     }
-
-    if (auto status = construct_csr() != SPARSE_STATUS_SUCCESS)
-    {
-      throw std::runtime_error("mkl_sparse_?_create_csr reported status " + std::to_string(status));
-    }
-    check();
+    construct_csr(false);
   }
 
   sparse_matrix_csr(const sparse_matrix_csr& A)
@@ -148,8 +183,7 @@ struct sparse_matrix_csr
       m(A.m),
       n(A.n)
   {
-    construct_csr();
-    check();
+    construct_csr(false);
   }
 
   sparse_matrix_csr(sparse_matrix_csr&& A) noexcept
@@ -159,8 +193,7 @@ struct sparse_matrix_csr
       m(A.m),
       n(A.n)
   {
-    construct_csr();
-    check();
+    construct_csr(false);
   }
 
   sparse_matrix_csr& operator=(const sparse_matrix_csr& A)
@@ -170,9 +203,7 @@ struct sparse_matrix_csr
     values = A.values;
     m = A.m;
     n = A.n;
-    destruct_csr();
     construct_csr();
-    check();
     return *this;
   }
 
@@ -183,9 +214,7 @@ struct sparse_matrix_csr
     values = std::vector<T>(A.values.size(), value);
     m = A.m;
     n = A.n;
-    destruct_csr();
     construct_csr();
-    check();
     return *this;
   }
 
@@ -210,6 +239,7 @@ struct sparse_matrix_csr
       std::cout << "reset_support |values| = " + std::to_string(values.size()) + " |values'| = " + std::to_string(other.values.size()) << std::endl;
       assign(other, 0);
     }
+    construct_csr();
   }
 
   [[nodiscard]] long rows() const
@@ -220,13 +250,6 @@ struct sparse_matrix_csr
   [[nodiscard]] long cols() const
   {
     return n;
-  }
-
-  void clear()
-  {
-    row_index.clear();
-    columns.clear();
-    values.clear();
   }
 
   // Assign the given value to all coefficients

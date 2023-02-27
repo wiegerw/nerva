@@ -580,13 +580,13 @@ void fill_matrix(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLay
 }
 
 template <typename Scalar = scalar, int MatrixLayout = default_matrix_layout>
-void fill_matrix_random(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A, scalar sparsity, scalar a, scalar b, std::mt19937& rng)
+void fill_matrix_random(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A, scalar density, scalar a, scalar b, std::mt19937& rng)
 {
   auto m = A.rows();
   auto n = A.cols();
   A = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>::Zero(m, n);
 
-  std::bernoulli_distribution dist(scalar(1) - sparsity);
+  std::bernoulli_distribution dist(density);
   std::uniform_real_distribution<scalar> U(a, b);
   for (auto i = 0; i < m; i++)
   {

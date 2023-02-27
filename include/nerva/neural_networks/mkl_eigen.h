@@ -67,18 +67,20 @@ Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> support(const m
 template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
 mkl::sparse_matrix_csr<Scalar> to_csr(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A)
 {
-  int m = static_cast<int>(A.rows());
-  int n = static_cast<int>(A.cols());
-  mkl::sparse_matrix_csr<Scalar> result(m, n);
-
+  long m = A.rows();
+  long n = A.cols();
   long size = eigen::nonzero_count(A);
-  result.row_index.reserve(A.rows() + 1);
-  result.columns.reserve(size);
-  result.values.reserve(size);
 
-  result.row_index.push_back(0);
+  std::vector<MKL_INT> row_index;
+  std::vector<MKL_INT> columns;
+  std::vector<Scalar> values;
+  row_index.reserve(A.rows() + 1);
+  columns.reserve(size);
+  values.reserve(size);
 
-  int count = 0; // the number of nonzero elements
+  row_index.push_back(0);
+
+  long count = 0; // the number of nonzero elements
   for (long i = 0; i < m; i++)
   {
     for (long j = 0; j < n; j++)
@@ -87,20 +89,14 @@ mkl::sparse_matrix_csr<Scalar> to_csr(const Eigen::Matrix<Scalar, Eigen::Dynamic
       if (value != Scalar(0))
       {
         count++;
-        result.columns.push_back(static_cast<int>(j));
-        result.values.push_back(value);
+        columns.push_back(j);
+        values.push_back(value);
       }
     }
-    result.row_index.push_back(count);
+    row_index.push_back(count);
   }
 
-  if (auto status = result.construct_csr() != SPARSE_STATUS_SUCCESS)
-  {
-    throw std::runtime_error("mkl_sparse_d_create_csr  reported status " + std::to_string(status));
-  }
-  result.descr.type = SPARSE_MATRIX_TYPE_GENERAL;
-
-  return result;
+  return mkl::sparse_matrix_csr<Scalar>(m, n, row_index, columns, values);
 }
 
 template <typename Scalar = scalar>
