@@ -173,7 +173,7 @@ struct linear_layer: public neural_network_layer
     if constexpr (IsSparse)
     {
       this->DW.reset_support(this->W);
-      this->optimizer->reset_support(this->W);
+      this->optimizer->reset_support();
     }
   }
 

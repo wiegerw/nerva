@@ -26,7 +26,7 @@ struct layer_optimizer
 
   // If the layer is sparse, the nonzero entries of the weight matrices in the
   // optimizer need to be updated
-  virtual void reset_support(const mkl::sparse_matrix_csr<scalar>& W)
+  virtual void reset_support()
   { }
 
   virtual ~layer_optimizer() = default;
@@ -77,6 +77,14 @@ struct momentum_optimizer: public gradient_descent_optimizer<Matrix>
   eigen::vector delta_b;
   scalar mu;
 
+  void reset_support() override
+  {
+    if constexpr (IsSparse)
+    {
+      delta_W.reset_support(W);
+    }
+  }
+
   momentum_optimizer(Matrix& W, Matrix& DW, eigen::vector& b, eigen::vector& Db, scalar mu_)
    : super(W, DW, b, Db),
      delta_W(W.rows(), W.cols()),
@@ -85,7 +93,7 @@ struct momentum_optimizer: public gradient_descent_optimizer<Matrix>
   {
     if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
     {
-      delta_W.assign(W, scalar(0)); // copy the support of W and fill the matrix with zeroes
+      reset_support();
     }
     else
     {
@@ -115,14 +123,6 @@ struct momentum_optimizer: public gradient_descent_optimizer<Matrix>
     delta_b = mu * delta_b - eta * Db;
     b += delta_b;
   }
-
-  void reset_support(const mkl::sparse_matrix_csr<scalar>& W) override
-  {
-    if constexpr (IsSparse)
-    {
-      delta_W.reset_support(W);
-    }
-  }
 };
 
 template <typename Matrix>
@@ -141,6 +141,15 @@ struct nesterov_optimizer: public gradient_descent_optimizer<Matrix>
   eigen::vector delta_b_prev;
   scalar mu;
 
+  void reset_support() override
+  {
+    if constexpr (IsSparse)
+    {
+      delta_W.reset_support(W);
+      delta_W_prev.reset_support(W);
+    }
+  }
+
   nesterov_optimizer(Matrix& W, Matrix& DW, eigen::vector& b, eigen::vector& Db, scalar mu_)
       : super(W, DW, b, Db),
         delta_W(W.rows(), W.cols()),
@@ -151,8 +160,7 @@ struct nesterov_optimizer: public gradient_descent_optimizer<Matrix>
   {
     if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
     {
-      delta_W.assign(W, scalar(0)); // copy the support of W and fill the matrix with zeroes
-      delta_W_prev.assign(W, scalar(0)); // copy the support of W and fill the matrix with zeroes
+      reset_support();
     }
     else
     {
@@ -186,15 +194,6 @@ struct nesterov_optimizer: public gradient_descent_optimizer<Matrix>
     delta_b_prev = delta_b;
     delta_b = mu * delta_b - eta * b;
     b += (-mu * delta_b_prev + (scalar(1) + mu) * delta_b);
-  }
-
-  void reset_support(const mkl::sparse_matrix_csr<scalar>& W) override
-  {
-    if constexpr (IsSparse)
-    {
-      delta_W.reset_support(W);
-      delta_W_prev.reset_support(W);
-    }
   }
 };
 

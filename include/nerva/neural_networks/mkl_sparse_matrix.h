@@ -10,6 +10,7 @@
 #ifndef NERVA_NEURAL_NETWORKS_MKL_SPARSE_MATRIX_H
 #define NERVA_NEURAL_NETWORKS_MKL_SPARSE_MATRIX_H
 
+#include "nerva/neural_networks/mkl_dense_matrix.h"
 #include "nerva/utilities/print.h"
 #include "nerva/utilities/random.h"
 #include <mkl.h>
@@ -209,17 +210,6 @@ struct sparse_matrix_csr
     return *this;
   }
 
-  sparse_matrix_csr& assign(const sparse_matrix_csr& A, T value = 0)
-  {
-    row_index = A.row_index;
-    columns = A.columns;
-    values = std::vector<T>(A.values.size(), value);
-    m = A.m;
-    n = A.n;
-    construct_csr();
-    return *this;
-  }
-
   ~sparse_matrix_csr()
   {
     destruct_csr();
@@ -238,8 +228,11 @@ struct sparse_matrix_csr
     }
     else
     {
-      std::cout << "reset_support |values| = " + std::to_string(values.size()) + " |values'| = " + std::to_string(other.values.size()) << std::endl;
-      assign(other, 0);
+      row_index = other.row_index;
+      columns = other.columns;
+      values = std::vector<T>(other.values.size(), 0);
+      m = other.m;
+      n = other.n;
     }
     construct_csr();
   }
@@ -322,6 +315,60 @@ void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
   eigen::vector_map<Scalar> C1(const_cast<Scalar*>(C.values.data()), C.values.size());
 
   A1 = alpha * A1 + beta * B1 + gamma * C1;
+  A.construct_csr();
+}
+
+// Does the assignment A := alpha * A + beta * op(B) * C with B sparse and A, C dense
+//
+// operation_B determines whether op(B) = B or op(B) = B^T
+template <typename Scalar, matrix_layout layout>
+void assign_matrix_product(dense_matrix_view<Scalar>& A,
+                           const mkl::sparse_matrix_csr<Scalar>& B,
+                           const dense_matrix_view<Scalar>& C,
+                           Scalar alpha = 0,
+                           Scalar beta = 1,
+                           sparse_operation_t operation_B = SPARSE_OPERATION_NON_TRANSPOSE
+)
+{
+  assert(A.rows() == (operation_B == SPARSE_OPERATION_NON_TRANSPOSE ? B.rows() : B.cols()));
+  assert(A.cols() == C.cols());
+  assert((operation_B == SPARSE_OPERATION_NON_TRANSPOSE ? B.cols() : B.rows()) == C.rows());
+
+  sparse_status_t status;
+  if constexpr (std::is_same<Scalar, double>::value)
+  {
+    if constexpr (layout == matrix_layout::column_major)
+    {
+      status = mkl_sparse_d_mm(operation_B, beta, B.csr, B.descr, SPARSE_LAYOUT_COLUMN_MAJOR, C.data(), A.cols(), C.rows(), alpha, A.data(), A.rows());
+    }
+    else
+    {
+      status = mkl_sparse_d_mm(operation_B, beta, B.csr, B.descr, SPARSE_LAYOUT_ROW_MAJOR, C.data(), A.cols(), C.cols(), alpha, A.data(), A.cols());
+    }
+  }
+  else
+  {
+    if constexpr (layout == matrix_layout::column_major)
+    {
+      status = mkl_sparse_s_mm(operation_B, beta, B.csr, B.descr, SPARSE_LAYOUT_COLUMN_MAJOR, C.data(), A.cols(), C.rows(), alpha, A.data(), A.rows());
+    }
+    else
+    {
+      status = mkl_sparse_s_mm(operation_B, beta, B.csr, B.descr, SPARSE_LAYOUT_ROW_MAJOR, C.data(), A.cols(), C.cols(), alpha, A.data(), A.cols());
+    }
+  }
+
+  if (status != SPARSE_STATUS_SUCCESS)
+  {
+    throw std::runtime_error("mkl_sparse_dense_mat_mult reported status " + std::to_string(status));
+  }
+}
+
+// Performs the assignment A := B, with A, B sparse. A and B must have the same support.
+template <typename Scalar>
+void assign_matrix(sparse_matrix_csr<Scalar>& A, const sparse_matrix_csr<Scalar>& B)
+{
+  std::copy(B.values.begin(), B.values.end(), A.values.begin());
   A.construct_csr();
 }
 
