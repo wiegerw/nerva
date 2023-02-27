@@ -65,11 +65,11 @@ struct sparse_matrix_csr
 
   void check() const
   {
-    if (m > 0 && n > 0)
-    {
-      assert(row_index.size() == m + 1);
-      assert(columns.size() == values.size());
-    }
+    assert(m > 0);
+    assert(n > 0);
+    assert(row_index.size() == m + 1);
+    assert(columns.size() == values.size());
+    assert(columns.capacity() != 0);
   }
 
   void destruct_csr()
@@ -127,11 +127,13 @@ struct sparse_matrix_csr
     check();
   }
 
-  explicit sparse_matrix_csr(long rows = 0, long columns = 0)
-    : m(rows), n(columns)
+  // Creates a sparse matrix with empty support
+  explicit sparse_matrix_csr(long rows = 1, long cols = 1)
+    : row_index(rows + 1, 0), m(rows), n(cols)
   {
-    // N.B. This brings the matrix in an unusable state.
-    // TODO: find out if MKL allows a useful default initialization
+    columns.reserve(1);  // to make sure that the data pointer has a value
+    values.reserve(1);   // to make sure that the data pointer has a value
+    construct_csr();
   }
 
   sparse_matrix_csr(long rows,
@@ -278,7 +280,7 @@ struct sparse_matrix_csr
 
 // Does the assignment A := alpha * A + beta * B, with A, B sparse.
 // A and B must have the same non-zero mask
-template <typename Scalar = scalar>
+template <typename Scalar>
 void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
                        const mkl::sparse_matrix_csr<Scalar>& B,
                        Scalar alpha = 0.0,
@@ -299,7 +301,7 @@ void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
 
 // Does the assignment A := alpha * A + beta * B + gamma * C, with A, B, C sparse.
 // A, B and C must have the same support
-template <typename Scalar = scalar>
+template <typename Scalar>
 void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
                        const mkl::sparse_matrix_csr<Scalar>& B,
                        const mkl::sparse_matrix_csr<Scalar>& C,

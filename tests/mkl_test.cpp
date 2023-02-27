@@ -74,12 +74,12 @@ struct matrix_mkl
     values = (double*) mkl_malloc(m * n * sizeof(double), 64);
   }
 
-  int rows() const
+  [[nodiscard]] int rows() const
   {
     return m;
   }
 
-  int cols() const
+  [[nodiscard]] int cols() const
   {
     return n;
   }

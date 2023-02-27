@@ -12,6 +12,7 @@
 #include "doctest/doctest.h"
 #include <Eigen/Dense>
 #include "nerva/neural_networks/mkl_matrix.h"
+#include "nerva/neural_networks/mkl_eigen.h"
 #include <iostream>
 
 using namespace nerva;
@@ -101,4 +102,14 @@ TEST_CASE("test_mkl2")
   test_dense_dense_multiplication(12, 8, 5);
   test_dense_dense_multiplication(1, 8, 5);
   test_dense_dense_multiplication(1, 8, 1);
+}
+
+TEST_CASE("test_empty_support")
+{
+  using matrix_type = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>;
+
+  mkl::sparse_matrix_csr<float> A(3, 4);
+  matrix_type B = to_eigen(A);
+  matrix_type expected = matrix_type::Zero(3, 4);
+  CHECK_EQ(B, expected);
 }
