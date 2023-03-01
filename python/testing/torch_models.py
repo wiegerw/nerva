@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+
+# Copyright 2023 Wieger Wesselink.
+# Distributed under the Boost Software License, Version 1.0.
+# (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
+
 import numpy as np
 import torch
 
@@ -8,7 +14,7 @@ def flatten_torch(x: torch.Tensor) -> torch.Tensor:
 
 
 def to_one_hot_torch(x: torch.Tensor) -> np.ndarray:
-    return to_numpy(torch.nn.functional.one_hot(x, num_classes = 10).float())
+    return torch.nn.functional.one_hot(x, num_classes = 10).float()
 
 
 def make_torch_scheduler(args, optimizer):

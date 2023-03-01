@@ -20,13 +20,13 @@ import nerva.random
 from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
 from testing.torch_models import make_torch_scheduler
-from testing.models import MLP1, MLP2
+from testing.models import MLPPyTorch, MLPNerva
 from testing.training import compute_densities
 from testing.compare import compare_pytorch_nerva, CompareOptions, copy_weights_and_bias
 
 
 def make_torch_model(args, sizes, densities):
-    M1 = MLP1(sizes, densities)
+    M1 = MLPPyTorch(sizes, densities)
     M1.optimizer = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
     M1.loss = nn.CrossEntropyLoss()
     M1.learning_rate = make_torch_scheduler(args, M1.optimizer)
@@ -38,7 +38,7 @@ def make_torch_model(args, sizes, densities):
 
 def make_nerva_model(args, sizes, densities):
     optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
-    M2 = MLP2(sizes, densities, optimizer2, args.batch_size)
+    M2 = MLPNerva(sizes, densities, optimizer2, args.batch_size)
     M2.loss = nerva.loss.SoftmaxCrossEntropyLoss()
     M2.learning_rate = make_nerva_scheduler(args)
     return M2

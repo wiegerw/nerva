@@ -1,20 +1,23 @@
-from typing import List
+#!/usr/bin/env python3
 
-import numpy as np
+# Copyright 2023 Wieger Wesselink.
+# Distributed under the Boost Software License, Version 1.0.
+# (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
+
 import torch
 from torch import nn as nn
 from torch.nn import functional as F
 
 import nerva.layers
+import nerva.optimizers
 from testing.datasets import save_dict_to_npz, load_dict_from_npz
 from testing.masking import create_mask
-from testing.numpy_utils import pp, l1_norm
 
 
-# This PyTorch model supports sparse layers using binary masks
-class MLP1(nn.Module):
-    """ Multi-Layer Perceptron """
-    def __init__(self, sizes, densities):
+class MLPPyTorch(nn.Module):
+    """ PyTorch Multilayer perceptron that supports sparse layers using binary masks.
+    """
+    def __init__(self, sizes, layer_densities):
         super().__init__()
         self.sizes = sizes
         self.optimizer = None
@@ -23,11 +26,11 @@ class MLP1(nn.Module):
         self.layers = nn.ModuleList()
         for i in range(n):
             self.layers.append(nn.Linear(sizes[i], sizes[i + 1]))
-        self.set_masks(densities)
+        self._set_masks(layer_densities)
 
-    def set_masks(self, densities):
+    def _set_masks(self, layer_densities):
         self.masks = []
-        for layer, density in zip(self.layers, densities):
+        for layer, density in zip(self.layers, layer_densities):
             if density == 1.0:
                 self.masks.append(None)
             else:
@@ -38,13 +41,6 @@ class MLP1(nn.Module):
             if mask is not None:
                 layer.weight.data = layer.weight.data * mask
 
-    def print_masks(self):
-        print('--- masks ---')
-        for i, mask in enumerate(self.masks):
-            if mask is not None:
-                pp(f'mask{i + 1}', mask.int())
-
-
     def optimize(self):
         self.apply_masks()  # N.B. This seems to be the correct order
         self.optimizer.step()
@@ -54,12 +50,6 @@ class MLP1(nn.Module):
             x = F.relu(self.layers[i](x))
         x = self.layers[-1](x)  # output layer does not have an activation function
         return x
-
-    def weights(self) -> List[torch.Tensor]:
-        return [layer.weight.detach().numpy() for layer in self.layers]
-
-    def bias(self) -> List[torch.Tensor]:
-        return [layer.bias.detach().numpy() for layer in self.layers]
 
     def export_weights(self, filename: str):
         print(f'Exporting weights to {filename}')
@@ -75,16 +65,7 @@ class MLP1(nn.Module):
             layer.weight.data = data[f'W{i + 1}']
             layer.bias.data = data[f'b{i + 1}']
 
-    def print_weight_info(self):
-        for i, layer in enumerate(self.layers):
-            print(f'|w{i + 1}| = {l1_norm(layer.weight.detach().numpy())}')
-
-    def scale_weights(self, factor):
-        print(f'Scale weights with factor {factor}')
-        for layer in self.layers:
-            layer.weight.data *= factor
-
-    def info(self):
+    def __str__(self):
         def density_info(layer, mask: torch.Tensor):
             if mask is not None:
                 n, N = torch.count_nonzero(mask), mask.numel()
@@ -92,54 +73,52 @@ class MLP1(nn.Module):
                 n, N = layer.weight.numel(), layer.weight.numel()
             return f'{n}/{N} ({100 * n / N:.8f}%)'
 
-        print('=== PyTorch model ===')
-        print(self)
-        print(f'scheduler = {self.learning_rate}')
         density_info = [density_info(layer, mask) for layer, mask in zip(self.layers, self.masks)]
-        print(f'layer densities: {", ".join(density_info)}\n')
+        return f'{super().__str__()}\nscheduler = {self.learning_rate}\nlayer densities: {", ".join(density_info)}\n'
 
 
-class MLP2(nerva.layers.Sequential):
-    def __init__(self, sizes, densities, optimizer, batch_size):
+class MLPNerva(nerva.layers.Sequential):
+    """ Nerva Multilayer perceptron
+    """
+    def __init__(self, layer_sizes, layer_densities, optimizers, activations, loss, learning_rate, batch_size):
         super().__init__()
-        self.sizes = sizes
-        self.optimizer = optimizer
-        self.loss = None
-        self.learning_rate = None
-        n = len(densities)  # the number of layers
-        activations = [nerva.layers.ReLU()] * (n-1) + [nerva.layers.NoActivation()]
-        output_sizes = sizes[1:]
-        for (density, size, activation) in zip(densities, output_sizes, activations):
+        self.layer_sizes = layer_sizes
+        self.layer_densities = layer_densities
+        self.loss = loss
+        self.learning_rate = learning_rate
+
+        n_layers = len(layer_densities)
+        assert len(layer_sizes) == n_layers + 1
+        assert len(activations) == n_layers
+        assert len(optimizers) == n_layers
+
+        output_sizes = layer_sizes[1:]
+        for (density, size, activation, optimizer) in zip(layer_densities, output_sizes, activations, optimizers):
             if density == 1.0:
                  self.add(nerva.layers.Dense(size, activation=activation, optimizer=optimizer))
             else:
                 self.add(nerva.layers.Sparse(size, density, activation=activation, optimizer=optimizer))
-        self.compile(sizes[0], batch_size)
 
-    def weights(self) -> List[np.ndarray]:
-        return self.compiled_model.weights()
-
-    def bias(self) -> List[np.ndarray]:
-        return [b.reshape((b.shape[0])) for b in self.compiled_model.bias()]
+        self.compile(layer_sizes[0], batch_size)
 
     def export_weights(self, filename: str):
+        """
+        Exports the weights and biases to a file in .npz format
+
+        The weight matrices should have keys W1, W2, ... and the bias vectors should have keys "b1, b2, ..."
+        :param filename: the name of the file
+        """
         self.compiled_model.export_weights(filename)
 
     def import_weights(self, filename: str):
+        """
+        Imports the weights and biases from a file in .npz format
+
+        The weight matrices are stored using the keys W1, W2, ... and the bias vectors using the keys "b1, b2, ..."
+        :param filename: the name of the file
+        """
         self.compiled_model.import_weights(filename)
 
-    def info(self):
-        print('=== Nerva python model ===')
-        print(self)
-        print(f'loss = {self.loss}')
-        print(f'scheduler = {self.learning_rate}')
+    def __str__(self):
         density_info = [layer.density_info() for layer in self.layers]
-        print(f'layer densities: {", ".join(density_info)}\n')
-
-
-def print_model_info(M):
-    W = M.weights()
-    b = M.bias()
-    for i in range(len(W)):
-        pp(f'W{i + 1}', W[i])
-        pp(f'b{i + 1}', b[i])
+        return f'{super().__str__()}\nloss = {self.loss}\nscheduler = {self.learning_rate}\nlayer densities: {", ".join(density_info)}\n'

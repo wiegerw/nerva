@@ -3,39 +3,28 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import random
-from nervalib import compute_statistics, compute_accuracy, stochastic_gradient_descent, SGDOptions
+from nervalib import compute_statistics, compute_accuracy
 from nerva.utilities import StopWatch
 
 
-def stochastic_gradient_descent_python(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True):
-    M = model.compiled_model
-    N = dataset.Xtrain.shape[1]  # the number of examples
-    I = list(range(N))
-    K = N // batch_size  # the number of batches
-    compute_statistics(M, loss, dataset, batch_size, -1, statistics, 0.0)
-    total_time = 0.0
-    watch = StopWatch()
+def compute_accuracy_nerva(M: MLP2, data_loader):
+    N = len(data_loader.dataset)  # N is the number of examples
+    total_correct = 0
+    for X, T in data_loader:
+        X = to_numpy(X)
+        T = to_numpy(T)
+        Y = M.feedforward(X)
+        predicted = Y.argmax(axis=0)  # the predicted classes for the batch
+        total_correct += (predicted == T).sum().item()
+    return total_correct / N
 
-    for epoch in range(epochs):
-        watch.reset()
-        if shuffle:
-            random.shuffle(I)
 
-        eta = learning_rate(epoch)  # update the learning rate at the start of each epoch
-
-        for k in range(K):
-            batch = I[k * batch_size: (k + 1) * batch_size]
-            X = dataset.Xtrain[:, batch]
-            T = dataset.Ttrain[:, batch]
-            Y = model.feedforward(X)
-            dY = loss.gradient(Y, T) / batch_size  # pytorch uses this division
-            model.backpropagate(Y, dY)
-            model.optimize(eta)
-
-        seconds = watch.seconds()
-        compute_statistics(M, loss, dataset, batch_size, epoch, statistics, seconds)
-        total_time += seconds
-
-    print(f'Accuracy of the network on the {dataset.Xtest.shape[1]} test examples: {(100.0 * compute_accuracy(M, dataset.Xtest, dataset.Ttest, batch_size)):.2f}%')
-    print(f'Total training time for the {epochs} epochs: {total_time:4.2f}s')
-
+def compute_loss_nerva(M: MLP2, data_loader):
+    N = len(data_loader.dataset)  # N is the number of examples
+    total_loss = 0.0
+    for X, T in data_loader:
+        X = to_numpy(X)
+        T = to_one_hot_numpy(T, 10)
+        Y = M.feedforward(X)
+        total_loss += M.loss.value(Y, T)
+    return total_loss / N

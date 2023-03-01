@@ -17,32 +17,33 @@ import nerva.learning_rate
 import nerva.loss
 import nerva.optimizers
 import nerva.random
-import nervalib
 from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
 from testing.torch_models import make_torch_scheduler
-from testing.models import MLP1, MLP2
+from testing.models import MLPPyTorch, MLPNerva
 from testing.training import train_nerva, train_torch, compute_accuracy_torch, compute_accuracy_nerva, \
     compute_densities, train_torch_preprocessed, train_nerva_preprocessed
 
 
-def make_torch_model(args, sizes, densities):
-    M1 = MLP1(sizes, densities)
-    M1.optimizer = optim.SGD(M1.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
-    M1.loss = nn.CrossEntropyLoss()
-    M1.learning_rate = make_torch_scheduler(args, M1.optimizer)
-    for layer in M1.layers:
+def make_torch_model(args, layer_sizes, densities):
+    M = MLPPyTorch(layer_sizes, densities)
+    M.optimizer = optim.SGD(M.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
+    M.loss = nn.CrossEntropyLoss()
+    M.learning_rate = make_torch_scheduler(args, M.optimizer)
+    for layer in M.layers:
         nn.init.xavier_uniform_(layer.weight)
-    M1.apply_masks()
-    return M1
+    M.apply_masks()
+    return M
 
 
-def make_nerva_model(args, sizes, densities):
-    optimizer2 = make_nerva_optimizer(args.momentum, args.nesterov)
-    M2 = MLP2(sizes, densities, optimizer2, args.batch_size)
-    M2.loss = nerva.loss.SoftmaxCrossEntropyLoss()
-    M2.learning_rate = make_nerva_scheduler(args)
-    return M2
+def make_nerva_model(args, layer_sizes, layer_densities):
+    n_layers = len(layer_densities)
+    loss = nerva.loss.SoftmaxCrossEntropyLoss()
+    learning_rate = make_nerva_scheduler(args)
+    activations = [nerva.layers.ReLU()] * (n_layers - 1) + [nerva.layers.NoActivation()]
+    optimizer = make_nerva_optimizer(args.momentum, args.nesterov)
+    optimizers = [optimizer] * n_layers
+    return MLPNerva(layer_sizes, layer_densities, optimizers, activations, loss, learning_rate, args.batch_size)
 
 
 def make_argument_parser():
@@ -140,18 +141,19 @@ def main():
         else:
             train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
 
-    sizes = [int(s) for s in args.sizes.split(',')]
+    layer_sizes = [int(s) for s in args.sizes.split(',')]
 
     if args.densities:
-        densities = list(float(d) for d in args.densities.split(','))
+        layer_densities = list(float(d) for d in args.densities.split(','))
     elif args.overall_density:
-        densities = compute_densities(args.overall_density, sizes)
+        layer_densities = compute_densities(args.overall_density, layer_sizes)
     else:
-        densities = [1.0] * (len(sizes) - 1)
+        layer_densities = [1.0] * (len(layer_sizes) - 1)
 
     if args.torch:
-        M1 = make_torch_model(args, sizes, densities)
-        M1.info()
+        M1 = make_torch_model(args, layer_sizes, layer_densities)
+        print('=== PyTorch model ===')
+        print(M1)
 
         if args.export_weights:
             M1.export_weights(args.export_weights)
@@ -162,8 +164,9 @@ def main():
         else:
             train_torch(M1, train_loader, test_loader, args.epochs)
     elif args.nerva:
-        M2 = make_nerva_model(args, sizes, densities)
-        M2.info()
+        M2 = make_nerva_model(args, layer_sizes, layer_densities)
+        print('=== Nerva python model ===')
+        print(M2)
 
         if args.import_weights:
             M2.import_weights(args.import_weights)

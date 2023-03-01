@@ -1,4 +1,10 @@
-from typing import List, Union
+#!/usr/bin/env python3
+
+# Copyright 2023 Wieger Wesselink.
+# Distributed under the Boost Software License, Version 1.0.
+# (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
+
+from typing import List
 
 import numpy as np
 
@@ -6,10 +12,10 @@ import nerva.weights
 from nerva.utilities import StopWatch
 from testing.datasets import create_npz_dataloaders
 from testing.numpy_utils import to_numpy, to_one_hot_numpy, l1_norm
-from testing.models import MLP1, MLP2
+from testing.models import MLPPyTorch, MLPNerva
 
 
-def compute_accuracy_torch(M: MLP1, data_loader):
+def compute_accuracy_torch(M: MLPPyTorch, data_loader):
     N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
     for X, T in data_loader:
@@ -19,7 +25,7 @@ def compute_accuracy_torch(M: MLP1, data_loader):
     return total_correct / N
 
 
-def compute_loss_torch(M: MLP1, data_loader):
+def compute_loss_torch(M: MLPPyTorch, data_loader):
     N = len(data_loader.dataset)  # N is the number of examples
     batch_size = N // len(data_loader)
     total_loss = 0.0
@@ -29,7 +35,7 @@ def compute_loss_torch(M: MLP1, data_loader):
     return batch_size * total_loss / N
 
 
-def compute_accuracy_nerva(M: MLP2, data_loader):
+def compute_accuracy_nerva(M: MLPNerva, data_loader):
     N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
     for X, T in data_loader:
@@ -41,7 +47,7 @@ def compute_accuracy_nerva(M: MLP2, data_loader):
     return total_correct / N
 
 
-def compute_loss_nerva(M: MLP2, data_loader):
+def compute_loss_nerva(M: MLPNerva, data_loader):
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
     for X, T in data_loader:
@@ -185,7 +191,7 @@ def train_torch_preprocessed(M, datadir, epochs, batch_size):
 
 
 def train_nerva(M, train_loader, test_loader, epochs, zeta=0, separate_posneg=False):
-    n_classes = M.sizes[-1]
+    n_classes = M.layer_sizes[-1]
     batch_size = len(train_loader.dataset) // len(train_loader)
     watch = StopWatch()
 
@@ -225,7 +231,7 @@ def train_nerva(M, train_loader, test_loader, epochs, zeta=0, separate_posneg=Fa
 def train_nerva_preprocessed(M, datadir, epochs, batch_size, zeta=0, separate_posneg=False):
     train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch0.npz', batch_size=batch_size)
 
-    n_classes = M.sizes[-1]
+    n_classes = M.layer_sizes[-1]
     batch_size = len(train_loader.dataset) // len(train_loader)
     watch = StopWatch()
 

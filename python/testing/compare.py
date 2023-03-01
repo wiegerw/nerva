@@ -3,7 +3,7 @@ import sys
 import tempfile
 
 from nerva.utilities import StopWatch
-from testing.models import MLP1, MLP2
+from testing.models import MLPPyTorch, MLPNerva
 from testing.numpy_utils import pp, to_numpy, to_one_hot_numpy
 from testing.training import compute_weight_difference, compute_matrix_difference, print_epoch, compute_loss_torch, \
     compute_accuracy_torch, compute_loss_nerva, compute_accuracy_nerva
@@ -36,14 +36,14 @@ def print_batch_info(epoch, k, Y1, Y2, DY2):
         # compute_matrix_difference('DY', Y1.grad.detach().numpy().T, DY2)
 
 
-def copy_weights_and_bias(M1: MLP1, M2: MLP2):
+def copy_weights_and_bias(M1: MLPPyTorch, M2: MLPNerva):
     filename = tempfile.NamedTemporaryFile().name + '.npz'
     M1.export_weights(filename)
     M2.import_weights(filename)
     pathlib.Path(filename).unlink()
 
 
-def compare_pytorch_nerva(M1: MLP1, M2: MLP2, train_loader, test_loader, epochs: int):
+def compare_pytorch_nerva(M1: MLPPyTorch, M2: MLPNerva, train_loader, test_loader, epochs: int):
     M1.train()  # Set model in training mode
     watch = StopWatch()
 
