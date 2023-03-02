@@ -318,7 +318,8 @@ void assign_matrix_product(dense_matrix_view<Scalar>& A,
 
   if (status != SPARSE_STATUS_SUCCESS)
   {
-    throw std::runtime_error("mkl_sparse_dense_mat_mult reported status " + std::to_string(status));
+    std::string error_message = "mkl_sparse_?_mm: " + sparse_status_message(status);
+    throw std::runtime_error(error_message);
   }
 }
 

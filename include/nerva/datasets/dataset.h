@@ -56,10 +56,10 @@ struct dataset
 
   void info() const
   {
-    eigen::print_numpy_matrix("Xtrain", Xtrain);
-    eigen::print_numpy_matrix("Ttrain", Ttrain);
-    eigen::print_numpy_matrix("Xtest", Xtest);
-    eigen::print_numpy_matrix("Ttest", Ttest);
+    eigen::print_numpy_matrix("Xtrain", Xtrain.transpose());
+    eigen::print_numpy_matrix("Ttrain", Ttrain.transpose());
+    eigen::print_numpy_matrix("Xtest", Xtest.transpose());
+    eigen::print_numpy_matrix("Ttest", Ttest.transpose());
   }
 
   // Precondition: the python interpreter must be running.

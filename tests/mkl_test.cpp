@@ -637,7 +637,7 @@ TEST_CASE("test_csr_matrix4")
 }
 
 inline
-  void check_csr()
+void check_csr()
 {
   // sparse matrix A
   sparse_matrix_t A_csr;
