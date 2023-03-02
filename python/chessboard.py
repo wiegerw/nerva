@@ -7,6 +7,7 @@
 import math
 import random
 import numpy as np
+import torch
 from nerva.activation import ReLU, NoActivation
 from nerva.dataset import DataSet
 from nerva.layers import Sequential, Dense, Sparse
@@ -101,20 +102,21 @@ def plot_dataset(X, T):
 
 if __name__ == '__main__':
     n = 20000
-    manual_seed(317822)
+    seed = 12345
+    manual_seed(seed)
+    torch.manual_seed(seed)
     Xtrain, Ttrain = make_dataset_chessboard(n)
     Xtest, Ttest = make_dataset_chessboard(n // 5)
     dataset = DataSet(Xtrain, Ttrain, Xtest, Ttest)
-    dataset.info()
-    dataset.save('chess0.npz')
+    dataset.save('chessboard.npz')
     #plot_dataset(Xtrain, Ttrain)
     #plot_dataset(Xtest, Ttest)
     overall_density = 1.0
     loss = SquaredErrorLoss()
-    learning_rate_scheduler = ConstantScheduler(0.01)
+    learning_rate_scheduler = ConstantScheduler(0.1)
     input_size = 2
     batch_size = 100
     model = create_model(overall_density)
     model.compile(input_size, batch_size)
     print(model)
-    stochastic_gradient_descent(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=batch_size, shuffle=True, statistics=True)
+    stochastic_gradient_descent(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=batch_size, shuffle=False, statistics=True)

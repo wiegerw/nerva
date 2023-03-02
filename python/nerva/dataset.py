@@ -6,10 +6,7 @@ import nervalib
 import numpy as np
 
 class DataSet(nervalib.DataSetView):
-    def __init__(self, x_train, y_train, x_test, y_test):
-        super().__init__(np.asfortranarray(x_train.T),
-                         np.asfortranarray(y_train.T),
-                         np.asfortranarray(x_test.T),
-                         np.asfortranarray(y_test.T))
+    def __init__(self, Xtrain, Ttrain, Xtest, Ttest):
+        super().__init__(Xtrain.T, Ttrain.T, Xtest.T, Ttest.T)
         # store references to the original data to make sure it is not destroyed
-        self.keep_alive = [x_train, y_train, x_test, y_test]
+        self.keep_alive = [Xtrain, Ttrain, Xtest, Ttest]
