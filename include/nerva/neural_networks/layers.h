@@ -571,7 +571,7 @@ void set_optimizer(linear_layer<Matrix>& layer, const std::string& text)
     auto endpos = text.find(')');
     if (startpos == std::string::npos || endpos == std::string::npos || endpos <= startpos)
     {
-      throw std::runtime_error("Error: could not parse optimizer '" + text + "'");
+      throw std::runtime_error("could not parse optimizer '" + text + "'");
     }
     return parse_scalar(text.substr(startpos + 1, endpos - startpos - 1));
   };

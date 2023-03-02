@@ -94,7 +94,7 @@ dataset make_dataset(const std::string& name, std::size_t n, RandomNumberGenerat
   }
   else
   {
-    throw std::runtime_error("Error: unknown dataset " + name);
+    throw std::runtime_error("unknown dataset " + name);
   }
   return result;
 }

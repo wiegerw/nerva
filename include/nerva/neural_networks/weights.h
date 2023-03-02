@@ -258,7 +258,7 @@ weight_initialization parse_weight_initialization(const std::string& text)
   {
     return weight_initialization::ten;
   }
-  throw std::runtime_error("Error: could not parse weight initialization '" + text + "'");
+  throw std::runtime_error("could not parse weight initialization '" + text + "'");
 }
 
 template <typename Matrix>

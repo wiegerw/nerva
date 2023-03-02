@@ -63,7 +63,7 @@ weight_initialization parse_weight_char(char c)
   {
     return weight_initialization::tensorflow;
   }
-  throw std::runtime_error(std::string("Error: could not parse weight char '") + c + "'");
+  throw std::runtime_error(std::string("could not parse weight char '") + c + "'");
 }
 
 template <typename RandomNumberGenerator>

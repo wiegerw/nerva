@@ -71,7 +71,7 @@ std::shared_ptr<neural_network_layer> parse_dense_layer(char c, std::size_t D, s
     }
   }
 
-  throw std::runtime_error(std::string("Error: unknown layer type '") + c + "'");
+  throw std::runtime_error(std::string("unknown layer type '") + c + "'");
 }
 
 inline
@@ -108,7 +108,7 @@ std::shared_ptr<neural_network_layer> parse_sparse_layer(char c, std::size_t D, 
     return layer;
   }
 
-  throw std::runtime_error(std::string("Error: unknown layer type '") + c + "'");
+  throw std::runtime_error(std::string("unknown layer type '") + c + "'");
 }
 
 } // namespace nerva

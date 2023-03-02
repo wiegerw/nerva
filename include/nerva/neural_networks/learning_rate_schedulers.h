@@ -154,7 +154,7 @@ std::shared_ptr<learning_rate_scheduler> parse_constant_scheduler(const std::str
   bool result = std::regex_match(text, m, re);
   if (!result)
   {
-    throw std::runtime_error("Error: could not parse learning scheduler '" + text + "'");
+    throw std::runtime_error("could not parse learning scheduler '" + text + "'");
   }
   scalar value = parse_scalar(m[1]);
   return std::make_shared<constant_scheduler>(value);
@@ -168,7 +168,7 @@ std::shared_ptr<learning_rate_scheduler> parse_multistep_lr_scheduler(const std:
   bool result = std::regex_match(text, m, re);
   if (!result)
   {
-    throw std::runtime_error("Error: could not parse learning scheduler '" + text + "'");
+    throw std::runtime_error("could not parse learning scheduler '" + text + "'");
   }
   scalar lr = parse_scalar(m[1]);
   std::vector<unsigned int> milestones = parse_comma_separated_numbers<unsigned int>(m[2]);
@@ -184,7 +184,7 @@ std::shared_ptr<learning_rate_scheduler> parse_time_based_scheduler(const std::s
   bool result = std::regex_match(text, m, re);
   if (!result)
   {
-    throw std::runtime_error("Error: could not parse learning scheduler '" + text + "'");
+    throw std::runtime_error("could not parse learning scheduler '" + text + "'");
   }
   scalar lr = parse_scalar(m[1]);
   scalar decay = parse_scalar(m[2]);
@@ -199,7 +199,7 @@ std::shared_ptr<learning_rate_scheduler> parse_step_based_scheduler(const std::s
   bool result = std::regex_match(text, m, re);
   if (!result)
   {
-    throw std::runtime_error("Error: could not parse learning scheduler '" + text + "'");
+    throw std::runtime_error("could not parse learning scheduler '" + text + "'");
   }
   scalar lr = parse_scalar(m[1]);
   scalar drop_rate = parse_scalar(m[2]);
@@ -215,7 +215,7 @@ std::shared_ptr<learning_rate_scheduler> parse_exponential_scheduler(const std::
   bool result = std::regex_match(text, m, re);
   if (!result)
   {
-    throw std::runtime_error("Error: could not parse learning scheduler '" + text + "'");
+    throw std::runtime_error("could not parse learning scheduler '" + text + "'");
   }
   scalar lr = parse_scalar(m[1]);
   scalar change_rate = parse_scalar(m[2]);
@@ -245,7 +245,7 @@ std::shared_ptr<learning_rate_scheduler> parse_learning_rate_scheduler(const std
   {
     return parse_exponential_scheduler(text);
   }
-  throw std::runtime_error("Error: could not parse learning scheduler '" + text + "'");
+  throw std::runtime_error("could not parse learning scheduler '" + text + "'");
 }
 
 } // namespace nerva
