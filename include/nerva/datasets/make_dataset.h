@@ -12,6 +12,7 @@
 
 #include "nerva/datasets/cifar10reader.h"
 #include "nerva/datasets/dataset.h"
+#include "nerva/neural_networks/chessboard.h"
 
 namespace nerva::datasets {
 
@@ -106,19 +107,6 @@ dataset load_cifar10_dataset(const std::string& directory)
   reader.read(directory);
   reader.normalize_data();
   std::tie(result.Xtrain, result.Ttrain, result.Xtest, result.Ttest) = reader.data();
-  return result;
-}
-
-inline
-dataset load_dataset(const std::string& directory)
-{
-  std::cout << "loading dataset from directory " << directory << std::endl;
-  dataset result;
-  eigen::load_matrix(directory + "/xtrain.txt", result.Xtrain);
-  eigen::load_matrix(directory + "/ttrain.txt", result.Ttrain);
-  eigen::load_matrix(directory + "/xvalid.txt", result.Xtest);
-  eigen::load_matrix(directory + "/tvalid.txt", result.Ttest);
-  std::cout << "done" << std::endl;
   return result;
 }
 

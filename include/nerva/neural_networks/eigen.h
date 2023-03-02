@@ -613,16 +613,44 @@ scalar l2_distance(const sparse_matrix& A, const Eigen::Matrix<Scalar, Eigen::Dy
   return (B - A).squaredNorm();
 }
 
-// convert a vector of longs into a one hot matrix
-void to_one_hot(const Eigen::Matrix<long, Eigen::Dynamic, 1>& x, eigen::matrix& result, long classes = 10)
+// Converts a target vector of longs into a one hot matrix.
+// Every column will contain exactly one value 1.
+inline
+eigen::matrix to_one_hot(const Eigen::Matrix<long, Eigen::Dynamic, 1>& T, long classes)
 {
-  long n = x.size();
-  result = eigen::matrix::Zero(classes, n);
+  long n = T.size();
+  eigen::matrix result = eigen::matrix::Zero(classes, n);
   for (long i = 0; i < n; i++)
   {
-    result(x(i), i) = scalar(1);
+    result(T(i), i) = scalar(1);
   }
+  return result;
 }
+
+// Converts a one hot encoding X that was obtained from a long vector T to the original vector T.
+// Every column of X should contain exactly one times the value 1.
+inline
+Eigen::Matrix<long, Eigen::Dynamic, 1> from_one_hot(const Eigen::Matrix<scalar, Eigen::Dynamic, Eigen::Dynamic>& X)
+{
+  auto m = X.rows();
+  auto n = X.cols();
+  Eigen::Matrix<long, Eigen::Dynamic, 1> T(n);
+
+  for (auto j = 0; j < n; ++j)
+  {
+    for (auto i = 0; i < m; ++i)
+    {
+      if (X(i, j) == 1)
+      {
+        T(j) = i;
+        break;
+      }
+    }
+  }
+
+  return T;
+}
+
 
 } // namespace nerva::eigen
 

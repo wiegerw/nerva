@@ -195,6 +195,7 @@ class tool: public command_line_tool
     mlp_options options;
     std::string import_weights_file;
     std::string export_weights_file;
+    std::string save_dataset_file;
     std::string layer_sizes_text;
     std::string densities_text;
     std::string preprocessed_dir;  // a directory containing a dataset for every epoch
@@ -226,6 +227,7 @@ class tool: public command_line_tool
       cli |= lyra::opt(preprocessed_dir, "value")["--preprocessed"]("A directory containing the files epoch<nnn>.npz");
       cli |= lyra::opt(import_weights_file, "value")["--import-weights"]("Loads the weights from a file in .npz format");
       cli |= lyra::opt(export_weights_file, "value")["--export-weights"]("Exports the weights to a file in .npz format");
+      cli |= lyra::opt(save_dataset_file, "value")["--save-dataset"]("Saves the dataset to a file in .npz format");
       cli |= lyra::opt(options.precision, "value")["--precision"]("The precision that is used for printing.");
       cli |= lyra::opt(options.check_gradients)["--check"]("Check the computed gradients");
       cli |= lyra::opt(options.check_gradients_step, "value")["--gradient-step"]("The step size for approximating the gradient");
@@ -259,6 +261,10 @@ class tool: public command_line_tool
       {
         NERVA_LOG(log::verbose) << "loading dataset " << options.dataset << std::endl;
         data = datasets::make_dataset(options.dataset, options.dataset_size, rng);
+        if (!save_dataset_file.empty())
+        {
+          data.save(save_dataset_file);
+        }
       }
 
       options.sizes = compute_sizes(layer_sizes, options.architecture);

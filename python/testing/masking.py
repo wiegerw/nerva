@@ -16,14 +16,10 @@ def reservoir_sample(k: int, n: int) -> List[int]:
 
     # Iterate over the remaining elements
     for i in range(k, n):
-        # Generate a random number between 0 and i
         j = random.randint(0, i)
-
-        # If j is less than k, replace the jth element in the reservoir
         if j < k:
             reservoir[j] = i
 
-    # Return the reservoir
     return reservoir
 
 

@@ -262,7 +262,7 @@ std::pair<double, double> stochastic_gradient_descent_preprocessed(
   datasets::dataset data;
 
   // read the first dataset
-  data.import_cifar10_from_npz(path / "epoch0.npz");
+  data.load(path / "epoch0.npz");
 
   double total_training_time = 0;
   long N = data.Xtrain.cols(); // the number of examples
@@ -281,7 +281,7 @@ std::pair<double, double> stochastic_gradient_descent_preprocessed(
     // read the next dataset
     if (epoch > 0)
     {
-      data.import_cifar10_from_npz((path / ("epoch" + std::to_string(epoch) + ".npz")).native());
+      data.load((path / ("epoch" + std::to_string(epoch) + ".npz")).native());
     }
     watch.reset();
     if (options.shuffle)

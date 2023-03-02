@@ -17,15 +17,15 @@ from testing.masking import create_mask
 class MLPPyTorch(nn.Module):
     """ PyTorch Multilayer perceptron that supports sparse layers using binary masks.
     """
-    def __init__(self, sizes, layer_densities):
+    def __init__(self, layer_sizes, layer_densities):
         super().__init__()
-        self.sizes = sizes
+        self.layer_sizes = layer_sizes
         self.optimizer = None
         self.masks = None
-        n = len(sizes) - 1  # the number of layers
+        n = len(layer_sizes) - 1  # the number of layers
         self.layers = nn.ModuleList()
         for i in range(n):
-            self.layers.append(nn.Linear(sizes[i], sizes[i + 1]))
+            self.layers.append(nn.Linear(layer_sizes[i], layer_sizes[i + 1]))
         self._set_masks(layer_densities)
 
     def _set_masks(self, layer_densities):

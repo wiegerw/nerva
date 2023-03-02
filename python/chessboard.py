@@ -7,22 +7,21 @@
 import math
 import random
 import numpy as np
-from nerva.activation import ReLU, NoActivation, AllReLU
+from nerva.activation import ReLU, NoActivation
 from nerva.dataset import DataSet
-from nerva.layers import Sequential, Dense, Dropout, Sparse, BatchNormalization
+from nerva.layers import Sequential, Dense, Sparse
 from nerva.learning_rate import ConstantScheduler
-from nerva.loss import SoftmaxCrossEntropyLoss, SquaredErrorLoss
+from nerva.loss import SquaredErrorLoss
 from nerva.optimizers import GradientDescent
 from nerva.random import manual_seed
-from nerva.training import stochastic_gradient_descent, stochastic_gradient_descent_python, SGDOptions, compute_accuracy, compute_statistics
-from nerva.utilities import set_num_threads, StopWatch
+from nerva.training import compute_accuracy, compute_statistics, compute_densities
+from nerva.utilities import StopWatch
 from nerva.weights import Xavier
-from regrow import regrow_weights
 
 
 def make_dataset_chessboard(n: int):
-    X = np.zeros(shape=(2, n), dtype=np.float32, order='F')
-    T = np.zeros(shape=(2, n), dtype=np.float32, order='F')
+    X = np.zeros(shape=(n, 2), dtype=np.float32, order='C')
+    T = np.zeros(shape=(n, 2), dtype=np.float32, order='C')
     N = 8
 
     for i in range(n):
@@ -31,40 +30,25 @@ def make_dataset_chessboard(n: int):
         col = math.floor(x * N)
         row = math.floor(y * N)
         is_dark = (row + col) % 2 == 0
-        X[0, i] = x
-        X[1, i] = y
-        T[0, i] = 1 if is_dark else 0
-        T[1, i] = 0 if is_dark else 1
+        X[i, 0] = x
+        X[i, 1] = y
+        T[i, 0] = 1 if is_dark else 0
+        T[i, 1] = 0 if is_dark else 1
 
+    X = 2 * (X - X.min()) / (X.max() - X.min()) - 1  # normalize X to the interval [-1, 1]
     return X, T
 
 
-def create_model(density: float):
-    model = Sequential()
-    if density == 0:
-        model.add(Dense(64, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
-        model.add(Dense(16, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
-        model.add(Dense(2, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))
-    else:
-        model.add(Sparse(32, density, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
-        model.add(Sparse(8, density, activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
-        model.add(Sparse(2, density, activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))
-    return model
-
-
-def stochastic_gradient_descent_with_regrow(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True, zeta=0.3, weights_initializer=Xavier()):
+def stochastic_gradient_descent(model, dataset, loss, learning_rate, epochs, batch_size, shuffle=True, statistics=True):
     M = model.compiled_model
     N = dataset.Xtrain.shape[1]  # the number of examples
     I = list(range(N))
     K = N // batch_size  # the number of batches
-    compute_statistics(M, loss, dataset, batch_size, -1, statistics, 0.0)
+    compute_statistics(M, learning_rate(0), loss, dataset, batch_size, -1, statistics, 0.0)
     total_time = 0.0
     watch = StopWatch()
 
     for epoch in range(epochs):
-        if epoch > 0:
-            regrow_weights(M, zeta)
-
         watch.reset()
         if shuffle:
             random.shuffle(I)
@@ -81,24 +65,27 @@ def stochastic_gradient_descent_with_regrow(model, dataset, loss, learning_rate,
             M.optimize(eta)
 
         seconds = watch.seconds()
-        compute_statistics(M, loss, dataset, batch_size, epoch, statistics, seconds)
+        compute_statistics(M, eta, loss, dataset, batch_size, epoch, statistics, seconds)
         total_time += seconds
 
     print(f'Accuracy of the network on the {dataset.Xtest.shape[1]} test examples: {(100.0 * compute_accuracy(M, dataset.Xtest, dataset.Ttest, batch_size)):.2f}%')
     print(f'Total training time for the {epochs} epochs: {total_time:4.2f}s')
 
 
-def train_sparse_model_with_regrow(dataset, density):
-    seed = random.randint(0, 999999999)
-    print('seed', seed)
-    loss = SoftmaxCrossEntropyLoss()
-    learning_rate_scheduler = ConstantScheduler(0.1)
-    input_size = 2
-    batch_size = 100
-    model = create_model(density)
-    model.compile(input_size, batch_size)
-    stochastic_gradient_descent_with_regrow(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=batch_size, shuffle=True, statistics=True, zeta=0.1, weights_initializer=Xavier())
-    print('')
+def create_model(overall_density: float):
+    model = Sequential()
+    layer_sizes = [2, 64, 64, 2]
+    output_sizes = layer_sizes[1:]
+    if overall_density == 1.0:
+        model.add(Dense(output_sizes[0], activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+        model.add(Dense(output_sizes[1], activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+        model.add(Dense(output_sizes[2], activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+    else:
+        densities = compute_densities(overall_density, layer_sizes)
+        model.add(Sparse(output_sizes[0], densities[0], activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+        model.add(Sparse(output_sizes[1], densities[1], activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+        model.add(Sparse(output_sizes[2], densities[2], activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))
+    return model
 
 
 def plot_dataset(X, T):
@@ -114,12 +101,19 @@ def plot_dataset(X, T):
 
 
 if __name__ == '__main__':
-    n = 100000
+    n = 20000
     manual_seed(317822)
     Xtrain, Ttrain = make_dataset_chessboard(n)
     Xtest, Ttest = make_dataset_chessboard(n // 5)
+    dataset = DataSet(Xtrain, Ttrain, Xtest, Ttest)
     # plot_dataset(Xtrain, Ttrain)
     # plot_dataset(Xtest, Ttest)
-    dataset = DataSet(Xtrain.T, Ttrain.T, Xtest.T, Ttest.T)
-    density = 0.8
-    train_sparse_model_with_regrow(dataset, density)
+    overall_density = 1.0
+    loss = SquaredErrorLoss()
+    learning_rate_scheduler = ConstantScheduler(0.01)
+    input_size = 2
+    batch_size = 100
+    model = create_model(overall_density)
+    model.compile(input_size, batch_size)
+    print(model)
+    stochastic_gradient_descent(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=batch_size, shuffle=True, statistics=True)

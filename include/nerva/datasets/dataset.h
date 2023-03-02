@@ -14,6 +14,7 @@
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/neural_networks/numpy_eigen.h"
 #include "nerva/utilities/random.h"
+#include <pybind11/embed.h>
 #include <algorithm>
 #include <cmath>
 #include <ctime>
@@ -48,8 +49,9 @@ struct dataset
   )
    : Xtrain(std::move(Xtrain_)), Xtest(std::move(Xtest_))
   {
-    eigen::to_one_hot(Ttrain_, Ttrain);
-    eigen::to_one_hot(Ttest_, Ttest);
+    long num_classes = Ttrain_.maxCoeff() + 1;
+    Ttrain = eigen::to_one_hot(Ttrain_, num_classes);
+    Ttest = eigen::to_one_hot(Ttest_, num_classes);
   }
 
   void info() const
@@ -62,9 +64,9 @@ struct dataset
 
   // Precondition: the python interpreter must be running.
   // This can be enforced using `py::scoped_interpreter guard{};`
-  void import_cifar10_from_npz(const std::string& filename)
+  void load(const std::string& filename)
   {
-    std::cout << "Loading data from file " << filename << std::endl;
+    std::cout << "Loading dataset from file " << filename << std::endl;
 
     if (!std::filesystem::exists(std::filesystem::path(filename)))
     {
@@ -76,8 +78,27 @@ struct dataset
     Xtest = eigen::extract_matrix<scalar>(data, "Xtest").transpose();
     auto Ttrain_ = eigen::extract_vector<long>(data, "Ttrain");
     auto Ttest_ = eigen::extract_vector<long>(data, "Ttest");
-    eigen::to_one_hot(Ttrain_, Ttrain);
-    eigen::to_one_hot(Ttest_, Ttest);
+    long num_classes = Ttrain_.maxCoeff() + 1;
+    Ttrain = eigen::to_one_hot(Ttrain_, num_classes);
+    Ttest = eigen::to_one_hot(Ttest_, num_classes);
+  }
+
+  void save(const std::string& filename) const
+  {
+    std::cout << "Saving dataset to file " << filename << std::endl;
+
+    auto Xtrain_ = Xtrain.transpose();
+    auto Xtest_ = Xtest.transpose();
+    long_vector Ttrain_ = eigen::from_one_hot(Ttrain);
+    long_vector Ttest_ = eigen::from_one_hot(Ttest);
+
+    pybind11::dict data;
+    data["Xtrain"] = pybind11::array_t<scalar, pybind11::array::f_style>({Xtrain_.rows(), Xtrain_.cols()}, Xtrain_.data());
+    data["Ttrain"] = pybind11::array_t<long, pybind11::array::f_style>(Ttrain_.size(), Ttrain_.data());
+    data["Xtest"] = pybind11::array_t<scalar, pybind11::array::f_style>({Xtest_.rows(), Xtest_.cols()}, Xtest_.data());
+    data["Ttest"] = pybind11::array_t<long, pybind11::array::f_style>(Ttest_.size(), Ttest_.data());
+
+    pybind11::module::import("numpy").attr("savez_compressed")(filename, **data);
   }
 };
 
