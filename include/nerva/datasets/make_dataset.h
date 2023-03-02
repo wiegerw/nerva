@@ -30,8 +30,8 @@ std::pair<eigen::matrix, eigen::matrix> make_dataset_chessboard(long n, RandomNu
     int col = std::floor(x * N);
     int row = std::floor(y * N);
     bool is_dark = (row + col) % 2 == 0;
-    X(0, i) = x;
-    X(1, i) = y;
+    X(0, i) = 2 * x - 1;  // normalize to the interval [-1, 1]
+    X(1, i) = 2 * y - 1;  // normalize to the interval [-1, 1]
     T(0, i) = is_dark ? 1 : 0;
     T(1, i) = is_dark ? 0 : 1;
   }

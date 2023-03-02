@@ -3,9 +3,13 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import nervalib
+import numpy as np
 
 class DataSet(nervalib.DataSetView):
     def __init__(self, x_train, y_train, x_test, y_test):
-        super().__init__(x_train.T, y_train.T, x_test.T, y_test.T)  # N.B. the data needs to be transposed
+        super().__init__(np.asfortranarray(x_train.T),
+                         np.asfortranarray(y_train.T),
+                         np.asfortranarray(x_test.T),
+                         np.asfortranarray(y_test.T))
         # store references to the original data to make sure it is not destroyed
         self.keep_alive = [x_train, y_train, x_test, y_test]

@@ -271,7 +271,6 @@ class tool: public command_line_tool
       else if (!load_dataset_file.empty())
       {
         dataset.load(load_dataset_file);
-        dataset.info();
       }
 
       options.sizes = compute_sizes(layer_sizes, options.architecture);

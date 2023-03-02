@@ -87,8 +87,8 @@ struct dataset
   {
     std::cout << "Saving dataset to file " << filename << std::endl;
 
-    auto Xtrain_ = Xtrain.transpose();
-    auto Xtest_ = Xtest.transpose();
+    eigen::matrix Xtrain_ = Xtrain.transpose();
+    eigen::matrix Xtest_ = Xtest.transpose();
     long_vector Ttrain_ = eigen::from_one_hot(Ttrain);
     long_vector Ttest_ = eigen::from_one_hot(Ttest);
 
@@ -123,10 +123,30 @@ struct dataset_view
 
   void info() const
   {
-    eigen::print_numpy_matrix("Xtrain", Xtrain);
-    eigen::print_numpy_matrix("Ttrain", Ttrain);
-    eigen::print_numpy_matrix("Xtest", Xtest);
-    eigen::print_numpy_matrix("Ttest", Ttest);
+    eigen::print_numpy_matrix("Xtrain", Xtrain.transpose());
+    eigen::print_numpy_matrix("Ttrain", Ttrain.transpose());
+    eigen::print_numpy_matrix("Xtest", Xtest.transpose());
+    eigen::print_numpy_matrix("Ttest", Ttest.transpose());
+  }
+
+  void save(const std::string& filename) const
+  {
+    using long_vector = Eigen::Matrix<long, Eigen::Dynamic, 1>;
+
+    std::cout << "Saving dataset to file " << filename << std::endl;
+
+    eigen::matrix Xtrain_ = Xtrain.transpose();
+    eigen::matrix Xtest_ = Xtest.transpose();
+    long_vector Ttrain_ = eigen::from_one_hot(Ttrain);
+    long_vector Ttest_ = eigen::from_one_hot(Ttest);
+
+    pybind11::dict data;
+    data["Xtrain"] = pybind11::array_t<scalar, pybind11::array::f_style>({Xtrain_.rows(), Xtrain_.cols()}, Xtrain_.data());
+    data["Ttrain"] = pybind11::array_t<long, pybind11::array::f_style>(Ttrain_.size(), Ttrain_.data());
+    data["Xtest"] = pybind11::array_t<scalar, pybind11::array::f_style>({Xtest_.rows(), Xtest_.cols()}, Xtest_.data());
+    data["Ttest"] = pybind11::array_t<long, pybind11::array::f_style>(Ttest_.size(), Ttest_.data());
+
+    pybind11::module::import("numpy").attr("savez_compressed")(filename, **data);
   }
 };
 

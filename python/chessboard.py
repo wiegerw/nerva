@@ -20,8 +20,8 @@ from nerva.weights import Xavier
 
 
 def make_dataset_chessboard(n: int):
-    X = np.zeros(shape=(n, 2), dtype=np.float32, order='C')
-    T = np.zeros(shape=(n, 2), dtype=np.float32, order='C')
+    X = np.zeros(shape=(n, 2), dtype=np.float32)
+    T = np.zeros(shape=(n, 2), dtype=np.float32)
     N = 8
 
     for i in range(n):
@@ -30,12 +30,11 @@ def make_dataset_chessboard(n: int):
         col = math.floor(x * N)
         row = math.floor(y * N)
         is_dark = (row + col) % 2 == 0
-        X[i, 0] = x
-        X[i, 1] = y
+        X[i, 0] = 2 * x - 1  # normalize to the interval [-1, 1]
+        X[i, 1] = 2 * y - 1  # normalize to the interval [-1, 1]
         T[i, 0] = 1 if is_dark else 0
         T[i, 1] = 0 if is_dark else 1
 
-    X = 2 * (X - X.min()) / (X.max() - X.min()) - 1  # normalize X to the interval [-1, 1]
     return X, T
 
 
@@ -92,9 +91,9 @@ def plot_dataset(X, T):
     import matplotlib.pyplot as plt
 
     rows, columns = X.shape
-    x = [X[0][i] for i in range(columns)]
-    y = [X[1][i] for i in range(columns)]
-    c = ['lightblue' if T[0][i] == 1 else 'green' for i in range(columns)]
+    x = [X[i][0] for i in range(rows)]
+    y = [X[i][1] for i in range(rows)]
+    c = ['green' if T[i][0] == 1 else 'lightblue' for i in range(rows)]
     s = 2
     plt.scatter(x, y, c=c, s=s)
     plt.show()
@@ -106,8 +105,10 @@ if __name__ == '__main__':
     Xtrain, Ttrain = make_dataset_chessboard(n)
     Xtest, Ttest = make_dataset_chessboard(n // 5)
     dataset = DataSet(Xtrain, Ttrain, Xtest, Ttest)
-    # plot_dataset(Xtrain, Ttrain)
-    # plot_dataset(Xtest, Ttest)
+    dataset.info()
+    dataset.save('chess0.npz')
+    #plot_dataset(Xtrain, Ttrain)
+    #plot_dataset(Xtest, Ttest)
     overall_density = 1.0
     loss = SquaredErrorLoss()
     learning_rate_scheduler = ConstantScheduler(0.01)
