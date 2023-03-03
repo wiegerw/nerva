@@ -32,6 +32,28 @@
 
 using namespace nerva;
 
+// Does an attempt to print the original command line call.
+// N.B. It does not handle nested quotes.
+inline
+void print_command_line_call(int argc, const char* argv[])
+{
+  for (int i = 0; i < argc; i++) {
+    if (std::string(argv[i]).find_first_of(" ()") != std::string::npos)
+    {
+      std::cout << "\"" << argv[i] << "\"";
+    }
+    else
+    {
+      std::cout << argv[i];
+    }
+    if (i < argc - 1)
+    {
+      std::cout << " ";
+    }
+  }
+  std::cout << "\n\n";
+}
+
 inline
 weight_initialization parse_weight_char(char c)
 {
@@ -378,8 +400,9 @@ class tool: public command_line_tool
     }
 };
 
-int main(int argc, const char** argv)
+int main(int argc, const char* argv[])
 {
   pybind11::scoped_interpreter guard{};
+  print_command_line_call(argc, argv);
   return tool().execute(argc, argv);
 }
