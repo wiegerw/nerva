@@ -15,6 +15,7 @@
 #include "nerva/utilities/random.h"
 #include <mkl.h>
 #include <mkl_spblas.h>
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
@@ -68,13 +69,57 @@ struct sparse_matrix_csr
   long m{}; // number of rows
   long n{}; // number of columns
 
-  void check() const
+
+  [[nodiscard]] bool is_valid() const
   {
-    assert(m > 0);
-    assert(n > 0);
-    assert(row_index.size() == m + 1);
-    assert(columns.size() == values.size());
-    assert(columns.capacity() != 0);
+    // Check if dimensions are non-negative
+    if (m < 0 || n < 0)
+    {
+      return false;
+    }
+
+    // Check if row index size matches the number of rows + 1
+    if (row_index.size() != m + 1)
+    {
+      return false;
+    }
+
+    // Check if columns and values have the same size
+    if (columns.size() != values.size())
+    {
+      return false;
+    }
+
+    // Check if row index values are non-negative and non-decreasing
+    for (size_t i = 0; i < row_index.size() - 1; i++)
+    {
+      if (row_index[i] < 0 || row_index[i] > values.size())
+      {
+        return false;
+      }
+      if (row_index[i] > row_index[i+1])
+      {
+        return false;
+      }
+    }
+
+    // Check if column indices are within bounds
+    for (auto column: columns)
+    {
+      if (column < 0 || column >= n)
+      {
+        return false;
+      }
+    }
+
+    // Check if the data() pointers of columns and values are defined
+    if (columns.capacity() == 0 || values.capacity() == 0)
+    {
+      return false;
+    }
+
+    // If all checks passed, the sparse matrix is valid
+    return true;
   }
 
   void destruct_csr()
@@ -87,6 +132,7 @@ struct sparse_matrix_csr
 
   void construct_csr(bool throw_on_error = true)
   {
+    assert(is_valid());
     destruct_csr();
     sparse_status_t status;
     if constexpr (std::is_same<T, double>::value)
@@ -113,11 +159,6 @@ struct sparse_matrix_csr
     }
     if (status != SPARSE_STATUS_SUCCESS)
     {
-      std::cout << "rows = " << m << std::endl;
-      std::cout << "columns = " << n << std::endl;
-      std::cout << "|row_index| = " << row_index.size() << std::endl;
-      std::cout << "|columns| = " << columns.size() << std::endl;
-      std::cout << "|values| = " << values.size() << std::endl;
       std::string error_message = "mkl_sparse_?_create_csr: " + sparse_status_message(status);
       if (throw_on_error)
       {
@@ -129,7 +170,6 @@ struct sparse_matrix_csr
         std::exit(1);
       }
     }
-    check();
   }
 
   // Creates a sparse matrix with empty support
