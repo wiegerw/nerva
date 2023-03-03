@@ -55,14 +55,15 @@ TEST_CASE("test_linear_layer1")
 
   std::cout << "========================" << std::endl;
   counter f;
-  for (auto& value: layer.W.values)
+  auto& W_values = const_cast<std::vector<scalar>&>(layer.W.values());
+  for (auto& value: W_values)
   {
     value = f();
   }
   std::cout << "layer.W =\n" << layer.W.to_string() << std::endl;
-  std::cout << "layer.W.values = " << print_list(layer.W.values) << std::endl;
+  std::cout << "layer.W.values = " << print_list(layer.W.values()) << std::endl;
   std::vector<scalar> values = {1, 2, 3, 4};
-  CHECK_EQ(values, layer.W.values);
+  CHECK_EQ(values, layer.W.values());
 
   eigen::matrix W1_expected {
     {1, 2},
@@ -74,8 +75,8 @@ TEST_CASE("test_linear_layer1")
 
   layer.W = mkl::to_csr<scalar>(W1_expected);
   std::cout << "layer.W =\n" << layer.W.to_string() << std::endl;
-  std::cout << "layer.W.values = " << print_list(layer.W.values) << std::endl;
-  CHECK_EQ(values, layer.W.values);
+  std::cout << "layer.W.values = " << print_list(layer.W.values()) << std::endl;
+  CHECK_EQ(values, layer.W.values());
 }
 
 TEST_CASE("test_linear_layer2")
@@ -100,7 +101,7 @@ TEST_CASE("test_linear_layer2")
   initialize_weights(weight_initialization::xavier, layer.W, layer.b, rng);
 
   std::cout << "layer.W =\n" << layer.W.to_string() << std::endl;
-  std::cout << "layer.W.values = " << print_list(layer.W.values) << std::endl;
+  std::cout << "layer.W.values = " << print_list(layer.W.values()) << std::endl;
 }
 
 template <typename Layer1, typename Layer2>

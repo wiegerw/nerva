@@ -162,15 +162,19 @@ bool check_gradient(const std::string& name, Function f, mkl::sparse_matrix_csr<
 {
   bool result = true;
   auto m = X.rows();
+  auto X_values = const_cast<Scalar*>(X.values().data());
+  const auto& X_col_index = X.col_index();
+  const auto& X_row_index = X.row_index();
+  const auto& dX_values = dX.values();
 
   for (long i = 0; i < m; i++)
   {
-    for (long k = X.row_index[i]; k < X.row_index[i + 1]; k++)
+    for (long k = X_row_index[i]; k < X_row_index[i + 1]; k++)
     {
-      long j = X.columns[k];
-      if (!check_gradient(f, X.values[k], dX.values[k], h, count, threshold))
+      long j = X_col_index[k];
+      if (!check_gradient(f, X_values[k], dX_values[k], h, count, threshold))
       {
-        print_gradient(name + '[' + std::to_string(i) + ',' + std::to_string(j) + ']', f, X.values[k], dX.values[k], h, count);
+        print_gradient(name + '[' + std::to_string(i) + ',' + std::to_string(j) + ']', f, X_values[k], dX_values[k], h, count);
         result = false;
       }
     }

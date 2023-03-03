@@ -854,8 +854,8 @@ TEST_CASE("test_assign_values")
 
   mkl::sparse_matrix_csr<scalar> A1 = mkl::to_csr<scalar>(A);
   std::vector<scalar> A_values = {3, 1, 2, 4};
-  std::cout << "A1.values = " << print_list(A1.values) << std::endl;
-  CHECK_EQ(A_values, A1.values);
+  std::cout << "A1.values = " << print_list(A1.values()) << std::endl;
+  CHECK_EQ(A_values, A1.values());
   eigen::matrix A2 = mkl::to_eigen(A1);
   eigen::print_cpp_matrix("A2", A2);
   CHECK_EQ(A, A2);

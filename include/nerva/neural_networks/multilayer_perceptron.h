@@ -201,7 +201,7 @@ std::string layer_density_info(const multilayer_perceptron& M)
     }
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
-      auto n = slayer->W.values.size();
+      auto n = slayer->W.values().size();
       auto N = slayer->W.rows() * slayer->W.cols();
       v.push_back(fmt::format("{}/{} ({:.3f}%)", n, N, (100.0 * n) / N));
     }
@@ -404,9 +404,9 @@ void save_model_weights_to_npy(const std::string& filename, const multilayer_per
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
       const auto& W = slayer->W;
-      np.attr("save")(file, py::array_t<scalar>(W.values.size(), W.values.data()));
-      np.attr("save")(file, py::array_t<MKL_INT>(W.columns.size(), W.columns.data()));
-      np.attr("save")(file, py::array_t<MKL_INT>(W.row_index.size(), W.row_index.data()));
+      np.attr("save")(file, py::array_t<scalar>(W.values().size(), W.values().data()));
+      np.attr("save")(file, py::array_t<MKL_INT>(W.col_index().size(), W.col_index().data()));
+      np.attr("save")(file, py::array_t<MKL_INT>(W.row_index().size(), W.row_index().data()));
     }
   }
 }

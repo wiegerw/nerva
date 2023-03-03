@@ -31,13 +31,17 @@ Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> to_eigen(con
   int n = A.cols();
   Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> result = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>::Zero(m, n);
 
+  const auto& A_values = A.values();
+  const auto& A_col_index = A.col_index();
+  const auto& A_row_index = A.row_index();
+
   long count = 0;
   for (long i = 0; i < m; i++)
   {
-    for (long k = A.row_index[i]; k < A.row_index[i + 1]; k++)
+    for (long k = A_row_index[i]; k < A_row_index[i + 1]; k++)
     {
-      Scalar value = A.values[count];
-      long j = A.columns[count];
+      Scalar value = A_values[count];
+      long j = A_col_index[count];
       count++;
       result(i, j) = value;
     }
@@ -56,12 +60,15 @@ Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> support(const m
   int n = A.cols();
   int_matrix result = int_matrix::Zero(m, n);
 
+  const auto& A_col_index = A.col_index();
+  const auto& A_row_index = A.row_index();
+
   long count = 0;
   for (long i = 0; i < m; i++)
   {
-    for (long k = A.row_index[i]; k < A.row_index[i + 1]; k++)
+    for (long k = A_row_index[i]; k < A_row_index[i + 1]; k++)
     {
-      long j = A.columns[count];
+      long j = A_col_index[count];
       count++;
       result(i, j) = 1;
     }
@@ -105,12 +112,6 @@ mkl::sparse_matrix_csr<Scalar> to_csr(const Eigen::Matrix<Scalar, Eigen::Dynamic
   return mkl::sparse_matrix_csr<Scalar>(m, n, row_index, columns, values);
 }
 
-template <typename Scalar = scalar>
-void save_matrix(const std::string& filename, const mkl::sparse_matrix_csr<Scalar>& A)
-{
-  eigen::save_matrix(filename, to_eigen<Scalar>(A));
-}
-
 // Performs the assignment A := B * C, with A sparse and B, C dense.
 // N.B. Only the existing entries of A are changed.
 // Note that this implementation is very slow.
@@ -125,15 +126,17 @@ void assign_matrix_product_for_loop_eigen_dot(mkl::sparse_matrix_csr<Scalar>& A,
   assert(B.cols() == C.rows());
 
   auto m = A.rows();
-  Scalar* values = A.values.data();
+  auto A_values = const_cast<Scalar*>(A.values().data());
+  const auto& A_col_index = A.col_index();
+  const auto& A_row_index = A.row_index();
 
-  #pragma omp parallel for
+#pragma omp parallel for
   for (long i = 0; i < m; i++)
   {
-    for (long k = A.row_index[i]; k < A.row_index[i + 1]; k++)
+    for (long k = A_row_index[i]; k < A_row_index[i + 1]; k++)
     {
-      long j = A.columns[k];
-      *values++ = B.row(i).dot(C.col(j));
+      long j = A_col_index[k];
+      *A_values++ = B.row(i).dot(C.col(j));
     }
   }
   A.construct_csr();
@@ -154,9 +157,12 @@ void assign_matrix_product_for_loop_mkl_dot(mkl::sparse_matrix_csr<Scalar>& A,
   auto m = B.rows();
   auto p = B.cols();
   auto n = C.cols();
-  Scalar* A_values = A.values.data();
+  auto A_values = const_cast<Scalar*>(A.values().data());
   auto B_values = const_cast<Scalar*>(B.data());
   auto C_values = const_cast<Scalar*>(C.data());
+  const auto& A_col_index = A.col_index();
+  const auto& A_row_index = A.row_index();
+
   MKL_INT incx = 1;
   MKL_INT incy = n;
   MKL_INT N = p;
@@ -164,9 +170,9 @@ void assign_matrix_product_for_loop_mkl_dot(mkl::sparse_matrix_csr<Scalar>& A,
   #pragma omp parallel for
   for (long i = 0; i < m; i++)
   {
-    for (long k = A.row_index[i]; k < A.row_index[i + 1]; k++)
+    for (long k = A_row_index[i]; k < A_row_index[i + 1]; k++)
     {
-      long j = A.columns[k];
+      long j = A_col_index[k];
       if constexpr (std::is_same<Scalar, float>::value)
       {
         *A_values++ = cblas_sdot(N, B_values + i * p, incx, C_values + j, incy);
@@ -196,7 +202,9 @@ void assign_matrix_product_batch(mkl::sparse_matrix_csr<Scalar>& A,
 
   long m = A.rows();
   Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> BC;
-  Scalar* values = A.values.data();
+  auto values = const_cast<Scalar*>(A.values().data());
+  const auto& A_col_index = A.col_index();
+  const auto& A_row_index = A.row_index();
 
   long i_first = 0;
   while (i_first < m)
@@ -207,9 +215,9 @@ void assign_matrix_product_batch(mkl::sparse_matrix_csr<Scalar>& A,
     BC = Bbatch * C;
     for (long i = i_first; i < i_last; i++)
     {
-      for (long k = A.row_index[i]; k < A.row_index[i + 1]; k++)
+      for (long k = A_row_index[i]; k < A_row_index[i + 1]; k++)
       {
-        long j = A.columns[k];
+        long j = A_col_index[k];
         *values++ = BC(i - i_first, j);
       }
     }
@@ -235,7 +243,9 @@ void assign_matrix_product_batch_omp_parallel_assignment(mkl::sparse_matrix_csr<
 
   long m = A.rows();
   Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> BC;
-  Scalar* values = A.values.data();
+  auto A_values = const_cast<Scalar*>(A.values().data());
+  const auto& A_col_index = A.col_index();
+  const auto& A_row_index = A.row_index();
 
   long i_first = 0;
   while (i_first < m)
@@ -251,10 +261,10 @@ void assign_matrix_product_batch_omp_parallel_assignment(mkl::sparse_matrix_csr<
     // #pragma omp for
     for (long i = i_first; i < i_last; i++)
     {
-      for (long k = A.row_index[i]; k < A.row_index[i + 1]; k++)
+      for (long k = A_row_index[i]; k < A_row_index[i + 1]; k++)
       {
-        long j = A.columns[k];
-        values[k] = BC(i - i_first, j);
+        long j = A_col_index[k];
+        A_values[k] = BC(i - i_first, j);
       }
     }
     std::cout << fmt::format("assign: {:6.6f}\n", watch.seconds());
@@ -299,11 +309,11 @@ void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
 {
   assert(A.rows() == B.rows());
   assert(A.cols() == B.cols());
-  assert(A.columns == B.columns);
-  assert(A.row_index == B.row_index);
+  assert(A.m_col_index == B.m_col_index);
+  assert(A.m_row_index == B.m_row_index);
 
-  eigen::vector_map<Scalar> A1(const_cast<Scalar*>(A.values.data()), A.values.size());
-  eigen::vector_map<Scalar> B1(const_cast<Scalar*>(B.values.data()), B.values.size());
+  eigen::vector_map<Scalar> A1(const_cast<Scalar*>(A.values().data()), A.values().size());
+  eigen::vector_map<Scalar> B1(const_cast<Scalar*>(B.values().data()), B.values().size());
 
   A1 = alpha * A1 + beta * B1;
   A.construct_csr();
@@ -324,12 +334,12 @@ void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
   assert(A.rows() == C.rows());
   assert(A.cols() == B.cols());
   assert(A.cols() == C.cols());
-  assert(A.values.size() == B.values.size());
-  assert(A.values.size() == C.values.size());
+  assert(A.values().size() == B.values().size());
+  assert(A.values().size() == C.values().size());
 
-  eigen::vector_map<Scalar> A1(const_cast<Scalar*>(A.values.data()), A.values.size());
-  eigen::vector_map<Scalar> B1(const_cast<Scalar*>(B.values.data()), B.values.size());
-  eigen::vector_map<Scalar> C1(const_cast<Scalar*>(C.values.data()), C.values.size());
+  eigen::vector_map<Scalar> A1(const_cast<Scalar*>(A.values().data()), A.values().size());
+  eigen::vector_map<Scalar> B1(const_cast<Scalar*>(B.values().data()), B.values().size());
+  eigen::vector_map<Scalar> C1(const_cast<Scalar*>(C.values().data()), C.values().size());
 
   A1 = alpha * A1 + beta * B1 + gamma * C1;
   A.construct_csr();

@@ -49,270 +49,300 @@ std::string sparse_status_message(sparse_status_t status)
 
 // https://www.intel.com/content/www/us/en/develop/documentation/onemkl-developer-reference-c/top/appendix-a-linear-solvers-basics/sparse-matrix-storage-formats/sparse-blas-csr-matrix-storage-format.html
 template <typename T>
-struct sparse_matrix_csr
+class sparse_matrix_csr
 {
-  using Scalar = T;
+  public:
+    using Scalar = T;
 
-  std::vector<MKL_INT> row_index;
-  std::vector<MKL_INT> columns;
-  std::vector<T> values;
+  protected:
+    long m_rows{}; // number of rows
+    long m_columns{}; // number of columns
+    std::vector<MKL_INT> m_row_index;
+    std::vector<MKL_INT> m_col_index;
+    std::vector<T> m_values;
+    // The sparse_matrix_t type used by the Intel MKL library is an opaque type,
+    // which means that its internal structure is not exposed to the user. This
+    // type is used to represent sparse matrices in the MKL library and is used as
+    // a handle for various sparse matrix operations. Whenever the content of the
+    // attributes row_index, columns or values is changed, the csr object needs to
+    // be recreated(!!!).
+    sparse_matrix_t m_csr{nullptr};
+    matrix_descr m_descr{SPARSE_MATRIX_TYPE_GENERAL, SPARSE_FILL_MODE_FULL, SPARSE_DIAG_NON_UNIT};
 
-  // The sparse_matrix_t type used by the Intel MKL library is an opaque type,
-  // which means that its internal structure is not exposed to the user. This
-  // type is used to represent sparse matrices in the MKL library and is used as
-  // a handle for various sparse matrix operations. Whenever the content of the
-  // attributes row_index, columns or values is changed, the csr object needs to
-  // be recreated(!!!).
-  sparse_matrix_t csr{nullptr};
-  matrix_descr descr{SPARSE_MATRIX_TYPE_GENERAL, SPARSE_FILL_MODE_FULL, SPARSE_DIAG_NON_UNIT};
-
-  long m{}; // number of rows
-  long n{}; // number of columns
-
-
-  [[nodiscard]] bool is_valid() const
-  {
-    // Check if dimensions are non-negative
-    if (m < 0 || n < 0)
+    [[nodiscard]] bool is_valid() const
     {
-      return false;
-    }
-
-    // Check if row index size matches the number of rows + 1
-    if (row_index.size() != m + 1)
-    {
-      return false;
-    }
-
-    // Check if columns and values have the same size
-    if (columns.size() != values.size())
-    {
-      return false;
-    }
-
-    // Check if row index values are non-negative and non-decreasing
-    for (size_t i = 0; i < row_index.size() - 1; i++)
-    {
-      if (row_index[i] < 0 || row_index[i] > values.size())
+      // Check if dimensions are non-negative
+      if (m_rows < 0 || m_columns < 0)
       {
         return false;
       }
-      if (row_index[i] > row_index[i+1])
+
+      // Check if row index size matches the number of rows + 1
+      if (m_row_index.size() != m_rows + 1)
       {
         return false;
       }
-    }
 
-    // Check if column indices are within bounds
-    for (auto column: columns)
-    {
-      if (column < 0 || column >= n)
+      // Check if columns and values have the same size
+      if (m_col_index.size() != m_values.size())
       {
         return false;
       }
-    }
 
-    // Check if the data() pointers of columns and values are defined
-    if (columns.capacity() == 0 || values.capacity() == 0)
-    {
-      return false;
-    }
-
-    // If all checks passed, the sparse matrix is valid
-    return true;
-  }
-
-  void destruct_csr()
-  {
-    if (csr)
-    {
-      mkl_sparse_destroy(csr);
-    }
-  }
-
-  void construct_csr(bool throw_on_error = true)
-  {
-    assert(is_valid());
-    destruct_csr();
-    sparse_status_t status;
-    if constexpr (std::is_same<T, double>::value)
-    {
-      status = mkl_sparse_d_create_csr(&csr,
-                                       SPARSE_INDEX_BASE_ZERO,
-                                       m,
-                                       n,
-                                       row_index.data(),
-                                       row_index.data() + 1,
-                                       columns.data(),
-                                       values.data());
-    }
-    else
-    {
-      status = mkl_sparse_s_create_csr(&csr,
-                                       SPARSE_INDEX_BASE_ZERO,
-                                       m,
-                                       n,
-                                       row_index.data(),
-                                       row_index.data() + 1,
-                                       columns.data(),
-                                       values.data());
-    }
-    if (status != SPARSE_STATUS_SUCCESS)
-    {
-      std::string error_message = "mkl_sparse_?_create_csr: " + sparse_status_message(status);
-      if (throw_on_error)
+      // Check if row index values are non-negative and non-decreasing
+      for (size_t i = 0; i < m_row_index.size() - 1; i++)
       {
-        throw std::runtime_error(error_message);
+        if (m_row_index[i] < 0 || m_row_index[i] > m_values.size())
+        {
+          return false;
+        }
+        if (m_row_index[i] > m_row_index[i + 1])
+        {
+          return false;
+        }
+      }
+
+      // Check if column indices are within bounds
+      for (auto column: m_col_index)
+      {
+        if (column < 0 || column >= m_columns)
+        {
+          return false;
+        }
+      }
+
+      // Check if the data() pointers of columns and values are defined
+      if (m_col_index.capacity() == 0 || m_values.capacity() == 0)
+      {
+        return false;
+      }
+
+      // If all checks passed, the sparse matrix is valid
+      return true;
+    }
+
+    void destruct_csr()
+    {
+      if (m_csr)
+      {
+        mkl_sparse_destroy(m_csr);
+      }
+    }
+
+  public:
+    void construct_csr(bool throw_on_error = true)
+    {
+      assert(is_valid());
+      destruct_csr();
+      sparse_status_t status;
+      if constexpr (std::is_same<T, double>::value)
+      {
+        status = mkl_sparse_d_create_csr(&m_csr,
+                                         SPARSE_INDEX_BASE_ZERO,
+                                         m_rows,
+                                         m_columns,
+                                         m_row_index.data(),
+                                         m_row_index.data() + 1,
+                                         m_col_index.data(),
+                                         m_values.data());
       }
       else
       {
-        std::cout << "Error: " + error_message << std::endl;
-        std::exit(1);
+        status = mkl_sparse_s_create_csr(&m_csr,
+                                         SPARSE_INDEX_BASE_ZERO,
+                                         m_rows,
+                                         m_columns,
+                                         m_row_index.data(),
+                                         m_row_index.data() + 1,
+                                         m_col_index.data(),
+                                         m_values.data());
       }
-    }
-  }
-
-  // Creates a sparse matrix with empty support
-  explicit sparse_matrix_csr(long rows = 1, long cols = 1)
-    : row_index(rows + 1, 0), m(rows), n(cols)
-  {
-    columns.reserve(1);  // to make sure that the data pointer has a value
-    values.reserve(1);   // to make sure that the data pointer has a value
-    construct_csr();
-  }
-
-  sparse_matrix_csr(long rows,
-                    long cols,
-                    std::vector<MKL_INT> row_index_,
-                    std::vector<MKL_INT> columns_,
-                    std::vector<T> values_
-  )
-    : row_index(std::move(row_index_)), columns(std::move(columns_)), values(std::move(values_)), m(rows), n(cols)
-  {
-    construct_csr();
-  }
-
-  sparse_matrix_csr(long rows, long cols, double density, std::mt19937& rng, T value = 0)
-    : m(rows), n(cols)
-  {
-    long nonzero_count = std::lround(density * rows * cols);
-    assert(0 < nonzero_count && nonzero_count <= rows * cols);
-    values.reserve(nonzero_count);
-    columns.reserve(nonzero_count);
-    row_index.push_back(0);
-
-    long remaining = rows * cols;  // the remaining number of positions
-    long nonzero = nonzero_count;  // the remaining number of nonzero positions
-
-    for (auto i = 0; i < m; i++)
-    {
-      long row_count = 0;
-      for (auto j = 0; j < n; j++)
+      if (status != SPARSE_STATUS_SUCCESS)
       {
-        if ((random_real<double>(0, 1, rng) < static_cast<double>(nonzero) / remaining) || (remaining == nonzero))
+        std::string error_message = "mkl_sparse_?_create_csr: " + sparse_status_message(status);
+        if (throw_on_error)
         {
-          columns.push_back(static_cast<long>(j));
-          values.push_back(value);
-          row_count++;
-          nonzero--;
+          throw std::runtime_error(error_message);
         }
-        remaining--;
+        else
+        {
+          std::cout << "Error: " + error_message << std::endl;
+          std::exit(1);
+        }
       }
-      row_index.push_back(row_index.back() + row_count);
     }
-    construct_csr(false);
-  }
 
-  sparse_matrix_csr(const sparse_matrix_csr& A)
-    : row_index(A.row_index),
-      columns(A.columns),
-      values(A.values),
-      m(A.m),
-      n(A.n)
-  {
-    construct_csr(false);
-  }
-
-  sparse_matrix_csr(sparse_matrix_csr&& A) noexcept
-    : row_index(std::move(A.row_index)),
-      columns(std::move(A.columns)),
-      values(std::move(A.values)),
-      m(A.m),
-      n(A.n)
-  {
-    construct_csr(false);
-  }
-
-  sparse_matrix_csr& operator=(const sparse_matrix_csr& A)
-  {
-    row_index = A.row_index;
-    columns = A.columns;
-    values = A.values;
-    m = A.m;
-    n = A.n;
-    construct_csr();
-    return *this;
-  }
-
-  ~sparse_matrix_csr()
-  {
-    destruct_csr();
-  }
-
-  // Copies the support set of other and sets all values to 0.
-  // The support size must match.
-  void reset_support(const sparse_matrix_csr& other)
-  {
-    compare_sizes(*this, other);
-    if (values.size() == other.values.size())
+    // Creates a sparse matrix with empty support
+    explicit sparse_matrix_csr(long rows = 1, long cols = 1)
+      : m_rows(rows), m_columns(cols), m_row_index(rows + 1, 0)
     {
-      std::fill(values.begin(), values.end(), 0);
-      std::copy(other.columns.begin(), other.columns.end(), columns.begin());
-      std::copy(other.row_index.begin(), other.row_index.end(), row_index.begin());
+      m_col_index.reserve(1);  // to make sure that the data pointer has a value
+      m_values.reserve(1);   // to make sure that the data pointer has a value
+      construct_csr();
     }
-    else
+
+    sparse_matrix_csr(long rows,
+                      long cols,
+                      std::vector<MKL_INT> row_index_,
+                      std::vector<MKL_INT> columns_,
+                      std::vector<T> values_
+    )
+      : m_rows(rows), m_columns(cols), m_row_index(std::move(row_index_)), m_col_index(std::move(columns_)), m_values(std::move(values_))
     {
-      row_index = other.row_index;
-      columns = other.columns;
-      values = std::vector<T>(other.values.size(), 0);
-      m = other.m;
-      n = other.n;
+      construct_csr();
     }
-    construct_csr();
-  }
 
-  [[nodiscard]] long rows() const
-  {
-    return m;
-  }
+    sparse_matrix_csr(long rows, long cols, double density, std::mt19937& rng, T value = 0)
+      : m_rows(rows), m_columns(cols)
+    {
+      long nonzero_count = std::lround(density * rows * cols);
+      assert(0 < nonzero_count && nonzero_count <= rows * cols);
+      m_values.reserve(nonzero_count);
+      m_col_index.reserve(nonzero_count);
+      m_row_index.push_back(0);
 
-  [[nodiscard]] long cols() const
-  {
-    return n;
-  }
+      long remaining = rows * cols;  // the remaining number of positions
+      long nonzero = nonzero_count;  // the remaining number of nonzero positions
 
-  // Assign the given value to all coefficients
-  sparse_matrix_csr& operator=(T value)
-  {
-    std::fill(values.begin(), values.end(), value);
-    return *this;
-  }
+      for (auto i = 0; i < m_rows; i++)
+      {
+        long row_count = 0;
+        for (auto j = 0; j < m_columns; j++)
+        {
+          if ((random_real<double>(0, 1, rng) < static_cast<double>(nonzero) / remaining) || (remaining == nonzero))
+          {
+            m_col_index.push_back(static_cast<long>(j));
+            m_values.push_back(value);
+            row_count++;
+            nonzero--;
+          }
+          remaining--;
+        }
+        m_row_index.push_back(m_row_index.back() + row_count);
+      }
+      construct_csr(false);
+    }
 
-  [[nodiscard]] std::string to_string() const
-  {
-    std::ostringstream out;
-    out << "--- mkl matrix ---\n";
-    out << "dimension: " << m << " x " << n << '\n';
-    out << "values:    " << values.size() << ' ' << nerva::print_list(values) << '\n';
-    out << "columns:   " << columns.size() << ' ' << nerva::print_list(columns) << '\n';
-    out << "row_index: " << row_index.size() << ' ' << nerva::print_list(row_index) << '\n';
-    return out.str();
-  }
+    sparse_matrix_csr(const sparse_matrix_csr& A)
+     : m_rows(A.m_rows),
+       m_columns(A.m_columns),
+       m_row_index(A.m_row_index),
+       m_col_index(A.m_col_index),
+       m_values(A.m_values)
+    {
+      construct_csr(false);
+    }
 
-  [[nodiscard]] Scalar density() const
-  {
-    return Scalar(values.size()) / (m * n);
-  }
+    sparse_matrix_csr(sparse_matrix_csr&& A) noexcept
+     : m_rows(A.m_rows),
+       m_columns(A.m_columns),
+       m_row_index(std::move(A.m_row_index)),
+       m_col_index(std::move(A.m_col_index)),
+       m_values(std::move(A.m_values))
+    {
+      construct_csr(false);
+    }
+
+    sparse_matrix_csr& operator=(const sparse_matrix_csr& A)
+    {
+      m_rows = A.m_rows;
+      m_columns = A.m_columns;
+      m_row_index = A.m_row_index;
+      m_col_index = A.m_col_index;
+      m_values = A.m_values;
+      m_descr = A.m_descr;
+      construct_csr();
+      return *this;
+    }
+
+    ~sparse_matrix_csr()
+    {
+      destruct_csr();
+    }
+
+    [[nodiscard]] long rows() const
+    {
+      return m_rows;
+    }
+
+    [[nodiscard]] long cols() const
+    {
+      return m_columns;
+    }
+
+    [[nodiscard]] const std::vector<MKL_INT>& row_index() const
+    {
+      return m_row_index;
+    }
+    
+    [[nodiscard]] const std::vector<MKL_INT>& col_index() const
+    {
+      return m_col_index;
+    }
+    
+    const std::vector<T>& values() const
+    {
+      return m_values;
+    }
+    
+    [[nodiscard]] const matrix_descr& descriptor() const
+    {
+      return m_descr;
+    }
+
+    [[nodiscard]] sparse_matrix_t csr() const
+    {
+      return m_csr;
+    }
+
+    [[nodiscard]] Scalar density() const
+    {
+      return Scalar(m_values.size()) / (m_rows * m_columns);
+    }
+
+    // Copies the support set of other and sets all values to 0.
+    // The support size must match.
+    void reset_support(const sparse_matrix_csr& other)
+    {
+      compare_sizes(*this, other);
+      if (m_values.size() == other.m_values.size())
+      {
+        std::fill(m_values.begin(), m_values.end(), 0);
+        std::copy(other.m_col_index.begin(), other.m_col_index.end(), m_col_index.begin());
+        std::copy(other.m_row_index.begin(), other.m_row_index.end(), m_row_index.begin());
+      }
+      else
+      {
+        m_rows = other.m_rows;
+        m_columns = other.m_columns;
+        m_row_index = other.m_row_index;
+        m_col_index = other.m_col_index;
+        m_values = std::vector<T>(other.m_values.size(), 0);
+      }
+      construct_csr();
+    }
+
+    // Assign the given value to all coefficients
+    sparse_matrix_csr& operator=(T value)
+    {
+      std::fill(m_values.begin(), m_values.end(), value);
+      construct_csr();
+      return *this;
+    }
+
+    [[nodiscard]] std::string to_string() const
+    {
+      std::ostringstream out;
+      out << "--- mkl matrix ---\n";
+      out << "dimension: " << m_rows << " x " << m_columns << '\n';
+      out << "values:    " << m_values.size() << ' ' << nerva::print_list(m_values) << '\n';
+      out << "columns:   " << m_col_index.size() << ' ' << nerva::print_list(m_col_index) << '\n';
+      out << "row_index: " << m_row_index.size() << ' ' << nerva::print_list(m_row_index) << '\n';
+      return out.str();
+    }
+
+    template <typename Scalar> friend void assign_matrix(sparse_matrix_csr<Scalar>& A, const sparse_matrix_csr<Scalar>& B);
+    template <typename Scalar, typename Function> friend void initialize_matrix(sparse_matrix_csr<Scalar>& A, Function f);
 };
 
 // Does the assignment A := alpha * A + beta * op(B) * C with B sparse and A, C dense
@@ -337,22 +367,22 @@ void assign_matrix_product(dense_matrix_view<Scalar>& A,
   {
     if (A.layout() == matrix_layout::column_major)
     {
-      status = mkl_sparse_d_mm(operation_B, beta, B.csr, B.descr, SPARSE_LAYOUT_COLUMN_MAJOR, C.data(), A.cols(), C.rows(), alpha, A.data(), A.rows());
+      status = mkl_sparse_d_mm(operation_B, beta, B.csr(), B.descriptor(), SPARSE_LAYOUT_COLUMN_MAJOR, C.data(), A.cols(), C.rows(), alpha, A.data(), A.rows());
     }
     else
     {
-      status = mkl_sparse_d_mm(operation_B, beta, B.csr, B.descr, SPARSE_LAYOUT_ROW_MAJOR, C.data(), A.cols(), C.cols(), alpha, A.data(), A.cols());
+      status = mkl_sparse_d_mm(operation_B, beta, B.csr(), B.descriptor(), SPARSE_LAYOUT_ROW_MAJOR, C.data(), A.cols(), C.cols(), alpha, A.data(), A.cols());
     }
   }
   else
   {
     if (A.layout() == matrix_layout::column_major)
     {
-      status = mkl_sparse_s_mm(operation_B, beta, B.csr, B.descr, SPARSE_LAYOUT_COLUMN_MAJOR, C.data(), A.cols(), C.rows(), alpha, A.data(), A.rows());
+      status = mkl_sparse_s_mm(operation_B, beta, B.csr(), B.descriptor(), SPARSE_LAYOUT_COLUMN_MAJOR, C.data(), A.cols(), C.rows(), alpha, A.data(), A.rows());
     }
     else
     {
-      status = mkl_sparse_s_mm(operation_B, beta, B.csr, B.descr, SPARSE_LAYOUT_ROW_MAJOR, C.data(), A.cols(), C.cols(), alpha, A.data(), A.cols());
+      status = mkl_sparse_s_mm(operation_B, beta, B.csr(), B.descriptor(), SPARSE_LAYOUT_ROW_MAJOR, C.data(), A.cols(), C.cols(), alpha, A.data(), A.cols());
     }
   }
 
@@ -367,14 +397,14 @@ void assign_matrix_product(dense_matrix_view<Scalar>& A,
 template <typename Scalar>
 void assign_matrix(sparse_matrix_csr<Scalar>& A, const sparse_matrix_csr<Scalar>& B)
 {
-  std::copy(B.values.begin(), B.values.end(), A.values.begin());
+  std::copy(B.m_values.begin(), B.m_values.end(), A.m_values.begin());
   A.construct_csr();
 }
 
 template <typename Scalar, typename Function>
 void initialize_matrix(sparse_matrix_csr<Scalar>& A, Function f)
 {
-  for (auto& value: A.values)
+  for (auto& value: A.m_values)
   {
     value = f();
   }
