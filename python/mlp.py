@@ -74,10 +74,6 @@ def make_argument_parser():
     cmdline_parser.add_argument("--epochs", help="The number of epochs", type=int, default=100)
     cmdline_parser.add_argument("--batch-size", help="The batch size", type=int, default=1)
 
-    # regrow
-    cmdline_parser.add_argument("--zeta", help="The regrow factor, use 0 for no regrow", type=float, default=0)
-    cmdline_parser.add_argument("--separate", help="Separate negative and positive values for regrow", action="store_true")
-
     # dataset
     cmdline_parser.add_argument('--datadir', type=str, default='', help='the data directory (default: ./data)')
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
@@ -90,6 +86,10 @@ def make_argument_parser():
     # print options
     cmdline_parser.add_argument("--precision", help="The precision used for printing matrices", type=int, default=8)
     cmdline_parser.add_argument("--edgeitems", help="The edgeitems used for printing matrices", type=int, default=3)
+
+    # regrow (experimental!)
+    cmdline_parser.add_argument("--zeta", help="The regrow factor, use 0 for no regrow", type=float, default=0)
+    cmdline_parser.add_argument("--separate", help="Separate negative and positive values for regrow", action="store_true")
 
     return cmdline_parser
 

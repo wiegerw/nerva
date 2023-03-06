@@ -228,34 +228,56 @@ class tool: public command_line_tool
 
     void add_options(lyra::cli& cli) override
     {
+      // randomness
+      cli |= lyra::opt(options.seed, "value")["--seed"]("A seed value for the random generator.");
+
+      // model parameters
+      cli |= lyra::opt(layer_sizes_text, "value")["--sizes"]("A comma separated list of layer sizes");
+      cli |= lyra::opt(densities_text, "value")["--densities"]("A comma separated list of sparse layer densities");
+      cli |= lyra::opt(options.density, "value")["--overall-density"]("The overall density level of the sparse layers");
+      cli |= lyra::opt(options.architecture, "value")["--architecture"]("The architecture of the multilayer perceptron e.g. RRL,\nwhere R=ReLU, S=Sigmoid, L=Linear, B=Batchnorm, Z=Softmax");
+      cli |= lyra::opt(options.dropout, "value")["--dropout"]("The dropout rate for the the linear layers (use 0 for no dropout)");
+
+      // training
       cli |= lyra::opt(options.algorithm, "value")["--algorithm"]("The algorithm (sgd)");
-      cli |= lyra::opt(options.dataset, "value")["--dataset"]("The dataset (chessboard, spirals, square, sincos)");
-      cli |= lyra::opt(options.dataset_size, "value")["--size"]("The size of the dataset (default: 1000)");
-      cli |= lyra::opt(options.normalize_data)["--normalize"]("Normalize the data");
       cli |= lyra::opt(options.epochs, "value")["--epochs"]("The number of epochs (default: 100)");
       cli |= lyra::opt(options.batch_size, "value")["--batch-size"]("The batch size of the training algorithm");
-      cli |= lyra::opt(options.learning_rate_scheduler, "value")["--learning-rate"]("The learning rate scheduler (default: constant(0.0001))");
-      cli |= lyra::opt(options.weights_initialization, "value")["--weights"]("The weight initialization (default, he, uniform, xavier, normalized_xavier, uniform)");
-      cli |= lyra::opt(options.loss_function, "value")["--loss"]("The loss function (squared-error, cross-entropy, logistic-cross-entropy)");
-      cli |= lyra::opt(options.architecture, "value")["--architecture"]("The architecture of the multilayer perceptron e.g. RRL,\nwhere R=ReLU, S=Sigmoid, L=Linear, B=Batchnorm, Z=Softmax");
-      cli |= lyra::opt(layer_sizes_text, "value")["--sizes"]("A comma separated list of layer sizes");
-      cli |= lyra::opt(options.dropout, "value")["--dropout"]("The dropout rate for the weights of the layers");
-      cli |= lyra::opt(options.density, "value")["--overall-density"]("The overall density level of the sparse layers");
-      cli |= lyra::opt(densities_text, "value")["--densities"]("A comma separated list of sparse layer densities");
-      cli |= lyra::opt(options.optimizer, "value")["--optimizer"]("The optimizer (gradient-descent, momentum(<mu>), nesterov(<mu>))");
-      cli |= lyra::opt(options.seed, "value")["--seed"]("A seed value for the random generator.");
       cli |= lyra::opt(no_shuffle)["--no-shuffle"]("Do not shuffle the dataset during training.");
       cli |= lyra::opt(no_statistics)["--no-statistics"]("Do not compute statistics during training.");
-      cli |= lyra::opt(options.threads, "value")["--threads"]("The number of threads used by Eigen.");
-      cli |= lyra::opt(preprocessed_dir, "value")["--preprocessed"]("A directory containing the files epoch<nnn>.npz");
+
+      // optimizer
+      cli |= lyra::opt(options.optimizer, "value")["--optimizer"]("The optimizer (gradient-descent, momentum(<mu>), nesterov(<mu>))");
+
+      // learning rate
+      cli |= lyra::opt(options.learning_rate_scheduler, "value")["--learning-rate"]("The learning rate scheduler (default: constant(0.0001))");
+
+      // loss function
+      cli |= lyra::opt(options.loss_function, "value")["--loss"]("The loss function (squared-error, cross-entropy, logistic-cross-entropy)");
+
+      // weights
+      cli |= lyra::opt(options.weights_initialization, "value")["--weights"]("The weight initialization (default, he, uniform, xavier, normalized_xavier, uniform)");
       cli |= lyra::opt(import_weights_file, "value")["--import-weights"]("Loads the weights from a file in .npz format");
       cli |= lyra::opt(export_weights_file, "value")["--export-weights"]("Exports the weights to a file in .npz format");
+
+      // dataset
+      cli |= lyra::opt(options.dataset, "value")["--dataset"]("The dataset (chessboard, spirals, square, sincos)");
       cli |= lyra::opt(load_dataset_file, "value")["--load-dataset"]("Loads the dataset from a file in .npz format");
       cli |= lyra::opt(save_dataset_file, "value")["--save-dataset"]("Saves the dataset to a file in .npz format");
+      cli |= lyra::opt(options.dataset_size, "value")["--size"]("The size of the dataset (default: 1000)");
+      cli |= lyra::opt(options.normalize_data)["--normalize"]("Normalize the data");
+      cli |= lyra::opt(preprocessed_dir, "value")["--preprocessed"]("A directory containing the files epoch<nnn>.npz");
+
+      // print options
       cli |= lyra::opt(options.precision, "value")["--precision"]("The precision that is used for printing.");
+      cli |= lyra::opt(info)["--info"]("print some info about the multilayer_perceptron's");
+
+      // regrow (experimental!)
+      cli |= lyra::opt(options.regrow_rate, "value")["--zeta"]("The regrow rate, use 0 for no regrow.");
+      cli |= lyra::opt(options.regrow_separate_positive_negative)["--separate"]("Separate negative and positive weights for regrow");
+
+      cli |= lyra::opt(options.threads, "value")["--threads"]("The number of threads used by Eigen.");
       cli |= lyra::opt(options.check_gradients)["--check"]("Check the computed gradients");
       cli |= lyra::opt(options.check_gradients_step, "value")["--gradient-step"]("The step size for approximating the gradient");
-      cli |= lyra::opt(info)["--info"]("print some info about the multilayer_perceptron's");
     }
 
     std::string description() const override

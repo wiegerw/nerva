@@ -24,6 +24,8 @@ struct sgd_options
   std::size_t epochs = 100;
   long batch_size = 1;
   bool shuffle = true;
+  scalar regrow_rate = 0.0;
+  bool regrow_separate_positive_negative = false; // apply the regrow rate to positive and negative values separately
   bool statistics = true;
   bool debug = false;
   bool check_gradients = false;
@@ -60,6 +62,11 @@ std::ostream& operator<<(std::ostream& out, const sgd_options& options)
   out << "epochs = " << options.epochs << std::endl;
   out << "batch size = " << options.batch_size << std::endl;
   out << "shuffle = " << std::boolalpha << options.shuffle << std::endl;
+  if (options.regrow_rate > 0)
+  {
+    out << "regrow rate = " << options.regrow_rate << std::endl;
+    out << "regrow separate positive/negative weights = " << options.regrow_separate_positive_negative << std::endl;
+  }
   out << "statistics = " << std::boolalpha << options.statistics << std::endl;
   out << "debug = " << std::boolalpha << options.debug << std::endl;
   return out;

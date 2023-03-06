@@ -200,9 +200,16 @@ std::pair<double, double> stochastic_gradient_descent(
   for (unsigned int epoch = 0; epoch < options.epochs; ++epoch)
   {
     watch.reset();
+
+    if (epoch > 0 && options.regrow_rate > 0)
+    {
+      std::cout << "regrow" << std::endl;
+      M.regrow(options.regrow_rate, weight_initialization::xavier, options.regrow_separate_positive_negative, rng);
+    }
+
     if (options.shuffle)
     {
-      std::shuffle(I.begin(), I.end(), rng);// shuffle the examples at the start of each epoch
+      std::shuffle(I.begin(), I.end(), rng);      // shuffle the examples at the start of each epoch
     }
     M.renew_dropout_mask(rng);
     eta = learning_rate->operator()(epoch);       // update the learning at the start of each epoch
