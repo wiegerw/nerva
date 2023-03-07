@@ -309,8 +309,8 @@ void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
 {
   assert(A.rows() == B.rows());
   assert(A.cols() == B.cols());
-  assert(A.m_col_index == B.m_col_index);
-  assert(A.m_row_index == B.m_row_index);
+  assert(A.col_index() == B.col_index());
+  assert(A.row_index() == B.row_index());
 
   eigen::vector_map<Scalar> A1(const_cast<Scalar*>(A.values().data()), A.values().size());
   eigen::vector_map<Scalar> B1(const_cast<Scalar*>(B.values().data()), B.values().size());

@@ -149,7 +149,7 @@ void print_numpy_row(const Row& x, long edgeitems=3)
 template <typename Vector>
 void print_numpy_vector(const std::string& name, const Vector& x, long edgeitems=3)
 {
-  std::cout << name << "= " << x.size() << "\n";
+  std::cout << name << "= (" << x.size() << ")\n";
   std::cout << std::setw(7);
   print_numpy_row(x, edgeitems);
 }
@@ -180,7 +180,7 @@ struct matrix_row
 template <typename Matrix>
 void print_numpy_matrix(const std::string& name, const Matrix& x, long edgeitems=3)
 {
-  std::cout << name << "= " << x.rows() << "x" << x.cols() << " norm = " << x.template lpNorm<Eigen::Infinity>() << "\n";
+  std::cout << name << "= (" << x.rows() << "x" << x.cols() << ") norm = " << x.template lpNorm<Eigen::Infinity>() << "\n";
   long m = x.rows();
   long top = m;
   long bottom = m;
@@ -210,7 +210,7 @@ void print_numpy_matrix(const std::string& name, const Matrix& x, long edgeitems
 template <>
 void print_numpy_matrix(const std::string& name, const sparse_matrix& x, long edgeitems)
 {
-  std::cout << name << "= " << x.rows() << "x" << x.cols() << "\n";
+  std::cout << name << "= (" << x.rows() << "x" << x.cols() << ")\n";
 }
 
 template <typename Matrix>

@@ -176,11 +176,11 @@ void compute_statistics_batch(MultilayerPerceptron& M,
 }
 
 // Returns the test accuracy and the total training time
-template <typename MultilayerPerceptron, typename DataSet, typename RandomNumberGenerator>
+template <typename DataSet, typename RandomNumberGenerator>
 std::pair<double, double> stochastic_gradient_descent(
-  MultilayerPerceptron& M,
+  multilayer_perceptron& M,
   const std::shared_ptr<loss_function>& loss,
-  const DataSet& data,
+  DataSet& data,
   const sgd_options& options,
   const std::shared_ptr<learning_rate_scheduler>& learning_rate,
   RandomNumberGenerator rng)
@@ -221,13 +221,7 @@ std::pair<double, double> stochastic_gradient_descent(
       auto X = data.Xtrain(Eigen::all, batch);
       auto T = data.Ttrain(Eigen::all, batch);
       M.feedforward(X, Y);
-      if (options.debug)
-      {
-        std::cout << "epoch: " << epoch << " batch: " << k << std::endl;
-        print_model_info(M);
-        eigen::print_numpy_matrix("X", X.transpose());
-        eigen::print_numpy_matrix("Y", Y.transpose());
-      }
+
       if (options.check_gradients)
       {
         DY = loss->gradient(Y, T);
@@ -238,11 +232,23 @@ std::pair<double, double> stochastic_gradient_descent(
       {
         DY = loss->gradient(Y, T) / options.batch_size;  // pytorch does it like this
       }
+
+      if (options.debug)
+      {
+        std::cout << "epoch: " << epoch << " batch: " << k << std::endl;
+        // print_model_info(M);
+        eigen::print_numpy_matrix("X", X.transpose());
+        eigen::print_numpy_matrix("Y", Y.transpose());
+        eigen::print_numpy_matrix("DY", DY.transpose());
+      }
+
       M.backpropagate(Y, DY);
+
       if (options.check_gradients)
       {
         M.check_gradients(loss, T, options.check_gradients_step);
       }
+
       M.optimize(eta);
     }
     double seconds = watch.seconds();
@@ -256,9 +262,9 @@ std::pair<double, double> stochastic_gradient_descent(
 }
 
 // Loads a new dataset at every epoch from the directory datadir
-template <typename MultilayerPerceptron, typename RandomNumberGenerator>
+template <typename RandomNumberGenerator>
 std::pair<double, double> stochastic_gradient_descent_preprocessed(
-  MultilayerPerceptron& M,
+  multilayer_perceptron& M,
   const std::shared_ptr<loss_function>& loss,
   const std::string& datadir,
   const sgd_options& options,
@@ -291,10 +297,18 @@ std::pair<double, double> stochastic_gradient_descent_preprocessed(
       data.load((path / ("epoch" + std::to_string(epoch) + ".npz")).native());
     }
     watch.reset();
+
+    if (epoch > 0 && options.regrow_rate > 0)
+    {
+      std::cout << "regrow" << std::endl;
+      M.regrow(options.regrow_rate, weight_initialization::xavier, options.regrow_separate_positive_negative, rng);
+    }
+
     if (options.shuffle)
     {
-      std::shuffle(I.begin(), I.end(), rng);// shuffle the examples at the start of each epoch
+      std::shuffle(I.begin(), I.end(), rng);      // shuffle the examples at the start of each epoch
     }
+
     M.renew_dropout_mask(rng);
     eta = learning_rate->operator()(epoch);       // update the learning at the start of each epoch
     eigen::matrix DY(L, options.batch_size);
@@ -305,13 +319,7 @@ std::pair<double, double> stochastic_gradient_descent_preprocessed(
       auto X = data.Xtrain(Eigen::all, batch);
       auto T = data.Ttrain(Eigen::all, batch);
       M.feedforward(X, Y);
-      if (options.debug)
-      {
-        std::cout << "epoch: " << epoch << " batch: " << k << std::endl;
-        print_model_info(M);
-        eigen::print_numpy_matrix("X", X.transpose());
-        eigen::print_numpy_matrix("Y", Y.transpose());
-      }
+
       if (options.check_gradients)
       {
         DY = loss->gradient(Y, T);
@@ -322,11 +330,23 @@ std::pair<double, double> stochastic_gradient_descent_preprocessed(
       {
         DY = loss->gradient(Y, T) / options.batch_size;  // pytorch does it like this
       }
+
+      if (options.debug)
+      {
+        std::cout << "epoch: " << epoch << " batch: " << k << std::endl;
+        // print_model_info(M);
+        eigen::print_numpy_matrix("X", X.transpose());
+        eigen::print_numpy_matrix("Y", Y.transpose());
+        eigen::print_numpy_matrix("DY", DY.transpose());
+      }
+
       M.backpropagate(Y, DY);
+
       if (options.check_gradients)
       {
         M.check_gradients(loss, T, options.check_gradients_step);
       }
+
       M.optimize(eta);
     }
     double seconds = watch.seconds();
