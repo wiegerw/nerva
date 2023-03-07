@@ -39,7 +39,6 @@ function run()
                --verbose \
                --no-shuffle \
                --seed=$seed \
-               --check \
                --gradient-step=$gradient_step \
                $1
 }

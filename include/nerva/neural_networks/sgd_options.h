@@ -29,7 +29,7 @@ struct sgd_options
   bool statistics = true;
   bool debug = false;
   bool check_gradients = false;
-  scalar check_gradients_step = 0.00001;
+  scalar gradient_step = 0;  // if gradient_step > 0 then gradient checks will be done
 
   void info() const;
 };

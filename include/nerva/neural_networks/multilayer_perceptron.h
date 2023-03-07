@@ -248,10 +248,10 @@ std::vector<eigen::matrix> mlp_bias(const multilayer_perceptron& M)
 // Precondition: the python interpreter must be running.
 // This can be enforced using `py::scoped_interpreter guard{};`
 inline
-void export_weights(const multilayer_perceptron& M, const std::string& filename)
+void save_weights(const multilayer_perceptron& M, const std::string& filename)
 {
   namespace py = pybind11;
-  NERVA_LOG(log::verbose) << "Exporting weights and bias to file " << filename << std::endl;
+  NERVA_LOG(log::verbose) << "Saving weights and bias to file " << filename << std::endl;
 
   py::dict data;
   unsigned int index = 1;
@@ -287,10 +287,10 @@ void export_weights(const multilayer_perceptron& M, const std::string& filename)
 // Precondition: the python interpreter must be running.
 // This can be enforced using `py::scoped_interpreter guard{};`
 inline
-void import_weights(multilayer_perceptron& M, const std::string& filename)
+void load_weights(multilayer_perceptron& M, const std::string& filename)
 {
   namespace py = pybind11;
-  NERVA_LOG(log::verbose) << "Importing weights and bias from file " << filename << std::endl;
+  NERVA_LOG(log::verbose) << "Loading weights and bias from file " << filename << std::endl;
 
   py::dict data = py::module::import("numpy").attr("load")(filename);
   unsigned int index = 1;
@@ -370,20 +370,7 @@ std::vector<std::pair<long, long>> sparse_linear_layer_sizes(multilayer_perceptr
   return result;
 }
 
-template <typename EigenVector, typename T>
-EigenVector convert_to_eigen(const std::vector<T>& x)
-{
-  typedef typename EigenVector::Scalar Scalar;
-
-  unsigned int size = x.size();
-  EigenVector result(size);
-  for (unsigned int i = 0; i < size; i++)
-  {
-    result[i] = static_cast<Scalar>(x[i]);
-  }
-  return result;
-}
-
+// This function can be used to get a rough indication of the size of a model.
 inline
 void save_model_weights_to_npy(const std::string& filename, const multilayer_perceptron& M)
 {

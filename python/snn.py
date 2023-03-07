@@ -81,9 +81,9 @@ def make_argument_parser():
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
     cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
 
-    # import/export weights
-    cmdline_parser.add_argument('--export-weights', type=str, help='Export weights to a file in .npz format')
-    cmdline_parser.add_argument('--import-weights', type=str, help='Import weights from a file in .npz format')
+    # load/save weights
+    cmdline_parser.add_argument('--save-weights', type=str, help='Save weights and bias to a file in .npz format')
+    cmdline_parser.add_argument('--load-weights', type=str, help='Load weights and bias from a file in .npz format')
 
     # print options
     cmdline_parser.add_argument("--precision", help="The precision used for printing matrices", type=int, default=8)
@@ -161,8 +161,8 @@ def main():
         print('=== PyTorch model ===')
         print(M1)
 
-        if args.export_weights:
-            M1.export_weights(args.export_weights)
+        if args.save_weights:
+            M1.save_weights(args.save_weights)
 
         print('\n=== Training PyTorch model ===')
         if args.preprocessed:
@@ -174,8 +174,8 @@ def main():
         print('=== Nerva python model ===')
         print(M2)
 
-        if args.import_weights:
-            M2.import_weights(args.import_weights)
+        if args.load_weights:
+            M2.load_weights(args.load_weights)
 
         print('\n=== Training Nerva model ===')
         if args.preprocessed:

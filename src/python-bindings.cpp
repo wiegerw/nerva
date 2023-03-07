@@ -368,8 +368,8 @@ PYBIND11_MODULE(nervalib, m)
     .def("regrow", &multilayer_perceptron::regrow)
     .def("append_layer", [](multilayer_perceptron& M, const std::shared_ptr<neural_network_layer>& layer) { M.layers.push_back(layer); })
     .def("info", &multilayer_perceptron::info)
-    .def("export_weights", [](const multilayer_perceptron& M, const std::string& filename) { export_weights(M, filename); })
-    .def("import_weights", [](multilayer_perceptron& M, const std::string& filename) { import_weights(M, filename); })
+    .def("save_weights", [](const multilayer_perceptron& M, const std::string& filename) { save_weights(M, filename); })
+    .def("load_weights", [](multilayer_perceptron& M, const std::string& filename) { load_weights(M, filename); })
     .def("weights", [](multilayer_perceptron& M) { return mlp_weights(M); })
     .def("bias", [](multilayer_perceptron& M) { return mlp_bias(M); })
     ;
@@ -427,7 +427,7 @@ PYBIND11_MODULE(nervalib, m)
     .def("info", &sgd_options::info)
     ;
 
-  m.def("stochastic_gradient_descent", stochastic_gradient_descent<multilayer_perceptron, datasets::dataset_view, std::mt19937>);
+  m.def("stochastic_gradient_descent", stochastic_gradient_descent<datasets::dataset_view, std::mt19937>);
   m.def("compute_loss", compute_loss_batch<multilayer_perceptron>);
   m.def("compute_accuracy", compute_accuracy_batch<multilayer_perceptron, datasets::matrix_ref>);
   m.def("compute_statistics", compute_statistics_batch<multilayer_perceptron, datasets::dataset_view>);

@@ -290,21 +290,14 @@ class Sequential(object):
         layers = ',\n  '.join([str(layer) for layer in self.layers])
         return f'Sequential(\n  {layers}\n)'
 
-    def info(self):
-        self.compiled_model.info('M')
+    # def info(self):
+    #     self.compiled_model.info('M')
 
-    def import_weights(self, filename: str):
+    def load_weights(self, filename: str):
         self.compiled_model.import_weights_npz(filename)
 
-    # TODO: Currently unsupported, because of limitations at the C++ side
-    # def export_weights(self, filename: str):
-    #     self.compiled_model.export_weights(filename)
-
-    def import_bias(self, filename: str):
-        self.compiled_model.import_bias(filename)
-
-    def export_bias(self, filename: str):
-        self.compiled_model.export_bias(filename)
+    def save_weights(self, filename: str):
+        self.compiled_model.export_weights_npz(filename)
 
 
 def compute_sparse_layer_densities(overall_density: float, layer_sizes: List[int], erk_power_scale: float=1) -> List[float]:

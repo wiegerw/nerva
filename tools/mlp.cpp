@@ -215,8 +215,8 @@ class tool: public command_line_tool
 {
   protected:
     mlp_options options;
-    std::string import_weights_file;
-    std::string export_weights_file;
+    std::string load_weights_file;
+    std::string save_weights_file;
     std::string load_dataset_file;
     std::string save_dataset_file;
     std::string layer_sizes_text;
@@ -256,8 +256,8 @@ class tool: public command_line_tool
 
       // weights
       cli |= lyra::opt(options.weights_initialization, "value")["--weights"]("The weight initialization (default, he, uniform, xavier, normalized_xavier, uniform)");
-      cli |= lyra::opt(import_weights_file, "value")["--import-weights"]("Loads the weights from a file in .npz format");
-      cli |= lyra::opt(export_weights_file, "value")["--export-weights"]("Exports the weights to a file in .npz format");
+      cli |= lyra::opt(load_weights_file, "value")["--load-weights"]("Loads the weights and bias from a file in .npz format");
+      cli |= lyra::opt(save_weights_file, "value")["--save-weights"]("Saves the weights and bias to a file in .npz format");
 
       // dataset
       cli |= lyra::opt(options.dataset, "value")["--dataset"]("The dataset (chessboard, spirals, square, sincos)");
@@ -276,8 +276,7 @@ class tool: public command_line_tool
       cli |= lyra::opt(options.regrow_separate_positive_negative)["--separate"]("Separate negative and positive weights for regrow");
 
       cli |= lyra::opt(options.threads, "value")["--threads"]("The number of threads used by Eigen.");
-      cli |= lyra::opt(options.check_gradients)["--check"]("Check the computed gradients");
-      cli |= lyra::opt(options.check_gradients_step, "value")["--gradient-step"]("The step size for approximating the gradient");
+      cli |= lyra::opt(options.gradient_step, "value")["--gradient-step"]("If positive, gradient checks will be done with the given step size");
     }
 
     std::string description() const override
@@ -362,18 +361,18 @@ class tool: public command_line_tool
       std::shared_ptr<loss_function> loss = parse_loss_function(options.loss_function);
       std::shared_ptr<learning_rate_scheduler> learning_rate = parse_learning_rate_scheduler(options.learning_rate_scheduler);
 
-      if (import_weights_file.empty())
+      if (load_weights_file.empty())
       {
         set_weights(M, options.weights_initialization, options.architecture, rng);
       }
       else
       {
-        import_weights(M, import_weights_file);
+        load_weights(M, load_weights_file);
       }
 
-      if (!export_weights_file.empty())
+      if (!save_weights_file.empty())
       {
-        export_weights(M, export_weights_file);
+        save_weights(M, save_weights_file);
       }
 
       if (info)

@@ -131,7 +131,7 @@ void compute_statistics(MultilayerPerceptron& M,
                         const DataSet& data,
                         unsigned int epoch,
                         bool full_statistics,
-                        scalar elapsed_seconds = -1.0
+                        double elapsed_seconds = -1.0
                         )
 {
   std::cout << fmt::format("epoch {:3d}", epoch + 1);
@@ -157,7 +157,7 @@ void compute_statistics_batch(MultilayerPerceptron& M,
                               long Q, // the batch size
                               int epoch,
                               bool full_statistics,
-                              scalar elapsed_seconds = -1.0
+                              double elapsed_seconds = -1.0
                               )
 {
   std::cout << fmt::format("epoch {:3d}", epoch + 1);
@@ -197,7 +197,7 @@ std::pair<double, double> stochastic_gradient_descent(
 
   compute_statistics_batch(M, eta, loss, data, options.batch_size, -1, options.statistics, 0.0);
 
-  for (unsigned int epoch = 0; epoch < options.epochs; ++epoch)
+  for (int epoch = 0; epoch < options.epochs; ++epoch)
   {
     watch.reset();
 
@@ -222,11 +222,11 @@ std::pair<double, double> stochastic_gradient_descent(
       auto T = data.Ttrain(Eigen::all, batch);
       M.feedforward(X, Y);
 
-      if (options.check_gradients)
+      if (options.gradient_step > 0)
       {
         DY = loss->gradient(Y, T);
         auto f = [loss, &Y, &T]() { return loss->value(Y, T); };
-        check_gradient("DY", f, Y, DY, options.check_gradients_step);
+        check_gradient("DY", f, Y, DY, options.gradient_step);
       }
       else
       {
@@ -244,9 +244,9 @@ std::pair<double, double> stochastic_gradient_descent(
 
       M.backpropagate(Y, DY);
 
-      if (options.check_gradients)
+      if (options.gradient_step > 0)
       {
-        M.check_gradients(loss, T, options.check_gradients_step);
+        M.check_gradients(loss, T, options.gradient_step);
       }
 
       M.optimize(eta);
@@ -289,7 +289,7 @@ std::pair<double, double> stochastic_gradient_descent_preprocessed(
 
   compute_statistics_batch(M, eta, loss, data, options.batch_size, -1, options.statistics, 0.0);
 
-  for (unsigned int epoch = 0; epoch < options.epochs; ++epoch)
+  for (int epoch = 0; epoch < options.epochs; ++epoch)
   {
     // read the next dataset
     if (epoch > 0)
@@ -320,11 +320,11 @@ std::pair<double, double> stochastic_gradient_descent_preprocessed(
       auto T = data.Ttrain(Eigen::all, batch);
       M.feedforward(X, Y);
 
-      if (options.check_gradients)
+      if (options.gradient_step > 0)
       {
         DY = loss->gradient(Y, T);
         auto f = [loss, &Y, &T]() { return loss->value(Y, T); };
-        check_gradient("DY", f, Y, DY, options.check_gradients_step);
+        check_gradient("DY", f, Y, DY, options.gradient_step);
       }
       else
       {
@@ -342,9 +342,9 @@ std::pair<double, double> stochastic_gradient_descent_preprocessed(
 
       M.backpropagate(Y, DY);
 
-      if (options.check_gradients)
+      if (options.gradient_step > 0)
       {
-        M.check_gradients(loss, T, options.check_gradients_step);
+        M.check_gradients(loss, T, options.gradient_step);
       }
 
       M.optimize(eta);
