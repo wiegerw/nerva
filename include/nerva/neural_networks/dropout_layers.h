@@ -190,11 +190,6 @@ struct relu_dropout_layer: public activation_dropout_layer<Matrix, relu_activati
   relu_dropout_layer(std::size_t D, std::size_t K, std::size_t Q, scalar p)
    : super(relu_activation(), D, K, Q, p)
   {}
-
-  [[nodiscard]] std::string to_string() const override
-  {
-    return fmt::format("Dropout({})\n{}", p, super::to_string());
-  }
 };
 
 using dense_relu_dropout_layer = relu_dropout_layer<eigen::matrix>;
@@ -209,11 +204,6 @@ struct all_relu_dropout_layer: public activation_dropout_layer<Matrix, all_relu_
   all_relu_dropout_layer(scalar alpha, std::size_t D, std::size_t K, std::size_t Q, scalar p)
    : super(all_relu_activation(alpha), D, K, Q, p)
   {}
-
-  [[nodiscard]] std::string to_string() const override
-  {
-    return fmt::format("Dropout({})\n{}", p, super::to_string());
-  }
 };
 
 using dense_all_relu_dropout_layer = all_relu_dropout_layer<eigen::matrix>;
@@ -228,11 +218,6 @@ struct leaky_relu_dropout_layer: public activation_dropout_layer<Matrix, leaky_r
   leaky_relu_dropout_layer(scalar alpha, std::size_t D, std::size_t K, std::size_t Q, scalar p)
       : super(leaky_relu_activation(alpha), D, K, Q, p)
   {}
-
-  [[nodiscard]] std::string to_string() const override
-  {
-    return fmt::format("Dropout({})\n{}", p, super::to_string());
-  }
 };
 
 using dense_leaky_relu_dropout_layer = leaky_relu_dropout_layer<eigen::matrix>;
@@ -247,11 +232,6 @@ struct hyperbolic_tangent_dropout_layer: public activation_dropout_layer<Matrix,
   hyperbolic_tangent_dropout_layer(std::size_t D, std::size_t K, std::size_t Q, scalar p)
       : super(hyperbolic_tangent_activation(), D, K, Q, p)
   {}
-
-  [[nodiscard]] std::string to_string() const override
-  {
-    return fmt::format("Dropout({})\n{}", p, super::to_string());
-  }
 };
 
 using dense_hyperbolic_tangent_dropout_layer = hyperbolic_tangent_dropout_layer<eigen::matrix>;
@@ -266,11 +246,6 @@ struct softmax_dropout_layer: public activation_dropout_layer<Matrix, softmax_ac
   softmax_dropout_layer(std::size_t D, std::size_t K, std::size_t Q, scalar p)
       : super(softmax_activation(), D, K, Q, p)
   {}
-
-  [[nodiscard]] std::string to_string() const override
-  {
-    return fmt::format("Dropout({})\n{}", p, super::to_string());
-  }
 };
 
 using dense_softmax_dropout_layer = softmax_dropout_layer<eigen::matrix>;
