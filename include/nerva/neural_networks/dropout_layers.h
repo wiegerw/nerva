@@ -77,11 +77,6 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
     Db = DY.rowwise().sum();
     DX = W.cwiseProduct(R).transpose() * DY;
   }
-
-  [[nodiscard]] std::string name() const override
-  {
-    return "linear dropout layer";
-  }
 };
 
 using dense_linear_dropout_layer = linear_dropout_layer<eigen::matrix>;
@@ -131,11 +126,6 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
     }
     Db = DZ.rowwise().sum();
     DX = W.cwiseProduct(R).transpose() * DZ;
-  }
-
-  [[nodiscard]] std::string name() const override
-  {
-    return "sigmoid dropout layer";
   }
 };
 
@@ -188,11 +178,6 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
     Db = DZ.rowwise().sum();
     DX = W.cwiseProduct(R).transpose() * DZ;
   }
-
-  [[nodiscard]] std::string name() const override
-  {
-    return "activation dropout layer";
-  }
 };
 
 template <typename Matrix>
@@ -210,11 +195,6 @@ struct relu_dropout_layer: public activation_dropout_layer<Matrix, relu_activati
   {
     return fmt::format("Dropout({})\n{}", p, super::to_string());
   }
-
-  [[nodiscard]] std::string name() const override
-  {
-    return "relu dropout layer";
-  }
 };
 
 using dense_relu_dropout_layer = relu_dropout_layer<eigen::matrix>;
@@ -230,9 +210,9 @@ struct all_relu_dropout_layer: public activation_dropout_layer<Matrix, all_relu_
    : super(all_relu_activation(alpha), D, K, Q, p)
   {}
 
-  [[nodiscard]] std::string name() const override
+  [[nodiscard]] std::string to_string() const override
   {
-    return "all relu dropout layer";
+    return fmt::format("Dropout({})\n{}", p, super::to_string());
   }
 };
 
@@ -253,11 +233,6 @@ struct leaky_relu_dropout_layer: public activation_dropout_layer<Matrix, leaky_r
   {
     return fmt::format("Dropout({})\n{}", p, super::to_string());
   }
-
-  [[nodiscard]] std::string name() const override
-  {
-    return "leaky relu dropout layer";
-  }
 };
 
 using dense_leaky_relu_dropout_layer = leaky_relu_dropout_layer<eigen::matrix>;
@@ -277,11 +252,6 @@ struct hyperbolic_tangent_dropout_layer: public activation_dropout_layer<Matrix,
   {
     return fmt::format("Dropout({})\n{}", p, super::to_string());
   }
-
-  [[nodiscard]] std::string name() const override
-  {
-    return "hyperbolic_tangent dropout layer";
-  }
 };
 
 using dense_hyperbolic_tangent_dropout_layer = hyperbolic_tangent_dropout_layer<eigen::matrix>;
@@ -300,11 +270,6 @@ struct softmax_dropout_layer: public activation_dropout_layer<Matrix, softmax_ac
   [[nodiscard]] std::string to_string() const override
   {
     return fmt::format("Dropout({})\n{}", p, super::to_string());
-  }
-
-  [[nodiscard]] std::string name() const override
-  {
-    return "softmax dropout layer";
   }
 };
 

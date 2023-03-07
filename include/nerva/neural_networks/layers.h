@@ -67,8 +67,6 @@ struct neural_network_layer
 
   virtual void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) = 0;
 
-  [[nodiscard]] virtual std::string name() const = 0;
-
   virtual void info(unsigned int layer_index) const
   {}
 
@@ -151,15 +149,10 @@ struct linear_layer: public neural_network_layer
     optimizer->update(eta);
   }
 
-  [[nodiscard]] std::string name() const override
-  {
-    return "linear layer";
-  }
-
   void info(unsigned int layer_index) const override
   {
     std::string i = std::to_string(layer_index);
-    std::cout << "---" << name() << " ---" << std::endl;
+    std::cout << to_string() << std::endl;
     print_numpy_matrix("W" + i, W);
     if constexpr (IsSparse)
     {
@@ -272,11 +265,6 @@ struct sigmoid_layer : public linear_layer<Matrix>
       DX = W.transpose() * DZ;
     }
   }
-
-  [[nodiscard]] std::string name() const override
-  {
-    return "sigmoid layer";
-  }
 };
 
 using dense_sigmoid_layer = sigmoid_layer<eigen::matrix>;
@@ -350,11 +338,6 @@ struct activation_layer : public linear_layer<Matrix>
       DX = W.transpose() * DZ;
     }
   }
-
-  [[nodiscard]] std::string name() const override
-  {
-    return "activation layer";
-  }
 };
 
 template <typename Matrix>
@@ -365,11 +348,6 @@ struct hyperbolic_tangent_layer : public activation_layer<Matrix, hyperbolic_tan
   explicit hyperbolic_tangent_layer(std::size_t D, std::size_t K, std::size_t Q = 1)
    : super(hyperbolic_tangent_activation(), D, K, Q)
   {}
-
-  [[nodiscard]] std::string name() const override
-  {
-    return "hyperbolic_tangent layer";
-  }
 };
 
 using dense_hyperbolic_tangent_layer = hyperbolic_tangent_layer<eigen::matrix>;
@@ -383,11 +361,6 @@ struct relu_layer : public activation_layer<Matrix, relu_activation>
   explicit relu_layer(std::size_t D, std::size_t K, std::size_t Q = 1)
       : super(relu_activation(), D, K, Q)
   {}
-
-  [[nodiscard]] std::string name() const override
-  {
-    return "relu layer";
-  }
 };
 
 using dense_relu_layer = relu_layer<eigen::matrix>;
@@ -401,11 +374,6 @@ struct leaky_relu_layer : public activation_layer<Matrix, leaky_relu_activation>
   explicit leaky_relu_layer(scalar alpha, std::size_t D, std::size_t K, std::size_t Q = 1)
       : super(leaky_relu_activation(alpha), D, K, Q)
   {}
-
-  [[nodiscard]] std::string name() const override
-  {
-    return "leaky relu layer";
-  }
 };
 
 using dense_leaky_relu_layer = leaky_relu_layer<eigen::matrix>;
@@ -419,11 +387,6 @@ struct all_relu_layer : public activation_layer<Matrix, all_relu_activation>
   explicit all_relu_layer(scalar alpha, std::size_t D, std::size_t K, std::size_t Q = 1)
       : super(all_relu_activation(alpha), D, K, Q)
   {}
-
-  [[nodiscard]] std::string name() const override
-  {
-    return "all relu layer";
-  }
 };
 
 using dense_all_relu_layer = all_relu_layer<eigen::matrix>;
@@ -483,11 +446,6 @@ struct softmax_layer : public linear_layer<Matrix>
       Db = DZ.rowwise().sum();
       DX = W.transpose() * DZ;
     }
-  }
-
-  [[nodiscard]] std::string name() const override
-  {
-    return "softmax layer";
   }
 };
 
@@ -550,11 +508,6 @@ struct log_softmax_layer : public linear_layer<Matrix>
       Db = DZ.rowwise().sum();
       DX = W.transpose() * DZ;
     }
-  }
-
-  [[nodiscard]] std::string name() const override
-  {
-    return "log softmax layer";
   }
 };
 

@@ -1,4 +1,5 @@
 #!/bin/bash
+source utilities.sh
 
 epochs=100
 batchsize=100
@@ -6,18 +7,6 @@ momentum=0.9
 sizes="3072,1024,512,10"
 architecture=RRL
 weights=XXX
-
-function print_header()
-{
-  local title="$1"
-  local line="====================================================================================="
-  local padding="$(printf '%0.1s' ' '{1..80})" # create 80 spaces
-  local title_padding_length=$(( (80 - ${#title}) / 2 ))
-  local title_padding="${padding:0:title_padding_length}"
-  echo "$line"
-  echo "===$title_padding$title$title_padding==="
-  echo "$line"
-}
 
 function train_sparse()
 {

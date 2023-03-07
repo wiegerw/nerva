@@ -325,8 +325,6 @@ class tool: public command_line_tool
       options.densities = densities;
       options.info();
 
-      std::cout << "number type = " << (std::is_same<scalar, double>::value ? "double" : "float") << "\n\n";
-
       if (options.threads >= 1 && options.threads <= 8)
       {
         omp_set_num_threads(options.threads);
@@ -344,7 +342,7 @@ class tool: public command_line_tool
         }
         else
         {
-          scalar density = densities[densities_index++];
+          double density = densities[densities_index++];
           M.layers.push_back(parse_sparse_layer(a, options.sizes[i], options.sizes[i+1], density, options, rng));
         }
 
