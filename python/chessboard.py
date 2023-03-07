@@ -4,8 +4,11 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
+import argparse
 import math
 import random
+import sys
+
 import numpy as np
 import torch
 from nerva.activation import ReLU, NoActivation
@@ -60,8 +63,8 @@ def stochastic_gradient_descent(model, dataset, loss, learning_rate, epochs, bat
             X = dataset.Xtrain[:, batch]
             T = dataset.Ttrain[:, batch]
             Y = M.feedforward(X)
-            dY = loss.gradient(Y, T) / batch_size  # pytorch uses this division
-            M.backpropagate(Y, dY)
+            DY = loss.gradient(Y, T) / batch_size  # pytorch uses this division
+            M.backpropagate(Y, DY)
             M.optimize(eta)
 
         seconds = watch.seconds()
@@ -101,22 +104,44 @@ def plot_dataset(X, T):
 
 
 if __name__ == '__main__':
-    n = 20000
-    seed = 12345
-    manual_seed(seed)
-    torch.manual_seed(seed)
-    Xtrain, Ttrain = make_dataset_chessboard(n)
-    Xtest, Ttest = make_dataset_chessboard(n // 5)
+    cmdline_parser = argparse.ArgumentParser()
+    cmdline_parser.add_argument("--seed", help="The initial seed of the random generator", type=int, default=random.randrange(0, sys.maxsize))
+    cmdline_parser.add_argument('--sizes', type=str, default='2,64,64,2', help='A comma separated list of layer sizes, e.g. "2,64,64,2".')
+    cmdline_parser.add_argument("--lr", help="The learning rate", type=float, default=0.1)
+    cmdline_parser.add_argument("--epochs", help="The number of epochs", type=int, default=100)
+    cmdline_parser.add_argument("--batch-size", help="The batch size", type=int, default=10)
+    cmdline_parser.add_argument("--dataset-size", help="The dataset size", type=int, default=20000)
+    cmdline_parser.add_argument("--plot", help="Plot the generated dataset", action="store_true")
+    cmdline_parser.add_argument('--save-data', type=str, help='Save dataset to a file in .npz format')
+    cmdline_parser.add_argument('--save-weights', type=str, help='Save weights to a file in .npz format')
+    args = cmdline_parser.parse_args()
+
+    print(f'seed = {args.seed}')
+    manual_seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.set_printoptions(precision=8, edgeitems=3, threshold=5, sci_mode=False, linewidth=160)
+
+    Xtrain, Ttrain = make_dataset_chessboard(args.dataset_size)
+    Xtest, Ttest = make_dataset_chessboard(args.dataset_size // 5)
+
     dataset = DataSet(Xtrain, Ttrain, Xtest, Ttest)
-    dataset.save('chessboard.npz')
-    #plot_dataset(Xtrain, Ttrain)
-    #plot_dataset(Xtest, Ttest)
+
+    if args.save_data:
+        dataset.save(args.save_data)
+
+    if args.plot:
+        plot_dataset(Xtrain, Ttrain)
+        plot_dataset(Xtest, Ttest)
+
     overall_density = 1.0
     loss = SquaredErrorLoss()
-    learning_rate_scheduler = ConstantScheduler(0.1)
+    learning_rate_scheduler = ConstantScheduler(args.lr)
     input_size = 2
-    batch_size = 100
     model = create_model(overall_density)
-    model.compile(input_size, batch_size)
+    model.compile(input_size, args.batch_size)
+
+    if args.save_weights:
+        model.compiled_model.export_weights(args.save_weights)
+
     print(model)
-    stochastic_gradient_descent(model, dataset, loss, learning_rate_scheduler, epochs=100, batch_size=batch_size, shuffle=False, statistics=True)
+    stochastic_gradient_descent(model, dataset, loss, learning_rate_scheduler, epochs=args.epochs, batch_size=args.batch_size, shuffle=False, statistics=True)
