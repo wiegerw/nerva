@@ -239,7 +239,6 @@ class tool: public command_line_tool
       cli |= lyra::opt(options.dropout, "value")["--dropout"]("The dropout rate for the the linear layers (use 0 for no dropout)");
 
       // training
-      cli |= lyra::opt(options.algorithm, "value")["--algorithm"]("The algorithm (sgd)");
       cli |= lyra::opt(options.epochs, "value")["--epochs"]("The number of epochs (default: 100)");
       cli |= lyra::opt(options.batch_size, "value")["--batch-size"]("The batch size of the training algorithm");
       cli |= lyra::opt(no_shuffle)["--no-shuffle"]("Do not shuffle the dataset during training.");
@@ -389,20 +388,13 @@ class tool: public command_line_tool
       std::cout << "scheduler = " << learning_rate->to_string() << "\n";
       std::cout << "layer densities: " << layer_density_info(M) << "\n\n";
 
-      if (options.algorithm == "sgd")
+      if (!preprocessed_dir.empty())
       {
-        if (!preprocessed_dir.empty())
-        {
-          stochastic_gradient_descent_preprocessed(M, loss, preprocessed_dir, options, learning_rate, rng);
-        }
-        else
-        {
-          stochastic_gradient_descent(M, loss, dataset, options, learning_rate, rng);
-        }
+        stochastic_gradient_descent_preprocessed(M, loss, preprocessed_dir, options, learning_rate, rng);
       }
       else
       {
-        throw std::runtime_error("Unknown algorithm '" + options.algorithm + "'");
+        stochastic_gradient_descent(M, loss, dataset, options, learning_rate, rng);
       }
 
 #ifdef NERVA_ENABLE_PROFILING

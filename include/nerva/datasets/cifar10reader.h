@@ -39,6 +39,8 @@ class cifar10reader
         throw std::runtime_error("The size of the file " + filename + " is not equal to 3073000");
       }
 
+      NERVA_LOG(log::verbose) << ".";
+
       for (long j = 0; j < 10000; j++)
       {
         auto first = bytes.begin() + j * 3073;
@@ -84,11 +86,10 @@ class cifar10reader
       {
         auto path = fs::path(directory) / fs::path("data_batch_" + std::to_string(i + 1) + ".bin");
         read_slice(path.string(), Xtrain, Ttrain, i * 10000);
-        NERVA_LOG(log::verbose) << "read slice " << path << std::endl;
       }
       auto path = fs::path(directory) / fs::path("test_batch.bin");
       read_slice(path.string(), Xvalid, Tvalid, 0);
-      NERVA_LOG(log::verbose) << "read slice " << path << std::endl;
+      NERVA_LOG(log::verbose) << std::endl;
     }
 
     void normalize_data()
@@ -131,27 +132,27 @@ class cifar10reader
       return { Xtrain_subset, Ttrain_subset, Xvalid_subset, Tvalid_subset };
     }
 
-    std::tuple<eigen::matrix, eigen::matrix, eigen::matrix, eigen::matrix> data() const
+    [[nodiscard]] std::tuple<eigen::matrix, eigen::matrix, eigen::matrix, eigen::matrix> data() const
     {
       return { Xtrain, Ttrain, Xvalid, Tvalid };
     }
 
-    const eigen::matrix& xtrain() const
+    [[nodiscard]] const eigen::matrix& xtrain() const
     {
       return Xtrain;
     }
 
-    const eigen::matrix& ttrain() const
+    [[nodiscard]] const eigen::matrix& ttrain() const
     {
       return Ttrain;
     }
 
-    const eigen::matrix& xvalid() const
+    [[nodiscard]] const eigen::matrix& xvalid() const
     {
       return Xvalid;
     }
 
-    const eigen::matrix& tvalid() const
+    [[nodiscard]] const eigen::matrix& tvalid() const
     {
       return Tvalid;
     }

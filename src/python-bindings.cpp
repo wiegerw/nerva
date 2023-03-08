@@ -428,9 +428,9 @@ PYBIND11_MODULE(nervalib, m)
     ;
 
   m.def("stochastic_gradient_descent", stochastic_gradient_descent<datasets::dataset_view, std::mt19937>);
-  m.def("compute_loss", compute_loss_batch<multilayer_perceptron>);
-  m.def("compute_accuracy", compute_accuracy_batch<multilayer_perceptron, datasets::matrix_ref>);
-  m.def("compute_statistics", compute_statistics_batch<multilayer_perceptron, datasets::dataset_view>);
+  m.def("compute_loss", compute_loss);
+  m.def("compute_accuracy", compute_accuracy<datasets::matrix_ref>);
+  m.def("compute_statistics", compute_statistics<datasets::dataset_view>);
   m.def("set_num_threads", mkl_set_num_threads);
 
   /////////////////////////////////////////////////////////////////////////

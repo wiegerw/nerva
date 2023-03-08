@@ -66,8 +66,8 @@ TEST_CASE("test_mlp")
     layer3->b = b3;
   }
 
-  auto accuracy1 = compute_accuracy_batch(M, data.Xtrain, data.Ttrain, batch_size);
-  auto accuracy2 = compute_accuracy_batch(M, data1.Xtrain, data1.Ttrain, batch_size);
+  auto accuracy1 = compute_accuracy(M, data.Xtrain, data.Ttrain, batch_size);
+  auto accuracy2 = compute_accuracy(M, data1.Xtrain, data1.Ttrain, batch_size);
 
   CHECK(std::fabs(accuracy1 - accuracy2) < 0.00001);
 }

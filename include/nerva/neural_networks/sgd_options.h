@@ -36,7 +36,6 @@ struct sgd_options
 
 struct mlp_options: public sgd_options
 {
-  std::string algorithm = "sgd";
   std::string dataset;
   std::size_t dataset_size = 2000;
   bool normalize_data = false;
@@ -76,7 +75,6 @@ inline
 std::ostream& operator<<(std::ostream& out, const mlp_options& options)
 {
   out << static_cast<const sgd_options&>(options);
-  out << "algorithm = " << options.algorithm << std::endl;
   if (!options.dataset.empty())
   {
     out << "dataset = " << options.dataset << std::endl;

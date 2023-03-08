@@ -25,8 +25,8 @@
 
 namespace nerva {
 
-template <typename MultilayerPerceptron, typename EigenMatrix>
-double compute_accuracy(MultilayerPerceptron& M, const EigenMatrix& Xtest, const EigenMatrix& Ttest)
+template <typename EigenMatrix>
+double compute_accuracy(multilayer_perceptron& M, const EigenMatrix& Xtest, const EigenMatrix& Ttest, long Q)
 {
   auto is_correct = [](const eigen::vector& y, const eigen::vector& t)
   {
@@ -36,34 +36,7 @@ double compute_accuracy(MultilayerPerceptron& M, const EigenMatrix& Xtest, const
 
   long N = Xtest.cols(); // the number of examples
   long L = Ttest.rows(); // the number of outputs
-  std::size_t total_correct = 0;
-  eigen::matrix y(L, 1);
-
-  for (unsigned int i = 0; i < N; ++i)
-  {
-    const auto& t = Ttest.col(i);
-    const auto& x = Xtest.col(i);
-    M.feedforward(x, y);
-    if (is_correct(y, t))
-    {
-      total_correct++;
-    }
-  }
-  return static_cast<double>(total_correct) / N;
-}
-
-template <typename MultilayerPerceptron, typename EigenMatrix>
-double compute_accuracy_batch(MultilayerPerceptron& M, const EigenMatrix& Xtest, const EigenMatrix& Ttest, long Q)
-{
-  auto is_correct = [](const eigen::vector& y, const eigen::vector& t)
-  {
-    auto i = std::max_element(y.begin(), y.end()) - y.begin(); // i is the index of the largest element
-    return t[i] == 1;
-  };
-
-  long N = Xtest.cols(); // the number of examples
-  long L = Ttest.rows(); // the number of outputs
-  auto K = N / Q;  // the number of batches
+  auto K = N / Q;        // the number of batches
   eigen::matrix Ybatch(L, Q);
   std::size_t total_correct = 0;
 
@@ -86,30 +59,12 @@ double compute_accuracy_batch(MultilayerPerceptron& M, const EigenMatrix& Xtest,
   return static_cast<double>(total_correct) / N;
 }
 
-template <typename MultilayerPerceptron>
-double compute_loss(MultilayerPerceptron& M, const std::shared_ptr<loss_function>& loss, const eigen::matrix& X, const eigen::matrix& T)
+inline
+double compute_loss(multilayer_perceptron& M, const std::shared_ptr<loss_function>& loss, const eigen::matrix& X, const eigen::matrix& T, long Q)
 {
   long N = X.cols(); // the number of examples
   long L = T.rows(); // the number of outputs
-  double total_loss = 0.0;
-  eigen::matrix y(L, 1);
-
-  for (unsigned int i = 0; i < N; ++i)
-  {
-    const eigen::vector& t = T.col(i);
-    const eigen::vector& x = X.col(i);
-    M.feedforward(x, y);
-    total_loss += loss->value(y, t);
-  }
-  return total_loss / N; // display the average loss
-}
-
-template <typename MultilayerPerceptron>
-double compute_loss_batch(MultilayerPerceptron& M, const std::shared_ptr<loss_function>& loss, const eigen::matrix& X, const eigen::matrix& T, long Q)
-{
-  long N = X.cols(); // the number of examples
-  long L = T.rows(); // the number of outputs
-  auto K = N / Q;                // the number of batches
+  auto K = N / Q;    // the number of batches
   double total_loss = 0.0;
   eigen::matrix Ybatch(L, Q);
 
@@ -121,51 +76,26 @@ double compute_loss_batch(MultilayerPerceptron& M, const std::shared_ptr<loss_fu
     M.feedforward(Xbatch, Ybatch);
     total_loss += loss->value(Ybatch, Tbatch);
   }
-  return total_loss / N; // display the average loss
+  return total_loss / N; // return the average loss
 }
 
-template <typename MultilayerPerceptron, typename DataSet>
-void compute_statistics(MultilayerPerceptron& M,
+template <typename DataSet>
+void compute_statistics(multilayer_perceptron& M,
                         scalar lr,
                         const std::shared_ptr<loss_function>& loss,
                         const DataSet& data,
-                        unsigned int epoch,
+                        long Q, // the batch size
+                        int epoch,
                         bool full_statistics,
                         double elapsed_seconds = -1.0
-                        )
+                       )
 {
   std::cout << fmt::format("epoch {:3d}", epoch + 1);
   if (full_statistics)
   {
-    auto training_loss = compute_loss(M, loss, data.Xtrain, data.Ttrain);
-    auto training_accuracy = compute_accuracy(M, data.Xtrain, data.Ttrain);
-    auto test_accuracy = compute_accuracy(M, data.Xtest, data.Ttest);
-    std::cout << fmt::format("  lr: {:.8f}  loss: {:.8f}  train accuracy: {:.8f}  test accuracy: {:.8f}", lr, training_loss, training_accuracy, test_accuracy);
-  }
-  if (elapsed_seconds >= 0)
-  {
-    std::cout << fmt::format("  time: {:.8f}s", elapsed_seconds);
-  }
-  std::cout << std::endl;
-}
-
-template <typename MultilayerPerceptron, typename DataSet>
-void compute_statistics_batch(MultilayerPerceptron& M,
-                              scalar lr,
-                              const std::shared_ptr<loss_function>& loss,
-                              const DataSet& data,
-                              long Q, // the batch size
-                              int epoch,
-                              bool full_statistics,
-                              double elapsed_seconds = -1.0
-                              )
-{
-  std::cout << fmt::format("epoch {:3d}", epoch + 1);
-  if (full_statistics)
-  {
-    auto training_loss = compute_loss_batch(M, loss, data.Xtrain, data.Ttrain, Q);
-    auto training_accuracy = compute_accuracy_batch(M, data.Xtrain, data.Ttrain, Q);
-    auto test_accuracy = compute_accuracy_batch(M, data.Xtest, data.Ttest, Q);
+    auto training_loss = compute_loss(M, loss, data.Xtrain, data.Ttrain, Q);
+    auto training_accuracy = compute_accuracy(M, data.Xtrain, data.Ttrain, Q);
+    auto test_accuracy = compute_accuracy(M, data.Xtest, data.Ttest, Q);
     std::cout << fmt::format(" lr: {:.8f}  loss: {:.8f}  train accuracy: {:.8f}  test accuracy: {:.8f}", lr, training_loss, training_accuracy, test_accuracy);
   }
   if (elapsed_seconds >= 0)
@@ -195,7 +125,7 @@ std::pair<double, double> stochastic_gradient_descent(
   utilities::stopwatch watch;
   scalar eta = learning_rate->operator()(0);
 
-  compute_statistics_batch(M, eta, loss, data, options.batch_size, -1, options.statistics, 0.0);
+  compute_statistics(M, eta, loss, data, options.batch_size, -1, options.statistics, 0.0);
 
   for (int epoch = 0; epoch < options.epochs; ++epoch)
   {
@@ -253,9 +183,9 @@ std::pair<double, double> stochastic_gradient_descent(
     }
     double seconds = watch.seconds();
     total_training_time += seconds;
-    compute_statistics_batch(M, eta, loss, data, options.batch_size, epoch, options.statistics, seconds);
+    compute_statistics(M, eta, loss, data, options.batch_size, epoch, options.statistics, seconds);
   }
-  double test_accuracy = compute_accuracy_batch(M, data.Xtest, data.Ttest, options.batch_size);
+  double test_accuracy = compute_accuracy(M, data.Xtest, data.Ttest, options.batch_size);
   std::cout << fmt::format("Accuracy of the network on the {} test examples: {:.2f}%", data.Xtest.cols(), test_accuracy * 100.0) << std::endl;
   std::cout << fmt::format("Total training time for the {} epochs: {:.8f}s\n", options.epochs, total_training_time);
   return {test_accuracy, total_training_time};
@@ -287,7 +217,7 @@ std::pair<double, double> stochastic_gradient_descent_preprocessed(
   utilities::stopwatch watch;
   scalar eta = learning_rate->operator()(0);
 
-  compute_statistics_batch(M, eta, loss, data, options.batch_size, -1, options.statistics, 0.0);
+  compute_statistics(M, eta, loss, data, options.batch_size, -1, options.statistics, 0.0);
 
   for (int epoch = 0; epoch < options.epochs; ++epoch)
   {
@@ -351,9 +281,9 @@ std::pair<double, double> stochastic_gradient_descent_preprocessed(
     }
     double seconds = watch.seconds();
     total_training_time += seconds;
-    compute_statistics_batch(M, eta, loss, data, options.batch_size, epoch, options.statistics, seconds);
+    compute_statistics(M, eta, loss, data, options.batch_size, epoch, options.statistics, seconds);
   }
-  double test_accuracy = compute_accuracy_batch(M, data.Xtest, data.Ttest, options.batch_size);
+  double test_accuracy = compute_accuracy(M, data.Xtest, data.Ttest, options.batch_size);
   std::cout << fmt::format("Accuracy of the network on the {} test examples: {:.2f}%", data.Xtest.cols(), test_accuracy * 100.0) << std::endl;
   std::cout << fmt::format("Total training time for the {} epochs: {:.8f}s\n", options.epochs, total_training_time);
   return {test_accuracy, total_training_time};

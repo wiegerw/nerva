@@ -73,13 +73,3 @@ function run_dataset()
   dropout=0.3
   run
 }
-
-dataset=chessboard
-sizes="2,64,64,2"
-epochs=10
-run_dataset
-
-#dataset=cifar10
-#sizes="3072,4,10"
-#epochs=1
-#run_dataset
