@@ -158,7 +158,7 @@ struct nesterov_optimizer: public gradient_descent_optimizer<Matrix>
         delta_b_prev(b.size()),
         mu(mu_)
   {
-    if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+    if constexpr (IsSparse)
     {
       reset_support();
     }
@@ -178,7 +178,7 @@ struct nesterov_optimizer: public gradient_descent_optimizer<Matrix>
 
   void update(scalar eta) override
   {
-    if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+    if constexpr (IsSparse)
     {
       mkl::assign_matrix(delta_W_prev, delta_W);
       mkl::assign_matrix_sum(delta_W, DW, mu, -eta);

@@ -284,7 +284,12 @@ class sparse_matrix_csr
     {
       return m_values;
     }
-    
+
+    std::vector<T>& values()
+    {
+      return m_values;
+    }
+
     [[nodiscard]] const matrix_descr& descriptor() const
     {
       return m_descr;

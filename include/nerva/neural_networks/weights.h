@@ -29,29 +29,6 @@ struct weight_initializer
   virtual ~weight_initializer() = default;
 };
 
-struct naive_weight_initializer: public weight_initializer
-{
-  scalar low;
-  scalar high;
-
-  explicit naive_weight_initializer(std::mt19937& rng, scalar low_ = 0.0, scalar high_ = 1.0)
-    : weight_initializer(rng), low(low_), high(high_)
-  {}
-
-  scalar operator()() const override
-  {
-    std::uniform_real_distribution<scalar> dist(low, high);
-    return dist(rng);
-  }
-
-  template <typename Matrix>
-  void initialize(Matrix& W, eigen::vector& b) const
-  {
-    initialize_matrix(W, *this);
-    b = eigen::vector::NullaryExpr(b.size(), *this);
-  }
-};
-
 struct uniform_weight_initializer: public weight_initializer
 {
   scalar low;
