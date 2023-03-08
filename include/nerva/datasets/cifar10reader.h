@@ -99,7 +99,7 @@ class cifar10reader
         X = X.unaryExpr([](scalar t) { return scalar(2) * ((t / scalar(255)) - scalar(0.5)); });
       };
 
-      NERVA_LOG(log::verbose) << "normalizing data" << std::endl;
+      NERVA_LOG(log::verbose) << "Normalizing data" << std::endl;
       normalize(Xtrain);
       normalize(Xvalid);
     }

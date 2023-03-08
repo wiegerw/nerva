@@ -427,7 +427,11 @@ PYBIND11_MODULE(nervalib, m)
     .def("info", &sgd_options::info)
     ;
 
-  m.def("stochastic_gradient_descent", stochastic_gradient_descent<datasets::dataset_view, std::mt19937>);
+  py::class_<stochastic_gradient_descent_algorithm<datasets::dataset_view, std::mt19937>>(m, "SGD_Algorithm")
+    .def(py::init<multilayer_perceptron&, datasets::dataset_view&, const sgd_options&, const std::shared_ptr<loss_function>&, const std::shared_ptr<learning_rate_scheduler>&, std::mt19937, const std::string&>(), py::return_value_policy::copy)
+    .def("run", &stochastic_gradient_descent_algorithm<datasets::dataset_view, std::mt19937>::run)
+    ;
+
   m.def("compute_loss", compute_loss);
   m.def("compute_accuracy", compute_accuracy<datasets::matrix_ref>);
   m.def("compute_statistics", compute_statistics<datasets::dataset_view>);

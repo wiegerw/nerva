@@ -129,6 +129,27 @@ struct dataset_view
     eigen::print_numpy_matrix("Ttest", Ttest.transpose());
   }
 
+  // Precondition: the python interpreter must be running.
+  // This can be enforced using `py::scoped_interpreter guard{};`
+  void load(const std::string& filename)
+  {
+    std::cout << "Loading dataset from file " << filename << std::endl;
+
+    if (!std::filesystem::exists(std::filesystem::path(filename)))
+    {
+      throw std::runtime_error("Could not load file '" + filename + "'");
+    }
+
+    pybind11::dict data = pybind11::module::import("numpy").attr("load")(filename);
+    Xtrain = eigen::extract_matrix<scalar>(data, "Xtrain").transpose();
+    Xtest = eigen::extract_matrix<scalar>(data, "Xtest").transpose();
+    auto Ttrain_ = eigen::extract_vector<long>(data, "Ttrain");
+    auto Ttest_ = eigen::extract_vector<long>(data, "Ttest");
+    long num_classes = Ttrain_.maxCoeff() + 1;
+    Ttrain = eigen::to_one_hot(Ttrain_, num_classes);
+    Ttest = eigen::to_one_hot(Ttest_, num_classes);
+  }
+
   void save(const std::string& filename) const
   {
     using long_vector = Eigen::Matrix<long, Eigen::Dynamic, 1>;

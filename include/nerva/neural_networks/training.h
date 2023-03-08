@@ -105,189 +105,137 @@ void compute_statistics(multilayer_perceptron& M,
   std::cout << std::endl;
 }
 
-// Returns the test accuracy and the total training time
-template <typename DataSet, typename RandomNumberGenerator>
-std::pair<double, double> stochastic_gradient_descent(
-  multilayer_perceptron& M,
-  const std::shared_ptr<loss_function>& loss,
-  DataSet& data,
-  const sgd_options& options,
-  const std::shared_ptr<learning_rate_scheduler>& learning_rate,
-  RandomNumberGenerator rng)
+template <typename DataSet = datasets::dataset, typename RandomNumberGenerator = std::mt19937>
+class stochastic_gradient_descent_algorithm
 {
-  double total_training_time = 0;
-  long N = data.Xtrain.cols(); // the number of examples
-  long L = data.Ttrain.rows(); // the number of outputs
-  std::vector<long> I(N);
-  std::iota(I.begin(), I.end(), 0);
-  eigen::matrix Y(L, options.batch_size);
-  long K = N / options.batch_size; // the number of batches
-  utilities::stopwatch watch;
-  scalar eta = learning_rate->operator()(0);
+  protected:
+    multilayer_perceptron& M;
+    DataSet& data;
+    const sgd_options& options;
+    const std::shared_ptr<loss_function>& loss;
+    const std::shared_ptr<learning_rate_scheduler>& learning_rate;
+    RandomNumberGenerator rng;
+    std::filesystem::path preprocessed_dir;
 
-  compute_statistics(M, eta, loss, data, options.batch_size, -1, options.statistics, 0.0);
+  public:
+    stochastic_gradient_descent_algorithm(multilayer_perceptron& M_,
+                                          DataSet& data_,
+                                          const sgd_options& options_,
+                                          const std::shared_ptr<loss_function>& loss_,
+                                          const std::shared_ptr<learning_rate_scheduler>& learning_rate_,
+                                          RandomNumberGenerator rng_,
+                                          const std::string& preprocessed_dir_ = ""
+                                         )
+      : M(M_),
+        data(data_),
+        options(options_),
+        loss(loss_),
+        learning_rate(learning_rate_),
+        rng(rng_),
+        preprocessed_dir(preprocessed_dir_)
+    {}
 
-  for (int epoch = 0; epoch < options.epochs; ++epoch)
-  {
-    watch.reset();
-
-    if (epoch > 0 && options.regrow_rate > 0)
+    /// \brief Reloads the dataset if a directory with preprocessed data was specified.
+    void reload_data(unsigned int epoch)
     {
-      std::cout << "regrow" << std::endl;
-      M.regrow(options.regrow_rate, weight_initialization::xavier, options.regrow_separate_positive_negative, rng);
+      if (!preprocessed_dir.empty())
+      {
+        data.load((preprocessed_dir / ("epoch" + std::to_string(epoch) + ".npz")).native());
+      }
     }
 
-    if (options.shuffle)
+    /// \brief Prune and grow the weights of sparse linear layers (experimental!)
+    void regrow_weights()
     {
-      std::shuffle(I.begin(), I.end(), rng);      // shuffle the examples at the start of each epoch
-    }
-    M.renew_dropout_mask(rng);
-    eta = learning_rate->operator()(epoch);       // update the learning at the start of each epoch
-    eigen::matrix DY(L, options.batch_size);
-
-    for (long k = 0; k < K; k++)
-    {
-      eigen::eigen_slice batch(I.begin() + k * options.batch_size, options.batch_size);
-      auto X = data.Xtrain(Eigen::all, batch);
-      auto T = data.Ttrain(Eigen::all, batch);
-      M.feedforward(X, Y);
-
-      if (options.gradient_step > 0)
+      if (options.regrow_rate > 0)
       {
-        DY = loss->gradient(Y, T);
-        auto f = [loss, &Y, &T]() { return loss->value(Y, T); };
-        check_gradient("DY", f, Y, DY, options.gradient_step);
+        std::cout << "regrow" << std::endl;
+        M.regrow(options.regrow_rate, weight_initialization::xavier, options.regrow_separate_positive_negative, rng);
       }
-      else
-      {
-        DY = loss->gradient(Y, T) / options.batch_size;  // pytorch does it like this
-      }
-
-      if (options.debug)
-      {
-        std::cout << "epoch: " << epoch << " batch: " << k << std::endl;
-        // print_model_info(M);
-        eigen::print_numpy_matrix("X", X.transpose());
-        eigen::print_numpy_matrix("Y", Y.transpose());
-        eigen::print_numpy_matrix("DY", DY.transpose());
-      }
-
-      M.backpropagate(Y, DY);
-
-      if (options.gradient_step > 0)
-      {
-        M.check_gradients(loss, T, options.gradient_step);
-      }
-
-      M.optimize(eta);
-    }
-    double seconds = watch.seconds();
-    total_training_time += seconds;
-    compute_statistics(M, eta, loss, data, options.batch_size, epoch, options.statistics, seconds);
-  }
-  double test_accuracy = compute_accuracy(M, data.Xtest, data.Ttest, options.batch_size);
-  std::cout << fmt::format("Accuracy of the network on the {} test examples: {:.2f}%", data.Xtest.cols(), test_accuracy * 100.0) << std::endl;
-  std::cout << fmt::format("Total training time for the {} epochs: {:.8f}s\n", options.epochs, total_training_time);
-  return {test_accuracy, total_training_time};
-}
-
-// Loads a new dataset at every epoch from the directory datadir
-template <typename RandomNumberGenerator>
-std::pair<double, double> stochastic_gradient_descent_preprocessed(
-  multilayer_perceptron& M,
-  const std::shared_ptr<loss_function>& loss,
-  const std::string& datadir,
-  const sgd_options& options,
-  const std::shared_ptr<learning_rate_scheduler>& learning_rate,
-  RandomNumberGenerator rng)
-{
-  auto path = std::filesystem::path(datadir);
-  datasets::dataset data;
-
-  // read the first dataset
-  data.load(path / "epoch0.npz");
-
-  double total_training_time = 0;
-  long N = data.Xtrain.cols(); // the number of examples
-  long L = data.Ttrain.rows(); // the number of outputs
-  std::vector<long> I(N);
-  std::iota(I.begin(), I.end(), 0);
-  eigen::matrix Y(L, options.batch_size);
-  long K = N / options.batch_size; // the number of batches
-  utilities::stopwatch watch;
-  scalar eta = learning_rate->operator()(0);
-
-  compute_statistics(M, eta, loss, data, options.batch_size, -1, options.statistics, 0.0);
-
-  for (int epoch = 0; epoch < options.epochs; ++epoch)
-  {
-    // read the next dataset
-    if (epoch > 0)
-    {
-      data.load((path / ("epoch" + std::to_string(epoch) + ".npz")).native());
-    }
-    watch.reset();
-
-    if (epoch > 0 && options.regrow_rate > 0)
-    {
-      std::cout << "regrow" << std::endl;
-      M.regrow(options.regrow_rate, weight_initialization::xavier, options.regrow_separate_positive_negative, rng);
     }
 
-    if (options.shuffle)
+    std::pair<double, double> run()
     {
-      std::shuffle(I.begin(), I.end(), rng);      // shuffle the examples at the start of each epoch
+      reload_data(0);
+
+      double total_training_time = 0;
+      long N = data.Xtrain.cols(); // the number of examples
+      long L = data.Ttrain.rows(); // the number of outputs
+      std::vector<long> I(N);
+      std::iota(I.begin(), I.end(), 0);
+      eigen::matrix Y(L, options.batch_size);
+      long K = N / options.batch_size; // the number of batches
+      utilities::stopwatch watch;
+      scalar eta = learning_rate->operator()(0);
+
+      compute_statistics(M, eta, loss, data, options.batch_size, -1, options.statistics, 0.0);
+
+      for (unsigned int epoch = 0; epoch < options.epochs; ++epoch)
+      {
+        if (epoch > 0)
+        {
+          reload_data(epoch);
+        }
+
+        watch.reset();
+
+        M.renew_dropout_mask(rng);
+        regrow_weights();
+
+        if (options.shuffle)
+        {
+          std::shuffle(I.begin(), I.end(), rng);      // shuffle the examples at the start of each epoch
+        }
+
+        eta = learning_rate->operator()(epoch);       // update the learning at the start of each epoch
+
+        eigen::matrix DY(L, options.batch_size);
+
+        for (long k = 0; k < K; k++)
+        {
+          eigen::eigen_slice batch(I.begin() + k * options.batch_size, options.batch_size);
+          auto X = data.Xtrain(Eigen::all, batch);
+          auto T = data.Ttrain(Eigen::all, batch);
+          M.feedforward(X, Y);
+
+          if (options.debug)
+          {
+            std::cout << "epoch: " << epoch << " batch: " << k << std::endl;
+            print_model_info(M);
+            eigen::print_numpy_matrix("X", X.transpose());
+            eigen::print_numpy_matrix("Y", Y.transpose());
+          }
+
+          if (options.gradient_step > 0)
+          {
+            DY = loss->gradient(Y, T);
+            auto f = [this, &Y, &T]() { return loss->value(Y, T); };
+            check_gradient("DY", f, Y, DY, options.gradient_step);
+          }
+          else
+          {
+            DY = loss->gradient(Y, T) / options.batch_size;  // pytorch does it like this
+          }
+
+          M.backpropagate(Y, DY);
+
+          if (options.gradient_step > 0)
+          {
+            M.check_gradients(loss, T, options.gradient_step);
+          }
+
+          M.optimize(eta);
+        }
+        double seconds = watch.seconds();
+        total_training_time += seconds;
+        compute_statistics(M, eta, loss, data, options.batch_size, epoch, options.statistics, seconds);
+      }
+      double test_accuracy = compute_accuracy(M, data.Xtest, data.Ttest, options.batch_size);
+      std::cout << fmt::format("Accuracy of the network on the {} test examples: {:.2f}%", data.Xtest.cols(), test_accuracy * 100.0) << std::endl;
+      std::cout << fmt::format("Total training time for the {} epochs: {:.8f}s\n", options.epochs, total_training_time);
+      return {test_accuracy, total_training_time};
     }
-
-    M.renew_dropout_mask(rng);
-    eta = learning_rate->operator()(epoch);       // update the learning at the start of each epoch
-    eigen::matrix DY(L, options.batch_size);
-
-    for (long k = 0; k < K; k++)
-    {
-      eigen::eigen_slice batch(I.begin() + k * options.batch_size, options.batch_size);
-      auto X = data.Xtrain(Eigen::all, batch);
-      auto T = data.Ttrain(Eigen::all, batch);
-      M.feedforward(X, Y);
-
-      if (options.gradient_step > 0)
-      {
-        DY = loss->gradient(Y, T);
-        auto f = [loss, &Y, &T]() { return loss->value(Y, T); };
-        check_gradient("DY", f, Y, DY, options.gradient_step);
-      }
-      else
-      {
-        DY = loss->gradient(Y, T) / options.batch_size;  // pytorch does it like this
-      }
-
-      if (options.debug)
-      {
-        std::cout << "epoch: " << epoch << " batch: " << k << std::endl;
-        // print_model_info(M);
-        eigen::print_numpy_matrix("X", X.transpose());
-        eigen::print_numpy_matrix("Y", Y.transpose());
-        eigen::print_numpy_matrix("DY", DY.transpose());
-      }
-
-      M.backpropagate(Y, DY);
-
-      if (options.gradient_step > 0)
-      {
-        M.check_gradients(loss, T, options.gradient_step);
-      }
-
-      M.optimize(eta);
-    }
-    double seconds = watch.seconds();
-    total_training_time += seconds;
-    compute_statistics(M, eta, loss, data, options.batch_size, epoch, options.statistics, seconds);
-  }
-  double test_accuracy = compute_accuracy(M, data.Xtest, data.Ttest, options.batch_size);
-  std::cout << fmt::format("Accuracy of the network on the {} test examples: {:.2f}%", data.Xtest.cols(), test_accuracy * 100.0) << std::endl;
-  std::cout << fmt::format("Total training time for the {} epochs: {:.8f}s\n", options.epochs, total_training_time);
-  return {test_accuracy, total_training_time};
-}
+};
 
 } // namespace nerva
 

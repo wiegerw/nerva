@@ -388,14 +388,8 @@ class tool: public command_line_tool
       std::cout << "scheduler = " << learning_rate->to_string() << "\n";
       std::cout << "layer densities: " << layer_density_info(M) << "\n\n";
 
-      if (!preprocessed_dir.empty())
-      {
-        stochastic_gradient_descent_preprocessed(M, loss, preprocessed_dir, options, learning_rate, rng);
-      }
-      else
-      {
-        stochastic_gradient_descent(M, loss, dataset, options, learning_rate, rng);
-      }
+      stochastic_gradient_descent_algorithm algorithm(M, dataset, options, loss, learning_rate, rng, preprocessed_dir);
+      algorithm.run();
 
 #ifdef NERVA_ENABLE_PROFILING
       CALLGRIND_STOP_INSTRUMENTATION;

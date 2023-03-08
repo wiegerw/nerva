@@ -28,7 +28,6 @@ struct sgd_options
   bool regrow_separate_positive_negative = false; // apply the regrow rate to positive and negative values separately
   bool statistics = true;
   bool debug = false;
-  bool check_gradients = false;
   scalar gradient_step = 0;  // if gradient_step > 0 then gradient checks will be done
 
   void info() const;
