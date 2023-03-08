@@ -206,16 +206,15 @@ class stochastic_gradient_descent_algorithm
             eigen::print_numpy_matrix("Y", Y.transpose());
           }
 
+          DY = loss->gradient(Y, T);
+
           if (options.gradient_step > 0)
           {
-            DY = loss->gradient(Y, T);
             auto f = [this, &Y, &T]() { return loss->value(Y, T); };
             check_gradient("DY", f, Y, DY, options.gradient_step);
           }
-          else
-          {
-            DY = loss->gradient(Y, T) / options.batch_size;  // pytorch does it like this
-          }
+
+          DY /= options.batch_size;  // PyTorch does it like this
 
           M.backpropagate(Y, DY);
 

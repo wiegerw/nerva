@@ -355,21 +355,6 @@ class mlp_masking
     }
 };
 
-inline
-std::vector<std::pair<long, long>> sparse_linear_layer_sizes(multilayer_perceptron& M)
-{
-  std::vector<std::pair<long, long>> result;
-  for (auto& layer: M.layers)
-  {
-    if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
-    {
-      const auto& W = slayer->W;
-      result.emplace_back(W.rows(), W.cols());
-    }
-  }
-  return result;
-}
-
 // This function can be used to get a rough indication of the size of a model.
 inline
 void save_model_weights_to_npy(const std::string& filename, const multilayer_perceptron& M)
