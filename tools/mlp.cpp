@@ -114,18 +114,6 @@ void set_weights(multilayer_perceptron& M, std::string weights_initialization, c
 }
 
 inline
-void wipe_sparse_layer_bias(multilayer_perceptron& M)
-{
-  for (auto& layer: M.layers)
-  {
-    if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
-    {
-      slayer->b = eigen::vector::Zero(slayer->b.size());
-    }
-  }
-}
-
-inline
 std::vector<double> parse_comma_separated_real_numbers(const std::string& text)
 {
   std::vector<double> result;
@@ -238,8 +226,6 @@ class tool: public command_line_tool
     bool no_statistics = false;
     bool info = false;
 
-    bool wipe_bias = false;  // TODO: remove this experimental option
-
     void add_options(lyra::cli& cli) override
     {
       // randomness
@@ -271,7 +257,6 @@ class tool: public command_line_tool
       cli |= lyra::opt(options.weights_initialization, "value")["--weights"]("The weight initialization (default, he, uniform, xavier, normalized_xavier, uniform)");
       cli |= lyra::opt(load_weights_file, "value")["--load-weights"]("Loads the weights and bias from a file in .npz format");
       cli |= lyra::opt(save_weights_file, "value")["--save-weights"]("Saves the weights and bias to a file in .npz format");
-      cli |= lyra::opt(wipe_bias)["--wipe-bias"]("Zero the bias vectors of sparse linear layers (experimental!)");
 
       // dataset
       cli |= lyra::opt(options.dataset, "value")["--dataset"]("The dataset (chessboard, spirals, square, sincos)");
@@ -380,11 +365,6 @@ class tool: public command_line_tool
       else
       {
         load_weights(M, load_weights_file);
-        if (wipe_bias)
-        {
-          std::cout << "Zero the bias vectors of sparse linear layers" << std::endl;
-          wipe_sparse_layer_bias(M);
-        }
       }
 
       if (!save_weights_file.empty())

@@ -165,6 +165,30 @@ struct ten_weight_initializer: public weight_initializer
   }
 };
 
+struct pytorch_weight_initializer: public weight_initializer
+{
+  scalar x;
+
+  pytorch_weight_initializer(std::mt19937& rng, long rows, long columns)
+    : weight_initializer(rng)
+  {
+    x = std::sqrt(scalar(6.0)) / std::sqrt(scalar(rows + columns));
+  }
+
+  scalar operator()() const override
+  {
+    std::uniform_real_distribution<scalar> dist(-x, x);
+    return dist(rng);
+  }
+
+  template <typename Matrix>
+  void initialize(Matrix& W, eigen::vector& b) const
+  {
+    initialize_matrix(W, *this);
+    eigen::initialize_vector(b, *this);
+  }
+};
+
 enum class weight_initialization
 {
   default_,
@@ -258,9 +282,13 @@ void initialize_weights(weight_initialization w, Matrix& W, eigen::vector& b, st
       xavier_normalized_weight_initializer(rng, W.rows(), W.cols()).initialize(W, b);
       break;
     }
+    case weight_initialization::pytorch:
+    {
+      pytorch_weight_initializer(rng, W.rows(), W.cols()).initialize(W, b);
+      break;
+    }
     case weight_initialization::uniform:
     case weight_initialization::default_:  // TODO: implement this
-    case weight_initialization::pytorch:  // TODO: implement this
     case weight_initialization::tensorflow:  // TODO: implement this
     {
       uniform_weight_initializer(rng).initialize(W, b);
