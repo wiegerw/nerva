@@ -33,7 +33,6 @@ function run()
                --dropout=$dropout \
                --size=$size \
                --loss="softmax-cross-entropy" \
-               --algorithm=sgd \
                --normalize \
                --threads=4 \
                --verbose \
