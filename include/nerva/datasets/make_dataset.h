@@ -12,7 +12,6 @@
 
 #include "nerva/datasets/cifar10reader.h"
 #include "nerva/datasets/dataset.h"
-#include "nerva/neural_networks/chessboard.h"
 
 namespace nerva::datasets {
 
