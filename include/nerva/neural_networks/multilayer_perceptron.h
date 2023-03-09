@@ -304,13 +304,13 @@ void load_weights(multilayer_perceptron& M, const std::string& filename)
   {
     if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
-      dlayer->import_weights(eigen::extract_matrix<scalar>(data, name("W")));
+      dlayer->load_weights(eigen::extract_matrix<scalar>(data, name("W")));
       dlayer->b = eigen::extract_vector<scalar>(data, name("b")).transpose();
       index++;
     }
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
-      slayer->import_weights(eigen::extract_matrix<scalar>(data, name("W")));
+      slayer->load_weights(mkl::to_csr(eigen::extract_matrix<scalar>(data, name("W"))));
       slayer->b = eigen::extract_vector<scalar>(data, name("b")).transpose();
       index++;
     }

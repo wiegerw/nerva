@@ -243,7 +243,7 @@ class sparse_matrix_csr
       construct_csr(false);
     }
 
-    sparse_matrix_csr& operator=(const sparse_matrix_csr& A)
+    sparse_matrix_csr& operator=(const sparse_matrix_csr& A)  // TODO: use move operations
     {
       m_rows = A.m_rows;
       m_columns = A.m_columns;

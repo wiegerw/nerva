@@ -165,24 +165,15 @@ struct linear_layer: public neural_network_layer
   {
     if constexpr (IsSparse)
     {
-      this->DW.reset_support(this->W);
-      this->optimizer->reset_support();
+      DW.reset_support(W);
+      optimizer->reset_support();
     }
   }
 
-  void import_weights(const eigen::matrix& W)
+  void load_weights(const Matrix& W1)
   {
-    if constexpr (IsSparse)
-    {
-      compare_sizes(this->W, W);
-      this->W = mkl::to_csr(W);
-      reset_support();
-    }
-    else
-    {
-      compare_sizes(this->W, W);
-      this->W = W;
-    }
+    compare_sizes(W, W1);
+    W = W1;
   }
 };
 
