@@ -733,7 +733,7 @@ void test_matrix_multiplication(long m, long k, long n, scalar density)
   std::cout << "C = A * B " << watch.seconds() << "s" << std::endl;
 
   watch.reset();
-  mkl::assign_matrix_product(C1, A1, B);  // C1 := A1 * B1
+  mkl::dsd_product(C1, A1, B);  // C1 := A1 * B1
   std::cout << "C1 = A1 * B " << watch.seconds() << "s" << std::endl;
 
   watch.reset();
@@ -786,7 +786,7 @@ void test_matrix_addition(long m, long k, long n, scalar density)
   std::cout << "C = A + B " << watch.seconds() << "s" << std::endl;
 
   watch.reset();
-  mkl::assign_matrix_sum(C1, A1, B1); // C1 := A1 * B
+  mkl::sss_sum(C1, A1, B1); // C1 := A1 * B
   std::cout << "C1 = A1 + B1 " << watch.seconds() << "s" << std::endl;
 
   watch.reset();
@@ -918,7 +918,7 @@ TEST_CASE("test_assign_matrix_product")
   auto seed = std::random_device{}();
   std::mt19937 rng{seed};
   mkl::sparse_matrix_csr<scalar> A1(m, n, density, rng);
-  mkl::assign_matrix_product_batch(A1, B, C, 2);
+  mkl::sdd_product_batch(A1, B, C, 2);
 
   eigen::print_cpp_matrix("A", A);
   eigen::print_cpp_matrix("A1", mkl::to_eigen(A1));

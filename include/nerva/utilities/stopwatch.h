@@ -10,6 +10,7 @@
 #ifndef NERVA_UTILITIES_STOPWATCH_H
 #define NERVA_UTILITIES_STOPWATCH_H
 
+#include "fmt/format.h"
 #include <chrono>
 #include <utility>
 
@@ -57,7 +58,7 @@ class stopwatch_with_counter: public stopwatch
     void display(const std::string& label) const
     {
       auto s = seconds();
-      std::cout << label << '-' << stopwatch_with_counter::counter++ << ' ' << s << std::endl;
+      std::cout << fmt::format("{}-{} {:.6f}s", label, stopwatch_with_counter::counter++, s) << std::endl;
     }
 };
 

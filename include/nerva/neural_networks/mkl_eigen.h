@@ -114,11 +114,84 @@ mkl::sparse_matrix_csr<Scalar> to_csr(const Eigen::Matrix<Scalar, Eigen::Dynamic
 
 // Performs the assignment A := B * C, with A sparse and B, C dense.
 // N.B. Only the existing entries of A are changed.
+// Use a sequential computation to copy values to A
+template <typename EigenMatrix1, typename EigenMatrix2, typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
+void sdd_product(mkl::sparse_matrix_csr<Scalar>& A,
+                 const EigenMatrix1& B,
+                 const EigenMatrix2& C
+)
+{
+  assert(A.rows() == B.rows());
+  assert(A.cols() == C.cols());
+  assert(B.cols() == C.rows());
+
+  long m = A.rows();
+//utilities::stopwatch_with_counter watch;
+  Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> BC = B * C;
+//watch.display("sdd_product::BC");
+  scalar* values = A.values().data();
+  const auto& A_col_index = A.col_index();
+  const auto& A_row_index = A.row_index();
+
+  for (long i = 0; i < m; i++)
+  {
+    for (long k = A_row_index[i]; k < A_row_index[i + 1]; k++)
+    {
+      long j = A_col_index[k];
+      *values++ = BC(i, j);
+    }
+  }
+
+  A.construct_csr();
+}
+
+// Performs the assignment A := B * C, with A sparse and B, C dense.
+// N.B. Only the existing entries of A are changed.
+// Use a sequential computation to copy values to A
+template <typename EigenMatrix1, typename EigenMatrix2, typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
+void sdd_product_batch(mkl::sparse_matrix_csr<Scalar>& A,
+                       const EigenMatrix1& B,
+                       const EigenMatrix2& C,
+                       long batch_size
+)
+{
+  assert(A.rows() == B.rows());
+  assert(A.cols() == C.cols());
+  assert(B.cols() == C.rows());
+
+  long m = A.rows();
+  Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> BC(batch_size, C.cols());
+  scalar* values = A.values().data();
+  const auto& A_col_index = A.col_index();
+  const auto& A_row_index = A.row_index();
+
+  long i_first = 0;
+  while (i_first < m)
+  {
+    long i_last = std::min(i_first + batch_size, m);
+    auto batch = Eigen::seq(i_first, i_last - 1);
+    auto Bbatch = B(batch, Eigen::all);
+    BC = Bbatch * C;
+    for (long i = i_first; i < i_last; i++)
+    {
+      for (long k = A_row_index[i]; k < A_row_index[i + 1]; k++)
+      {
+        long j = A_col_index[k];
+        *values++ = BC(i - i_first, j);
+      }
+    }
+    i_first = i_last;
+  }
+  A.construct_csr();
+}
+
+// Performs the assignment A := B * C, with A sparse and B, C dense.
+// N.B. Only the existing entries of A are changed.
 // Note that this implementation is very slow.
 template <typename EigenMatrix1, typename EigenMatrix2, typename Scalar = scalar>
-void assign_matrix_product_for_loop_eigen_dot(mkl::sparse_matrix_csr<Scalar>& A,
-                                              const EigenMatrix1& B,
-                                              const EigenMatrix2& C
+void sdd_product_forloop_eigen(mkl::sparse_matrix_csr<Scalar>& A,
+                               const EigenMatrix1& B,
+                               const EigenMatrix2& C
 )
 {
   assert(A.rows() == B.rows());
@@ -145,9 +218,9 @@ void assign_matrix_product_for_loop_eigen_dot(mkl::sparse_matrix_csr<Scalar>& A,
 // Performs the assignment A := B * C, with A sparse and B, C dense.
 // N.B. Only the existing entries of A are changed.
 template <typename EigenMatrix1, typename EigenMatrix2, typename Scalar = scalar>
-void assign_matrix_product_for_loop_mkl_dot(mkl::sparse_matrix_csr<Scalar>& A,
-                                            const EigenMatrix1& B,
-                                            const EigenMatrix2& C
+void sdd_product_forloop_mkl(mkl::sparse_matrix_csr<Scalar>& A,
+                             const EigenMatrix1& B,
+                             const EigenMatrix2& C
 )
 {
   assert(A.rows() == B.rows());
@@ -167,7 +240,7 @@ void assign_matrix_product_for_loop_mkl_dot(mkl::sparse_matrix_csr<Scalar>& A,
   MKL_INT incy = n;
   MKL_INT N = p;
 
-  #pragma omp parallel for
+#pragma omp parallel for
   for (long i = 0; i < m; i++)
   {
     for (long k = A_row_index[i]; k < A_row_index[i + 1]; k++)
@@ -188,53 +261,13 @@ void assign_matrix_product_for_loop_mkl_dot(mkl::sparse_matrix_csr<Scalar>& A,
 
 // Performs the assignment A := B * C, with A sparse and B, C dense.
 // N.B. Only the existing entries of A are changed.
-// Use a sequential computation to copy values to A
-template <typename EigenMatrix1, typename EigenMatrix2, typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
-void assign_matrix_product_batch(mkl::sparse_matrix_csr<Scalar>& A,
-                                 const EigenMatrix1& B,
-                                 const EigenMatrix2& C,
-                                 long batch_size
-)
-{
-  assert(A.rows() == B.rows());
-  assert(A.cols() == C.cols());
-  assert(B.cols() == C.rows());
-
-  long m = A.rows();
-  Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> BC;
-  auto values = const_cast<Scalar*>(A.values().data());
-  const auto& A_col_index = A.col_index();
-  const auto& A_row_index = A.row_index();
-
-  long i_first = 0;
-  while (i_first < m)
-  {
-    long i_last = std::min(i_first + batch_size, m);
-    auto batch = Eigen::seq(i_first, i_last - 1);
-    auto Bbatch = B(batch, Eigen::all);
-    BC = Bbatch * C;
-    for (long i = i_first; i < i_last; i++)
-    {
-      for (long k = A_row_index[i]; k < A_row_index[i + 1]; k++)
-      {
-        long j = A_col_index[k];
-        *values++ = BC(i - i_first, j);
-      }
-    }
-    i_first = i_last;
-  }
-  A.construct_csr();
-}
-
-// Performs the assignment A := B * C, with A sparse and B, C dense.
-// N.B. Only the existing entries of A are changed.
 // Use a parallel computation to copy values to A
 // N.B. This doesn't seem to work!
 template <typename EigenMatrix1, typename EigenMatrix2, typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
-void assign_matrix_product_batch_omp_parallel_assignment(mkl::sparse_matrix_csr<Scalar>& A,
-                                                         const EigenMatrix1& B,
-                                                         const EigenMatrix2& C,
-                                                         long batch_size
+void sdd_product_forloop_omp(mkl::sparse_matrix_csr<Scalar>& A,
+                             const EigenMatrix1& B,
+                             const EigenMatrix2& C,
+                             long batch_size
 )
 {
   assert(A.rows() == B.rows());
@@ -278,12 +311,12 @@ void assign_matrix_product_batch_omp_parallel_assignment(mkl::sparse_matrix_csr<
 // Matrix C must have column major layout.
 // operation_B determines whether op(B) = B or op(B) = B^T
 template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
-void assign_matrix_product(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A,
-                           const mkl::sparse_matrix_csr<Scalar>& B,
-                           const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& C,
-                           Scalar alpha = 0,
-                           Scalar beta = 1,
-                           sparse_operation_t operation_B = SPARSE_OPERATION_NON_TRANSPOSE
+void dsd_product(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A,
+                 const mkl::sparse_matrix_csr<Scalar>& B,
+                 const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& C,
+                 Scalar alpha = 0,
+                 Scalar beta = 1,
+                 sparse_operation_t operation_B = SPARSE_OPERATION_NON_TRANSPOSE
 )
 {
   auto A_view = mkl::make_dense_matrix_view(A);
@@ -301,10 +334,10 @@ Scalar l2_distance(const mkl::sparse_matrix_csr<Scalar>& A, const Eigen::Matrix<
 // Does the assignment A := alpha * A + beta * B, with A, B sparse.
 // A and B must have the same non-zero mask
 template <typename Scalar>
-void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
-                       const mkl::sparse_matrix_csr<Scalar>& B,
-                       Scalar alpha = 0.0,
-                       Scalar beta = 1.0
+void ss_sum(mkl::sparse_matrix_csr<Scalar>& A,
+            const mkl::sparse_matrix_csr<Scalar>& B,
+            Scalar alpha = 0.0,
+            Scalar beta = 1.0
 )
 {
   assert(A.rows() == B.rows());
@@ -322,12 +355,12 @@ void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
 // Does the assignment A := alpha * A + beta * B + gamma * C, with A, B, C sparse.
 // A, B and C must have the same support
 template <typename Scalar>
-void assign_matrix_sum(mkl::sparse_matrix_csr<Scalar>& A,
-                       const mkl::sparse_matrix_csr<Scalar>& B,
-                       const mkl::sparse_matrix_csr<Scalar>& C,
-                       Scalar alpha = 1.0,
-                       Scalar beta = 1.0,
-                       Scalar gamma = 0.0
+void sss_sum(mkl::sparse_matrix_csr<Scalar>& A,
+             const mkl::sparse_matrix_csr<Scalar>& B,
+             const mkl::sparse_matrix_csr<Scalar>& C,
+             Scalar alpha = 1.0,
+             Scalar beta = 1.0,
+             Scalar gamma = 0.0
 )
 {
   assert(A.rows() == B.rows());

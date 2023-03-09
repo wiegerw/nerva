@@ -118,7 +118,7 @@ struct linear_layer: public neural_network_layer
     if constexpr (IsSparse)
     {
       auto Q = X.cols();
-      mkl::assign_matrix_product(result, W, X);
+      mkl::dsd_product(result, W, X);
       result += b.rowwise().replicate(Q);
     }
     else
@@ -132,9 +132,9 @@ struct linear_layer: public neural_network_layer
   {
     if constexpr (IsSparse)
     {
-      mkl::assign_matrix_product_batch(DW, DY, X.transpose(), std::max(4L, static_cast<long>(DY.rows() / 10)));
+      mkl::sdd_product_batch(DW, DY, X.transpose(), std::max(4L, static_cast<long>(DY.rows() / 10)));
       Db = DY.rowwise().sum();
-      mkl::assign_matrix_product(DX, W, DY, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
+      mkl::dsd_product(DX, W, DY, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
     else
     {
@@ -227,7 +227,7 @@ struct sigmoid_layer : public linear_layer<Matrix>
     if constexpr (IsSparse)
     {
       auto Q = X.cols();
-      mkl::assign_matrix_product(Z, W, X);
+      mkl::dsd_product(Z, W, X);
       Z += b.rowwise().replicate(Q);
       result = sigmoid()(Z);
     }
@@ -244,9 +244,9 @@ struct sigmoid_layer : public linear_layer<Matrix>
     if constexpr (IsSparse)
     {
       DZ = DY.cwiseProduct(eigen::x_times_one_minus_x(Y));
-      mkl::assign_matrix_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
+      mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
       Db = DZ.rowwise().sum();
-      mkl::assign_matrix_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
+      mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
     else
     {
@@ -300,7 +300,7 @@ struct activation_layer : public linear_layer<Matrix>
     if constexpr (IsSparse)
     {
       auto Q = X.cols();
-      mkl::assign_matrix_product(Z, W, X);
+      mkl::dsd_product(Z, W, X);
       Z += b.rowwise().replicate(Q);
       result = act(Z);
     }
@@ -317,9 +317,10 @@ struct activation_layer : public linear_layer<Matrix>
     if constexpr (IsSparse)
     {
       DZ = DY.cwiseProduct(act.prime(Z));
-      mkl::assign_matrix_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
+      mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
+      // mkl::sdd_product(DW, DZ, X.transpose());
       Db = DZ.rowwise().sum();
-      mkl::assign_matrix_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
+      mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
     else
     {
@@ -407,7 +408,7 @@ struct softmax_layer : public linear_layer<Matrix>
     if constexpr (IsSparse)
     {
       auto Q = X.cols();
-      mkl::assign_matrix_product(Z, W, X);
+      mkl::dsd_product(Z, W, X);
       Z += b.rowwise().replicate(Q);
       result = softmax()(Z);
     }
@@ -425,9 +426,9 @@ struct softmax_layer : public linear_layer<Matrix>
     {
       auto K = Y.rows();
       DZ = Y.cwiseProduct(DY - (Y.transpose() * DY).diagonal().transpose().colwise().replicate(K));
-      mkl::assign_matrix_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
+      mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
       Db = DZ.rowwise().sum();
-      mkl::assign_matrix_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
+      mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
     else
     {
@@ -467,7 +468,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
     if constexpr (IsSparse)
     {
       auto Q = X.cols();
-      mkl::assign_matrix_product(Z, W, X);
+      mkl::dsd_product(Z, W, X);
       Z += b.rowwise().replicate(Q);
       result = log_softmax()(Z);
     }
@@ -486,9 +487,9 @@ struct log_softmax_layer : public linear_layer<Matrix>
       auto K = Y.rows();
       auto softmax_Z = softmax()(Z);
       DZ = DY - softmax_Z.cwiseProduct(DY.colwise().sum().colwise().replicate(K));
-      mkl::assign_matrix_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
+      mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
       Db = DZ.rowwise().sum();
-      mkl::assign_matrix_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
+      mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
     else
     {

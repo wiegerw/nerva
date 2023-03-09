@@ -53,7 +53,7 @@ struct gradient_descent_optimizer: public layer_optimizer
   {
     if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
     {
-      mkl::assign_matrix_sum(W, DW, scalar(1), -eta);
+      mkl::ss_sum(W, DW, scalar(1), -eta);
     }
     else
     {
@@ -111,8 +111,8 @@ struct momentum_optimizer: public gradient_descent_optimizer<Matrix>
   {
     if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
     {
-      mkl::assign_matrix_sum(delta_W, DW, mu, -eta);
-      mkl::assign_matrix_sum(W, delta_W, scalar(1), scalar(1));
+      mkl::ss_sum(delta_W, DW, mu, -eta);
+      mkl::ss_sum(W, delta_W, scalar(1), scalar(1));
     }
     else
     {
@@ -181,8 +181,8 @@ struct nesterov_optimizer: public gradient_descent_optimizer<Matrix>
     if constexpr (IsSparse)
     {
       mkl::assign_matrix(delta_W_prev, delta_W);
-      mkl::assign_matrix_sum(delta_W, DW, mu, -eta);
-      mkl::assign_matrix_sum(W, delta_W, delta_W_prev, scalar(1), scalar(1) + mu, -mu);
+      mkl::ss_sum(delta_W, DW, mu, -eta);
+      mkl::sss_sum(W, delta_W, delta_W_prev, scalar(1), scalar(1) + mu, -mu);
     }
     else
     {
