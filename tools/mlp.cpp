@@ -32,28 +32,6 @@
 
 using namespace nerva;
 
-// Does an attempt to print the original command line call.
-// N.B. It does not handle nested quotes.
-inline
-void print_command_line_call(int argc, const char* argv[])
-{
-  for (int i = 0; i < argc; i++) {
-    if (std::string(argv[i]).find_first_of(" ()") != std::string::npos)
-    {
-      std::cout << "\"" << argv[i] << "\"";
-    }
-    else
-    {
-      std::cout << argv[i];
-    }
-    if (i < argc - 1)
-    {
-      std::cout << " ";
-    }
-  }
-  std::cout << "\n\n";
-}
-
 inline
 weight_initialization parse_weight_char(char c)
 {
@@ -285,6 +263,8 @@ class tool: public command_line_tool
 
     bool run() override
     {
+      NERVA_LOG(log::verbose) << command_line_call() << "\n\n";
+
       options.debug = is_debug();
       if (no_shuffle)
       {
@@ -322,7 +302,6 @@ class tool: public command_line_tool
         densities = compute_densities(options.architecture, options.sizes, options.density);
       }
       options.densities = densities;
-      options.info();
 
       if (options.threads >= 1 && options.threads <= 8)
       {
@@ -408,6 +387,5 @@ class tool: public command_line_tool
 int main(int argc, const char* argv[])
 {
   pybind11::scoped_interpreter guard{};
-  print_command_line_call(argc, argv);
   return tool().execute(argc, argv);
 }

@@ -185,7 +185,7 @@ struct pytorch_weight_initializer: public weight_initializer
   void initialize(Matrix& W, eigen::vector& b) const
   {
     initialize_matrix(W, *this);
-    eigen::initialize_vector(b, *this);
+    b.array() = scalar(0.01);  // initialize b with small positive values
   }
 };
 

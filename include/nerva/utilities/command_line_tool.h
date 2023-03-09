@@ -24,6 +24,7 @@ class command_line_tool
     bool m_show_help = false;
     bool m_verbose = false;
     bool m_debug = false;
+    std::string m_command_line_call;
     lyra::cli m_cli{};
 
     virtual void add_options(lyra::cli& cli)
@@ -36,9 +37,33 @@ class command_line_tool
       return "";
     }
 
+    // Does an attempt to print the original command line call.
+    // TODO: handle nested quotes
+    std::string reconstruct_command_line_call(int argc, const char** argv)
+    {
+      std::ostringstream out;
+      for (int i = 0; i < argc; i++)
+      {
+        if (std::string(argv[i]).find_first_of(" ()") != std::string::npos)
+        {
+          out << "\"" << argv[i] << "\"";
+        }
+        else
+        {
+          out << argv[i];
+        }
+        if (i < argc - 1)
+        {
+          out << " ";
+        }
+      }
+      return out.str();
+    }
+
   public:
     int execute(int argc, const char** argv)
     {
+      m_command_line_call = reconstruct_command_line_call(argc, argv);
       m_cli.add_argument(lyra::help(m_show_help).description(this->description()));
       m_cli.add_argument(lyra::opt(m_verbose)["--verbose"]["-v"]("Show verbose output."));
       m_cli.add_argument(lyra::opt(m_debug)["--debug"]["-d"]("Show debug output."));
@@ -83,6 +108,11 @@ class command_line_tool
     bool is_debug() const
     {
       return m_debug;
+    }
+
+    const std::string& command_line_call() const
+    {
+      return m_command_line_call;
     }
 };
 
