@@ -12,6 +12,7 @@
 
 #include "fmt/format.h"
 #include <chrono>
+#include <iostream>
 #include <utility>
 
 namespace nerva::utilities {

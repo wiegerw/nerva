@@ -170,7 +170,7 @@ void sdd_product_batch(mkl::sparse_matrix_csr<Scalar>& A,
   {
     long i_last = std::min(i_first + batch_size, m);
     auto batch = Eigen::seq(i_first, i_last - 1);
-    auto Bbatch = B(batch, Eigen::all);
+    auto Bbatch = B(batch, Eigen::indexing::all);
     BC = Bbatch * C;
     for (long i = i_first; i < i_last; i++)
     {
@@ -285,7 +285,7 @@ void sdd_product_forloop_omp(mkl::sparse_matrix_csr<Scalar>& A,
   {
     long i_last = std::min(i_first + batch_size, m);
     auto batch = Eigen::seq(i_first, i_last - 1);
-    auto Bbatch = B(batch, Eigen::all);
+    auto Bbatch = B(batch, Eigen::indexing::all);
     utilities::stopwatch watch;
     BC = Bbatch * C;
     std::cout << fmt::format("dense : {:6.6f}\n", watch.seconds());

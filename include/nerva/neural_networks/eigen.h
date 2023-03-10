@@ -16,6 +16,7 @@
 #include "nerva/utilities/text_utility.h"
 #include "fmt/format.h"
 #include <algorithm>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <random>
@@ -651,6 +652,44 @@ Eigen::Matrix<long, Eigen::Dynamic, 1> from_one_hot(const Eigen::Matrix<scalar, 
   return T;
 }
 
+template<class Matrix>
+inline void write_dense_matrix(const std::string& filename, const Matrix& A)
+{
+  std::ofstream out(filename, std::ios::out | std::ios::binary | std::ios::trunc);
+  if (out)
+  {
+    long rows = A.rows();
+    long cols = A.cols();
+    out.write(reinterpret_cast<char*>(&rows), sizeof(long));
+    out.write(reinterpret_cast<char*>(&cols), sizeof(long));
+    out.write(reinterpret_cast<const char*>(A.data()), rows * cols * sizeof(typename Matrix::Scalar));
+    out.close();
+  }
+  else
+  {
+    std::cout << "Could not write to file: " << filename << std::endl;
+  }
+}
+
+template<class Matrix>
+inline void read_dense_matrix(const std::string& filename, Matrix& A)
+{
+  std::ifstream from(filename, std::ios::in | std::ios::binary);
+  if (from)
+  {
+    long rows;
+    long cols;
+    from.read(reinterpret_cast<char*>(&rows), sizeof(long));
+    from.read(reinterpret_cast<char*>(&cols), sizeof(long));
+    A.resize(rows, cols);
+    from.read(reinterpret_cast<char*>(A.data()), rows * cols * sizeof(typename Matrix::Scalar) );
+    from.close();
+  }
+  else
+  {
+    std::cout << "Could not read from file: " << filename << std::endl;
+  }
+}
 
 } // namespace nerva::eigen
 

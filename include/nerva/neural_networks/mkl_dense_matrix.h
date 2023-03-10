@@ -11,6 +11,7 @@
 #define NERVA_NEURAL_NETWORKS_MKL_DENSE_MATRIX_H
 
 #include <mkl.h>
+#include <cassert>
 #include <stdexcept>
 #include <vector>
 

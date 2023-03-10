@@ -43,8 +43,8 @@ double compute_accuracy(multilayer_perceptron& M, const EigenMatrix& Xtest, cons
   for (long k = 0; k < K; k++)
   {
     auto batch = Eigen::seqN(k * Q, Q);
-    auto Xbatch = Xtest(Eigen::all, batch);
-    auto Tbatch = Ttest(Eigen::all, batch);
+    auto Xbatch = Xtest(Eigen::indexing::all, batch);
+    auto Tbatch = Ttest(Eigen::indexing::all, batch);
     M.feedforward(Xbatch, Ybatch);
     for (long i = 0; i < Q; i++)
     {
@@ -71,8 +71,8 @@ double compute_loss(multilayer_perceptron& M, const std::shared_ptr<loss_functio
   for (long k = 0; k < K; k++)
   {
     auto batch = Eigen::seqN(k * Q, Q);
-    auto Xbatch = X(Eigen::all, batch);
-    auto Tbatch = T(Eigen::all, batch);
+    auto Xbatch = X(Eigen::indexing::all, batch);
+    auto Tbatch = T(Eigen::indexing::all, batch);
     M.feedforward(Xbatch, Ybatch);
     total_loss += loss->value(Ybatch, Tbatch);
   }
@@ -194,8 +194,8 @@ class stochastic_gradient_descent_algorithm
         for (long k = 0; k < K; k++)
         {
           eigen::eigen_slice batch(I.begin() + k * options.batch_size, options.batch_size);
-          auto X = data.Xtrain(Eigen::all, batch);
-          auto T = data.Ttrain(Eigen::all, batch);
+          auto X = data.Xtrain(Eigen::indexing::all, batch);
+          auto T = data.Ttrain(Eigen::indexing::all, batch);
           M.feedforward(X, Y);
 
           if (options.debug)
