@@ -33,11 +33,10 @@ class dense_matrix_view
     long m_rows;
     long m_columns;
     int m_layout;
-    bool m_transposed;
 
   public:
-    dense_matrix_view(Scalar* data, long rows, long columns, int layout, bool transposed = false)
-      : m_data(data), m_rows(rows), m_columns(columns), m_layout(layout), m_transposed(transposed)
+    dense_matrix_view(Scalar* data, long rows, long columns, int layout)
+      : m_data(data), m_rows(rows), m_columns(columns), m_layout(layout)
     {}
 
     [[nodiscard]] long rows() const
@@ -63,11 +62,6 @@ class dense_matrix_view
     [[nodiscard]] int layout() const
     {
       return m_layout;
-    }
-
-    [[nodiscard]] bool transposed() const
-    {
-      return m_transposed;
     }
 };
 
@@ -79,11 +73,10 @@ class dense_matrix
     long m_rows;
     long m_columns;
     int m_layout;  // TODO: use the type matrix_layout
-    bool m_transposed;
 
   public:
     dense_matrix(long rows, long columns, int layout, bool transposed = false)
-      : m_data(rows * columns, 0), m_rows(rows), m_columns(columns), m_layout(layout), m_transposed(transposed)
+      : m_data(rows * columns, 0), m_rows(rows), m_columns(columns), m_layout(layout)
     {}
 
     [[nodiscard]] long rows() const
@@ -110,54 +103,55 @@ class dense_matrix
     {
       return m_layout;
     }
-
-    [[nodiscard]] bool transposed() const
-    {
-      return m_transposed;
-    }
 };
 
 // Computes the matrix product C = A * B
 template <typename Scalar, template <typename> class Matrix1, template <typename> class Matrix2>
-dense_matrix<Scalar> matrix_product(const Matrix1<Scalar>& A, const Matrix2<Scalar>& B)
+dense_matrix<Scalar> ddd_product(const Matrix1<Scalar>& A, const Matrix2<Scalar>& B, bool A_transposed = false, bool B_transposed = false)
 {
-  assert(A.cols() == B.rows());
-  assert(A.layout() == B.layout());
-  dense_matrix<Scalar> C(A.rows(), B.cols(), A.layout());
+  long A_cols = A_transposed ? A.rows() : A.cols();
+  long A_rows = A_transposed ? A.cols() : A.rows();
+  long B_cols = B_transposed ? B.rows() : B.cols();
+  long B_rows = B_transposed ? B.cols() : B.rows();
 
-  CBLAS_TRANSPOSE transA = A.transposed() ? CblasTrans : CblasNoTrans;
-  CBLAS_TRANSPOSE transB = B.transposed() ? CblasTrans : CblasNoTrans;
+  assert(A.layout() == B.layout());
+  assert(A_rows == B_cols);
+
+  dense_matrix<Scalar> C(A_rows, B_cols, A.layout());
+
+  CBLAS_TRANSPOSE transA = A_transposed ? CblasTrans : CblasNoTrans;
+  CBLAS_TRANSPOSE transB = B_transposed ? CblasTrans : CblasNoTrans;
 
   if (A.layout() == column_major)
   {
-    int lda = A.rows();
-    int ldb = B.rows();
-    int ldc = C.rows();
+    long lda = A_transposed ? A_cols : A_rows;
+    long ldb = B_transposed ? B_cols : B_rows;
+    long ldc = C.rows();
     double alpha = 1.0;
     double beta = 0.0;
     if constexpr (std::is_same<Scalar, double>::value)
     {
-      cblas_dgemm(CblasColMajor, transA, transB, C.rows(), C.cols(), A.cols(), alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
+      cblas_dgemm(CblasColMajor, transA, transB, C.rows(), C.cols(), A_cols, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
     }
     else
     {
-      cblas_sgemm(CblasColMajor, transA, transB, C.rows(), C.cols(), A.cols(), alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
+      cblas_sgemm(CblasColMajor, transA, transB, C.rows(), C.cols(), A_cols, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
     }
   }
   else
   {
-    int lda = A.cols();
-    int ldb = B.cols();
-    int ldc = C.cols();
+    long lda = A_transposed ? A_rows : A_cols;
+    long ldb = B_transposed ? B_rows : B_cols;
+    long ldc = C.cols();
     double alpha = 1.0;
     double beta = 0.0;
     if constexpr (std::is_same<Scalar, double>::value)
     {
-      cblas_dgemm(CblasRowMajor, transA, transB, C.rows(), C.cols(), A.cols(), alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
+      cblas_dgemm(CblasRowMajor, transA, transB, C.rows(), C.cols(), A_cols, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
     }
     else
     {
-      cblas_sgemm(CblasRowMajor, transA, transB, C.rows(), C.cols(), A.cols(), alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
+      cblas_sgemm(CblasRowMajor, transA, transB, C.rows(), C.cols(), A_cols, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
     }
   }
   return C;

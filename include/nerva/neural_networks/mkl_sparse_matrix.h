@@ -354,12 +354,12 @@ class sparse_matrix_csr
 //
 // operation_B determines whether op(B) = B or op(B) = B^T
 template <typename Scalar>
-void assign_matrix_product(dense_matrix_view<Scalar>& A,
-                           const mkl::sparse_matrix_csr<Scalar>& B,
-                           const dense_matrix_view<Scalar>& C,
-                           Scalar alpha = 0,
-                           Scalar beta = 1,
-                           sparse_operation_t operation_B = SPARSE_OPERATION_NON_TRANSPOSE
+void dsd_product(dense_matrix_view<Scalar>& A,
+                 const mkl::sparse_matrix_csr<Scalar>& B,
+                 const dense_matrix_view<Scalar>& C,
+                 Scalar alpha = 0,
+                 Scalar beta = 1,
+                 sparse_operation_t operation_B = SPARSE_OPERATION_NON_TRANSPOSE
 )
 {
   assert(A.rows() == (operation_B == SPARSE_OPERATION_NON_TRANSPOSE ? B.rows() : B.cols()));

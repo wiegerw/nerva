@@ -50,6 +50,20 @@ Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> to_eigen(con
   return result;
 }
 
+template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
+Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> to_eigen(const mkl::dense_matrix<Scalar>& A)
+{
+  using matrix = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>;
+  return Eigen::Map<matrix>(const_cast<Scalar*>(A.data()), A.rows(), A.cols());
+}
+
+template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
+Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> to_eigen(const mkl::dense_matrix_view<Scalar>& A)
+{
+  using matrix = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>;
+  return Eigen::Map<matrix>(const_cast<Scalar*>(A.data()), A.rows(), A.cols());
+}
+
 // returns a boolean matrix with the non-zero entries of A
 template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
 Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> support(const mkl::sparse_matrix_csr<Scalar>& A)
@@ -321,7 +335,7 @@ void dsd_product(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLay
 {
   auto A_view = mkl::make_dense_matrix_view(A);
   auto C_view = mkl::make_dense_matrix_view(C);
-  mkl::assign_matrix_product(A_view, B, C_view, alpha, beta, operation_B);
+  mkl::dsd_product(A_view, B, C_view, alpha, beta, operation_B);
 }
 
 // returns the L2 norm of (B - A)
