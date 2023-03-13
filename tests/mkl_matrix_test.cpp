@@ -46,13 +46,16 @@ void test_dense_dense_multiplication(const Eigen::Matrix<Scalar, Eigen::Dynamic,
   auto A1 = mkl::make_dense_matrix_view(A);
   auto B1 = mkl::make_dense_matrix_view(B);
   auto C1 = mkl::ddd_product(A1, B1, A_transposed, B_transposed);
+  auto C2 = mkl::ddd_product_manual_loops(A1, B1, A_transposed, B_transposed);
 
   scalar epsilon = std::is_same<Scalar, double>::value ? 1e-10 : 1e-5;
 
   std::cout << "--- test_dense_dense_multiplication ---" << std::endl;
   eigen::print_numpy_matrix("C", C);
   eigen::print_numpy_matrix("C1", mkl::to_eigen(C1));
+  eigen::print_numpy_matrix("C2", mkl::to_eigen(C2));
   CHECK_LE((C - to_eigen<MatrixLayout>(C1)).squaredNorm(), epsilon);
+  CHECK_LE((C - to_eigen<MatrixLayout>(C2)).squaredNorm(), epsilon);
 }
 
 void test_dense_dense_multiplication(long m, long k, long n)
