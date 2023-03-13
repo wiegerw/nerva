@@ -178,3 +178,41 @@ TEST_CASE("test_empty_support")
   matrix_type expected = matrix_type::Zero(3, 4);
   CHECK_EQ(B, expected);
 }
+
+TEST_CASE("test_element_access")
+{
+  Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> A {
+    {2, 3},
+    {7, 4},
+    {1, 8},
+  };
+
+  Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> B {
+    {2, 3},
+    {7, 4},
+    {1, 8},
+  };
+
+  CHECK_EQ(A(0, 0), 2);
+  CHECK_EQ(A(1, 0), 7);
+  CHECK_EQ(A(2, 0), 1);
+  CHECK_EQ(A(0, 1), 3);
+  CHECK_EQ(A(1, 1), 4);
+  CHECK_EQ(A(2, 1), 8);
+
+  auto A1 = mkl::make_dense_matrix_view(A);
+  CHECK_EQ(A1(0, 0), 2);
+  CHECK_EQ(A1(1, 0), 7);
+  CHECK_EQ(A1(2, 0), 1);
+  CHECK_EQ(A1(0, 1), 3);
+  CHECK_EQ(A1(1, 1), 4);
+  CHECK_EQ(A1(2, 1), 8);
+
+//  auto B1 = mkl::make_dense_matrix_view(B);
+//  CHECK_EQ(B1(0, 0), 2);
+//  CHECK_EQ(B1(1, 0), 7);
+//  CHECK_EQ(B1(2, 0), 1);
+//  CHECK_EQ(B1(0, 1), 3);
+//  CHECK_EQ(B1(1, 1), 4);
+//  CHECK_EQ(B1(2, 1), 8);
+}

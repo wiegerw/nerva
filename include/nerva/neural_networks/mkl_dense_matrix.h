@@ -24,6 +24,18 @@ enum matrix_layout
   row_major = 0x1
 };
 
+inline
+long column_major_index(long rows, long columns, long i, long j)
+{
+  return j * rows + i;
+}
+
+inline
+long row_major_index(long rows, long columns, long i, long j)
+{
+  return i * columns + j;
+}
+
 // This class can be used to wrap an Eigen matrix (or NumPy etc.)
 template <typename Scalar, int MatrixLayout>
 class dense_matrix_view
@@ -56,6 +68,30 @@ class dense_matrix_view
     const Scalar* data() const
     {
       return m_data;
+    }
+
+    Scalar operator()(long i, long j) const
+    {
+      if constexpr (MatrixLayout == column_major)
+      {
+        return m_data[column_major_index(m_rows, m_columns, i, j)];
+      }
+      else
+      {
+        return m_data[row_major_index(m_rows, m_columns, i, j)];
+      }
+    }
+
+    Scalar& operator()(long i, long j)
+    {
+      if constexpr (MatrixLayout == column_major)
+      {
+        return m_data[column_major_index(m_rows, m_columns, i, j)];
+      }
+      else
+      {
+        return m_data[row_major_index(m_rows, m_columns, i, j)];
+      }
     }
 };
 
@@ -90,6 +126,30 @@ class dense_matrix
     const Scalar* data() const
     {
       return m_data.data();
+    }
+
+    Scalar operator()(long i, long j) const
+    {
+      if constexpr (MatrixLayout == column_major)
+      {
+        return m_data[column_major_index(m_rows, m_columns, i, j)];
+      }
+      else
+      {
+        return m_data[row_major_index(m_rows, m_columns, i, j)];
+      }
+    }
+
+    Scalar& operator()(long i, long j)
+    {
+      if constexpr (MatrixLayout == column_major)
+      {
+        return m_data[column_major_index(m_rows, m_columns, i, j)];
+      }
+      else
+      {
+        return m_data[row_major_index(m_rows, m_columns, i, j)];
+      }
     }
 };
 
