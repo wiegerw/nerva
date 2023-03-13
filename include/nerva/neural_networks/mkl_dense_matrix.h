@@ -153,6 +153,12 @@ class dense_matrix
     }
 };
 
+template <typename Scalar, int MatrixLayout, template <typename, int> class Matrix>
+dense_matrix_view<Scalar, 1 - MatrixLayout> make_transposed_dense_matrix_view(const Matrix<Scalar, MatrixLayout>& A)
+{
+  return dense_matrix_view<Scalar, 1 - MatrixLayout>(const_cast<Scalar*>(A.data()), A.cols(), A.rows());
+}
+
 // Computes the matrix product C = A * B
 template <typename Scalar, int MatrixLayout, template <typename, int> class Matrix1, template <typename, int> class Matrix2>
 dense_matrix<Scalar, MatrixLayout> ddd_product(const Matrix1<Scalar, MatrixLayout>& A, const Matrix2<Scalar, MatrixLayout>& B, bool A_transposed = false, bool B_transposed = false)

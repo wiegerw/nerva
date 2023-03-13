@@ -193,13 +193,6 @@ TEST_CASE("test_element_access")
     {1, 8},
   };
 
-  CHECK_EQ(A(0, 0), 2);
-  CHECK_EQ(A(1, 0), 7);
-  CHECK_EQ(A(2, 0), 1);
-  CHECK_EQ(A(0, 1), 3);
-  CHECK_EQ(A(1, 1), 4);
-  CHECK_EQ(A(2, 1), 8);
-
   auto A1 = mkl::make_dense_matrix_view(A);
   CHECK_EQ(A1(0, 0), 2);
   CHECK_EQ(A1(1, 0), 7);
@@ -208,11 +201,44 @@ TEST_CASE("test_element_access")
   CHECK_EQ(A1(1, 1), 4);
   CHECK_EQ(A1(2, 1), 8);
 
-//  auto B1 = mkl::make_dense_matrix_view(B);
-//  CHECK_EQ(B1(0, 0), 2);
-//  CHECK_EQ(B1(1, 0), 7);
-//  CHECK_EQ(B1(2, 0), 1);
-//  CHECK_EQ(B1(0, 1), 3);
-//  CHECK_EQ(B1(1, 1), 4);
-//  CHECK_EQ(B1(2, 1), 8);
+  auto B1 = mkl::make_dense_matrix_view(B);
+  CHECK_EQ(B1(0, 0), 2);
+  CHECK_EQ(B1(1, 0), 7);
+  CHECK_EQ(B1(2, 0), 1);
+  CHECK_EQ(B1(0, 1), 3);
+  CHECK_EQ(B1(1, 1), 4);
+  CHECK_EQ(B1(2, 1), 8);
+}
+
+TEST_CASE("test_transposed_view")
+{
+  Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> A {
+    {2, 3},
+    {7, 4},
+    {1, 8},
+  };
+
+  Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> B {
+    {2, 3},
+    {7, 4},
+    {1, 8},
+  };
+
+  auto A1 = mkl::make_dense_matrix_view(A);
+  auto A2 = mkl::make_transposed_dense_matrix_view(A1);
+  auto A3 = mkl::to_eigen(A2);
+  eigen::print_numpy_matrix("A", A);
+  eigen::print_numpy_matrix("A1", mkl::to_eigen(A1));
+  eigen::print_numpy_matrix("A2", mkl::to_eigen(A2));
+  eigen::print_numpy_matrix("A3", A3);
+  CHECK_EQ(A.transpose(), A3);
+
+  auto B1 = mkl::make_dense_matrix_view(B);
+  auto B2 = mkl::make_transposed_dense_matrix_view(B1);
+  auto B3 = mkl::to_eigen(B2);
+  eigen::print_numpy_matrix("B", B);
+  eigen::print_numpy_matrix("B1", mkl::to_eigen(B1));
+  eigen::print_numpy_matrix("B2", mkl::to_eigen(B2));
+  eigen::print_numpy_matrix("B3", B3);
+  CHECK_EQ(B.transpose(), B3);
 }
