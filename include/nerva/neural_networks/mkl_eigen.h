@@ -19,9 +19,9 @@
 namespace nerva::mkl {
 
 template <typename Scalar, int MatrixLayout>
-mkl::dense_matrix_view<Scalar> make_dense_matrix_view(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A)
+mkl::dense_matrix_view<Scalar, MatrixLayout> make_dense_matrix_view(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A)
 {
-  return mkl::dense_matrix_view<Scalar>(const_cast<Scalar*>(A.data()), A.rows(), A.cols(), MatrixLayout);
+  return mkl::dense_matrix_view<Scalar, MatrixLayout>(const_cast<Scalar*>(A.data()), A.rows(), A.cols());
 }
 
 template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
@@ -51,14 +51,14 @@ Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> to_eigen(con
 }
 
 template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
-Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> to_eigen(const mkl::dense_matrix<Scalar>& A)
+Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> to_eigen(const mkl::dense_matrix<Scalar, MatrixLayout>& A)
 {
   using matrix = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>;
   return Eigen::Map<matrix>(const_cast<Scalar*>(A.data()), A.rows(), A.cols());
 }
 
 template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
-Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> to_eigen(const mkl::dense_matrix_view<Scalar>& A)
+Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> to_eigen(const mkl::dense_matrix_view<Scalar, MatrixLayout>& A)
 {
   using matrix = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>;
   return Eigen::Map<matrix>(const_cast<Scalar*>(A.data()), A.rows(), A.cols());
@@ -140,9 +140,7 @@ void sdd_product(mkl::sparse_matrix_csr<Scalar>& A,
   assert(B.cols() == C.rows());
 
   long m = A.rows();
-//utilities::stopwatch_with_counter watch;
   Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> BC = B * C;
-//watch.display("sdd_product::BC");
   scalar* values = A.values().data();
   const auto& A_col_index = A.col_index();
   const auto& A_row_index = A.row_index();

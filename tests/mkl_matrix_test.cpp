@@ -28,9 +28,8 @@ long nonzero_count(const matrix& A)
 }
 
 template <int MatrixLayout = Eigen::ColMajor, typename Scalar>
-Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>> to_eigen(mkl::dense_matrix<Scalar>& A)
+Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>> to_eigen(mkl::dense_matrix<Scalar, MatrixLayout>& A)
 {
-  assert(A.layout() == MatrixLayout);
   return { A.data(), A.rows(), A.cols() };
 }
 

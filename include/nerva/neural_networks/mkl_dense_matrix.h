@@ -25,18 +25,17 @@ enum matrix_layout
 };
 
 // This class can be used to wrap an Eigen matrix (or NumPy etc.)
-template <typename Scalar>
+template <typename Scalar, int MatrixLayout>
 class dense_matrix_view
 {
   protected:
     Scalar* m_data;
     long m_rows;
     long m_columns;
-    int m_layout;
 
   public:
-    dense_matrix_view(Scalar* data, long rows, long columns, int layout)
-      : m_data(data), m_rows(rows), m_columns(columns), m_layout(layout)
+    dense_matrix_view(Scalar* data, long rows, long columns)
+      : m_data(data), m_rows(rows), m_columns(columns)
     {}
 
     [[nodiscard]] long rows() const
@@ -58,25 +57,19 @@ class dense_matrix_view
     {
       return m_data;
     }
-
-    [[nodiscard]] int layout() const
-    {
-      return m_layout;
-    }
 };
 
-template <typename Scalar>
+template <typename Scalar, int MatrixLayout>
 class dense_matrix
 {
   protected:
     std::vector<Scalar> m_data;
     long m_rows;
     long m_columns;
-    int m_layout;  // TODO: use the type matrix_layout
 
   public:
-    dense_matrix(long rows, long columns, int layout, bool transposed = false)
-      : m_data(rows * columns, 0), m_rows(rows), m_columns(columns), m_layout(layout)
+    dense_matrix(long rows, long columns)
+      : m_data(rows * columns, 0), m_rows(rows), m_columns(columns)
     {}
 
     [[nodiscard]] long rows() const
@@ -98,31 +91,25 @@ class dense_matrix
     {
       return m_data.data();
     }
-
-    [[nodiscard]] int layout() const
-    {
-      return m_layout;
-    }
 };
 
 // Computes the matrix product C = A * B
-template <typename Scalar, template <typename> class Matrix1, template <typename> class Matrix2>
-dense_matrix<Scalar> ddd_product(const Matrix1<Scalar>& A, const Matrix2<Scalar>& B, bool A_transposed = false, bool B_transposed = false)
+template <typename Scalar, int MatrixLayout, template <typename, int> class Matrix1, template <typename, int> class Matrix2>
+dense_matrix<Scalar, MatrixLayout> ddd_product(const Matrix1<Scalar, MatrixLayout>& A, const Matrix2<Scalar, MatrixLayout>& B, bool A_transposed = false, bool B_transposed = false)
 {
   long A_cols = A_transposed ? A.rows() : A.cols();
   long A_rows = A_transposed ? A.cols() : A.rows();
   long B_cols = B_transposed ? B.rows() : B.cols();
   long B_rows = B_transposed ? B.cols() : B.rows();
 
-  assert(A.layout() == B.layout());
   assert(A_rows == B_cols);
 
-  dense_matrix<Scalar> C(A_rows, B_cols, A.layout());
+  dense_matrix<Scalar, MatrixLayout> C(A_rows, B_cols);
 
   CBLAS_TRANSPOSE transA = A_transposed ? CblasTrans : CblasNoTrans;
   CBLAS_TRANSPOSE transB = B_transposed ? CblasTrans : CblasNoTrans;
 
-  if (A.layout() == column_major)
+  if constexpr (MatrixLayout == column_major)
   {
     long lda = A_transposed ? A_cols : A_rows;
     long ldb = B_transposed ? B_cols : B_rows;
