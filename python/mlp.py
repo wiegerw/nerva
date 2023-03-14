@@ -107,9 +107,9 @@ def check_command_line_arguments(args):
 
 def print_command_line_arguments(args):
     print("python3 " + " ".join(shlex.quote(arg) if " " in arg else arg for arg in sys.argv))
-    print('')
-    for key, value in vars(args).items():
-        print(f'{key} = {value}')
+    # print('')
+    # for key, value in vars(args).items():
+    #    print(f'{key} = {value}')
     print('\n')
 
 

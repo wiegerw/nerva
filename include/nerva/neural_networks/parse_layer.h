@@ -21,7 +21,7 @@ namespace nerva {
 inline
 bool is_linear_layer(char c)
 {
-  return std::string("LRSYZ").find(c) != std::string::npos;
+  return std::string("LRSTYZ").find(c) != std::string::npos;
 }
 
 inline
@@ -41,6 +41,10 @@ std::shared_ptr<neural_network_layer> parse_dense_layer(char c, std::size_t D, s
     else if (c == 'R')
     {
       return std::make_shared<dense_relu_layer>(D, K, options.batch_size);
+    }
+    else if (c == 'T')
+    {
+      return std::make_shared<dense_trimmed_relu_layer>(1e-30, D, K, options.batch_size);  // TODO: make the value epsilon configurable
     }
     else if (c == 'S')
     {
@@ -86,6 +90,12 @@ std::shared_ptr<neural_network_layer> parse_sparse_layer(char c, std::size_t D, 
   else if (c == 'R')
   {
     auto layer = std::make_shared<sparse_relu_layer>(D, K, options.batch_size);
+    initialize_sparse_weights<scalar>(*layer, density, rng);
+    return layer;
+  }
+  else if (c == 'T')
+  {
+    auto layer = std::make_shared<sparse_trimmed_relu_layer>(1e-30, D, K, options.batch_size);  // TODO: make the value epsilon configurable
     initialize_sparse_weights<scalar>(*layer, density, rng);
     return layer;
   }

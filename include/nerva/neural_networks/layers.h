@@ -359,6 +359,19 @@ using dense_relu_layer = relu_layer<eigen::matrix>;
 using sparse_relu_layer = relu_layer<mkl::sparse_matrix_csr<scalar>>;
 
 template <typename Matrix>
+struct trimmed_relu_layer : public activation_layer<Matrix, trimmed_relu_activation>
+{
+  using super = activation_layer<Matrix, trimmed_relu_activation>;
+
+  explicit trimmed_relu_layer(scalar epsilon, std::size_t D, std::size_t K, std::size_t Q = 1)
+    : super(trimmed_relu_activation(epsilon), D, K, Q)
+  {}
+};
+
+using dense_trimmed_relu_layer = trimmed_relu_layer<eigen::matrix>;
+using sparse_trimmed_relu_layer = trimmed_relu_layer<mkl::sparse_matrix_csr<scalar>>;
+
+template <typename Matrix>
 struct leaky_relu_layer : public activation_layer<Matrix, leaky_relu_activation>
 {
   using super = activation_layer<Matrix, leaky_relu_activation>;

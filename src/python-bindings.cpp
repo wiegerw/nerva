@@ -184,6 +184,10 @@ PYBIND11_MODULE(nervalib, m)
     .def(py::init<std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
 
+  py::class_<dense_trimmed_relu_layer, dense_linear_layer, std::shared_ptr<dense_trimmed_relu_layer>>(m, "trimmed_relu_layer")
+    .def(py::init<scalar, std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
+    ;
+
   py::class_<dense_all_relu_layer, dense_linear_layer, std::shared_ptr<dense_all_relu_layer>>(m, "all_relu_layer")
     .def(py::init<scalar, std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
@@ -288,6 +292,15 @@ PYBIND11_MODULE(nervalib, m)
     .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar density)
                   {
                     auto layer = std::make_shared<sparse_relu_layer>(D, K, batch_size);
+                    initialize_sparse_weights<scalar>(*layer, density, nerva_rng);
+                    return layer;
+                  }))
+    ;
+
+  py::class_<sparse_trimmed_relu_layer, sparse_linear_layer, std::shared_ptr<trimmed_relu_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_trimmed_relu_layer")
+    .def(py::init([](scalar epsilon, std::size_t D, std::size_t K, std::size_t batch_size, scalar density)
+                  {
+                    auto layer = std::make_shared<sparse_trimmed_relu_layer>(epsilon, D, K, batch_size);
                     initialize_sparse_weights<scalar>(*layer, density, nerva_rng);
                     return layer;
                   }))

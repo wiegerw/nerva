@@ -3,7 +3,8 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from typing import Optional, List, Union, Tuple
-from nerva.activation import Activation, NoActivation, ReLU, AllReLU, Softmax, LogSoftmax, Sigmoid, HyperbolicTangent, LeakyReLU
+from nerva.activation import Activation, NoActivation, ReLU, AllReLU, Softmax, LogSoftmax, Sigmoid, HyperbolicTangent, \
+    LeakyReLU, TrimmedReLU
 from nerva.optimizers import Optimizer, GradientDescent
 from nerva.weights import WeightInitializer, Xavier
 import nervalib
@@ -59,36 +60,37 @@ class Dense(Layer):
         if dropout_rate == 0.0:
             if isinstance(self.activation, NoActivation):
                 layer = nervalib.linear_layer(self.input_size, self.units, batch_size)
-            elif isinstance(self.activation, ReLU):
-                layer = nervalib.relu_layer(self.input_size, self.units, batch_size)
             elif isinstance(self.activation, AllReLU):
                 layer = nervalib.all_relu_layer(self.activation.alpha, self.input_size, self.units, batch_size)
+            elif isinstance(self.activation, HyperbolicTangent):
+                layer = nervalib.hyperbolic_tangent_layer(self.input_size, self.units, batch_size)
             elif isinstance(self.activation, LeakyReLU):
                 layer = nervalib.leaky_relu_layer(self.activation.alpha, self.input_size, self.units, batch_size)
+            elif isinstance(self.activation, LogSoftmax):
+                layer = nervalib.log_softmax_layer(self.input_size, self.units, batch_size)
+            elif isinstance(self.activation, ReLU):
+                layer = nervalib.relu_layer(self.input_size, self.units, batch_size)
             elif isinstance(self.activation, Sigmoid):
                 layer = nervalib.sigmoid_layer(self.input_size, self.units, batch_size)
             elif isinstance(self.activation, Softmax):
                 layer = nervalib.softmax_layer(self.input_size, self.units, batch_size)
-            elif isinstance(self.activation, LogSoftmax):
-                print('warning: the LogSoftmax activation function is experimental')
-                layer = nervalib.log_softmax_layer(self.input_size, self.units, batch_size)
-            elif isinstance(self.activation, HyperbolicTangent):
-                layer = nervalib.hyperbolic_tangent_layer(self.input_size, self.units, batch_size)
+            elif isinstance(self.activation, TrimmedReLU):
+                layer = nervalib.trimmed_relu_layer(self.activation.epsilon, self.input_size, self.units, batch_size)
         else:
             if isinstance(self.activation, NoActivation):
                 layer = nervalib.linear_dropout_layer(self.input_size, self.units, batch_size, dropout_rate)
-            elif isinstance(self.activation, ReLU):
-                layer = nervalib.relu_dropout_layer(self.input_size, self.units, batch_size, dropout_rate)
             elif isinstance(self.activation, AllReLU):
                 layer = nervalib.all_relu_dropout_layer(self.activation.alpha, self.input_size, self.units, batch_size, dropout_rate)
+            elif isinstance(self.activation, HyperbolicTangent):
+                layer = nervalib.hyperbolic_tangent_dropout_layer(self.input_size, self.units, batch_size, dropout_rate)
             elif isinstance(self.activation, LeakyReLU):
                 layer = nervalib.leaky_relu_dropout_layer(self.activation.alpha, self.input_size, self.units, batch_size, dropout_rate)
+            elif isinstance(self.activation, ReLU):
+                layer = nervalib.relu_dropout_layer(self.input_size, self.units, batch_size, dropout_rate)
             elif isinstance(self.activation, Sigmoid):
                 layer = nervalib.sigmoid_dropout_layer(self.input_size, self.units, batch_size, dropout_rate)
             elif isinstance(self.activation, Softmax):
                 layer = nervalib.softmax_dropout_layer(self.input_size, self.units, batch_size, dropout_rate)
-            elif isinstance(self.activation, HyperbolicTangent):
-                layer = nervalib.hyperbolic_tangent_dropout_layer(self.input_size, self.units, batch_size, dropout_rate)
 
         if not layer:
             raise RuntimeError('Unsupported layer type')
@@ -140,19 +142,22 @@ class Sparse(Layer):
         if dropout_rate == 0.0:
             if isinstance(self.activation, NoActivation):
                 layer = nervalib.sparse_linear_layer(self.input_size, self.units, batch_size, self.density)
+            elif isinstance(self.activation, AllReLU):
+                layer = nervalib.sparse_all_relu_layer(self.activation.alpha, self.input_size, self.units, batch_size, self.density)
+            elif isinstance(self.activation, HyperbolicTangent):
+                layer = nervalib.sparse_hyperbolic_tangent_layer(self.input_size, self.units, batch_size, self.density)
+            elif isinstance(self.activation, LogSoftmax):
+                layer = nervalib.sparse_log_softmax_layer(self.input_size, self.units, batch_size, self.density)
+            elif isinstance(self.activation, LeakyReLU):
+                layer = nervalib.sparse_leaky_relu_layer(self.activation.alpha, self.input_size, self.units, batch_size, self.density)
             elif isinstance(self.activation, ReLU):
                 layer = nervalib.sparse_relu_layer(self.input_size, self.units, batch_size, self.density)
             elif isinstance(self.activation, Sigmoid):
                 layer = nervalib.sparse_sigmoid_layer(self.input_size, self.units, batch_size, self.density)
             elif isinstance(self.activation, Softmax):
                 layer = nervalib.sparse_softmax_layer(self.input_size, self.units, batch_size, self.density)
-            elif isinstance(self.activation, LogSoftmax):
-                print('warning: the LogSoftmax activation function is experimental')
-                layer = nervalib.sparse_log_softmax_layer(self.input_size, self.units, batch_size, self.density)
-            elif isinstance(self.activation, AllReLU):
-                layer = nervalib.sparse_all_relu_layer(self.activation.alpha, self.input_size, self.units, batch_size, self.density)
-            elif isinstance(self.activation, HyperbolicTangent):
-                layer = nervalib.sparse_hyperbolic_tangent_layer(self.input_size, self.units, batch_size, self.density)
+            elif isinstance(self.activation, TrimmedReLU):
+                layer = nervalib.sparse_trimmed_relu_layer(self.activation.epsilon, self.input_size, self.units, batch_size, self.density)
 
         if not layer:
             raise RuntimeError('Unsupported layer type')

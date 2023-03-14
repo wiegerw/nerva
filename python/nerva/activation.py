@@ -31,6 +31,14 @@ class LogSoftmax(Activation):
         return 'LogSoftmax()'
 
 
+class TrimmedReLU(Activation):
+    def __init__(self, epsilon: float):
+        self.epsilon = epsilon
+
+    def __str__(self):
+        return f'TrimmedReLU({self.epsilon})'
+
+
 class LeakyReLU(Activation):
     def __init__(self, alpha: float):
         self.alpha = alpha

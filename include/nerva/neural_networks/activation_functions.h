@@ -70,7 +70,7 @@ struct relu
 {
   scalar operator()(scalar x) const
   {
-    return std::max(scalar(0.0), x);
+    return std::max(scalar(0), x);
   }
 
   template <typename Matrix>
@@ -84,7 +84,7 @@ struct relu_prime
 {
   scalar operator()(scalar x) const
   {
-    return (x < 0) ? scalar(0.0) : scalar(1.0);
+    return (x < 0) ? scalar(0) : scalar(1);
   }
 
   template <typename Matrix>
@@ -177,6 +177,72 @@ struct leaky_relu_activation
   [[nodiscard]] std::string to_string() const
   {
     return fmt::format("LeakyRelu({:7.5f})", alpha);
+  }
+};
+
+struct trimmed_relu
+{
+  scalar epsilon;
+
+  explicit trimmed_relu(scalar epsilon_)
+    : epsilon(epsilon_)
+  {}
+
+  scalar operator()(scalar x) const
+  {
+    return (x < epsilon) ? scalar(0) : x;
+  }
+
+  template <typename Matrix>
+  auto operator()(const Matrix& x) const
+  {
+    return x.unaryExpr(*this);
+  }
+};
+
+struct trimmed_relu_prime
+{
+  scalar epsilon;
+
+  explicit trimmed_relu_prime(scalar epsilon_)
+    : epsilon(epsilon_)
+  {}
+
+  scalar operator()(scalar x) const
+  {
+    return (x < epsilon) ? scalar(0) : scalar(1);
+  }
+
+  template <typename Matrix>
+  auto operator()(const Matrix& x) const
+  {
+    return x.unaryExpr(*this);
+  }
+};
+
+struct trimmed_relu_activation
+{
+  scalar epsilon;
+
+  explicit trimmed_relu_activation(scalar epsilon_)
+    : epsilon(epsilon_)
+  {}
+
+  template <typename Matrix>
+  auto operator()(const Matrix& X) const
+  {
+    return trimmed_relu(epsilon)(X);
+  }
+
+  template <typename Matrix>
+  auto prime(const Matrix& X) const
+  {
+    return trimmed_relu_prime(epsilon)(X);
+  }
+
+  [[nodiscard]] std::string to_string() const
+  {
+    return "TrimmedReLU()";
   }
 };
 

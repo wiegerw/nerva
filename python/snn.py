@@ -42,7 +42,10 @@ def make_nerva_model(args, layer_sizes, layer_densities):
     n_layers = len(layer_densities)
     loss = nerva.loss.SoftmaxCrossEntropyLoss()
     learning_rate = make_nerva_scheduler(args)
-    activations = [nerva.layers.ReLU()] * (n_layers - 1) + [nerva.layers.NoActivation()]
+    if args.trim_relu == 0:
+        activations = [nerva.layers.ReLU()] * (n_layers - 1) + [nerva.layers.NoActivation()]
+    else:
+        activations = [nerva.layers.TrimmedReLU(args.trim_relu)] * (n_layers - 1) + [nerva.layers.NoActivation()]
     optimizer = make_nerva_optimizer(args.momentum, args.nesterov)
     optimizers = [optimizer] * n_layers
     return MLPNerva(layer_sizes, layer_densities, optimizers, activations, loss, learning_rate, args.batch_size)
@@ -62,6 +65,7 @@ def make_argument_parser():
     cmdline_parser.add_argument('--sizes', type=str, default='3072,128,64,10', help='A comma separated list of layer sizes, e.g. "3072,128,64,10".')
     cmdline_parser.add_argument('--densities', type=str, help='A comma separated list of layer densities, e.g. "0.05,0.05,1.0".')
     cmdline_parser.add_argument('--overall-density', type=float, default=1.0, help='The overall density of the layers.')
+    cmdline_parser.add_argument('--trim-relu', type=float, default=0.0, help='The threshold for trimming ReLU outputs.')
 
     # optimizer
     cmdline_parser.add_argument('--momentum', type=float, default=0.9, help='the momentum value (default: off)')
@@ -112,9 +116,9 @@ def check_command_line_arguments(args):
 
 def print_command_line_arguments(args):
     print("python3 " + " ".join(shlex.quote(arg) if " " in arg else arg for arg in sys.argv))
-    print('')
-    for key, value in vars(args).items():
-        print(f'{key} = {value}')
+    # print('')
+    # for key, value in vars(args).items():
+    #     print(f'{key} = {value}')
     print('\n')
 
 
