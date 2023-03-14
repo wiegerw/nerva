@@ -2,11 +2,13 @@
 #include "nerva/utilities/stopwatch.h"
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/neural_networks/mkl_eigen.h"
+#include <algorithm>
+#include <iomanip>
 #include <iostream>
 #include <numeric>
 #include <random>
 
-void product()
+void matrix_product()
 {
   Eigen::MatrixXf A = Eigen::MatrixXf::Random(1024, 100);
   Eigen::MatrixXf B = Eigen::MatrixXf::Random(100, 1024);
@@ -62,9 +64,66 @@ void product()
   }
 }
 
+void multiplication1()
+{
+  std::cout << "--- multiplication1 ---" << std::endl;
+  std::uniform_real_distribution<float> dist(-1, 1);
+  std::mt19937 rng{std::random_device{}()};
+
+  std::size_t n = 100000000;
+  std::vector<float> x(n);
+  std::vector<float> y(n);
+  for (auto& y_i: y)
+  {
+    y_i = dist(rng);
+  }
+
+  nerva::utilities::stopwatch watch;
+  for (unsigned int power = 0; power < 46; power++)
+  {
+    float value = std::pow(float(10), -float(power));
+    std::fill(x.begin(), x.end(), value);
+    watch.reset();
+    float sum = 0;
+    for (std::size_t i = 0; i < n; i++)
+    {
+      sum += x[i] * y[i];
+    }
+    auto seconds = watch.seconds();
+    std::cout << std::setw(10) << seconds << " value = " << value << " sum = " << sum << std::endl;
+  }
+}
+
+void multiplication2()
+{
+  std::cout << "--- multiplication2 ---" << std::endl;
+
+  std::size_t n = 100000000;
+  std::vector<float> x(n);
+  std::vector<float> y(n);
+
+  nerva::utilities::stopwatch watch;
+  for (unsigned int power = 0; power < 46; power++)
+  {
+    float value = std::pow(float(10), -float(power));
+    std::fill(x.begin(), x.end(), value);
+    std::fill(y.begin(), y.end(), value);
+    watch.reset();
+    float sum = 0;
+    for (std::size_t i = 0; i < n; i++)
+    {
+      sum += x[i] * y[i];
+    }
+    auto seconds = watch.seconds();
+    std::cout << std::setw(10) << seconds << " value = " << value << " sum = " << sum << std::endl;
+  }
+}
+
 int main()
 {
-  product();
+  multiplication1();
+  multiplication2();
+  matrix_product();
 
   return 0;
 }
