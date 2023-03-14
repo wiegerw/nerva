@@ -331,9 +331,46 @@ void dsd_product(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLay
                  sparse_operation_t operation_B = SPARSE_OPERATION_NON_TRANSPOSE
 )
 {
-  auto A_view = mkl::make_dense_matrix_view(A);
-  auto C_view = mkl::make_dense_matrix_view(C);
-  mkl::dsd_product(A_view, B, C_view, alpha, beta, operation_B);
+  if (A.rows() == 0)
+  {
+    A = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>(B.rows(), C.cols());
+  }
+  assert(A.rows() == (operation_B == SPARSE_OPERATION_NON_TRANSPOSE ? B.rows() : B.cols()));
+  assert(A.cols() == C.cols());
+  assert((operation_B == SPARSE_OPERATION_NON_TRANSPOSE ? B.cols() : B.rows()) == C.rows());
+
+  sparse_status_t status;
+  if constexpr (std::is_same<Scalar, double>::value)
+  {
+    if constexpr (MatrixLayout == Eigen::ColMajor)
+    {
+      status = mkl_sparse_d_mm(operation_B, beta, B.csr(), B.descriptor(), SPARSE_LAYOUT_COLUMN_MAJOR, C.data(), A.cols(), C.rows(), alpha, A.data(), A.rows());
+    }
+    else
+    {
+      status = mkl_sparse_d_mm(operation_B, beta, B.csr(), B.descriptor(), SPARSE_LAYOUT_ROW_MAJOR, C.data(), A.cols(), C.cols(), alpha, A.data(), A.cols());
+    }
+  }
+  else
+  {
+    if constexpr (MatrixLayout == Eigen::ColMajor)
+    {
+      status = mkl_sparse_s_mm(operation_B, beta, B.csr(), B.descriptor(), SPARSE_LAYOUT_COLUMN_MAJOR, C.data(), A.cols(), C.rows(), alpha, A.data(), A.rows());
+    }
+    else
+    {
+      status = mkl_sparse_s_mm(operation_B, beta, B.csr(), B.descriptor(), SPARSE_LAYOUT_ROW_MAJOR, C.data(), A.cols(), C.cols(), alpha, A.data(), A.cols());
+    }
+  }
+
+  if (status != SPARSE_STATUS_SUCCESS)
+  {
+    throw std::runtime_error("mkl_sparse_dense_mat_mult reported status " + std::to_string(status));
+  }
+
+//  auto A_view = mkl::make_dense_matrix_view(A);
+//  auto C_view = mkl::make_dense_matrix_view(C);
+//  mkl::dsd_product(A_view, B, C_view, alpha, beta, operation_B);
 }
 
 // returns the L2 norm of (B - A)
