@@ -6,7 +6,6 @@
 
 import torch
 from torch import nn as nn
-from torch.autograd import Function
 from torch.nn import functional as F
 
 import nerva.layers
@@ -76,6 +75,23 @@ class MLPPyTorch(nn.Module):
 
         density_info = [density_info(layer, mask) for layer, mask in zip(self.layers, self.masks)]
         return f'{super().__str__()}\nscheduler = {self.learning_rate}\nlayer densities: {", ".join(density_info)}\n'
+
+
+class MLPPyTorchTrimmedRelu(MLPPyTorch):
+    """ PyTorch Multilayer perceptron that supports sparse layers using binary masks.
+        It uses a trimmed ReLU activation function.
+    """
+    def __init__(self, layer_sizes, layer_densities, epsilon: float):
+        super().__init__(layer_sizes, layer_densities)
+        self.epsilon = epsilon
+        print(f'epsilon = {epsilon}')
+
+    def forward(self, x):
+        for i in range(len(self.layers) - 1):
+            z = self.layers[i](x)
+            x = torch.where(z < self.epsilon, 0, z)  # apply trimmed ReLU to z
+        x = self.layers[-1](x)  # output layer does not have an activation function
+        return x
 
 
 class MLPNerva(nerva.layers.Sequential):
