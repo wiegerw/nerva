@@ -191,36 +191,33 @@ struct relu_dropout_layer: public activation_dropout_layer<Matrix, relu_activati
    : super(relu_activation(), D, K, Q, p)
   {}
 };
-
 using dense_relu_dropout_layer = relu_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
-struct all_relu_dropout_layer: public activation_dropout_layer<Matrix, all_relu_activation>
+struct softmax_dropout_layer: public activation_dropout_layer<Matrix, softmax_activation>
 {
-  using super = activation_dropout_layer<Matrix, all_relu_activation>;
+  using super = activation_dropout_layer<Matrix, softmax_activation>;
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
-  all_relu_dropout_layer(scalar alpha, std::size_t D, std::size_t K, std::size_t Q, scalar p)
-   : super(all_relu_activation(alpha), D, K, Q, p)
+  softmax_dropout_layer(std::size_t D, std::size_t K, std::size_t Q, scalar p)
+    : super(softmax_activation(), D, K, Q, p)
   {}
 };
-
-using dense_all_relu_dropout_layer = all_relu_dropout_layer<eigen::matrix>;
+using dense_softmax_dropout_layer = softmax_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
-struct leaky_relu_dropout_layer: public activation_dropout_layer<Matrix, leaky_relu_activation>
+struct log_softmax_dropout_layer: public activation_dropout_layer<Matrix, log_softmax_activation>
 {
-  using super = activation_dropout_layer<Matrix, leaky_relu_activation>;
+  using super = activation_dropout_layer<Matrix, log_softmax_activation>;
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
-  leaky_relu_dropout_layer(scalar alpha, std::size_t D, std::size_t K, std::size_t Q, scalar p)
-      : super(leaky_relu_activation(alpha), D, K, Q, p)
+  log_softmax_dropout_layer(std::size_t D, std::size_t K, std::size_t Q, scalar p)
+    : super(log_softmax_activation(), D, K, Q, p)
   {}
 };
-
-using dense_leaky_relu_dropout_layer = leaky_relu_dropout_layer<eigen::matrix>;
+using dense_log_softmax_dropout_layer = log_softmax_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
 struct hyperbolic_tangent_dropout_layer: public activation_dropout_layer<Matrix, hyperbolic_tangent_activation>
@@ -233,22 +230,46 @@ struct hyperbolic_tangent_dropout_layer: public activation_dropout_layer<Matrix,
       : super(hyperbolic_tangent_activation(), D, K, Q, p)
   {}
 };
-
 using dense_hyperbolic_tangent_dropout_layer = hyperbolic_tangent_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
-struct softmax_dropout_layer: public activation_dropout_layer<Matrix, softmax_activation>
+struct all_relu_dropout_layer: public activation_dropout_layer<Matrix, all_relu_activation>
 {
-  using super = activation_dropout_layer<Matrix, softmax_activation>;
+  using super = activation_dropout_layer<Matrix, all_relu_activation>;
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
-  softmax_dropout_layer(std::size_t D, std::size_t K, std::size_t Q, scalar p)
-      : super(softmax_activation(), D, K, Q, p)
+  all_relu_dropout_layer(scalar alpha, std::size_t D, std::size_t K, std::size_t Q, scalar p)
+    : super(all_relu_activation(alpha), D, K, Q, p)
   {}
 };
+using dense_all_relu_dropout_layer = all_relu_dropout_layer<eigen::matrix>;
 
-using dense_softmax_dropout_layer = softmax_dropout_layer<eigen::matrix>;
+template <typename Matrix>
+struct leaky_relu_dropout_layer: public activation_dropout_layer<Matrix, leaky_relu_activation>
+{
+  using super = activation_dropout_layer<Matrix, leaky_relu_activation>;
+  using super::to_string;
+  using dropout_layer<Matrix>::p;
+
+  leaky_relu_dropout_layer(scalar alpha, std::size_t D, std::size_t K, std::size_t Q, scalar p)
+    : super(leaky_relu_activation(alpha), D, K, Q, p)
+  {}
+};
+using dense_leaky_relu_dropout_layer = leaky_relu_dropout_layer<eigen::matrix>;
+
+template <typename Matrix>
+struct trimmed_relu_dropout_layer: public activation_dropout_layer<Matrix, trimmed_relu_activation>
+{
+  using super = activation_dropout_layer<Matrix, trimmed_relu_activation>;
+  using super::to_string;
+  using dropout_layer<Matrix>::p;
+
+  trimmed_relu_dropout_layer(scalar epsilon, std::size_t D, std::size_t K, std::size_t Q, scalar p)
+    : super(trimmed_relu_activation(epsilon), D, K, Q, p)
+  {}
+};
+using dense_trimmed_relu_dropout_layer = trimmed_relu_dropout_layer<eigen::matrix>;
 
 } // namespace nerva
 

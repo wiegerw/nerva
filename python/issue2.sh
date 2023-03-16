@@ -11,4 +11,4 @@ source utilities.sh
 # It is unknown what causes this.
 
 print_header "Dropout gradient checking"
-../tools/dist/mlpd --epochs=10 --architecture=RRL --sizes=2,64,64,2 --dataset=chessboard --weights=xxx --batch-size=5 "--learning-rate=constant(0.001)" --optimizer=gradient-descent --dropout=0.3 --size=50 --loss=softmax-cross-entropy --normalize --threads=4 --verbose --no-shuffle --seed=12345 --gradient-step=0.00001
+../tools/dist/mlpd --epochs=10 --layers="Dropout(0.3);ReLU;Dropout(0.3);ReLU;Dropout(0.3);Linear" --sizes=2,64,64,2 --dataset=chessboard --weights=xxx --batch-size=5 "--learning-rate=constant(0.001)" --optimizer=gradient-descent --size=50 --loss=softmax-cross-entropy --normalize --threads=4 --verbose --no-shuffle --seed=12345 --gradient-step=0.00001

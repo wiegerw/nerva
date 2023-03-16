@@ -5,7 +5,7 @@ dataset=cifar10
 sizes="3072,8,4,10"
 
 weights=xxx
-architecture=RRL
+layers="ReLU;ReLU;Linear"
 
 seed=12345
 epochs=1
@@ -23,14 +23,13 @@ function run()
   extra_args=$1
 
   ../tools/dist/mlpd --epochs=$epochs \
-               --architecture=$architecture \
+               --layers="$layers" \
                --sizes=$sizes \
                --dataset=$dataset \
                --weights=$weights \
                --batch-size=$batch_size \
                --learning-rate="constant($lr)" \
                --optimizer=$optimizer \
-               --dropout=$dropout \
                --size=$size \
                --loss="softmax-cross-entropy" \
                --normalize \
@@ -45,30 +44,29 @@ function run()
 function run_dataset()
 {
   print_header "default"
-  architecture=RRL
+  layers="ReLU;ReLU;Linear"
   run
 
   print_header "softmax layer"
-  architecture=ZRL
+  layers="ZReLU;Linear"
   run
 
   print_header "momentum"
-  architecture=RRL
+  layers="ReLU;ReLU;Linear"
   optimizer="momentum(0.8)"
   run
 
   print_header "nesterov"
-  architecture=RRL
+  layers="ReLU;ReLU;Linear"
   optimizer="nesterov(0.8)"
   run
 
   print_header "batch normalization 1"
-  architecture=BRBRL
+  layers="BatchNorm;ReLU;BatchNorm;ReLU;Linear"
   optimizer="gradient-descent"
   run
 
   print_header "dropout"
-  architecture=RRL
-  dropout=0.3
+  layers="Dropout(0.3);ReLU;ReLU;Linear"
   run
 }

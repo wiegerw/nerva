@@ -78,7 +78,7 @@ class sparse_matrix_csr
       }
 
       // Check if row index size matches the number of rows + 1
-      if (m_row_index.size() != m_rows + 1)
+      if (m_row_index.size() != static_cast<std::size_t>(m_rows) + 1)
       {
         return false;
       }
@@ -92,7 +92,7 @@ class sparse_matrix_csr
       // Check if row index values are non-negative and non-decreasing
       for (size_t i = 0; i < m_row_index.size() - 1; i++)
       {
-        if (m_row_index[i] < 0 || m_row_index[i] > m_values.size())
+        if (m_row_index[i] < 0 || m_row_index[i] > static_cast<long>(m_values.size()))
         {
           return false;
         }

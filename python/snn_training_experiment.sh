@@ -5,7 +5,7 @@ epochs=100
 batchsize=100
 momentum=0.9
 sizes="3072,1024,512,10"
-architecture=RRL
+layers="ReLU;ReLU;Linear"
 weights=XXX
 
 function train_sparse()
@@ -60,7 +60,7 @@ function train_sparse()
                          --epochs=$epochs \
                          --learning-rate="multistep_lr($lr;50,75;0.1)" \
                          --optimizer="nesterov($momentum)" \
-                         --architecture=$architecture \
+                         --layers="$layers" \
                          --weights=$weights \
                          --loss="softmax-cross-entropy" \
                          --threads=4 \
@@ -122,7 +122,7 @@ function train_dense()
                          --epochs=$epochs \
                          --learning-rate="multistep_lr($lr;50,75;0.1)" \
                          --optimizer="nesterov($momentum)" \
-                         --architecture=$architecture \
+                         --layers="$layers" \
                          --weights=$weights \
                          --loss="softmax-cross-entropy" \
                          --threads=4 \

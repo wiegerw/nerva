@@ -11,14 +11,14 @@ datadir="./data"
 #--- variable settings ---#
 seed=1
 sizes="1024,512"
-architecture=RRL
+layers="ReLU;ReLU;Linear"
 weights=xxx
 
 # do one experiment with pytorch and nerva
 function run
 {
   sizes=$1
-  architecture=$2
+  layers=$2
   weights=$3
   logfile="snn/running-time/torch-density-$density-sizes-$sizes-seed-$seed.log"
 
@@ -46,7 +46,7 @@ function run
                      --epochs=$epochs \
                      --learning-rate="multistep_lr($lr;50,75;0.1)" \
                      --optimizer="nesterov($momentum)" \
-                     --architecture=$architecture \
+                     --layers="$layers" \
                      --weights=$weights \
                      --dataset=cifar10 \
                      --size=50000 \
@@ -61,21 +61,21 @@ function run_all()
 {
     for seed in 1
     do
-        run "1024"                                              "RL"          "xx"
-        run "1024,1024"                                         "RRL"         "xxx"
-        run "1024,1024,1024"                                    "RRRL"        "xxxx"
-        run "1024,1024,1024,1024"                               "RRRRL"       "xxxxx"
-        run "1024,1024,1024,1024,1024"                          "RRRRRL"      "xxxxxx"
-        run "1024,1024,1024,1024,1024,1024"                     "RRRRRRL"     "xxxxxxx"
-        run "1024,1024,1024,1024,1024,1024,1024"                "RRRRRRRL"    "xxxxxxxx"
-        run "1024,1024,1024,1024,1024,1024,1024,1024"           "RRRRRRRRL"   "xxxxxxxxx"
-        run "1024,1024,1024,1024,1024,1024,1024,1024,1024"      "RRRRRRRRRL"  "xxxxxxxxxx"
-        run "1024,1024,1024,1024,1024,1024,1024,1024,1024,1024" "RRRRRRRRRRL" "xxxxxxxxxxx"
-        run "2048,2048,2048"                                    "RRRL"        "xxxx"
-        run "4096,4096,4096"                                    "RRRL"        "xxxx"
-        run "8192,8192,8192"                                    "RRRL"        "xxxx"
-        run "16384,16384,16384"                                 "RRRL"        "xxxx"
-        run "32768,32768,32768"                                 "RRRL"        "xxxx"
+        run "1024"                                              "ReLU;Linear"                                              "xx"
+        run "1024,1024"                                         "ReLU;ReLU;Linear"                                         "xxx"
+        run "1024,1024,1024"                                    "ReLU;eLU;ReLU;ReLU;Linear"                                "xxxx"
+        run "1024,1024,1024,1024"                               "ReLU;ReLU;ReLU;ReLU;Linear"                               "xxxxx"
+        run "1024,1024,1024,1024,1024"                          "ReLU;ReLU;ReLU;ReLU;ReLU;Linear"                          "xxxxxx"
+        run "1024,1024,1024,1024,1024,1024"                     "ReLU;ReLU;ReLU;ReLU;ReLU;ReLU;Linear"                     "xxxxxxx"
+        run "1024,1024,1024,1024,1024,1024,1024"                "ReLU;ReLU;ReLU;ReLU;ReLU;ReLU;ReLU;Linear"                "xxxxxxxx"
+        run "1024,1024,1024,1024,1024,1024,1024,1024"           "ReLU;ReLU;ReLU;ReLU;ReLU;ReLU;ReLU;ReLU;Linear"           "xxxxxxxxx"
+        run "1024,1024,1024,1024,1024,1024,1024,1024,1024"      "ReLU;ReLU;ReLU;ReLU;ReLU;ReLU;ReLU;ReLU;ReLU;Linear"      "xxxxxxxxxx"
+        run "1024,1024,1024,1024,1024,1024,1024,1024,1024,1024" "ReLU;ReLU;ReLU;ReLU;ReLU;ReLU;ReLU;ReLU;ReLU;ReLU;Linear" "xxxxxxxxxxx"
+        run "2048,2048,2048"                                    "ReLU;ReLU;ReLU;Linear"                                    "xxxx"
+        run "4096,4096,4096"                                    "ReLU;ReLU;ReLU;Linear"                                    "xxxx"
+        run "8192,8192,8192"                                    "ReLU;ReLU;ReLU;Linear"                                    "xxxx"
+        run "16384,16384,16384"                                 "ReLU;ReLU;ReLU;Linear"                                    "xxxx"
+        run "32768,32768,32768"                                 "ReLU;ReLU;ReLU;Linear"                                    "xxxx"
     done
 }
 

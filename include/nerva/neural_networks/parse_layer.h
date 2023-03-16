@@ -13,112 +13,336 @@
 #include "nerva/neural_networks/layers.h"
 #include "nerva/neural_networks/batch_normalization_layer.h"
 #include "nerva/neural_networks/dropout_layers.h"
+#include "nerva/utilities/parse_numbers.h"
 #include "nerva/neural_networks/sgd_options.h"
+#include "nerva/utilities/string_utility.h"
+#include <iostream>
 #include <memory>
+#include <numeric>
+#include <random>
 
 namespace nerva {
 
+// supported layers:
+//
+// Linear
+// Sigmoid
+// ReLU
+// Softmax
+// LogSoftmax
+// HyperbolicTangent
+// AllRelu(<alpha>)
+// LeakyRelu(<alpha>)
+// TrimmedReLU(<epsilon>)
+//
+// BatchNorm
+// Dropout(<rate>)
+
 inline
-bool is_linear_layer(char c)
+std::vector<double> parse_comma_separated_real_numbers(const std::string& text)
 {
-  return std::string("LRSTYZ").find(c) != std::string::npos;
+  std::vector<double> result;
+  for (const std::string& word: utilities::regex_split(text, ","))
+  {
+    result.push_back(static_cast<double>(parse_double(word)));
+  }
+  return result;
 }
 
 inline
-std::shared_ptr<neural_network_layer> parse_dense_layer(char c, std::size_t D, std::size_t K, const mlp_options& options, std::mt19937& rng)
+std::vector<std::string> parse_layers(const std::string& text)
 {
-  if (c == 'B')
-  {
-    return std::make_shared<dense_batch_normalization_layer>(D, options.batch_size);
-  }
-
-  if (options.dropout == scalar(0))
-  {
-    if (c == 'L')
-    {
-      return std::make_shared<dense_linear_layer>(D, K, options.batch_size);
-    }
-    else if (c == 'R')
-    {
-      return std::make_shared<dense_relu_layer>(D, K, options.batch_size);
-    }
-    else if (c == 'T')
-    {
-      return std::make_shared<dense_trimmed_relu_layer>(1e-30, D, K, options.batch_size);  // TODO: make the value epsilon configurable
-    }
-    else if (c == 'S')
-    {
-      return std::make_shared<dense_sigmoid_layer>(D, K, options.batch_size);
-    }
-    else if (c == 'Y')
-    {
-      return std::make_shared<dense_log_softmax_layer>(D, K, options.batch_size);
-    }
-    else if (c == 'Z')
-    {
-      return std::make_shared<dense_softmax_layer>(D, K, options.batch_size);
-    }
-  }
-  else
-  {
-    if (c == 'L')
-    {
-      return std::make_shared<dense_linear_dropout_layer>(D, K, options.batch_size, options.dropout);
-    }
-    else if (c == 'R')
-    {
-      return std::make_shared<dense_relu_dropout_layer>(D, K, options.batch_size, options.dropout);
-    }
-    else if (c == 'S')
-    {
-      return std::make_shared<dense_sigmoid_dropout_layer>(D, K, options.batch_size, options.dropout);
-    }
-  }
-
-  throw std::runtime_error(std::string("unknown layer type '") + c + "'");
+  return utilities::regex_split(text, ";");
 }
 
 inline
-std::shared_ptr<neural_network_layer> parse_sparse_layer(char c, std::size_t D, std::size_t K, double density, const mlp_options& options, std::mt19937& rng)
+std::vector<std::string> parse_arguments(const std::string& text, unsigned int expected_size)
 {
-  if (c == 'L')
+  auto pos1 = text.find_first_of('(');
+  auto pos2 = text.find_last_of(')');
+  if (pos1 == std::string::npos || pos2 == std::string::npos)
   {
-    auto layer = std::make_shared<sparse_linear_layer>(D, K, options.batch_size);
-    initialize_sparse_weights<scalar>(*layer, density, rng);
-    return layer;
+    throw std::runtime_error("could not parse arguments of string '" + text + "'");
   }
-  else if (c == 'R')
+  std::string arguments_text = text.substr(pos1 + 1, pos2 - pos1 - 1);
+  auto result = utilities::regex_split(arguments_text, ",");
+  if (result.size() != expected_size)
   {
-    auto layer = std::make_shared<sparse_relu_layer>(D, K, options.batch_size);
-    initialize_sparse_weights<scalar>(*layer, density, rng);
-    return layer;
+    throw std::runtime_error("the string '" + text + "' has an unexpected number of arguments");
   }
-  else if (c == 'T')
+  return result;
+}
+
+inline
+scalar parse_scalar_argument(const std::string& text)
+{
+  std::vector<std::string> arguments = parse_arguments(text, 1);
+  return parse_scalar(arguments.front());
+}
+
+template <typename Predicate, typename T>
+std::vector<T> filter_sequence(const std::vector<T>& items, Predicate pred)
+{
+  std::vector<T> result;
+  for (const auto& item: items)
   {
-    auto layer = std::make_shared<sparse_trimmed_relu_layer>(1e-30, D, K, options.batch_size);  // TODO: make the value epsilon configurable
-    initialize_sparse_weights<scalar>(*layer, density, rng);
-    return layer;
+    if (pred(item))
+    {
+      result.push_back(item);
+    }
   }
-  else if (c == 'S')
+  return result;
+}
+
+bool is_linear_layer(const std::string& layer_description)
+{
+  return layer_description != "BatchNorm" && !utilities::starts_with(layer_description, "Dropout");
+}
+
+inline
+std::vector<double> compute_linear_layer_densities(const std::string& densities_text, double overall_density, const std::vector<std::string>& linear_layer_specifications, const std::vector<std::size_t>& linear_layer_sizes)
+{
+  if (linear_layer_specifications.size() + 1 != linear_layer_sizes.size())
   {
-    auto layer = std::make_shared<sparse_sigmoid_layer>(D, K, options.batch_size);
-    initialize_sparse_weights<scalar>(*layer, density, rng);
-    return layer;
-  }
-  else if (c == 'Y')
-  {
-    auto layer = std::make_shared<sparse_log_softmax_layer>(D, K, options.batch_size);
-    initialize_sparse_weights<scalar>(*layer, density, rng);
-    return layer;
-  }
-  else if (c == 'Z')
-  {
-    auto layer = std::make_shared<sparse_softmax_layer>(D, K, options.batch_size);
-    initialize_sparse_weights<scalar>(*layer, density, rng);
-    return layer;
+    std::cout << "linear layers: " << print_list(linear_layer_specifications) << std::endl;
+    std::cout << "layer sizes: " << print_list(linear_layer_sizes) << std::endl;
+    throw std::runtime_error("the number of linear layer sizes does not match with the number of linear layers");
   }
 
-  throw std::runtime_error(std::string("unknown layer type '") + c + "'");
+  std::vector<double> densities = parse_comma_separated_real_numbers(densities_text);
+  if (densities.empty())
+  {
+    if (overall_density == 1)
+    {
+      densities = std::vector<double>(linear_layer_specifications.size(), 1);
+    }
+    else
+    {
+      densities = compute_sparse_layer_densities(overall_density, linear_layer_sizes);
+    }
+  }
+
+  if (densities.size() != linear_layer_specifications.size())
+  {
+    throw std::runtime_error("the number of densities does not match with the number of linear layers");
+  }
+
+  return densities;
+}
+
+inline
+std::vector<std::size_t> compute_linear_layer_sizes(const std::string& linear_layer_sizes_text, const std::vector<std::string>& linear_layer_specifications)
+{
+  std::vector<std::size_t> linear_layer_sizes = parse_comma_separated_numbers(linear_layer_sizes_text);
+  if (linear_layer_specifications.size() + 1 != linear_layer_sizes.size())
+  {
+    throw std::runtime_error("the number of layer sizes does not match with the number of linear layers");
+  }
+  return linear_layer_sizes;
+}
+
+struct layer_builder
+{
+  double dropout_rate = 0;  // dropout rate of the next linear layer
+  std::mt19937& rng;        // needed for creating sparse matrices
+
+  layer_builder(std::mt19937& rng_)
+    : rng(rng_)
+  {}
+
+  std::shared_ptr<neural_network_layer> make_dense_linear_layer(const std::string& layer_description, std::size_t D, std::size_t K, long batch_size)
+  {
+    if (layer_description == "Linear")
+    {
+      return std::make_shared<dense_linear_layer>(D, K, batch_size);
+    }
+    else if (layer_description == "Sigmoid")
+    {
+      return std::make_shared<dense_sigmoid_layer>(D, K, batch_size);
+    }
+    else if (layer_description == "ReLU")
+    {
+      return std::make_shared<dense_relu_layer>(D, K, batch_size);
+    }
+    else if (layer_description == "Softmax")
+    {
+      return std::make_shared<dense_softmax_layer>(D, K, batch_size);
+    }
+    else if (layer_description == "LogSoftmax")
+    {
+      return std::make_shared<dense_log_softmax_layer>(D, K, batch_size);
+    }
+    else if (layer_description == "HyperbolicTangent")
+    {
+      return std::make_shared<dense_hyperbolic_tangent_layer>(D, K, batch_size);
+    }
+    else if (utilities::starts_with(layer_description, "AllRelu"))
+    {
+      scalar alpha = parse_scalar_argument(layer_description);
+      return std::make_shared<dense_trimmed_relu_layer>(alpha, D, K, batch_size);
+    }
+    else if (utilities::starts_with(layer_description, "LeakyRelu"))
+    {
+      scalar alpha = parse_scalar_argument(layer_description);
+      return std::make_shared<dense_leaky_relu_layer>(alpha, D, K, batch_size);
+    }
+    else if (utilities::starts_with(layer_description, "TrimmedReLU"))
+    {
+      scalar epsilon = parse_scalar_argument(layer_description);
+      return std::make_shared<dense_trimmed_relu_layer>(epsilon, D, K, batch_size);
+    }
+    throw std::runtime_error("unsupported dense layer '" + layer_description + "'");
+  }
+
+  inline
+  std::shared_ptr<sparse_linear_layer> make_sparse_linear_layer(const std::string& layer_description, std::size_t D, std::size_t K, long batch_size)
+  {
+    if (layer_description == "Linear")
+    {
+      return std::make_shared<sparse_linear_layer>(D, K, batch_size);
+    }
+    else if (layer_description == "Sigmoid")
+    {
+      return std::make_shared<sparse_sigmoid_layer>(D, K, batch_size);
+    }
+    else if (layer_description == "ReLU")
+    {
+      return std::make_shared<sparse_relu_layer>(D, K, batch_size);
+    }
+    else if (layer_description == "Softmax")
+    {
+      return std::make_shared<sparse_softmax_layer>(D, K, batch_size);
+    }
+    else if (layer_description == "LogSoftmax")
+    {
+      return std::make_shared<sparse_log_softmax_layer>(D, K, batch_size);
+    }
+    else if (layer_description == "HyperbolicTangent")
+    {
+      return std::make_shared<sparse_hyperbolic_tangent_layer>(D, K, batch_size);
+    }
+    else if (utilities::starts_with(layer_description, "AllRelu"))
+    {
+      scalar alpha = parse_scalar_argument(layer_description);
+      return std::make_shared<sparse_trimmed_relu_layer>(alpha, D, K, batch_size);
+    }
+    else if (utilities::starts_with(layer_description, "LeakyRelu"))
+    {
+      scalar alpha = parse_scalar_argument(layer_description);
+      return std::make_shared<sparse_leaky_relu_layer>(alpha, D, K, batch_size);
+    }
+    else if (utilities::starts_with(layer_description, "TrimmedReLU"))
+    {
+      scalar epsilon = parse_scalar_argument(layer_description);
+      return std::make_shared<sparse_trimmed_relu_layer>(epsilon, D, K, batch_size);
+    }
+    throw std::runtime_error("unsupported sparse layer '" + layer_description + "'");
+  }
+
+  std::shared_ptr<neural_network_layer> make_dense_linear_dropout_layer(const std::string& layer_description, std::size_t D, std::size_t K, long batch_size, scalar dropout)
+  {
+    if (layer_description == "Linear")
+    {
+      return std::make_shared<dense_linear_dropout_layer>(D, K, batch_size, dropout);
+    }
+    else if (layer_description == "Sigmoid")
+    {
+      return std::make_shared<dense_sigmoid_dropout_layer>(D, K, batch_size, dropout);
+    }
+    else if (layer_description == "ReLU")
+    {
+      return std::make_shared<dense_relu_dropout_layer>(D, K, batch_size, dropout);
+    }
+    else if (layer_description == "Softmax")
+    {
+      return std::make_shared<dense_softmax_dropout_layer>(D, K, batch_size, dropout);
+    }
+    else if (layer_description == "LogSoftmax")
+    {
+      return std::make_shared<dense_log_softmax_dropout_layer>(D, K, batch_size, dropout);
+    }
+    else if (layer_description == "HyperbolicTangent")
+    {
+      return std::make_shared<dense_hyperbolic_tangent_dropout_layer>(D, K, batch_size, dropout);
+    }
+    else if (utilities::starts_with(layer_description, "AllRelu"))
+    {
+      scalar alpha = parse_scalar_argument(layer_description);
+      return std::make_shared<dense_trimmed_relu_dropout_layer>(alpha, D, K, batch_size, dropout);
+    }
+    else if (utilities::starts_with(layer_description, "LeakyRelu"))
+    {
+      scalar alpha = parse_scalar_argument(layer_description);
+      return std::make_shared<dense_leaky_relu_dropout_layer>(alpha, D, K, batch_size, dropout);
+    }
+    else if (utilities::starts_with(layer_description, "TrimmedReLU"))
+    {
+      scalar epsilon = parse_scalar_argument(layer_description);
+      return std::make_shared<dense_trimmed_relu_dropout_layer>(epsilon, D, K, batch_size, dropout);
+    }
+    throw std::runtime_error("unsupported dropout layer '" + layer_description + "'");
+  }
+
+  std::shared_ptr<neural_network_layer> make_linear_layer(const std::string& layer_description, std::size_t D, std::size_t K, long batch_size, double density)
+  {
+    if (dropout_rate == 0)
+    {
+      if (density == 1)
+      {
+        return make_dense_linear_layer(layer_description, D, K, batch_size);
+      }
+      else
+      {
+        auto layer = make_sparse_linear_layer(layer_description, D, K, batch_size);
+        initialize_sparse_weights<scalar>(*layer, density, rng);
+        return layer;
+      }
+    }
+    else
+    {
+      return make_dense_linear_dropout_layer(layer_description, D, K, batch_size, dropout_rate);
+    }
+  }
+
+  std::vector<std::shared_ptr<neural_network_layer>> build(const std::vector<std::string>& layer_specifications,
+                                                           const std::vector<std::size_t>& linear_layer_sizes,
+                                                           const std::vector<double>& linear_layer_densities,
+                                                           long batch_size)
+  {
+    std::vector<std::shared_ptr<neural_network_layer>> result;
+
+    unsigned int i = 0;  // index of the linear layers
+    for (const std::string& layer: layer_specifications)
+    {
+      if (utilities::starts_with("Dropout", layer))
+      {
+        auto arguments = parse_arguments(layer, 1);
+        dropout_rate = parse_double(arguments.front());
+      }
+      else if (layer == "BatchNorm")
+      {
+        result.push_back(std::make_shared<dense_batch_normalization_layer>(linear_layer_sizes[i], batch_size));
+      }
+      else if (is_linear_layer(layer))
+      {
+        result.push_back(make_linear_layer(layer, linear_layer_sizes[i], linear_layer_sizes[i + 1], batch_size, linear_layer_densities[i]));
+        i++;
+      }
+    }
+
+    return result;
+  }
+};
+
+std::vector<std::shared_ptr<neural_network_layer>> construct_layers(const std::vector<std::string>& layer_specifications,
+                                                                    const std::vector<std::size_t>& linear_layer_sizes,
+                                                                    const std::vector<double>& linear_layer_densities,
+                                                                    long batch_size,
+                                                                    std::mt19937& rng
+)
+{
+  layer_builder builder(rng);
+  return builder.build(layer_specifications, linear_layer_sizes, linear_layer_densities, batch_size);
 }
 
 } // namespace nerva

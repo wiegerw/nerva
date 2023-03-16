@@ -4,7 +4,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-/// \file nerva/examples/multilayer_perceptron.cpp
+/// \file nerva/tools/mlp.cpp
 /// \brief add your file description here.
 
 #include "nerva/neural_networks/multilayer_perceptron.h"
@@ -92,99 +92,17 @@ void set_weights(multilayer_perceptron& M, std::string weights_initialization, c
 }
 
 inline
-std::vector<double> parse_comma_separated_real_numbers(const std::string& text)
+void set_optimizers(multilayer_perceptron& M, const std::string& optimizer)
 {
-  std::vector<double> result;
-  for (const std::string& word: utilities::regex_split(text, ","))
+  for (auto& layer: M.layers)
   {
-    result.push_back(static_cast<double>(parse_double(word)));
-  }
-  return result;
-}
-
-inline
-std::vector<double> compute_densities(const std::string& architecture, const std::vector<std::size_t>& sizes, double density)
-{
-  if (architecture.size() + 1 != sizes.size())
-  {
-    throw std::runtime_error("Unexpected number of sizes in compute_densities");
-  }
-
-  std::vector<double> densities;
-
-  if (density == 1)
-  {
-    for (char a: architecture)
+    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
-      if (is_linear_layer(a))
-      {
-        densities.push_back(density);
-      }
+      set_optimizer(*dlayer, optimizer);
     }
-  }
-  else
-  {
-    densities = compute_sparse_layer_densities(density, sizes);
-  }
-  return densities;
-}
-
-// D is the input size of the neural network
-// K is the output size of the neural network
-inline
-std::vector<std::size_t> compute_sizes(const std::vector<std::size_t>& layer_sizes, const std::string& architecture)
-{
-  std::size_t D = layer_sizes.front(); // the number of features
-  std::size_t K = layer_sizes.back(); // the number of outputs
-  auto B_count = std::count(architecture.begin(), architecture.end(), 'B');
-
-  if (layer_sizes.size() != architecture.size() - B_count + 1)
-  {
-    throw std::runtime_error("The number of layer sizes does not match with the given architecture.");
-  }
-
-  std::vector<std::size_t> sizes = { D };
-  int index = 1;
-  for (char ch: architecture.substr(0, architecture.size() - 1))
-  {
-    if (ch == 'B')
+    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
-      sizes.push_back(sizes.back());
-    }
-    else
-    {
-      sizes.push_back(layer_sizes[index++]);
-    }
-  }
-  sizes.push_back(K);
-
-  return sizes;
-}
-
-inline
-void check_options(const mlp_options& options, const std::vector<std::size_t>& layer_sizes)
-{
-  if (options.architecture.empty())
-  {
-    throw std::runtime_error("There should be at least one layer.");
-  }
-  
-  if (options.architecture.back() == 'B')
-  {
-    throw std::runtime_error("The last layer should not be a batch normalization layer.");
-  }
-
-  auto B_count = std::count(options.architecture.begin(), options.architecture.end(), 'B');
-  if (layer_sizes.size() != options.architecture.size() - B_count + 1)
-  {
-    throw std::runtime_error("The number of hidden layer sizes does not match with the given architecture.");
-  }
-
-  if (!options.weights_initialization.empty())
-  {
-    if (options.weights_initialization.size() != options.architecture.size() - B_count)
-    {
-      throw std::runtime_error("The weight initialization does not match with the given architecture.");
+      set_optimizer(*slayer, optimizer);
     }
   }
 }
@@ -197,8 +115,10 @@ class tool: public command_line_tool
     std::string save_weights_file;
     std::string load_dataset_file;
     std::string save_dataset_file;
-    std::string layer_sizes_text;
+    std::string linear_layer_sizes_text;
     std::string densities_text;
+    std::string layer_specifications_text;
+    double overall_density = 1;
     std::string preprocessed_dir;  // a directory containing a dataset for every epoch
     bool no_shuffle = false;
     bool no_statistics = false;
@@ -210,11 +130,12 @@ class tool: public command_line_tool
       cli |= lyra::opt(options.seed, "value")["--seed"]("A seed value for the random generator.");
 
       // model parameters
-      cli |= lyra::opt(layer_sizes_text, "value")["--sizes"]("A comma separated list of layer sizes");
+      cli |= lyra::opt(linear_layer_sizes_text, "value")["--sizes"]("A comma separated list of layer sizes");
       cli |= lyra::opt(densities_text, "value")["--densities"]("A comma separated list of sparse layer densities");
-      cli |= lyra::opt(options.density, "value")["--overall-density"]("The overall density level of the sparse layers");
-      cli |= lyra::opt(options.architecture, "value")["--architecture"]("The architecture of the multilayer perceptron e.g. RRL,\nwhere R=ReLU, S=Sigmoid, L=Linear, B=Batchnorm, Z=Softmax");
-      cli |= lyra::opt(options.dropout, "value")["--dropout"]("The dropout rate for the the linear layers (use 0 for no dropout)");
+      cli |= lyra::opt(overall_density, "value")["--overall-density"]("The overall density level of the sparse layers");
+      cli |= lyra::opt(layer_specifications_text, "value")["--layers"]("A semi-colon separated lists of layers. The following layers are supported: "
+                                                                  "Linear, ReLU, Sigmoid, Softmax, LogSoftmax, HyperbolicTangent, BatchNorm, "
+                                                                  "Dropout(<rate>), AllRelu(<alpha>), TrimmedReLU(<epsilon>)");
 
       // training
       cli |= lyra::opt(options.epochs, "value")["--epochs"]("The number of epochs (default: 100)");
@@ -274,9 +195,6 @@ class tool: public command_line_tool
       {
         options.statistics = false;
       }
-      std::vector<std::size_t> layer_sizes = parse_comma_separated_numbers(layer_sizes_text);
-      std::vector<double> densities = parse_comma_separated_real_numbers(densities_text);
-      check_options(options, layer_sizes);
 
       std::mt19937 rng{options.seed};
 
@@ -295,13 +213,10 @@ class tool: public command_line_tool
         dataset.load(load_dataset_file);
       }
 
-      options.sizes = compute_sizes(layer_sizes, options.architecture);
-
-      if (densities.empty())
-      {
-        densities = compute_densities(options.architecture, options.sizes, options.density);
-      }
-      options.densities = densities;
+      auto layer_specifications = parse_layers(layer_specifications_text);
+      auto linear_layer_specifications = filter_sequence(layer_specifications, is_linear_layer);
+      auto linear_layer_sizes = compute_linear_layer_sizes(linear_layer_sizes_text, linear_layer_specifications);
+      auto linear_layer_densities = compute_linear_layer_densities(densities_text, overall_density, linear_layer_specifications, linear_layer_sizes);
 
       if (options.threads >= 1 && options.threads <= 8)
       {
@@ -310,32 +225,8 @@ class tool: public command_line_tool
 
       // construct the multilayer perceptron M
       multilayer_perceptron M;
-      unsigned int densities_index = 0;
-      for (std::size_t i = 0; i < options.architecture.size(); i++)
-      {
-        char a = options.architecture[i];
-        if (!is_linear_layer(a) || densities[densities_index] == 1.0)
-        {
-          M.layers.push_back(parse_dense_layer(a, options.sizes[i], options.sizes[i+1], options, rng));
-        }
-        else
-        {
-          double density = densities[densities_index++];
-          M.layers.push_back(parse_sparse_layer(a, options.sizes[i], options.sizes[i+1], density, options, rng));
-        }
-
-        if (auto layer = dynamic_cast<dense_linear_layer*>(M.layers.back().get()))
-        {
-          set_optimizer(*layer, options.optimizer);
-        }
-        else if (auto mlayer = dynamic_cast<linear_layer<mkl::sparse_matrix_csr<scalar>>*>(M.layers.back().get()))
-        {
-          set_optimizer(*mlayer, options.optimizer);
-        }
-      }
-
-      std::shared_ptr<loss_function> loss = parse_loss_function(options.loss_function);
-      std::shared_ptr<learning_rate_scheduler> learning_rate = parse_learning_rate_scheduler(options.learning_rate_scheduler);
+      M.layers = construct_layers(layer_specifications, linear_layer_sizes, linear_layer_densities, options.batch_size, rng);
+      set_optimizers(M, options.optimizer);
 
       if (load_weights_file.empty())
       {
@@ -350,6 +241,9 @@ class tool: public command_line_tool
       {
         save_weights(M, save_weights_file);
       }
+
+      std::shared_ptr<loss_function> loss = parse_loss_function(options.loss_function);
+      std::shared_ptr<learning_rate_scheduler> learning_rate = parse_learning_rate_scheduler(options.learning_rate_scheduler);
 
       if (info)
       {
