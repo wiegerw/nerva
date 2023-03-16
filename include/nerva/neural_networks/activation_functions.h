@@ -176,7 +176,7 @@ struct leaky_relu_activation
 
   [[nodiscard]] std::string to_string() const
   {
-    return fmt::format("LeakyRelu({:7.5f})", alpha);
+    return fmt::format("LeakyRelu({})", alpha);
   }
 };
 
@@ -242,7 +242,7 @@ struct trimmed_relu_activation
 
   [[nodiscard]] std::string to_string() const
   {
-    return "TrimmedReLU(" + std::to_string(epsilon) + ")";
+    return fmt::format("TrimmedReLU({})", epsilon);
   }
 };
 
@@ -309,7 +309,7 @@ struct all_relu_activation
 
   [[nodiscard]] std::string to_string() const
   {
-    return fmt::format("AllRelu({:7.5f})", alpha);
+    return fmt::format("AllRelu({})", alpha);
   }
 };
 

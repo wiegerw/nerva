@@ -39,7 +39,7 @@ function run
   logfile="snn/running-time/nerva-density-$density-sizes-$sizes-seed-$seed.log"
 
   echo "Creating $logfile"
-  ../tools/dist/mlpf --seed=$seed \
+  ../tools/dist/mlp --seed=$seed \
                      --overall-density=$density \
                      --sizes="3072,$sizes,10" \
                      --batch-size=$batchsize \

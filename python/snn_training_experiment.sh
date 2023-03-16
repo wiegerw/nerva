@@ -4,9 +4,21 @@ source utilities.sh
 epochs=100
 batchsize=100
 momentum=0.9
-sizes="3072,1024,512,10"
-layers="ReLU;ReLU;Linear"
-weights=XXX
+
+#--- original experiment with 2 hidden layers ---#
+#sizes="3072,1024,512,10"
+#layers="ReLU;ReLU;Linear"
+#weights=XXX
+
+#--- larger experiment with 3 hidden layers ---#
+#sizes="3072,1024,1024,1024,10"
+#layers="ReLU;ReLU;ReLU;Linear"
+#weights=XXXX
+
+#--- larger experiment with 3 hidden layers and trimmed ReLU ---#
+sizes="3072,1024,1024,1024,10"
+layers="TrimmedReLU(1e-30);TrimmedReLU(1e-30);TrimmedReLU(1e-30);Linear"
+weights=XXXX
 
 function train_sparse()
 {
@@ -53,22 +65,22 @@ function train_sparse()
                         --load-weights="weights-$density.npz" \
                         2>&1 | tee $logfile
   elif [ $framework == 'nervacpp' ]; then
-      ../tools/dist/mlpf --seed=$seed \
-                         --overall-density=$density \
-                         --sizes="$sizes" \
-                         --batch-size=$batchsize \
-                         --epochs=$epochs \
-                         --learning-rate="multistep_lr($lr;50,75;0.1)" \
-                         --optimizer="nesterov($momentum)" \
-                         --layers="$layers" \
-                         --weights=$weights \
-                         --loss="softmax-cross-entropy" \
-                         --threads=4 \
-                         --no-shuffle \
-                         --verbose \
-                         --preprocessed=./cifar$seed \
-                         --load-weights="weights-$density.npz" \
-                         2>&1 | tee $logfile
+      ../tools/dist/mlp --seed=$seed \
+                        --overall-density=$density \
+                        --sizes="$sizes" \
+                        --batch-size=$batchsize \
+                        --epochs=$epochs \
+                        --learning-rate="multistep_lr($lr;50,75;0.1)" \
+                        --optimizer="nesterov($momentum)" \
+                        --layers="$layers" \
+                        --weights=$weights \
+                        --loss="softmax-cross-entropy" \
+                        --threads=4 \
+                        --no-shuffle \
+                        --verbose \
+                        --preprocessed=./cifar$seed \
+                        --load-weights="weights-$density.npz" \
+                        2>&1 | tee $logfile
   fi
   echo ''
 }
@@ -116,20 +128,20 @@ function train_dense()
                         --load-weights="weights-$density.npz" \
                         2>&1 | tee $logfile
   elif [ $framework == 'nervacpp' ]; then
-      ../tools/dist/mlpf --seed=$seed \
-                         --sizes="$sizes" \
-                         --batch-size=$batchsize \
-                         --epochs=$epochs \
-                         --learning-rate="multistep_lr($lr;50,75;0.1)" \
-                         --optimizer="nesterov($momentum)" \
-                         --layers="$layers" \
-                         --weights=$weights \
-                         --loss="softmax-cross-entropy" \
-                         --threads=4 \
-                         --verbose \
-                         --preprocessed=./cifar$seed \
-                         --load-weights="weights-$density.npz" \
-                         2>&1 | tee $logfile
+      ../tools/dist/mlp --seed=$seed \
+                        --sizes="$sizes" \
+                        --batch-size=$batchsize \
+                        --epochs=$epochs \
+                        --learning-rate="multistep_lr($lr;50,75;0.1)" \
+                        --optimizer="nesterov($momentum)" \
+                        --layers="$layers" \
+                        --weights=$weights \
+                        --loss="softmax-cross-entropy" \
+                        --threads=4 \
+                        --verbose \
+                        --preprocessed=./cifar$seed \
+                        --load-weights="weights-$density.npz" \
+                        2>&1 | tee $logfile
   fi
   echo ''
 }

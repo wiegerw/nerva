@@ -44,7 +44,7 @@ class command_line_tool
       std::ostringstream out;
       for (int i = 0; i < argc; i++)
       {
-        if (std::string(argv[i]).find_first_of(" ()") != std::string::npos)
+        if (std::string(argv[i]).find_first_of(" ();") != std::string::npos)
         {
           out << "\"" << argv[i] << "\"";
         }
