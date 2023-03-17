@@ -11,6 +11,7 @@
 #define NERVA_NEURAL_NETWORKS_REGROWTH_H
 
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
+#include "nerva/neural_networks/functions.h"
 #include "nerva/neural_networks/layers.h"
 #include "nerva/neural_networks/weights.h"
 #include <algorithm>
@@ -19,66 +20,6 @@
 #include <vector>
 
 namespace nerva {
-
-struct accept_zero
-{
-  template <typename T>
-  bool operator()(T x) const
-  {
-    return x == 0;
-  }
-};
-
-struct accept_nonzero
-{
-  template <typename T>
-  bool operator()(T x) const
-  {
-    return x != 0;
-  }
-};
-
-struct accept_negative
-{
-  template <typename T>
-  bool operator()(T x) const
-  {
-    return x < 0;
-  }
-};
-
-struct accept_positive
-{
-  template <typename T>
-  bool operator()(T x) const
-  {
-    return x > 0;
-  }
-};
-
-template <typename Scalar>
-struct accept_value
-{
-  Scalar value;
-
-  explicit accept_value(Scalar value_)
-   : value(value_)
-  {}
-
-  bool operator()(Scalar x) const
-  {
-    return x == value;
-  }
-};
-
-struct compare_less_absolute
-{
-  template <typename T>
-  bool operator()(T x, T y) const
-  {
-    return std::fabs(x) < std::fabs(y);
-  }
-};
 
 /// Generic version of `std::nth_element` applied to accepted elements of an Eigen matrix.
 /// \param A a matrix
@@ -208,26 +149,7 @@ void regrow_threshold(EigenMatrix& W, const std::shared_ptr<weight_initializer>&
   threshold = std::fabs(threshold);
   Scalar max_scalar = std::numeric_limits<Scalar>::max();
 
-  // Accepts values x with 0 < |x| <= threshold.
-  // At most num_copies elements with |x| == threshold are accepted.
-  auto accept = [threshold, &num_copies](Scalar x)
-  {
-    auto x_ = std::fabs(x);
-    if (0 != x_ && x_ <= threshold)
-    {
-      if (std::fabs(x) == threshold)
-      {
-        if (num_copies > 0)
-        {
-          num_copies--;
-          return true;
-        }
-        return false;
-      }
-      return true;
-    }
-    return false;
-  };
+  accept_nonzero_threshold accept(threshold, num_copies);
 
   // prune elements by giving them the value max_scalar
   long prune_count = prune(W, accept, max_scalar);
@@ -262,36 +184,14 @@ void regrow_interval(EigenMatrix& W, const std::shared_ptr<weight_initializer>& 
   assert(positive_count > 0);
 
   Scalar threshold_negative;
-  unsigned long num_copies_negative;
   Scalar threshold_positive;
-  unsigned long num_copies_positive;
-  std::tie(threshold_negative, num_copies_negative) = nth_element(W, negative_count - 1, accept_negative(), std::greater<>());  // TODO: use structured bindings when moving to C++20
-  std::tie(threshold_positive, num_copies_positive) = nth_element(W, positive_count - 1, accept_positive());
-  Scalar max_scalar = std::numeric_limits<Scalar>::max();
+  unsigned long threshold_negative_count;
+  unsigned long threshold_positive_count;
+  std::tie(threshold_negative, threshold_negative_count) = nth_element(W, negative_count - 1, accept_negative(), std::greater<>());  // TODO: use structured bindings when moving to C++20
+  std::tie(threshold_positive, threshold_positive_count) = nth_element(W, positive_count - 1, accept_positive());
+  accept_nonzero_threshold_positive_negative accept(threshold_negative, threshold_positive, threshold_negative_count, threshold_positive_count);
 
-  // Accepts values x with `threshold_negative <= x < 0` or `0 < x <= threshold_positive`.
-  // At most num_copies_negative elements with x == threshold_negative are accepted.
-  // At most num_copies_positive elements with x == threshold_positive are accepted.
-  auto accept = [threshold_negative, threshold_positive, &num_copies_negative, &num_copies_positive](Scalar x)
-  {
-    if (x < 0 && threshold_negative <= x)
-    {
-      if (x == threshold_negative)
-      {
-        return num_copies_negative-- > 0;
-      }
-      return true;
-    }
-    else if (x > 0 && x <= threshold_positive)
-    {
-      if (x == threshold_positive)
-      {
-        return num_copies_positive-- > 0;
-      }
-      return true;
-    }
-    return false;
-  };
+  Scalar max_scalar = std::numeric_limits<Scalar>::max();
 
   // prune elements by giving them the value max_scalar
   long prune_count = prune(W, accept, max_scalar);
