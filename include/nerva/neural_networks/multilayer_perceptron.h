@@ -18,7 +18,7 @@
 #include "nerva/neural_networks/numpy_eigen.h"
 #include "nerva/neural_networks/layers.h"
 #include "nerva/neural_networks/loss_functions.h"
-#include "nerva/neural_networks/regrowth.h"
+#include "nerva/neural_networks/regrow.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
 #include "nerva/utilities/stopwatch.h"

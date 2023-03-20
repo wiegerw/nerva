@@ -72,15 +72,15 @@ struct accept_value
 
 // f(x) = 0 < |x| <= threshold
 //
-// At most \a threshold_count elements with |x| == threshold are accepted.
+// At most \a count elements with |x| == threshold are accepted.
 template <typename Scalar>
-struct accept_nonzero_threshold
+struct accept_threshold
 {
   Scalar threshold;
-  mutable std::size_t threshold_count;
+  mutable std::size_t count;
 
-  accept_nonzero_threshold(Scalar threshold_, std::size_t threshold_count_)
-   : threshold(threshold_), threshold_count(threshold_count_)
+  accept_threshold(Scalar threshold_, std::size_t count_)
+   : threshold(threshold_), count(count_)
   {}
 
   template <typename T>
@@ -91,9 +91,9 @@ struct accept_nonzero_threshold
     {
       if (std::fabs(x) == threshold)
       {
-        if (threshold_count > 0)
+        if (count > 0)
         {
-          threshold_count--;
+          count--;
           return true;
         }
         return false;
@@ -104,44 +104,55 @@ struct accept_nonzero_threshold
   }
 };
 
-
-// Accepts values x with `threshold_negative <= x < 0` or `0 < x <= threshold_positive`.
-// At most num_copies_negative elements with x == threshold_negative are accepted.
-// At most num_copies_positive elements with x == threshold_positive are accepted.
+// Accepts values x with `0 < x <= threshold`.
+// At most `count` elements with `x == threshold` are accepted.
 template <typename Scalar>
-struct accept_nonzero_threshold_positive_negative
+struct accept_threshold_positive
 {
-  Scalar threshold_negative;
-  Scalar threshold_positive;
-  mutable std::size_t threshold_negative_count;
-  mutable std::size_t threshold_positive_count;
+  Scalar threshold;
+  mutable std::size_t count;
 
-  accept_nonzero_threshold_positive_negative(Scalar threshold_negative_,
-                                             Scalar threshold_positive_,
-                                             std::size_t threshold_negative_count_,
-                                             std::size_t threshold_positive_count_)
-    : threshold_negative(threshold_negative_),
-      threshold_positive(threshold_positive_),
-      threshold_negative_count(threshold_negative_count_),
-      threshold_positive_count(threshold_positive_count_)
+  accept_threshold_positive(Scalar threshold_, std::size_t count_)
+    : threshold(threshold_),
+      count(count_)
   {}
 
   template <typename T>
   bool operator()(T x) const
   {
-    if (x < 0 && threshold_negative <= x)
+    if (x > 0 && x <= threshold)
     {
-      if (x == threshold_negative)
+      if (x == threshold)
       {
-        return threshold_negative_count-- > 0;
+        return count-- > 0;
       }
       return true;
     }
-    else if (x > 0 && x <= threshold_positive)
+    return false;
+  }
+};
+
+// Accepts values x with `threshold <= x < 0`.
+// At most `count` elements with `x == threshold` are accepted.
+template <typename Scalar>
+struct accept_threshold_negative
+{
+  Scalar threshold;
+  mutable std::size_t count;
+
+  accept_threshold_negative(Scalar threshold_, std::size_t count_)
+    : threshold(threshold_),
+      count(count_)
+  {}
+
+  template <typename T>
+  bool operator()(T x) const
+  {
+    if (x < 0 && threshold <= x)
     {
-      if (x == threshold_positive)
+      if (x == threshold)
       {
-        return threshold_positive_count-- > 0;
+        return count-- > 0;
       }
       return true;
     }

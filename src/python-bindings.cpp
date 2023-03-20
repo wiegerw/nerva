@@ -13,7 +13,7 @@
 #include "nerva/neural_networks/learning_rate_schedulers.h"
 #include "nerva/neural_networks/multilayer_perceptron.h"
 #include "nerva/neural_networks/random.h"
-#include "nerva/neural_networks/regrowth.h"
+#include "nerva/neural_networks/regrow.h"
 #include "nerva/neural_networks/training.h"
 #include "nerva/neural_networks/weights.h"
 #include <pybind11/eigen.h>

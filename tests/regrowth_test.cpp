@@ -11,7 +11,7 @@
 
 #include "doctest/doctest.h"
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
-#include "nerva/neural_networks/regrowth.h"
+#include "nerva/neural_networks/regrow.h"
 #include <algorithm>
 
 using namespace nerva;

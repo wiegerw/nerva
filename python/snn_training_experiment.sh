@@ -4,6 +4,7 @@ source utilities.sh
 epochs=100
 batchsize=100
 momentum=0.9
+trim_relu=0
 
 #--- original experiment with 2 hidden layers ---#
 #sizes="3072,1024,512,10"
@@ -19,6 +20,7 @@ momentum=0.9
 sizes="3072,1024,1024,1024,10"
 layers="TrimmedReLU(1e-30);TrimmedReLU(1e-30);TrimmedReLU(1e-30);Linear"
 weights=XXXX
+trim_relu="1e-30"
 
 function train_sparse()
 {
@@ -50,6 +52,7 @@ function train_sparse()
                         --preprocessed=./cifar$seed \
                         --precision=8 \
                         --save-weights="weights-$density.npz" \
+                        --trim-relu=$trim_relu \
                         2>&1 | tee $logfile
   elif [ $framework == 'nerva' ]; then
       python3 -u snn.py --nerva \
@@ -114,6 +117,7 @@ function train_dense()
                         --preprocessed=./cifar$seed \
                         --precision=8 \
                         --save-weights="weights-$density.npz" \
+                        --trim-relu=$trim_relu \
                         2>&1 | tee $logfile
   elif [ $framework == 'nerva' ]; then
       python3 -u snn.py --nerva \
