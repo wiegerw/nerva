@@ -111,7 +111,7 @@ std::size_t prune_weights(Matrix& A, std::size_t count, T value = 0)
   unsigned long threshold_count;   // the number of copies of threshold that should be accepted
   std::tie(threshold, threshold_count) = detail::nth_element(A, count - 1, accept_nonzero(), compare_less_absolute());
   threshold = std::fabs(threshold);
-  accept_threshold accept(threshold, threshold_count);
+  accept_nonzero_absolute_with_threshold accept(threshold, threshold_count);
   return prune(A, accept, value);
 }
 
@@ -140,8 +140,8 @@ std::size_t prune_positive_weights(Matrix& A, std::size_t count, T value = 0)
   assert(count > 0);
   T threshold;
   unsigned long threshold_count;
-  std::tie(threshold, threshold_count) = detail::nth_element(A, count - 1, accept_positive());
-  accept_threshold_positive accept(threshold, threshold_count);
+  std::tie(threshold, threshold_count) = detail::nth_element(A, count - 1, accept_strictly_positive());
+  accept_strictly_positive_with_threshold accept(threshold, threshold_count);
   return prune(A, accept, value);
 }
 
@@ -169,8 +169,8 @@ std::size_t prune_negative_weights(Matrix& A, std::size_t count, T value = 0)
   assert(count > 0);
   T threshold;
   unsigned long threshold_count;
-  std::tie(threshold, threshold_count) = detail::nth_element(A, count - 1, accept_negative(), std::greater<>());  // TODO: use structured bindings when moving to C++20
-  accept_threshold_negative accept(threshold, threshold_count);
+  std::tie(threshold, threshold_count) = detail::nth_element(A, count - 1, accept_strictly_negative(), std::greater<>());  // TODO: use structured bindings when moving to C++20
+  accept_strictly_negative_with_threshold accept(threshold, threshold_count);
   return prune(A, accept, value);
 }
 
@@ -195,8 +195,8 @@ std::size_t prune_negative_weights(mkl::sparse_matrix_csr<T>& A, std::size_t cou
 /// \param f A weight initializer
 /// \param rng A random number generator
 /// \param accept A predicate that determines if an element may get a new value
-template <typename EigenMatrix, typename Accept=accept_zero, typename Scalar = scalar>
-void grow(EigenMatrix& A, const std::shared_ptr<weight_initializer>& init, long count, std::mt19937& rng, Accept accept=Accept())
+template <typename Matrix, typename Accept=accept_zero, typename Scalar = scalar>
+void grow(Matrix& A, const std::shared_ptr<weight_initializer>& init, std::size_t count, std::mt19937& rng, Accept accept=Accept())
 {
   long N = A.rows() * A.cols();
   Scalar* data = A.data();
@@ -213,7 +213,7 @@ void grow(EigenMatrix& A, const std::shared_ptr<weight_initializer>& init, long 
       continue;
     }
     selection.push_back(data + i);
-    if (static_cast<long>(selection.size()) == count)
+    if (selection.size() == count)
     {
       break;
     }
@@ -233,8 +233,8 @@ void grow(EigenMatrix& A, const std::shared_ptr<weight_initializer>& init, long 
     {
       continue;
     }
-    std::uniform_int_distribution<long> dist(0, i - 1);
-    long j = dist(rng);
+    std::uniform_int_distribution<std::size_t> dist(0, i - 1);
+    std::size_t j = dist(rng);
     if (j < count)
     {
       selection[j] = data + i;
