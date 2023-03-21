@@ -59,8 +59,8 @@ void regrow_interval(EigenMatrix& W, const std::shared_ptr<weight_initializer>& 
 {
   // prune elements by giving them the value max_scalar
   auto max_scalar = std::numeric_limits<Scalar>::max();
-  long negative_prune_count = prune_negative_weights(W, negative_count, max_scalar);
-  long positive_prune_count = prune_positive_weights(W, positive_count, max_scalar);
+  std::size_t negative_prune_count = prune_negative_weights(W, negative_count, max_scalar);
+  std::size_t positive_prune_count = prune_positive_weights(W, positive_count, max_scalar);
 
   assert(negative_prune_count == negative_count);
   assert(positive_prune_count == positive_count);
@@ -81,8 +81,8 @@ template <typename Scalar = scalar>
 void regrow_interval(mkl::sparse_matrix_csr<Scalar>& W, const std::shared_ptr<weight_initializer>& init, scalar zeta, std::mt19937& rng)
 {
   auto W1 = mkl::to_eigen(W);
-  long negative_count = std::lround(zeta * (W1.array() < 0).count());
-  long positive_count = std::lround(zeta * (W1.array() > 0).count());
+  std::size_t negative_count = std::lround(zeta * (W1.array() < 0).count());
+  std::size_t positive_count = std::lround(zeta * (W1.array() > 0).count());
   regrow_interval(W1, init, negative_count, positive_count, rng);
   W = mkl::to_csr(W1);
 }

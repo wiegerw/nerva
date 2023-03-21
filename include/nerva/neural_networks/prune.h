@@ -33,7 +33,7 @@ namespace detail {
 /// \return A pair `(value, m)` with \c value the value of the element with index \c n, if the elements were
 /// sorted according to \c comp, and \c m the number of accepted elements equal to \c value in the range `0, ..., k-1`.
 template <typename EigenMatrix, typename Accept=accept_nonzero, typename Scalar = scalar, typename Compare = std::less<Scalar>>
-std::pair<Scalar, unsigned int> nth_element(const EigenMatrix& A, long k, Accept accept = Accept(), Compare comp = Compare())
+std::pair<scalar, unsigned int> nth_element(const EigenMatrix& A, long k, Accept accept = Accept(), Compare comp = Compare())
 {
   long N = A.rows() * A.cols();
   const Scalar* data = A.data();
@@ -57,6 +57,58 @@ std::pair<Scalar, unsigned int> nth_element(const EigenMatrix& A, long k, Accept
   return {value, num_copies};
 }
 
+/// Generic version of `std::nth_element` applied to accepted elements of a sequence [first, last).
+/// \param first an iterator
+/// \param last an iterator
+/// \param k an index in the range `0, ..., A.size() - 1)`
+/// \param accept a predicate function; only values \c x for which `accept(x) == true` are considered
+/// \param comp comparison function object
+/// \return A pair `(value, m)` with \c value the value of the element with index \c n, if the elements were
+/// sorted according to \c comp, and \c m the number of accepted elements equal to \c value in the range `0, ..., k-1`.
+template <typename FwdIt, typename Accept=accept_nonzero, typename Scalar = scalar, typename Compare = std::less<Scalar>>
+std::pair<scalar, unsigned int> nth_element(FwdIt first, FwdIt last, long k, Accept accept = Accept(), Compare comp = Compare())
+{
+  // copy the non-zero entries of A
+  std::vector<Scalar> values;
+  for (auto i = first; i != last; ++i)
+  {
+    auto value = *i;
+    if (accept(value))
+    {
+      values.push_back(value);
+    }
+  }
+
+  auto kth_element = values.begin() + k;
+  std::nth_element(values.begin(), kth_element, values.end(), comp);
+
+  Scalar value = *kth_element;
+  unsigned int num_copies = 1 + std::count_if(values.begin(), kth_element, [value, comp](Scalar x) { return !comp(x, value); });
+  return {value, num_copies};
+}
+
+/// Overwrites entries in the sequence [first, last) that satisfy the predicate \a accept with a given value.
+/// This function is used as a building block for pruning functions.
+/// \param first An iterator
+/// \param last An iterator
+/// \param accept A predicate that determines if an element is pruned
+/// \param value The value that is assigned to pruned elements
+/// \return The number of entries that were pruned
+template <typename FwdIt, typename Accept, typename T = scalar>
+std::size_t prune(FwdIt first, FwdIt last, Accept accept, T value = 0)
+{
+  std::size_t count = 0;
+  for (auto i = first; i != last; ++i)
+  {
+    if (accept(*i))
+    {
+      *i = value;
+      count++;
+    }
+  }
+  return count;
+}
+
 } // namespace detail
 
 /// Overwrites entries `A[i,j]` that satisfy the predicate \a accept with a given value.
@@ -70,17 +122,7 @@ std::size_t prune(Matrix& A, Accept accept, T value = 0)
 {
   long N = A.rows() * A.cols();
   T* data = A.data();
-
-  std::size_t count = 0;
-  for (long i = 0; i < N; i++)
-  {
-    if (accept(data[i]))
-    {
-      data[i] = value;
-      count++;
-    }
-  }
-  return count;
+  return detail::prune(data, data + N, accept, value);
 }
 
 /// Overwrites entries `A[i,j]` that satisfy the predicate \a accept with a given value.
@@ -92,11 +134,8 @@ std::size_t prune(Matrix& A, Accept accept, T value = 0)
 template <typename Accept, typename T = scalar>
 std::size_t prune(mkl::sparse_matrix_csr<T>& A, Accept accept, T value = 0)
 {
-  // TODO: make a direct implementation for CSR matrices
-  auto A1 = mkl::to_eigen(A);
-  auto result = prune(A1, accept, value);
-  A = mkl::to_csr(A1);
-  return result;
+  auto& values = A.values();
+  return detail::prune(values.begin(), values.end(), accept, value);
 }
 
 /// Replaces the smallest \a count elements (in absolute value) from the matrix \a A
@@ -123,11 +162,13 @@ std::size_t prune_weights(Matrix& A, std::size_t count, T value = 0)
 template <typename T>
 std::size_t prune_weights(mkl::sparse_matrix_csr<T>& A, std::size_t count, T value = 0)
 {
-  // TODO: make a direct implementation for CSR matrices
-  auto A1 = mkl::to_eigen(A);
-  auto result = prune_weights(A1, count, value);
-  A = mkl::to_csr(A1);
-  return result;
+  assert(count > 0);
+  auto& values = A.values();
+  T threshold;                     // the threshold value corresponding with count elements
+  unsigned long threshold_count;   // the number of copies of threshold that should be accepted
+  std::tie(threshold, threshold_count) = detail::nth_element(values.begin(), values.end(), count - 1, accept_all(), compare_less_absolute());
+  accept_absolute_with_threshold accept(threshold, threshold_count);
+  return detail::prune(values.begin(), values.end(), accept, value);
 }
 
 /// Replaces the smallest \a count elements (in absolute value) of the matrix \a A by a given value
@@ -150,13 +191,15 @@ std::size_t prune_positive_weights(Matrix& A, std::size_t count, T value = 0)
 /// \param count The number of elements to be pruned
 /// \return The actual number of elements that have been pruned (i.e. min(count, |support(A)|) )
 template <typename T>
-std::size_t prune_positive_weights(mkl::sparse_matrix_csr<T>& A, std::size_t count)
+std::size_t prune_positive_weights(mkl::sparse_matrix_csr<T>& A, std::size_t count, T value = 0)
 {
-  // TODO: make a direct implementation for CSR matrices
-  auto A1 = mkl::to_eigen(A);
-  auto result = prune_positive_weights(A1, count);
-  A = mkl::to_csr(A1);
-  return result;
+  assert(count > 0);
+  auto& values = A.values();
+  T threshold;                     // the threshold value corresponding with count elements
+  unsigned long threshold_count;   // the number of copies of threshold that should be accepted
+  std::tie(threshold, threshold_count) = detail::nth_element(values.begin(), values.end(), count - 1, accept_positive(), std::less<>());
+  accept_positive_with_threshold accept(threshold, threshold_count);
+  return detail::prune(values.begin(), values.end(), accept, value);
 }
 
 /// Prunes the smallest \a count negative elements of the matrix \a A
@@ -179,13 +222,15 @@ std::size_t prune_negative_weights(Matrix& A, std::size_t count, T value = 0)
 /// \param count The number of elements to be pruned
 /// \return The actual number of elements that have been pruned (i.e. min(count, |support(A)|) )
 template <typename T>
-std::size_t prune_negative_weights(mkl::sparse_matrix_csr<T>& A, std::size_t count)
+std::size_t prune_negative_weights(mkl::sparse_matrix_csr<T>& A, std::size_t count, T value = 0)
 {
-  // TODO: make a direct implementation for CSR matrices
-  auto A1 = mkl::to_eigen(A);
-  auto result = prune_negative_weights(A1, count);
-  A = mkl::to_csr(A1);
-  return result;
+  assert(count > 0);
+  auto& values = A.values();
+  T threshold;                     // the threshold value corresponding with count elements
+  unsigned long threshold_count;   // the number of copies of threshold that should be accepted
+  std::tie(threshold, threshold_count) = detail::nth_element(values.begin(), values.end(), count - 1, accept_negative(), std::greater<>());
+  accept_negative_with_threshold accept(threshold, threshold_count);
+  return detail::prune(values.begin(), values.end(), accept, value);
 }
 
 /// Gives \a count random accepted entries of \a A a new value generated by the function \a f
@@ -246,6 +291,62 @@ void grow(Matrix& A, const std::shared_ptr<weight_initializer>& init, std::size_
   {
     *x = (*init)();
   }
+}
+
+/// Gives \a count random accepted entries of \a A a new value generated by the function \a f
+/// \tparam Scalar A number type (float of double)
+/// \param A A CSR matrix
+/// \param init A weight initializer. The values of added elements will be initialized using \a init.
+/// \param count The number of entries that will be added
+/// \param rng A random number generator
+/// \param remove_nan_values If true, elements with NaN values in A are removed
+template <typename Scalar = scalar>
+void grow(mkl::sparse_matrix_csr<Scalar>& A, const std::shared_ptr<weight_initializer>& init, std::size_t count, std::mt19937& rng, bool remove_nan_values = true)
+{
+  long N = A.rows() * A.cols();
+  if (A.values().size() + count > N)
+  {
+    throw std::runtime_error("cannot grow the matrix with " + std::to_string(count) + " elements");
+  }
+
+  // components of the result matrix
+  std::vector<MKL_INT> row_index;
+  std::vector<MKL_INT> col_index;
+  std::vector<Scalar> values;
+  row_index.reserve(A.row_index().size());
+  col_index.reserve(A.col_index().size());
+  values.reserve(A.values().size());
+
+  // Select k random locations outside the support of A
+  std::vector<std::size_t> new_locations = reservoir_sample(count, N - A.values().size(), rng);
+  auto ni = new_locations.begin();
+
+  mkl::csr_matrix_builder<Scalar> builder(A.rows(), A.cols(), A.values().size());
+
+  // fills the result matrix until location (i, j)
+  auto fill_until_index = [&](std::size_t i, std::size_t j)
+  {
+    std::size_t k = i * A.cols() + j;
+    while (ni != new_locations.end() && *ni < k)
+    {
+      std::size_t k1 = *ni;
+      std::size_t i1 = k1 / A.cols();
+      std::size_t j1 = k1 % A.cols();
+      auto value1 = (*init)();
+      builder.add_element(i1, j1, value1);
+    }
+  };
+
+  mkl::traverse_elements(A, [&](long i, long j, Scalar value)
+  {
+    fill_until_index(i, j);
+    if (!remove_nan_values || value != std::numeric_limits<Scalar>::quiet_NaN())
+    {
+      builder.add_element(i, j, value);
+    }
+  });
+
+  A = builder.result();  // TODO: avoid unnecessary copies
 }
 
 } // namespace nerva
