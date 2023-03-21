@@ -25,8 +25,27 @@ struct weight_initializer
    : rng(rng_)
   {}
 
-  virtual scalar operator()() const = 0;
   virtual ~weight_initializer() = default;
+
+  virtual scalar operator()() const
+  {
+    return 0;
+  }
+
+  virtual void initialize_weights(eigen::matrix& W)
+  {
+    initialize_matrix(W, *this);
+  }
+
+  virtual void initialize_weights(mkl::sparse_matrix_csr<scalar>& W)
+  {
+    initialize_matrix(W, *this);
+  }
+
+  virtual void initialize_bias(eigen::vector& b)
+  {
+    b.array() = scalar(0);
+  }
 };
 
 struct uniform_weight_initializer: public weight_initializer
@@ -44,11 +63,14 @@ struct uniform_weight_initializer: public weight_initializer
     return dist(rng);
   }
 
-  template <typename Matrix>
-  void initialize(Matrix& W, eigen::vector& b) const
+  void initialize_weights(eigen::matrix& W) override  // TODO: avoid the need for overriding this method
   {
     initialize_matrix(W, *this);
-    b = eigen::vector::Zero(b.size());
+  }
+
+  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) override  // TODO: avoid the need for overriding this method
+  {
+    initialize_matrix(W, *this);
   }
 };
 
@@ -68,11 +90,14 @@ struct xavier_weight_initializer: public weight_initializer
     return dist(rng);
   }
 
-  template <typename Matrix>
-  void initialize(Matrix& W, eigen::vector& b) const
+  void initialize_weights(eigen::matrix& W) override
   {
     initialize_matrix(W, *this);
-    b = eigen::vector::Zero(b.size());
+  }
+
+  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) override
+  {
+    initialize_matrix(W, *this);
   }
 };
 
@@ -92,11 +117,14 @@ struct xavier_normalized_weight_initializer: public weight_initializer
     return dist(rng);
   }
 
-  template <typename Matrix>
-  void initialize(Matrix& W, eigen::vector& b) const
+  void initialize_weights(eigen::matrix& W) override
   {
     initialize_matrix(W, *this);
-    b = eigen::vector::Zero(b.size());
+  }
+
+  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) override
+  {
+    initialize_matrix(W, *this);
   }
 };
 
@@ -118,11 +146,14 @@ struct he_weight_initializer: public weight_initializer
     return dist(rng);
   }
 
-  template <typename Matrix>
-  void initialize(Matrix& W, eigen::vector& b) const
+  void initialize_weights(eigen::matrix& W) override
   {
     initialize_matrix(W, *this);
-    b = eigen::vector::NullaryExpr(b.size(), *this);
+  }
+
+  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) override
+  {
+    initialize_matrix(W, *this);
   }
 };
 
@@ -137,11 +168,14 @@ struct zero_weight_initializer: public weight_initializer
     return scalar(0);
   }
 
-  template <typename Matrix>
-  void initialize(Matrix& W, eigen::vector& b) const
+  void initialize_weights(eigen::matrix& W) override
   {
     initialize_matrix(W, *this);
-    b = eigen::vector::NullaryExpr(b.size(), *this);
+  }
+
+  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) override
+  {
+    initialize_matrix(W, *this);
   }
 };
 
@@ -157,11 +191,14 @@ struct ten_weight_initializer: public weight_initializer
     return scalar(10);
   }
 
-  template <typename Matrix>
-  void initialize(Matrix& W, eigen::vector& b) const
+  void initialize_weights(eigen::matrix& W) override
   {
     initialize_matrix(W, *this);
-    b = eigen::vector::NullaryExpr(b.size(), *this);
+  }
+
+  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) override
+  {
+    initialize_matrix(W, *this);
   }
 };
 
@@ -181,11 +218,19 @@ struct pytorch_weight_initializer: public weight_initializer
     return dist(rng);
   }
 
-  template <typename Matrix>
-  void initialize(Matrix& W, eigen::vector& b) const
+  void initialize_bias(eigen::vector& b) override
+  {
+    b.array() = scalar(0.01);  // initialize b with small positive values
+  }
+
+  void initialize_weights(eigen::matrix& W) override
   {
     initialize_matrix(W, *this);
-    b.array() = scalar(0.01);  // initialize b with small positive values
+  }
+
+  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) override
+  {
+    initialize_matrix(W, *this);
   }
 };
 
@@ -263,48 +308,29 @@ weight_initialization parse_weight_initialization(const std::string& text)
 }
 
 template <typename Matrix>
-void initialize_weights(weight_initialization w, Matrix& W, eigen::vector& b, std::mt19937& rng)
+std::shared_ptr<weight_initializer> make_weight_initializer(weight_initialization w, Matrix& W, std::mt19937& rng)
 {
   switch(w)
   {
-    case weight_initialization::he:
-    {
-      he_weight_initializer(rng, W.cols()).initialize(W, b);
-      break;
-    }
-    case weight_initialization::xavier:
-    {
-      xavier_weight_initializer(rng, W.cols()).initialize(W, b);
-      break;
-    }
-    case weight_initialization::xavier_normalized:
-    {
-      xavier_normalized_weight_initializer(rng, W.rows(), W.cols()).initialize(W, b);
-      break;
-    }
-    case weight_initialization::pytorch:
-    {
-      pytorch_weight_initializer(rng, W.rows(), W.cols()).initialize(W, b);
-      break;
-    }
-    case weight_initialization::uniform:
-    case weight_initialization::default_:  // TODO: implement this
-    case weight_initialization::tensorflow:  // TODO: implement this
-    {
-      uniform_weight_initializer(rng).initialize(W, b);
-      break;
-    }
-    case weight_initialization::zero:
-    {
-      zero_weight_initializer(rng).initialize(W, b);
-      break;
-    }
-    case weight_initialization::ten:
-    {
-      ten_weight_initializer(rng).initialize(W, b);
-      break;
-    }
+    case weight_initialization::he: return std::make_shared<he_weight_initializer>(rng, W.cols());
+    case weight_initialization::xavier: return std::make_shared<xavier_weight_initializer>(rng, W.cols());
+    case weight_initialization::xavier_normalized: return std::make_shared<xavier_normalized_weight_initializer>(rng, W.rows(), W.cols());
+    case weight_initialization::pytorch: return std::make_shared<pytorch_weight_initializer>(rng, W.rows(), W.cols());
+    case weight_initialization::default_: // TODO: implement this
+    case weight_initialization::tensorflow: // TODO: implement this
+    case weight_initialization::uniform: return std::make_shared<uniform_weight_initializer>(rng);
+    case weight_initialization::zero: return std::make_shared<zero_weight_initializer>(rng);
+    case weight_initialization::ten: return std::make_shared<ten_weight_initializer>(rng);
   }
+  throw std::runtime_error("make_weight_initializer: unsupported weight initialization " + std::to_string(static_cast<int>(w)));
+}
+
+template <typename Matrix>
+void initialize_weights(weight_initialization w, Matrix& W, eigen::vector& b, std::mt19937& rng)
+{
+  auto init = make_weight_initializer(w, W, rng);
+  init->initialize_weights(W);
+  init->initialize_bias(b);
 }
 
 } // namespace nerva

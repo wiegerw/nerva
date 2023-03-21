@@ -443,7 +443,7 @@ struct csr_matrix_builder
 
   void add_element(long i, long j, Scalar value)
   {
-    while (i >= row_index.size())
+    while (static_cast<std::size_t>(i) >= row_index.size())
     {
       row_index.push_back(values.size());
     }
@@ -453,7 +453,7 @@ struct csr_matrix_builder
 
   mkl::sparse_matrix_csr<Scalar> result()
   {
-    while (row_index.size() <= rows)
+    while (row_index.size() <= static_cast<std::size_t>(rows))
     {
       row_index.push_back(values.size());
     }

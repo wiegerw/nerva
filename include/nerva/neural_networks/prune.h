@@ -33,7 +33,7 @@ namespace detail {
 /// \return A pair `(value, m)` with \c value the value of the element with index \c n, if the elements were
 /// sorted according to \c comp, and \c m the number of accepted elements equal to \c value in the range `0, ..., k-1`.
 template <typename EigenMatrix, typename Accept=accept_nonzero, typename Scalar = scalar, typename Compare = std::less<Scalar>>
-std::pair<scalar, unsigned int> nth_element(const EigenMatrix& A, long k, Accept accept = Accept(), Compare comp = Compare())
+std::pair<Scalar, unsigned int> nth_element(const EigenMatrix& A, long k, Accept accept = Accept(), Compare comp = Compare())
 {
   long N = A.rows() * A.cols();
   const Scalar* data = A.data();
