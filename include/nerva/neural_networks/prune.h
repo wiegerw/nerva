@@ -19,6 +19,7 @@
 #include "nerva/neural_networks/mkl_eigen.h"
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/neural_networks/scalar.h"
+#include "nerva/utilities/algorithms.h"
 
 namespace nerva {
 

@@ -14,6 +14,33 @@
 
 namespace nerva {
 
+namespace detail {
+
+// Decrements count with one, if possible.
+// Returns true if count was decremented.
+inline
+bool decrement_count(std::size_t& count)
+{
+  if (count > 0)
+  {
+    count--;
+    return true;
+  }
+  return false;
+}
+
+} // namespace detail
+
+// f(x) = true
+struct accept_all
+{
+  template <typename T>
+  bool operator()(T x) const
+  {
+    return true;
+  }
+};
+
 // f(x) = (x == 0)
 struct accept_zero
 {

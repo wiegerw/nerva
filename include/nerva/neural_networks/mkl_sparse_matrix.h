@@ -424,6 +424,62 @@ void compare_sizes(const mkl::sparse_matrix_csr<Scalar>& A, const mkl::sparse_ma
   }
 }
 
+template <typename Scalar>
+struct csr_matrix_builder
+{
+  long rows;
+  long columns;
+  std::vector<MKL_INT> row_index;
+  std::vector<MKL_INT> col_index;
+  std::vector<Scalar> values;
+
+  csr_matrix_builder(long rows_, long columns_, std::size_t size = 1)
+   : rows(rows_), columns(columns_)
+  {
+    row_index.reserve(rows + 1);
+    col_index.reserve(size);
+    values.reserve(size);
+  }
+
+  void add_element(long i, long j, Scalar value)
+  {
+    while (i >= row_index.size())
+    {
+      row_index.push_back(values.size());
+    }
+    col_index.push_back(j);
+    values.push_back(value);
+  }
+
+  mkl::sparse_matrix_csr<Scalar> result()
+  {
+    while (row_index.size() <= rows)
+    {
+      row_index.push_back(values.size());
+    }
+    return mkl::sparse_matrix_csr<Scalar>(rows, columns, row_index, col_index, values);
+  }
+};
+
+// calls f(i, j, A(i,j)) for each valid index (i, j) in A
+template <typename T, typename Function>
+void traverse_elements(const sparse_matrix_csr<T>& A, Function f)
+{
+  const auto& row_index = A.row_index();
+  const auto& col_index = A.col_index();
+  const T* data = A.values().data();
+  long m = A.rows();
+
+  for (long i = 0; i < m; i++)
+  {
+    for (auto k = row_index[i]; k < row_index[i + 1]; i++)
+    {
+      long j = col_index[k];
+      f(i, j, *data++);
+    }
+  }
+}
+
 } // namespace nerva::mkl
 
 #endif // NERVA_NEURAL_NETWORKS_MKL_SPARSE_MATRIX_H

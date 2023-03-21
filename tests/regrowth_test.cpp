@@ -80,13 +80,13 @@ TEST_CASE("test1")
   long k = 4; // consider the 5 smallest nonzero elements
   scalar threshold;
   unsigned int num_copies;
-  std::tie(threshold, num_copies) = nth_element(A, k, accept_nonzero(), compare_less_absolute());
+  std::tie(threshold, num_copies) = detail::nth_element(A, k, accept_nonzero(), compare_less_absolute());
   CHECK_EQ(3, threshold);
   CHECK_EQ(1, num_copies);
 
   auto A_pruned = A;
   auto accept = [threshold](scalar x) { return x != 0 && std::fabs(x) <= threshold; };
-  long prune_count = prune(A_pruned, accept);
+  auto prune_count = prune(A_pruned, accept);
   eigen::print_matrix("A_pruned", A_pruned);
   CHECK_EQ(A_pruned_expected, A_pruned);
   CHECK_EQ(5, prune_count);
@@ -159,7 +159,7 @@ TEST_CASE("test2")
   {
     return (negative_threshold <= x && x < 0) || (0 < x && x <= positive_threshold);
   };
-  long prune_count = prune(A_pruned, accept);
+  auto prune_count = prune(A_pruned, accept);
   eigen::print_matrix("A_pruned_expected", A_pruned_expected);
   CHECK_EQ(A_pruned_expected, A_pruned);
   CHECK_EQ(7, prune_count);
