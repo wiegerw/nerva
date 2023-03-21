@@ -52,6 +52,61 @@ TEST_CASE("test_nth_element")
   CHECK_EQ(5, *w);
 }
 
+void check_prune_weights(const eigen::matrix& A,
+                         std::size_t count,
+                         const eigen::matrix& expected,
+                         scalar expected_threshold,
+                         std::size_t expected_threshold_count)
+{
+  std::cout << "--- check_prune_count ---\n";
+  eigen::print_matrix("A", A);
+
+  scalar threshold;
+  unsigned int threshold_count;
+
+  // dense matrices
+  std::tie(threshold, threshold_count) = detail::nth_element(A, count - 1, accept_nonzero(), compare_less_absolute());
+  CHECK_EQ(expected_threshold, threshold);
+  CHECK_EQ(expected_threshold_count, threshold_count);
+  auto A_pruned = A;
+  auto prune_count = prune_weights(A_pruned, count);
+  eigen::print_matrix("A_pruned", A_pruned);
+  CHECK_EQ(prune_count, count);
+  CHECK_EQ(A_pruned, expected);
+
+  // sparse matrices
+  auto A1 = mkl::to_csr(A);
+  std::tie(threshold, threshold_count) = detail::nth_element(A1, count - 1, accept_nonzero(), compare_less_absolute());
+  CHECK_EQ(expected_threshold, threshold);
+  CHECK_EQ(expected_threshold_count, threshold_count);
+  auto A1_pruned = A1;
+  prune_count = prune_weights(A1_pruned, count);
+  eigen::print_matrix("A1_pruned", mkl::to_eigen(A1_pruned));
+  CHECK_EQ(prune_count, count);
+  CHECK_EQ(mkl::to_eigen(A1_pruned), expected);
+}
+
+TEST_CASE("test_prune_weights")
+{
+  const eigen::matrix A{
+    {1,  -1, 0, -2, 0},
+    {-2, 5,  0, 0,  0},
+    {0,  0,  4, 6,  4},
+    {-4, 0,  3, 7,  0},
+    {0,  8,  0, 0,  -5}
+  };
+
+  eigen::matrix A_pruned_expected {
+    {0,  0, 0, 0, 0},
+    {0,  5, 0, 0, 0},
+    {0,  0, 4, 6, 4},
+    {-4, 0, 0, 7, 0},
+    {0,  8, 0, 0, -5}
+  };
+
+  check_prune_weights(A, 5, A_pruned_expected, 3, 1);
+}
+
 TEST_CASE("test1")
 {
   std::cout << "--- test1 ---\n";

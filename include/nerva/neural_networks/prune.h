@@ -33,7 +33,7 @@ namespace detail {
 /// \return A pair `(value, m)` with \c value the value of the element with index \c n, if the elements were
 /// sorted according to \c comp, and \c m the number of accepted elements equal to \c value in the range `0, ..., k-1`.
 template <typename EigenMatrix, typename Accept=accept_nonzero, typename Scalar = scalar, typename Compare = std::less<Scalar>>
-std::pair<scalar, unsigned int> nth_element(const EigenMatrix& A, long k, Accept accept = Accept(), Compare comp = Compare())
+std::pair<scalar, unsigned int> nth_element(const EigenMatrix& A, std::size_t k, Accept accept = Accept(), Compare comp = Compare())
 {
   long N = A.rows() * A.cols();
   const Scalar* data = A.data();
@@ -66,7 +66,7 @@ std::pair<scalar, unsigned int> nth_element(const EigenMatrix& A, long k, Accept
 /// \return A pair `(value, m)` with \c value the value of the element with index \c n, if the elements were
 /// sorted according to \c comp, and \c m the number of accepted elements equal to \c value in the range `0, ..., k-1`.
 template <typename FwdIt, typename Accept=accept_nonzero, typename Scalar = scalar, typename Compare = std::less<Scalar>>
-std::pair<scalar, unsigned int> nth_element(FwdIt first, FwdIt last, long k, Accept accept = Accept(), Compare comp = Compare())
+std::pair<scalar, unsigned int> nth_element(FwdIt first, FwdIt last, std::size_t k, Accept accept = Accept(), Compare comp = Compare())
 {
   // copy the non-zero entries of A
   std::vector<Scalar> values;
@@ -85,6 +85,21 @@ std::pair<scalar, unsigned int> nth_element(FwdIt first, FwdIt last, long k, Acc
   Scalar value = *kth_element;
   unsigned int num_copies = 1 + std::count_if(values.begin(), kth_element, [value, comp](Scalar x) { return !comp(x, value); });
   return {value, num_copies};
+}
+
+/// Generic version of `std::nth_element` applied to accepted elements of a sequence [first, last).
+/// \param first an iterator
+/// \param last an iterator
+/// \param k an index in the range `0, ..., A.size() - 1)`
+/// \param accept a predicate function; only values \c x for which `accept(x) == true` are considered
+/// \param comp comparison function object
+/// \return A pair `(value, m)` with \c value the value of the element with index \c n, if the elements were
+/// sorted according to \c comp, and \c m the number of accepted elements equal to \c value in the range `0, ..., k-1`.
+template <typename Accept=accept_nonzero, typename Scalar = scalar, typename Compare = std::less<Scalar>>
+std::pair<scalar, unsigned int> nth_element(const mkl::sparse_matrix_csr<Scalar>& A, std::size_t k, Accept accept = Accept(), Compare comp = Compare())
+{
+  const auto& values = A.values();
+  return detail::nth_element(values.begin(), values.end(), k, accept_all(), compare_less_absolute());
 }
 
 /// Overwrites entries in the sequence [first, last) that satisfy the predicate \a accept with a given value.
@@ -139,36 +154,20 @@ std::size_t prune(mkl::sparse_matrix_csr<T>& A, Accept accept, T value = 0)
 }
 
 /// Replaces the smallest \a count elements (in absolute value) from the matrix \a A
+/// \tparam Matrix eigen::matrix or mkl::sparse_matrix_csr
 /// \param A A matrix
 /// \param count The number of elements to be pruned
 /// \param value The value that is assigned to the pruned elements (default 0)
 /// \return The actual number of elements that have been pruned (i.e. min(count, |A|) )
-template <typename Matrix, typename T>
-std::size_t prune_weights(Matrix& A, std::size_t count, T value = 0)
+template <typename Matrix>
+std::size_t prune_weights(Matrix& A, std::size_t count, typename Matrix::Scalar value = 0)
 {
-  T threshold;                     // the threshold value corresponding with count elements
-  unsigned long threshold_count;   // the number of copies of threshold that should be accepted
+  typename Matrix::Scalar threshold; // the threshold value corresponding with count elements
+  unsigned long threshold_count;     // the number of copies of threshold that should be accepted
   std::tie(threshold, threshold_count) = detail::nth_element(A, count - 1, accept_nonzero(), compare_less_absolute());
   threshold = std::fabs(threshold);
   accept_nonzero_absolute_with_threshold accept(threshold, threshold_count);
   return prune(A, accept, value);
-}
-
-/// Replaces the smallest \a count elements (in absolute value) from the matrix \a A
-/// \param A A matrix
-/// \param count The number of elements to be pruned
-/// \param value The value that is assigned to the pruned elements (default 0)
-/// \return The actual number of elements that have been pruned (i.e. min(count, |support(A)|) )
-template <typename T>
-std::size_t prune_weights(mkl::sparse_matrix_csr<T>& A, std::size_t count, T value = 0)
-{
-  assert(count > 0);
-  auto& values = A.values();
-  T threshold;                     // the threshold value corresponding with count elements
-  unsigned long threshold_count;   // the number of copies of threshold that should be accepted
-  std::tie(threshold, threshold_count) = detail::nth_element(values.begin(), values.end(), count - 1, accept_all(), compare_less_absolute());
-  accept_absolute_with_threshold accept(threshold, threshold_count);
-  return detail::prune(values.begin(), values.end(), accept, value);
 }
 
 /// Replaces the smallest \a count elements (in absolute value) of the matrix \a A by a given value
