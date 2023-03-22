@@ -22,22 +22,22 @@
 
 namespace nerva {
 
-// Remove the smallest count nonzero elements (in absolute size) and randomly add new elements for them.
-// N.B. This function must accept both Eigen::Matrix and Eigen::Ref<Eigen::Matrix>>.
-template <typename EigenMatrix, typename Scalar = scalar>
-void regrow_threshold(EigenMatrix& W, const std::shared_ptr<weight_initializer>& init, long count, std::mt19937& rng)
+/// Prunes `count` nonzero elements with the smallest magnitude and randomly add new elements for them.
+/// \tparam Matrix A matrix type (eigen::matrix or mkl::sparse_matrix_csr)
+/// \param A A matrix
+/// \param count The number of elements to be pruned
+/// \param rng A random number generator
+template <typename Matrix, typename Scalar = scalar>
+void regrow_threshold(Matrix& W, const std::shared_ptr<weight_initializer>& init, std::size_t count, std::mt19937& rng)
 {
-  // prune elements by giving them the value max_scalar
-  auto max_scalar = std::numeric_limits<Scalar>::max();
-  long prune_count = prune_weights(W, count, max_scalar);
-
+  // prune elements by giving them the value NaN
+  auto nan = std::numeric_limits<Scalar>::quiet_NaN();
+  std::size_t prune_count = prune_weights(W, count, nan);
   assert(prune_count == count);
 
   // grow elements that are equal to zero
-  grow(W, init, prune_count, rng, accept_zero());
-
-  // replace max_scalar by 0
-  W = W.unaryExpr([max_scalar](scalar x) { return x == max_scalar ? 0 : x; });
+  bool remove_nan_values = true;
+  grow(W, init, prune_count, rng, remove_nan_values);
 }
 
 /// Prunes and regrows a given fraction of the smallest elements (in absolute value) of the matrix \a W.
@@ -54,22 +54,26 @@ void regrow_threshold(mkl::sparse_matrix_csr<Scalar>& W, const std::shared_ptr<w
   W = mkl::to_csr(W1);
 }
 
+/// Prunes elements with the smallest magnitude and randomly add new elements for them.
+/// Elements with positive and negative values are handled separately.
+/// \tparam Matrix A matrix type (eigen::matrix or mkl::sparse_matrix_csr)
+/// \param A A matrix
+/// \param negative_count The number of elements with negative values to be pruned
+/// \param positive_count The number of elements with positive values to be pruned
+/// \param rng A random number generator
 template <typename EigenMatrix, typename Scalar = scalar>
-void regrow_interval(EigenMatrix& W, const std::shared_ptr<weight_initializer>& init, long negative_count, long positive_count, std::mt19937& rng)
+void regrow_interval(EigenMatrix& W, const std::shared_ptr<weight_initializer>& init, std::size_t negative_count, std::size_t positive_count, std::mt19937& rng)
 {
-  // prune elements by giving them the value max_scalar
-  auto max_scalar = std::numeric_limits<Scalar>::max();
-  std::size_t negative_prune_count = prune_negative_weights(W, negative_count, max_scalar);
-  std::size_t positive_prune_count = prune_positive_weights(W, positive_count, max_scalar);
-
+  // prune elements by giving them the value NaN
+  auto nan = std::numeric_limits<Scalar>::quiet_NaN();
+  std::size_t negative_prune_count = prune_negative_weights(W, negative_count, nan);
+  std::size_t positive_prune_count = prune_positive_weights(W, positive_count, nan);
   assert(negative_prune_count == negative_count);
   assert(positive_prune_count == positive_count);
 
   // grow elements that are equal to zero
-  grow(W, init, negative_prune_count + positive_prune_count, rng, accept_zero());
-
-  // replace max_scalar by 0
-  W = W.unaryExpr([max_scalar](Scalar x) { return x == max_scalar ? 0 : x; });
+  bool remove_nan_values = true;
+  grow(W, init, negative_prune_count + positive_prune_count, rng, remove_nan_values);
 }
 
 /// Prunes and regrows a given fraction of the smallest elements of matrix \a W.

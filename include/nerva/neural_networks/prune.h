@@ -255,7 +255,7 @@ std::size_t prune_negative_weights(mkl::sparse_matrix_csr<T>& A, std::size_t cou
 /// \param rng A random number generator
 /// \param accept A predicate that determines if an element may get a new value
 template <typename Matrix, typename Accept=accept_zero, typename Scalar = scalar>
-void grow(Matrix& A, const std::shared_ptr<weight_initializer>& init, std::size_t count, std::mt19937& rng, Accept accept=Accept())
+void grow(Matrix& A, const std::shared_ptr<weight_initializer>& init, std::size_t count, std::mt19937& rng, bool remove_nan_values = true, Accept accept=Accept())
 {
   long N = A.rows() * A.cols();
   Scalar* data = A.data();
@@ -304,6 +304,11 @@ void grow(Matrix& A, const std::shared_ptr<weight_initializer>& init, std::size_
   for (Scalar* x: selection)
   {
     *x = (*init)();
+  }
+
+  if (remove_nan_values)
+  {
+    A = A.unaryExpr([](Scalar x) { return std::isnan(x) ? 0 : x; });
   }
 }
 
