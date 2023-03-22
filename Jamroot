@@ -34,6 +34,7 @@ project nerva
        <toolset>gcc:<cxxflags>-DMKL_ILP64
        <toolset>gcc:<cxxflags>-Wno-unused-value
        <toolset>gcc:<cxxflags>-Wno-write-strings
+       <toolset>gcc:<cxxflags>-fopenmp
    ;
 
 lib nervalib
