@@ -4,7 +4,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-/// \file regrowth_test.cpp
+/// \file regrow_test.cpp
 /// \brief Tests for regrowing of a sparse weight matrix.
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
