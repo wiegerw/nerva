@@ -350,6 +350,26 @@ class sparse_matrix_csr
     template <typename Scalar, typename Function> friend void initialize_matrix(sparse_matrix_csr<Scalar>& A, Function f);
 };
 
+template <typename T>
+std::size_t support_size(const sparse_matrix_csr<T>& A)
+{
+  return A.values().size();
+}
+
+template <typename T>
+std::size_t count_positive_elements(const sparse_matrix_csr<T>& A)
+{
+  const auto& values = A.values();
+  return std::count_if(values.begin(), values.end(), [](auto x) { return x > 0; });
+}
+
+template <typename T>
+std::size_t count_negative_elements(const sparse_matrix_csr<T>& A)
+{
+  const auto& values = A.values();
+  return std::count_if(values.begin(), values.end(), [](auto x) { return x < 0; });
+}
+
 // Does the assignment A := alpha * A + beta * op(B) * C with B sparse and A, C dense
 //
 // operation_B determines whether op(B) = B or op(B) = B^T
@@ -472,7 +492,7 @@ void traverse_elements(const sparse_matrix_csr<T>& A, Function f)
 
   for (long i = 0; i < m; i++)
   {
-    for (auto k = row_index[i]; k < row_index[i + 1]; i++)
+    for (auto k = row_index[i]; k < row_index[i + 1]; k++)
     {
       long j = col_index[k];
       f(i, j, *data++);

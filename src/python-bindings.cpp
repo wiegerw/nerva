@@ -414,14 +414,14 @@ PYBIND11_MODULE(nervalib, m)
           auto init = create_weight_initializer(W, w, nerva_rng);
           if (separate_pos_neg)
           {
-            long negative_count = std::lround(zeta * (W.array() < 0).count());
-            long positive_count = std::lround(zeta * (W.array() > 0).count());
+            std::size_t negative_count = std::lround(zeta * (W.array() < 0).count());
+            std::size_t positive_count = std::lround(zeta * (W.array() > 0).count());
             regrow_interval(W, init, negative_count, positive_count, nerva_rng);
           }
           else
           {
-            long nonzero_count = (W.array() != 0).count();
-            long count = std::lround(zeta * static_cast<scalar>(nonzero_count));
+            std::size_t nonzero_count = (W.array() != 0).count();
+            std::size_t count = std::lround(zeta * static_cast<scalar>(nonzero_count));
             regrow_threshold(W, init, count, nerva_rng);
           }
         });

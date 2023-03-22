@@ -30,9 +30,9 @@ using matrix = Eigen::MatrixXd;
 using matrix_wrapper = Eigen::Map<matrix>;
 
 inline
-long nonzero_count(const matrix& A)
+std::size_t nonzero_count(const matrix& A)
 {
-  return (A.array() == 0.0).count();
+  return (A.array() == 0).count();
 }
 
 // prototypes

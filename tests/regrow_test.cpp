@@ -107,7 +107,7 @@ TEST_CASE("test_prune_weights")
   check_prune_weights(A, 5, A_pruned_expected, 3, 1);
 }
 
-TEST_CASE("test1")
+TEST_CASE("test_regrow")
 {
   std::cout << "--- test1 ---\n";
 
@@ -167,9 +167,9 @@ TEST_CASE("test1")
   CHECK_EQ((A_grow.array() == 10).count(), prune_count);
   CHECK_EQ((A_grow.array() == 0).count(), (A.array() == 0).count());
 
-  long zero_count = (A.array() == 0).count();
-  long nonzero_count = (A.array() != 0).count();
-  for (long count = 1; count <= nonzero_count; count++)
+  std::size_t zero_count = (A.array() == 0).count();
+  std::size_t nonzero_count = (A.array() != 0).count();
+  for (std::size_t count = 1; count <= nonzero_count; count++)
   {
     if (count > zero_count)
     {
@@ -219,12 +219,14 @@ TEST_CASE("test2")
   CHECK_EQ(A_pruned_expected, A_pruned);
   CHECK_EQ(7, prune_count);
 
-  long max_negative_count = (A.array() < 0).count();
-  long max_positive_count = (A.array() > 0).count();
-  long zero_count = (A.array() == 0).count();
-  for (long negative_count = 1; negative_count <= max_negative_count; negative_count++)
+  std::mt19937 rng{std::random_device{}()};
+
+  std::size_t max_negative_count = (A.array() < 0).count();
+  std::size_t max_positive_count = (A.array() > 0).count();
+  std::size_t zero_count = (A.array() == 0).count();
+  for (std::size_t negative_count = 1; negative_count <= max_negative_count; negative_count++)
   {
-    for (long positive_count = 1; positive_count <= max_positive_count; positive_count++)
+    for (std::size_t positive_count = 1; positive_count <= max_positive_count; positive_count++)
     {
       if (negative_count + positive_count > zero_count)
       {
@@ -232,13 +234,24 @@ TEST_CASE("test2")
       }
       std::cout << "=== regrow_interval negative_count = " << negative_count << " positive_count = " << positive_count << " ===" << std::endl;
       eigen::print_matrix("A", A);
+
+      // dense matrices
+      std::cout << "--- dense ---" << std::endl;
       auto B = A;
-      std::mt19937 rng{std::random_device{}()};
       auto init = std::make_shared<ten_weight_initializer>(rng);
       regrow_interval(B, init, negative_count, positive_count, rng);
       eigen::print_matrix("B", B);
       CHECK_EQ((B.array() == 10).count(), negative_count + positive_count);
       CHECK_EQ((B.array() == 0).count(), (A.array() == 0).count());
+
+      // sparse matrices
+      std::cout << "--- sparse ---" << std::endl;
+      auto B1 = mkl::to_csr(A);
+      regrow_interval(B1, init, negative_count, positive_count, rng);
+      eigen::print_matrix("B1", mkl::to_eigen(B1));
+      auto B2 = mkl::to_eigen(B1);
+      CHECK_EQ((B2.array() == 10).count(), negative_count + positive_count);
+      CHECK_EQ((B2.array() == 0).count(), (A.array() == 0).count());
     }
   }
 }

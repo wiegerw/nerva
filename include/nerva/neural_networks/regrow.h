@@ -27,9 +27,11 @@ namespace nerva {
 /// \param A A matrix
 /// \param count The number of elements to be pruned
 /// \param rng A random number generator
-template <typename Matrix, typename Scalar = scalar>
+template <typename Matrix>
 void regrow_threshold(Matrix& W, const std::shared_ptr<weight_initializer>& init, std::size_t count, std::mt19937& rng)
 {
+  using Scalar = typename Matrix::Scalar;
+
   // prune elements by giving them the value NaN
   auto nan = std::numeric_limits<Scalar>::quiet_NaN();
   std::size_t prune_count = prune_weights(W, count, nan);
@@ -41,17 +43,15 @@ void regrow_threshold(Matrix& W, const std::shared_ptr<weight_initializer>& init
 }
 
 /// Prunes and regrows a given fraction of the smallest elements (in absolute value) of the matrix \a W.
-/// \param W A sparse matrix
+/// \tparam Matrix A matrix type (eigen::matrix or mkl::sparse_matrix_csr)
+/// \param W A matrix
 /// \param zeta The fraction of entries in \a W that will get a new value
 /// \param rng A random number generator
-template <typename Scalar = scalar>
-void regrow_threshold(mkl::sparse_matrix_csr<Scalar>& W, const std::shared_ptr<weight_initializer>& init, scalar zeta, std::mt19937& rng)
+template <typename Matrix>
+void regrow_threshold(Matrix& W, const std::shared_ptr<weight_initializer>& init, scalar zeta, std::mt19937& rng)
 {
-  eigen::matrix W1 = mkl::to_eigen(W);
-  long nonzero_count = (W1.array() != 0).count();
-  long count = std::lround(zeta * static_cast<scalar>(nonzero_count));
-  regrow_threshold(W1, init, count, rng);
-  W = mkl::to_csr(W1);
+  std::size_t count = std::lround(zeta * static_cast<scalar>(support_size(W)));
+  regrow_threshold(W, init, count, rng);
 }
 
 /// Prunes elements with the smallest magnitude and randomly add new elements for them.
@@ -61,8 +61,8 @@ void regrow_threshold(mkl::sparse_matrix_csr<Scalar>& W, const std::shared_ptr<w
 /// \param negative_count The number of elements with negative values to be pruned
 /// \param positive_count The number of elements with positive values to be pruned
 /// \param rng A random number generator
-template <typename EigenMatrix, typename Scalar = scalar>
-void regrow_interval(EigenMatrix& W, const std::shared_ptr<weight_initializer>& init, std::size_t negative_count, std::size_t positive_count, std::mt19937& rng)
+template <typename Matrix, typename Scalar = scalar>
+void regrow_interval(Matrix& W, const std::shared_ptr<weight_initializer>& init, std::size_t negative_count, std::size_t positive_count, std::mt19937& rng)
 {
   // prune elements by giving them the value NaN
   auto nan = std::numeric_limits<Scalar>::quiet_NaN();
@@ -84,11 +84,9 @@ void regrow_interval(EigenMatrix& W, const std::shared_ptr<weight_initializer>& 
 template <typename Scalar = scalar>
 void regrow_interval(mkl::sparse_matrix_csr<Scalar>& W, const std::shared_ptr<weight_initializer>& init, scalar zeta, std::mt19937& rng)
 {
-  auto W1 = mkl::to_eigen(W);
-  std::size_t negative_count = std::lround(zeta * (W1.array() < 0).count());
-  std::size_t positive_count = std::lround(zeta * (W1.array() > 0).count());
-  regrow_interval(W1, init, negative_count, positive_count, rng);
-  W = mkl::to_csr(W1);
+  std::size_t negative_count = std::lround(zeta * static_cast<scalar>(count_negative_elements(W)));
+  std::size_t positive_count = std::lround(zeta * static_cast<scalar>(count_positive_elements(W)));
+  regrow_interval(W, init, negative_count, positive_count, rng);
 }
 
 template <typename Matrix>

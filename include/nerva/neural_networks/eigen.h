@@ -602,9 +602,27 @@ void fill_matrix_random(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Ma
 }
 
 template <typename Scalar = scalar, int MatrixLayout = default_matrix_layout>
-long nonzero_count(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A)
+std::size_t nonzero_count(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A)
 {
   return (A.array() == 0.0).count();
+}
+
+template <typename Matrix>
+std::size_t support_size(const Matrix& A)
+{
+  return (A.array() == 0).count();
+}
+
+template <typename Matrix>
+std::size_t count_positive_elements(const Matrix& A)
+{
+  return (A.array() > 0).count();
+}
+
+template <typename Matrix>
+std::size_t count_negative_elements(const Matrix& A)
+{
+  return (A.array() < 0).count();
 }
 
 // returns the L2 norm of (B - A)
