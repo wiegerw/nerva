@@ -38,8 +38,7 @@ void regrow_threshold(Matrix& W, const std::shared_ptr<weight_initializer>& init
   assert(prune_count == count);
 
   // grow elements that are equal to zero
-  bool remove_nan_values = true;
-  grow(W, init, prune_count, rng, remove_nan_values);
+  grow(W, init, prune_count, rng);
 }
 
 /// Prunes and regrows a given fraction of the smallest elements (in absolute value) of the matrix \a W.
@@ -72,8 +71,7 @@ void regrow_interval(Matrix& W, const std::shared_ptr<weight_initializer>& init,
   assert(positive_prune_count == positive_count);
 
   // grow elements that are equal to zero
-  bool remove_nan_values = true;
-  grow(W, init, negative_prune_count + positive_prune_count, rng, remove_nan_values);
+  grow(W, init, negative_prune_count + positive_prune_count, rng);
 }
 
 /// Prunes and regrows a given fraction of the smallest elements of matrix \a W.

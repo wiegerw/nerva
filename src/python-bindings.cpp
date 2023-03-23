@@ -273,11 +273,27 @@ PYBIND11_MODULE(nervalib, m)
     .def("optimize", &sparse_linear_layer::optimize)
     .def("initialize_weights", [](sparse_linear_layer& layer, weight_initialization w) { initialize_weights(w, layer.W, layer.b, nerva_rng); })
     .def("set_optimizer", [](sparse_linear_layer& layer, const std::string& text) { set_optimizer(layer, text); })
-    .def("regrow", [](sparse_linear_layer& layer, weight_initialization init, scalar zeta, bool separate_positive_negative)
-        {
-          regrow(layer, init, zeta, separate_positive_negative, nerva_rng);
-        })
-    ;
+    .def("shape", [](sparse_linear_layer& layer) { return std::make_pair(layer.W.rows(), layer.W.cols()); })
+    .def("weight_count", [](sparse_linear_layer& layer) { return support_size(layer.W); })
+    .def("positive_weight_count", [](sparse_linear_layer& layer) { return count_positive_elements(layer.W); })
+    .def("negative_weight_count", [](sparse_linear_layer& layer) { return count_negative_elements(layer.W); })
+    .def("prune_weights", [](sparse_linear_layer& layer, std::size_t count)
+    {
+      prune_weights(layer.W, count, std::numeric_limits<scalar>::quiet_NaN());
+    })
+    .def("prune_negative_weights", [](sparse_linear_layer& layer, std::size_t count)
+    {
+      return prune_negative_weights(layer.W, count, std::numeric_limits<scalar>::quiet_NaN());
+    })
+    .def("prune_positive_weights", [](sparse_linear_layer& layer, std::size_t count)
+    {
+      return prune_positive_weights(layer.W, count, std::numeric_limits<scalar>::quiet_NaN());
+    })
+    .def("grow_weights", [](sparse_linear_layer& layer, weight_initialization w, std::size_t count)
+    {
+      grow(layer.W, make_weight_initializer(w, layer.W, nerva_rng), count, nerva_rng);
+      layer.reset_support();
+    })
 
   py::class_<sparse_hyperbolic_tangent_layer, sparse_linear_layer, std::shared_ptr<hyperbolic_tangent_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_hyperbolic_tangent_layer")
     .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar density)
@@ -409,6 +425,11 @@ PYBIND11_MODULE(nervalib, m)
     ;
 
   m.def("initialize_weights", initialize_weights<eigen::matrix>);
+
+  /////////////////////////////////////////////////////////////////////////
+  //                       pruning + growing
+  /////////////////////////////////////////////////////////////////////////
+
   m.def("regrow_matrix", [](eigen::matrix_ref<scalar> W, scalar zeta, weight_initialization w, bool separate_pos_neg)
         {
           auto init = create_weight_initializer(W, w, nerva_rng);

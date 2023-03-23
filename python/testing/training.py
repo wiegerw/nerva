@@ -4,11 +4,12 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 
 import nerva.weights
+from nerva.layers import Sparse, Sequential
 from nerva.utilities import StopWatch
 from testing.datasets import create_npz_dataloaders
 from testing.numpy_utils import to_numpy, to_one_hot_numpy, l1_norm
@@ -120,6 +121,56 @@ def measure_inference_time_nerva(M, train_loader, density, repetitions=100):
     print(f'Average Nerva inference time for density={density} batch_size={batch_size}: {1000.0 * total_time/repetitions:.4f}ms')
 
 
+class RegrowFunction(object):
+    """
+    Interface for regrowing the sparse layers of a neural network
+    """
+    def __call__(self, M: Sequential):
+        raise NotImplementedError
+
+
+class RegrowMagnitude(RegrowFunction):
+    """
+    Regrows a fraction zeta of the weights in the sparse layers. Weights
+    are pruned according to their magnitude.
+    """
+
+    def __init__(self, zeta):
+        self.zeta = zeta
+
+    def __call__(self, M: Sequential):
+        print('regrow weights based on magnitude')
+        for layer in M.layers:
+            if isinstance(layer, Sparse):
+                weight_count = layer.weight_count()
+                count = int(self.zeta * weight_count)
+                print(f'regrowing {count}/{weight_count} weights')
+                layer.prune_weights(count)
+                layer.grow_weights(count, nerva.weights.XavierNormalized())
+
+
+class RegrowMagnitudePosNeg(RegrowFunction):
+    """
+    Regrows a fraction zeta of the positive and a fraction zeta of the negative
+    weights in the sparse layers. Weights are pruned according to their magnitude.
+    """
+
+    def __init__(self, zeta):
+        self.zeta = zeta
+
+    def __call__(self, M: Sequential):
+        print('regrow positive and negative weights')
+        for layer in M.layers:
+            if isinstance(layer, Sparse):
+                weight_count = layer.weight_count()
+                negative_count = int(self.zeta * layer.negative_weight_count())
+                positive_count = int(self.zeta * layer.positive_weight_count())
+                print(f'regrowing {negative_count + positive_count}/{weight_count} weights')
+                layer.prune_negative_weights(negative_count)
+                layer.prune_positive_weights(positive_count)
+                layer.grow_weights(negative_count + positive_count, nerva.weights.XavierNormalized())
+
+
 def train_torch(M, train_loader, test_loader, epochs):
     M.train()  # Set model in training mode
     watch = StopWatch()
@@ -190,7 +241,7 @@ def train_torch_preprocessed(M, datadir, epochs, batch_size):
         M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
 
 
-def train_nerva(M, train_loader, test_loader, epochs, zeta=0, separate_posneg=False):
+def train_nerva(M, train_loader, test_loader, epochs, regrow: Optional[RegrowFunction] = None):
     n_classes = M.layer_sizes[-1]
     batch_size = len(train_loader.dataset) // len(train_loader)
     watch = StopWatch()
@@ -203,9 +254,8 @@ def train_nerva(M, train_loader, test_loader, epochs, zeta=0, separate_posneg=Fa
                 elapsed=0)
 
     for epoch in range(epochs):
-        if epoch > 0 and zeta > 0:
-            print('regrow')
-            M.regrow(nerva.weights.Xavier(), zeta, separate_posneg)
+        if epoch > 0 and regrow:
+            regrow(M)
 
         lr = M.learning_rate(epoch)
         elapsed = 0.0
@@ -228,7 +278,7 @@ def train_nerva(M, train_loader, test_loader, epochs, zeta=0, separate_posneg=Fa
 
 
 # At every epoch a new dataset in .npz format is read from datadir.
-def train_nerva_preprocessed(M, datadir, epochs, batch_size, zeta=0, separate_posneg=False):
+def train_nerva_preprocessed(M, datadir, epochs, batch_size, regrow: Optional[RegrowFunction] = None):
     train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch0.npz', batch_size=batch_size)
 
     n_classes = M.layer_sizes[-1]
@@ -246,9 +296,8 @@ def train_nerva_preprocessed(M, datadir, epochs, batch_size, zeta=0, separate_po
         if epoch > 0:
             train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch{epoch}.npz', batch_size)
 
-        if epoch > 0 and zeta > 0:
-            print('regrow')
-            M.regrow(nerva.weights.Xavier(), zeta, separate_posneg)
+        if epoch > 0 and regrow:
+            regrow(M)
 
         lr = M.learning_rate(epoch)
         elapsed = 0.0

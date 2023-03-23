@@ -166,14 +166,26 @@ class Sparse(Layer):
         self._layer = layer
         return layer
 
-    def regrow(self, weight_initializer: WeightInitializer, zeta: float, separate_posneg: bool):
-        """Prunes and regrows the weights
+    def weight_count(self):
+        return self._layer.weight_count()
 
-        :param weight_initializer: A weight initializer
-        :param zeta: The fraction of weights that is regrown
-        """
-        assert self._layer
-        self._layer.regrow(weight_initializer.compile(), zeta, separate_posneg)
+    def positive_weight_count(self):
+        return self._layer.positive_weight_count()
+
+    def negative_weight_count(self):
+        return self._layer.negative_weight_count()
+
+    def prune_weights(self, count: int):
+        self._layer.prune_weights(count)
+
+    def prune_positive_weights(self, count: int):
+        self._layer.prune_positive_weights(count)
+
+    def prune_negative_weights(self, count: int):
+        self._layer.prune_negative_weights(count)
+
+    def grow_weights(self, count: int, weight_initializer=Xavier()):
+        self._layer.grow_weights(weight_initializer.compile(), count)
 
 
 class Dropout(Layer):
@@ -271,16 +283,6 @@ class Sequential(object):
                 cpp_layer = layer.compile(batch_size)
                 M.append_layer(cpp_layer)
         self.compiled_model = M
-
-    def regrow(self, weight_initializer: WeightInitializer, zeta: float, separate_posneg=False):
-        """Prunes and regrows the weights of the sparse layers
-
-        :param weight_initializer: A weight initializer
-        :param zeta: The fraction of weights that is regrown
-        """
-        for layer in self.layers:
-            if isinstance(layer, Sparse):
-                layer.regrow(weight_initializer, zeta, separate_posneg)
 
     def feedforward(self, X):
         return self.compiled_model.feedforward(X)
