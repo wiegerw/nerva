@@ -80,7 +80,10 @@ std::size_t prune_weights(Matrix& A, std::size_t count, typename Matrix::Scalar 
 template <typename Matrix>
 std::size_t prune_positive_weights(Matrix& A, std::size_t count, typename Matrix::Scalar value = 0)
 {
-  assert(count > 0);
+  if (count == 0)
+  {
+    return 0;
+  }
   typename Matrix::Scalar threshold;
   std::size_t threshold_count;
   std::tie(threshold, threshold_count) = detail::nth_element(A, count - 1, accept_strictly_positive());
@@ -95,7 +98,10 @@ std::size_t prune_positive_weights(Matrix& A, std::size_t count, typename Matrix
 template <typename Matrix, typename T>
 std::size_t prune_negative_weights(Matrix& A, std::size_t count, T value = 0)
 {
-  assert(count > 0);
+  if (count == 0)
+  {
+    return 0;
+  }
   T threshold;
   std::size_t threshold_count;
   std::tie(threshold, threshold_count) = detail::nth_element(A, count - 1, accept_strictly_negative(), std::greater<>());  // TODO: use structured bindings when moving to C++20

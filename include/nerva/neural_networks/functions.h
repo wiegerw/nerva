@@ -235,7 +235,7 @@ struct accept_strictly_positive_with_threshold
     {
       return detail::decrement_count(count);
     }
-    return x > 0 && x <= threshold;
+    return 0 < x && x <= threshold;
   }
 };
 

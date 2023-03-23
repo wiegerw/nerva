@@ -116,6 +116,10 @@ std::size_t prune(mkl::sparse_matrix_csr<T>& A, Accept accept, T value = 0)
 template <typename Scalar>
 std::size_t prune_weights(mkl::sparse_matrix_csr<Scalar>& A, std::size_t count, Scalar value = 0)
 {
+  if (count == 0)
+  {
+    return 0;
+  }
   Scalar threshold;             // the threshold value corresponding with count elements
   std::size_t threshold_count;  // the number of copies of threshold that should be accepted
   std::tie(threshold, threshold_count) = detail::nth_element(A, count - 1, accept_all(), compare_less_absolute());
@@ -131,7 +135,10 @@ std::size_t prune_weights(mkl::sparse_matrix_csr<Scalar>& A, std::size_t count, 
 template <typename T>
 std::size_t prune_positive_weights(mkl::sparse_matrix_csr<T>& A, std::size_t count, T value = 0)
 {
-  assert(count > 0);
+  if (count == 0)
+  {
+    return 0;
+  }
   T threshold;                   // the threshold value corresponding with count elements
   std::size_t threshold_count;   // the number of copies of threshold that should be accepted
   std::tie(threshold, threshold_count) = detail::nth_element(A, count - 1, accept_positive(), std::less<>());
@@ -146,7 +153,10 @@ std::size_t prune_positive_weights(mkl::sparse_matrix_csr<T>& A, std::size_t cou
 template <typename T>
 std::size_t prune_negative_weights(mkl::sparse_matrix_csr<T>& A, std::size_t count, T value = 0)
 {
-  assert(count > 0);
+  if (count == 0)
+  {
+    return 0;
+  }
   T threshold;                   // the threshold value corresponding with count elements
   std::size_t threshold_count;   // the number of copies of threshold that should be accepted
   std::tie(threshold, threshold_count) = detail::nth_element(A, count - 1, accept_negative(), std::greater<>());
