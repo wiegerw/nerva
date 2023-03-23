@@ -294,6 +294,7 @@ PYBIND11_MODULE(nervalib, m)
       grow(layer.W, make_weight_initializer(w, layer.W, nerva_rng), count, nerva_rng);
       layer.reset_support();
     })
+    ;
 
   py::class_<sparse_hyperbolic_tangent_layer, sparse_linear_layer, std::shared_ptr<hyperbolic_tangent_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_hyperbolic_tangent_layer")
     .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar density)
