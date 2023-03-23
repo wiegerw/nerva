@@ -104,7 +104,7 @@ std::shared_ptr<weight_initializer> create_weight_initializer(const Matrix& W, w
 
 /// Prunes and regrows a given fraction of the smallest elements of matrix \a W.
 /// Positive and negative entries are pruned independently.
-/// \param W A sparse matrix
+/// \param layer A sparse linear layer
 /// \param zeta The fraction of positive and negative entries in \a W that will get a new value
 /// \param rng A random number generator
 template <typename Scalar = scalar>

@@ -428,27 +428,6 @@ PYBIND11_MODULE(nervalib, m)
   m.def("initialize_weights", initialize_weights<eigen::matrix>);
 
   /////////////////////////////////////////////////////////////////////////
-  //                       pruning + growing
-  /////////////////////////////////////////////////////////////////////////
-
-  m.def("regrow_matrix", [](eigen::matrix_ref<scalar> W, scalar zeta, weight_initialization w, bool separate_pos_neg)
-        {
-          auto init = create_weight_initializer(W, w, nerva_rng);
-          if (separate_pos_neg)
-          {
-            std::size_t negative_count = std::lround(zeta * (W.array() < 0).count());
-            std::size_t positive_count = std::lround(zeta * (W.array() > 0).count());
-            regrow_interval(W, init, negative_count, positive_count, nerva_rng);
-          }
-          else
-          {
-            std::size_t nonzero_count = (W.array() != 0).count();
-            std::size_t count = std::lround(zeta * static_cast<scalar>(nonzero_count));
-            regrow_threshold(W, init, count, nerva_rng);
-          }
-        });
-
-  /////////////////////////////////////////////////////////////////////////
   //                       training
   /////////////////////////////////////////////////////////////////////////
 

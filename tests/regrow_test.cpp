@@ -11,6 +11,8 @@
 
 #include "doctest/doctest.h"
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
+#include "nerva/neural_networks/grow_dense.h"
+#include "nerva/neural_networks/prune_dense.h"
 #include "nerva/neural_networks/regrow.h"
 #include <algorithm>
 
