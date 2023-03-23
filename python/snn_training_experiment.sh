@@ -30,6 +30,7 @@ function train_sparse()
   local density=$4
 
   logfile="snn/training/$framework-sparse-$density-augmented-seed$seed.log"
+  weightsfile="snn/training/weights-seed=$seed-density=$density.npz"
 
   # skip the run if a complete log already exists
   if [ -f "./$logfile" ] && ( grep -E -q "epoch\s+$epochs " "./$logfile" );
@@ -51,7 +52,7 @@ function train_sparse()
                         --nesterov \
                         --preprocessed=./cifar$seed \
                         --precision=8 \
-                        --save-weights="weights-$density.npz" \
+                        --save-weights=$weightsfile \
                         --trim-relu=$trim_relu \
                         2>&1 | tee $logfile
   elif [ $framework == 'nerva' ]; then
@@ -65,7 +66,8 @@ function train_sparse()
                         --nesterov \
                         --preprocessed=./cifar$seed \
                         --precision=8 \
-                        --load-weights="weights-$density.npz" \
+                        --load-weights=$weightsfile \
+                        --trim-relu=$trim_relu \
                         2>&1 | tee $logfile
   elif [ $framework == 'nervacpp' ]; then
       ../tools/dist/mlp --seed=$seed \
@@ -82,7 +84,7 @@ function train_sparse()
                         --no-shuffle \
                         --verbose \
                         --preprocessed=./cifar$seed \
-                        --load-weights="weights-$density.npz" \
+                        --load-weights=$weightsfile \
                         2>&1 | tee $logfile
   fi
   echo ''
@@ -96,6 +98,7 @@ function train_dense()
   local density="1.0"
 
   logfile="snn/training/$framework-dense-augmented-seed$seed.log"
+  weightsfile="snn/training/weights-seed=$seed.npz"
 
   # skip the run if a complete log already exists
   if [ -f "./$logfile" ] && ( grep -E -q "epoch\s+$epochs " "./$logfile" );
@@ -116,7 +119,7 @@ function train_dense()
                         --nesterov \
                         --preprocessed=./cifar$seed \
                         --precision=8 \
-                        --save-weights="weights-$density.npz" \
+                        --save-weights="$weightsfile" \
                         --trim-relu=$trim_relu \
                         2>&1 | tee $logfile
   elif [ $framework == 'nerva' ]; then
@@ -129,7 +132,7 @@ function train_dense()
                         --nesterov \
                         --preprocessed=./cifar$seed \
                         --precision=8 \
-                        --load-weights="weights-$density.npz" \
+                        --load-weights="$weightsfile" \
                         2>&1 | tee $logfile
   elif [ $framework == 'nervacpp' ]; then
       ../tools/dist/mlp --seed=$seed \
@@ -144,7 +147,7 @@ function train_dense()
                         --threads=4 \
                         --verbose \
                         --preprocessed=./cifar$seed \
-                        --load-weights="weights-$density.npz" \
+                        --load-weights="$weightsfile" \
                         2>&1 | tee $logfile
   fi
   echo ''
