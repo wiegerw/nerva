@@ -13,6 +13,7 @@
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/neural_networks/functions.h"
 #include "nerva/neural_networks/layers.h"
+#include "nerva/neural_networks/grow.h"
 #include "nerva/neural_networks/prune.h"
 #include "nerva/neural_networks/weights.h"
 #include <algorithm>
