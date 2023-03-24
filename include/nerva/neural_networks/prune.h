@@ -92,8 +92,6 @@ std::size_t prune(FwdIt first, FwdIt last, Accept accept, T value = 0)
   return count;
 }
 
-} // namespace detail
-
 /// Overwrites entries `A[i,j]` that satisfy the predicate \a accept with a given value.
 /// This function is used as a building block for pruning functions.
 /// \param A A matrix
@@ -108,6 +106,52 @@ std::size_t prune(mkl::sparse_matrix_csr<T>& A, Accept accept, T value = 0)
 }
 
 /// Replaces the smallest \a count elements (in absolute value) from the matrix \a A
+/// \param first
+/// \param last
+/// \param A A matrix
+/// \param count The number of elements to be pruned
+/// \param accept Only weights that satisfy `accept` are pruned
+/// \param value The value that is assigned to pruned elements (default 0)
+/// \return The actual number of elements that have been pruned (i.e. min(count, |A|) )
+template <typename Scalar, typename Accept, typename FwdIt>
+std::size_t prune_magnitude_with_threshold(FwdIt first, FwdIt last, std::size_t count, Accept accept = Accept(), Scalar value = 0)
+{
+  if (count == 0)
+  {
+    return 0;
+  }
+
+  Scalar threshold;             // the threshold value corresponding with count elements
+  std::size_t threshold_count;  // the number of copies of threshold that should be accepted
+  std::tie(threshold, threshold_count) = detail::nth_element(first, last, count - 1, accept, less_magnitude());
+  threshold = std::fabs(threshold);
+
+  auto accept_prune = [threshold, &threshold_count, accept](auto x)
+  {
+    auto x_ = std::fabs(x);
+    return accept(x) && (x_ < threshold || (x_ == threshold && detail::decrement_count(threshold_count)));
+  };
+
+  return detail::prune(first, last, accept_prune, value);
+}
+
+} // namespace detail
+
+/// Replaces the smallest \a count elements (in absolute value) from the matrix \a A
+/// \tparam Matrix eigen::matrix or mkl::sparse_matrix_csr
+/// \param A A matrix
+/// \param count The number of elements to be pruned
+/// \param accept Only weights that satisfy `accept` are pruned
+/// \param value The value that is assigned to pruned elements (default 0)
+/// \return The actual number of elements that have been pruned (i.e. min(count, |A|) )
+template <typename Scalar, typename Accept>
+std::size_t prune_magnitude_with_threshold(mkl::sparse_matrix_csr<Scalar>& A, std::size_t count, Accept accept = Accept(), Scalar value = 0)
+{
+  auto& values = A.values();
+  return detail::prune_magnitude_with_threshold(values.begin(), values.end(), count, accept, value);
+}
+
+/// Replaces the smallest \a count elements (in absolute value) from the matrix \a A
 /// \tparam Matrix eigen::matrix or mkl::sparse_matrix_csr
 /// \param A A matrix
 /// \param count The number of elements to be pruned
@@ -116,16 +160,7 @@ std::size_t prune(mkl::sparse_matrix_csr<T>& A, Accept accept, T value = 0)
 template <typename Scalar>
 std::size_t prune_weights(mkl::sparse_matrix_csr<Scalar>& A, std::size_t count, Scalar value = 0)
 {
-  if (count == 0)
-  {
-    return 0;
-  }
-  Scalar threshold;             // the threshold value corresponding with count elements
-  std::size_t threshold_count;  // the number of copies of threshold that should be accepted
-  std::tie(threshold, threshold_count) = detail::nth_element(A, count - 1, accept_all(), compare_less_absolute());
-  threshold = std::fabs(threshold);
-  accept_absolute_with_threshold accept(threshold, threshold_count);
-  return prune(A, accept, value);
+  return prune_magnitude_with_threshold(A, count, accept_all(), value);
 }
 
 /// Replaces the smallest \a count elements (in absolute value) of the matrix \a A by a given value
@@ -135,15 +170,7 @@ std::size_t prune_weights(mkl::sparse_matrix_csr<Scalar>& A, std::size_t count, 
 template <typename T>
 std::size_t prune_positive_weights(mkl::sparse_matrix_csr<T>& A, std::size_t count, T value = 0)
 {
-  if (count == 0)
-  {
-    return 0;
-  }
-  T threshold;                   // the threshold value corresponding with count elements
-  std::size_t threshold_count;   // the number of copies of threshold that should be accepted
-  std::tie(threshold, threshold_count) = detail::nth_element(A, count - 1, accept_positive(), std::less<>());
-  accept_positive_with_threshold accept(threshold, threshold_count);
-  return prune(A, accept, value);
+  return prune_magnitude_with_threshold(A, count, accept_positive(), value);
 }
 
 /// Prunes the smallest \a count negative elements of the matrix \a A
@@ -153,15 +180,7 @@ std::size_t prune_positive_weights(mkl::sparse_matrix_csr<T>& A, std::size_t cou
 template <typename T>
 std::size_t prune_negative_weights(mkl::sparse_matrix_csr<T>& A, std::size_t count, T value = 0)
 {
-  if (count == 0)
-  {
-    return 0;
-  }
-  T threshold;                   // the threshold value corresponding with count elements
-  std::size_t threshold_count;   // the number of copies of threshold that should be accepted
-  std::tie(threshold, threshold_count) = detail::nth_element(A, count - 1, accept_negative(), std::greater<>());
-  accept_negative_with_threshold accept(threshold, threshold_count);
-  return prune(A, accept, value);
+  return prune_magnitude_with_threshold(A, count, accept_negative(), value);
 }
 
 } // namespace nerva
