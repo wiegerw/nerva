@@ -117,6 +117,22 @@ struct accept_value
   }
 };
 
+// f(x) = (|x| <= threshold)
+template <typename Scalar>
+struct accept_threshold
+{
+  Scalar threshold;
+
+  explicit accept_threshold(Scalar threshold_)
+    : threshold(threshold_)
+  {}
+
+  bool operator()(Scalar x) const
+  {
+    return std::fabs(x) <= threshold;
+  }
+};
+
 // f(x,y) = |x| < |y|
 struct less_magnitude
 {

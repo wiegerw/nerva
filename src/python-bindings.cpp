@@ -277,21 +277,22 @@ PYBIND11_MODULE(nervalib, m)
     .def("weight_count", [](sparse_linear_layer& layer) { return support_size(layer.W); })
     .def("positive_weight_count", [](sparse_linear_layer& layer) { return count_positive_elements(layer.W); })
     .def("negative_weight_count", [](sparse_linear_layer& layer) { return count_negative_elements(layer.W); })
-    .def("prune_weights", [](sparse_linear_layer& layer, std::size_t count)
+    .def("prune_magnitude", [](sparse_linear_layer& layer, scalar zeta)
     {
-      prune_weights(layer.W, count, std::numeric_limits<scalar>::quiet_NaN());
+      std::size_t count = std::lround(zeta * static_cast<scalar>(mkl::support_size(layer.W)));
+      return prune_magnitude(layer.W, count, std::numeric_limits<scalar>::quiet_NaN());
     })
-    .def("prune_negative_weights", [](sparse_linear_layer& layer, std::size_t count)
+    .def("prune_threshold", [](sparse_linear_layer& layer, scalar threshold)
     {
-      return prune_negative_weights(layer.W, count, std::numeric_limits<scalar>::quiet_NaN());
+      return prune_threshold(layer.W, threshold, std::numeric_limits<scalar>::quiet_NaN());
     })
-    .def("prune_positive_weights", [](sparse_linear_layer& layer, std::size_t count)
+    .def("prune_SET", [](sparse_linear_layer& layer, scalar zeta)
     {
-      return prune_positive_weights(layer.W, count, std::numeric_limits<scalar>::quiet_NaN());
+      return prune_SET(layer.W, zeta, std::numeric_limits<scalar>::quiet_NaN());
     })
-    .def("grow_weights", [](sparse_linear_layer& layer, weight_initialization w, std::size_t count)
+    .def("grow_random", [](sparse_linear_layer& layer, weight_initialization w, std::size_t count)
     {
-      grow(layer.W, make_weight_initializer(w, layer.W, nerva_rng), count, nerva_rng);
+      grow_random(layer.W, make_weight_initializer(w, layer.W, nerva_rng), count, nerva_rng);
       layer.reset_support();
     })
     ;

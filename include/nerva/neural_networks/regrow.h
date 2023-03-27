@@ -35,11 +35,11 @@ void regrow_threshold(Matrix& W, const std::shared_ptr<weight_initializer>& init
 
   // prune elements by giving them the value NaN
   auto nan = std::numeric_limits<Scalar>::quiet_NaN();
-  std::size_t prune_count = prune_weights(W, count, nan);
+  std::size_t prune_count = prune_magnitude(W, count, nan);
   assert(prune_count == count);
 
   // grow elements that are equal to zero
-  grow(W, init, prune_count, rng);
+  grow_random(W, init, prune_count, rng);
 }
 
 /// Prunes and regrows a given fraction of the smallest elements (in absolute value) of the matrix \a W.
@@ -72,7 +72,7 @@ void regrow_interval(Matrix& W, const std::shared_ptr<weight_initializer>& init,
   assert(positive_prune_count == positive_count);
 
   // grow elements that are equal to zero
-  grow(W, init, negative_prune_count + positive_prune_count, rng);
+  grow_random(W, init, negative_prune_count + positive_prune_count, rng);
 }
 
 /// Prunes and regrows a given fraction of the smallest elements of matrix \a W.

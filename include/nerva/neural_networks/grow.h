@@ -31,21 +31,13 @@ namespace nerva {
 /// \param count The number of entries that will be added
 /// \param rng A random number generator
 template <typename Scalar = scalar>
-void grow(mkl::sparse_matrix_csr<Scalar>& A, const std::shared_ptr<weight_initializer>& init, std::size_t count, std::mt19937& rng)
+void grow_random(mkl::sparse_matrix_csr<Scalar>& A, const std::shared_ptr<weight_initializer>& init, std::size_t count, std::mt19937& rng)
 {
   std::size_t N = A.rows() * A.cols();
   if (A.values().size() + count > N)
   {
     throw std::runtime_error("cannot grow the matrix with " + std::to_string(count) + " elements");
   }
-
-  // components of the result matrix
-  std::vector<MKL_INT> row_index;
-  std::vector<MKL_INT> col_index;
-  std::vector<Scalar> values;
-  row_index.reserve(A.row_index().size());
-  col_index.reserve(A.col_index().size());
-  values.reserve(A.values().size());
 
   // Select k random new positions outside the support of A
   std::vector<std::size_t> new_positions = reservoir_sample(count, N - A.values().size(), rng);

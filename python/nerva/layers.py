@@ -175,17 +175,17 @@ class Sparse(Layer):
     def negative_weight_count(self):
         return self._layer.negative_weight_count()
 
-    def prune_weights(self, count: int):
-        self._layer.prune_weights(count)
+    def prune_magnitude(self, zeta: float):
+        return self._layer.prune_magnitude(zeta)
 
-    def prune_positive_weights(self, count: int):
-        self._layer.prune_positive_weights(count)
+    def prune_SET(self, zeta: float):
+        return self._layer.prune_SET(zeta)
 
-    def prune_negative_weights(self, count: int):
-        self._layer.prune_negative_weights(count)
+    def prune_threshold(self, threshold: float):
+        return self._layer.prune_threshold(threshold)
 
-    def grow_weights(self, count: int, weight_initializer=Xavier()):
-        self._layer.grow_weights(weight_initializer.compile(), count)
+    def grow_random(self, count: int, weight_initializer=Xavier()):
+        self._layer.grow_random(weight_initializer.compile(), count)
 
 
 class Dropout(Layer):

@@ -82,7 +82,7 @@ void check_prune_weights(const eigen::matrix& A,
   CHECK_EQ(expected_threshold, threshold);
   CHECK_EQ(expected_threshold_count, threshold_count);
   auto A1_pruned = A1;
-  prune_count = prune_weights(A1_pruned, count);
+  prune_count = prune_magnitude(A1_pruned, count);
   eigen::print_matrix("A1_pruned", mkl::to_eigen(A1_pruned));
   CHECK_EQ(prune_count, count);
   CHECK_EQ(mkl::to_eigen(A1_pruned), expected);

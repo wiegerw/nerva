@@ -19,10 +19,11 @@ import nerva.optimizers
 import nerva.random
 from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
+from testing.prune_grow import RegrowNerva
 from testing.torch_models import make_torch_scheduler
 from testing.models import MLPPyTorch, MLPNerva
 from testing.training import train_nerva, train_torch, compute_accuracy_torch, compute_accuracy_nerva, \
-    compute_densities, train_torch_preprocessed, train_nerva_preprocessed, RegrowMagnitude, RegrowMagnitudePosNeg
+    compute_densities, train_torch_preprocessed, train_nerva_preprocessed
 
 
 def make_torch_model(args, layer_sizes, densities):
@@ -79,7 +80,8 @@ def make_argument_parser():
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
     cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
 
-    # load/save weights
+    # weights
+    cmdline_parser.add_argument('--weights', type=str, help='The function used for initializing weigths: Xavier, XavierNormalized, He, PyTorch')
     cmdline_parser.add_argument('--save-weights', type=str, help='Save weights and bias to a file in .npz format')
     cmdline_parser.add_argument('--load-weights', type=str, help='Load weights and bias from a file in .npz format')
 
@@ -87,9 +89,10 @@ def make_argument_parser():
     cmdline_parser.add_argument("--precision", help="The precision used for printing matrices", type=int, default=8)
     cmdline_parser.add_argument("--edgeitems", help="The edgeitems used for printing matrices", type=int, default=3)
 
-    # regrow (experimental!)
-    cmdline_parser.add_argument("--zeta", help="The regrow factor, use 0 for no regrow", type=float, default=0)
-    cmdline_parser.add_argument("--separate", help="Separate negative and positive values for regrow", action="store_true")
+    # pruning + growing (experimental!)
+    cmdline_parser.add_argument("--prune", help="The pruning strategy: Magnitude(<rate>), SET(<rate>) or Threshold(<value>)", type=str)
+    cmdline_parser.add_argument("--prune-interval", help="The number of batches between pruning + growing weights (default: 1 epoch)", type=int)
+    cmdline_parser.add_argument("--grow", help="The growing strategy: (default: Random)", type=str)
 
     return cmdline_parser
 
@@ -106,11 +109,7 @@ def check_command_line_arguments(args):
 
 
 def print_command_line_arguments(args):
-    print("python3 " + " ".join(shlex.quote(arg) if " " in arg else arg for arg in sys.argv))
-    # print('')
-    # for key, value in vars(args).items():
-    #    print(f'{key} = {value}')
-    print('\n')
+    print("python3 " + " ".join(shlex.quote(arg) if " " in arg else arg for arg in sys.argv) + '\n')
 
 
 def initialize_frameworks(args):
@@ -151,14 +150,6 @@ def main():
     else:
         layer_densities = [1.0] * (len(layer_sizes) - 1)
 
-    if args.zeta > 0:
-        if args.separate:
-            regrow = RegrowMagnitudePosNeg(args.zeta)
-        else:
-            regrow = RegrowMagnitude(args.zeta)
-    else:
-        regrow = None
-
     if args.torch:
         M1 = make_torch_model(args, layer_sizes, layer_densities)
         print('=== PyTorch model ===')
@@ -174,6 +165,8 @@ def main():
             train_torch(M1, train_loader, test_loader, args.epochs)
     elif args.nerva:
         M2 = make_nerva_model(args, layer_sizes, layer_densities)
+        regrow = RegrowNerva(args.prune, args.grow, args.prune_interval, args.weights) if args.prune else None
+
         print('=== Nerva python model ===')
         print(M2)
 

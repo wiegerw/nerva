@@ -40,9 +40,33 @@ class Uniform(WeightInitializer):
         return 'Uniform()'
 
 
+class PyTorch(WeightInitializer):
+    def compile(self):
+        return nervalib.Weights.PyTorch
+
+    def __str__(self):
+        return 'PyTorch()'
+
+
 class Zero(WeightInitializer):
     def compile(self):
         return nervalib.Weights.Zero
 
     def __str__(self):
         return 'Zero()'
+
+
+def parse_weights(text: str):
+    if text == 'Xavier':
+        return Xavier()
+    elif text == 'XavierNormalized':
+        return XavierNormalized()
+    elif text == 'He':
+        return He()
+    elif text == 'Uniform':
+        return Uniform()
+    elif text == 'Zero':
+        return Zero()
+    elif text == 'PyTorch':
+        return PyTorch()
+    raise RuntimeError(f"unknown weight initializer '{text}'")

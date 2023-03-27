@@ -14,6 +14,7 @@ from nerva.utilities import StopWatch
 from testing.datasets import create_npz_dataloaders
 from testing.numpy_utils import to_numpy, to_one_hot_numpy, l1_norm
 from testing.models import MLPPyTorch, MLPNerva
+from testing.prune_grow import RegrowFunction
 
 
 def compute_accuracy_torch(M: MLPPyTorch, data_loader):
@@ -121,56 +122,6 @@ def measure_inference_time_nerva(M, train_loader, density, repetitions=100):
     print(f'Average Nerva inference time for density={density} batch_size={batch_size}: {1000.0 * total_time/repetitions:.4f}ms')
 
 
-class RegrowFunction(object):
-    """
-    Interface for regrowing the sparse layers of a neural network
-    """
-    def __call__(self, M: Sequential):
-        raise NotImplementedError
-
-
-class RegrowMagnitude(RegrowFunction):
-    """
-    Regrows a fraction zeta of the weights in the sparse layers. Weights
-    are pruned according to their magnitude.
-    """
-
-    def __init__(self, zeta):
-        self.zeta = zeta
-
-    def __call__(self, M: Sequential):
-        print('regrow weights based on magnitude')
-        for layer in M.layers:
-            if isinstance(layer, Sparse):
-                weight_count = layer.weight_count()
-                count = int(self.zeta * weight_count)
-                print(f'regrowing {count}/{weight_count} weights')
-                layer.prune_weights(count)
-                layer.grow_weights(count, nerva.weights.XavierNormalized())
-
-
-class RegrowMagnitudePosNeg(RegrowFunction):
-    """
-    Regrows a fraction zeta of the positive and a fraction zeta of the negative
-    weights in the sparse layers. Weights are pruned according to their magnitude.
-    """
-
-    def __init__(self, zeta):
-        self.zeta = zeta
-
-    def __call__(self, M: Sequential):
-        print('regrow positive and negative weights')
-        for layer in M.layers:
-            if isinstance(layer, Sparse):
-                weight_count = layer.weight_count()
-                negative_count = int(self.zeta * layer.negative_weight_count())
-                positive_count = int(self.zeta * layer.positive_weight_count())
-                print(f'regrowing {negative_count + positive_count}/{weight_count} weights')
-                layer.prune_negative_weights(negative_count)
-                layer.prune_positive_weights(positive_count)
-                layer.grow_weights(negative_count + positive_count, nerva.weights.XavierNormalized())
-
-
 def train_torch(M, train_loader, test_loader, epochs):
     M.train()  # Set model in training mode
     watch = StopWatch()
@@ -184,7 +135,7 @@ def train_torch(M, train_loader, test_loader, epochs):
 
     for epoch in range(epochs):
         elapsed = 0.0
-        for k, (X, T) in enumerate(train_loader):
+        for (X, T) in train_loader:
             watch.reset()
             M.optimizer.zero_grad()
             Y = M(X)
@@ -222,7 +173,7 @@ def train_torch_preprocessed(M, datadir, epochs, batch_size):
             train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch{epoch}.npz', batch_size)
 
         elapsed = 0.0
-        for k, (X, T) in enumerate(train_loader):
+        for (X, T) in train_loader:
             watch.reset()
             M.optimizer.zero_grad()
             Y = M(X)
@@ -244,6 +195,7 @@ def train_torch_preprocessed(M, datadir, epochs, batch_size):
 def train_nerva(M, train_loader, test_loader, epochs, regrow: Optional[RegrowFunction] = None):
     n_classes = M.layer_sizes[-1]
     batch_size = len(train_loader.dataset) // len(train_loader)
+    batch_index = 0
     watch = StopWatch()
 
     print_epoch(epoch=0,
@@ -254,13 +206,13 @@ def train_nerva(M, train_loader, test_loader, epochs, regrow: Optional[RegrowFun
                 elapsed=0)
 
     for epoch in range(epochs):
-        if epoch > 0 and regrow:
-            regrow(M)
-
         lr = M.learning_rate(epoch)
         elapsed = 0.0
-        for k, (X, T) in enumerate(train_loader):
+        for (X, T) in train_loader:
+            batch_index += 1
             watch.reset()
+            if regrow:
+                regrow(M, batch_index)
             X = to_numpy(X)
             T = to_one_hot_numpy(T, n_classes)
             Y = M.feedforward(X)
@@ -283,6 +235,7 @@ def train_nerva_preprocessed(M, datadir, epochs, batch_size, regrow: Optional[Re
 
     n_classes = M.layer_sizes[-1]
     batch_size = len(train_loader.dataset) // len(train_loader)
+    batch_index = 0
     watch = StopWatch()
 
     print_epoch(epoch=0,
@@ -296,13 +249,13 @@ def train_nerva_preprocessed(M, datadir, epochs, batch_size, regrow: Optional[Re
         if epoch > 0:
             train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch{epoch}.npz', batch_size)
 
-        if epoch > 0 and regrow:
-            regrow(M)
-
         lr = M.learning_rate(epoch)
         elapsed = 0.0
-        for k, (X, T) in enumerate(train_loader):
+        for (X, T) in train_loader:
+            batch_index += 1
             watch.reset()
+            if regrow:
+                regrow(M, batch_index)
             X = to_numpy(X)
             T = to_one_hot_numpy(T, n_classes)
             Y = M.feedforward(X)
