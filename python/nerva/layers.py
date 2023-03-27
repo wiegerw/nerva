@@ -166,6 +166,9 @@ class Sparse(Layer):
         self._layer = layer
         return layer
 
+    def initialize_weights(self, init: WeightInitializer) -> None:
+        self._layer.initialize_weights(init.compile())
+
     def weight_count(self):
         return self._layer.weight_count()
 
@@ -175,16 +178,16 @@ class Sparse(Layer):
     def negative_weight_count(self):
         return self._layer.negative_weight_count()
 
-    def prune_magnitude(self, zeta: float):
+    def prune_magnitude(self, zeta: float) -> int:
         return self._layer.prune_magnitude(zeta)
 
-    def prune_SET(self, zeta: float):
+    def prune_SET(self, zeta: float) -> int:
         return self._layer.prune_SET(zeta)
 
-    def prune_threshold(self, threshold: float):
+    def prune_threshold(self, threshold: float) -> int:
         return self._layer.prune_threshold(threshold)
 
-    def grow_random(self, count: int, weight_initializer=Xavier()):
+    def grow_random(self, count: int, weight_initializer=Xavier()) -> None:
         self._layer.grow_random(weight_initializer.compile(), count)
 
 

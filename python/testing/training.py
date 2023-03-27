@@ -8,8 +8,6 @@ from typing import List, Optional
 
 import numpy as np
 
-import nerva.weights
-from nerva.layers import Sparse, Sequential
 from nerva.utilities import StopWatch
 from testing.datasets import create_npz_dataloaders
 from testing.numpy_utils import to_numpy, to_one_hot_numpy, l1_norm
