@@ -187,10 +187,10 @@ using sparse_linear_layer = linear_layer<mkl::sparse_matrix_csr<scalar>>;
 template <typename Scalar>
 void initialize_sparse_weights(linear_layer<mkl::sparse_matrix_csr<Scalar>>& layer, double density, std::mt19937& rng)
 {
-  auto m = layer.W.rows();
-  auto n = layer.W.cols();
-  layer.W = mkl::sparse_matrix_csr<Scalar>(m, n, density, rng, scalar(0));
-  layer.DW = layer.W;
+  auto rows = layer.W.rows();
+  auto columns = layer.W.cols();
+  layer.W = mkl::sparse_matrix_csr<Scalar>(rows, columns, density, rng, scalar(0));
+  layer.reset_support();
 }
 
 template <typename Scalar>

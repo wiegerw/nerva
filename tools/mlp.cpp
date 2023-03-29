@@ -21,10 +21,8 @@
 #include "nerva/utilities/command_line_tool.h"
 #include "nerva/utilities/parse_numbers.h"
 #include "nerva/utilities/string_utility.h"
-#include <algorithm>
 #include <iostream>
 #include <random>
-#include <type_traits>
 
 #ifdef NERVA_ENABLE_PROFILING
 #include <valgrind/callgrind.h>
@@ -223,6 +221,7 @@ class tool: public command_line_tool
 
       if (load_weights_file.empty())
       {
+        set_support_random(M, linear_layer_densities, rng);
         auto weights = parse_weights(options.weights_initialization, linear_layer_specifications);
         set_weights_and_bias(M, weights, rng);
       }

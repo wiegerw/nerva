@@ -146,7 +146,7 @@ struct layer_builder
   double dropout_rate = 0;  // dropout rate of the next linear layer
   std::mt19937& rng;        // needed for creating sparse matrices
 
-  layer_builder(std::mt19937& rng_)
+  explicit layer_builder(std::mt19937& rng_)
     : rng(rng_)
   {}
 
@@ -293,9 +293,7 @@ struct layer_builder
       }
       else
       {
-        auto layer = make_sparse_linear_layer(layer_description, D, K, batch_size);
-        initialize_sparse_weights<scalar>(*layer, density, rng);
-        return layer;
+        return make_sparse_linear_layer(layer_description, D, K, batch_size);
       }
     }
     else

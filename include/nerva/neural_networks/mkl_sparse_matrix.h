@@ -494,18 +494,19 @@ mkl::sparse_matrix_csr<Scalar> make_random_matrix(std::size_t rows, std::size_t 
   assert(nonzero_count <= rows * columns);
   mkl::csr_matrix_builder<Scalar> builder(rows, columns, nonzero_count);
 
-  std::size_t remaining = rows * columns;  // the remaining number of positions
-  std::size_t nonzero = nonzero_count;  // the remaining number of nonzero positions
+  std::size_t remaining_positions = rows * columns;  // the remaining number of positions
+  std::size_t remaining_nonzero_positions = nonzero_count;  // the remaining number of nonzero positions
 
   for (std::size_t i = 0; i < rows; i++)
   {
     for (std::size_t j = 0; j < columns; j++)
     {
-      if ((random_real<double>(0, 1, rng) < static_cast<double>(nonzero) / remaining) || (remaining == nonzero))
+      if ((random_real<double>(0, 1, rng) < static_cast<double>(remaining_nonzero_positions) / remaining_positions) || (remaining_positions == remaining_nonzero_positions))
       {
+        remaining_nonzero_positions--;
         builder.add_element(i, j, f());
       }
-      remaining--;
+      remaining_positions--;
     }
   }
 
