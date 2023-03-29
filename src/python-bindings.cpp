@@ -178,6 +178,7 @@ PYBIND11_MODULE(nervalib, m)
     .def("optimize", &dense_linear_layer::optimize)
     .def("initialize_weights", [](dense_linear_layer& layer, weight_initialization w) { initialize_weights(w, layer.W, layer.b, nerva_rng); })
     .def("set_optimizer", [](dense_linear_layer& layer, const std::string& text) { set_optimizer(layer, text); })
+    .def("set_weights_and_bias", [](dense_linear_layer& layer, weight_initialization w) { set_weights_and_bias(layer, w, nerva_rng); })
     ;
 
   py::class_<dense_relu_layer, dense_linear_layer, std::shared_ptr<dense_relu_layer>>(m, "relu_layer")
@@ -277,6 +278,8 @@ PYBIND11_MODULE(nervalib, m)
     .def("weight_count", [](sparse_linear_layer& layer) { return support_size(layer.W); })
     .def("positive_weight_count", [](sparse_linear_layer& layer) { return count_positive_elements(layer.W); })
     .def("negative_weight_count", [](sparse_linear_layer& layer) { return count_negative_elements(layer.W); })
+    .def("set_support_random", [](sparse_linear_layer& layer, scalar density) { set_support_random(layer, density, nerva_rng); })
+    .def("set_weights_and_bias", [](sparse_linear_layer& layer, weight_initialization w) { set_weights_and_bias(layer, w, nerva_rng); })
     .def("prune_magnitude", [](sparse_linear_layer& layer, scalar zeta)
     {
       std::size_t count = std::lround(zeta * static_cast<scalar>(mkl::support_size(layer.W)));
@@ -399,8 +402,8 @@ PYBIND11_MODULE(nervalib, m)
     .def("regrow", &multilayer_perceptron::regrow)
     .def("append_layer", [](multilayer_perceptron& M, const std::shared_ptr<neural_network_layer>& layer) { M.layers.push_back(layer); })
     .def("info", &multilayer_perceptron::info)
-    .def("save_weights", [](const multilayer_perceptron& M, const std::string& filename) { save_weights(M, filename); })
-    .def("load_weights", [](multilayer_perceptron& M, const std::string& filename) { load_weights(M, filename); })
+    .def("save_weights_and_bias", [](const multilayer_perceptron& M, const std::string& filename) { save_weights_and_bias(M, filename); })
+    .def("load_weights_and_bias", [](multilayer_perceptron& M, const std::string& filename) { load_weights_and_bias(M, filename); })
     .def("weights", [](multilayer_perceptron& M) { return mlp_weights(M); })
     .def("bias", [](multilayer_perceptron& M) { return mlp_bias(M); })
     ;

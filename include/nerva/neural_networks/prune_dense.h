@@ -77,7 +77,7 @@ std::size_t prune_magnitude_with_threshold(Matrix& A, std::size_t count, Accept 
 /// \param value The value that is assigned to the pruned elements (default 0)
 /// \return The actual number of elements that have been pruned (i.e. min(count, |A|) )
 template <typename Matrix>
-std::size_t prune_weights(Matrix& A, std::size_t count, typename Matrix::Scalar value = 0)
+std::size_t prune_magnitude(Matrix& A, std::size_t count, typename Matrix::Scalar value = 0)
 {
   return prune_magnitude_with_threshold(A, count, accept_nonzero(), value);
 }

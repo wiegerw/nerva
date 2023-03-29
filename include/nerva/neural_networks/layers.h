@@ -12,6 +12,7 @@
 
 #include "nerva/neural_networks/activation_functions.h"
 #include "nerva/neural_networks/mkl_eigen.h"
+#include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/neural_networks/optimizers.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
@@ -166,7 +167,10 @@ struct linear_layer: public neural_network_layer
     if constexpr (IsSparse)
     {
       DW.reset_support(W);
-      optimizer->reset_support();
+      if (optimizer)
+      {
+        optimizer->reset_support();
+      }
     }
   }
 
@@ -177,6 +181,9 @@ struct linear_layer: public neural_network_layer
   }
 };
 
+using dense_linear_layer = linear_layer<eigen::matrix>;
+using sparse_linear_layer = linear_layer<mkl::sparse_matrix_csr<scalar>>;
+
 template <typename Scalar>
 void initialize_sparse_weights(linear_layer<mkl::sparse_matrix_csr<Scalar>>& layer, double density, std::mt19937& rng)
 {
@@ -186,8 +193,24 @@ void initialize_sparse_weights(linear_layer<mkl::sparse_matrix_csr<Scalar>>& lay
   layer.DW = layer.W;
 }
 
-using dense_linear_layer = linear_layer<eigen::matrix>;
-using sparse_linear_layer = linear_layer<mkl::sparse_matrix_csr<scalar>>;
+template <typename Scalar>
+void set_support_random(linear_layer<mkl::sparse_matrix_csr<Scalar>>& layer, double density, std::mt19937& rng)
+{
+  auto rows = layer.W.rows();
+  auto columns = layer.W.cols();
+  std::size_t size = std::lround(density * rows * columns);
+  layer.W = mkl::make_random_matrix<Scalar>(rows, columns, size, rng);
+  layer.reset_support();
+}
+
+template <typename Matrix>
+void set_weights_and_bias(linear_layer<Matrix>& layer, weight_initialization w, std::mt19937& rng)
+{
+  auto& W = layer.W;
+  auto init = make_weight_initializer(w, W, rng);
+  set_weights(W, [&init]() { return (*init)(); });
+  init->initialize_bias(layer.b);
+}
 
 template <typename Matrix>
 struct sigmoid_layer : public linear_layer<Matrix>

@@ -33,7 +33,7 @@ namespace nerva {
 /// \param rng A random number generator
 /// \param accept A predicate that determines if an element may get a new value
 template <typename Matrix, typename Accept=accept_zero, typename Scalar = scalar>
-void grow(Matrix& A, const std::shared_ptr<weight_initializer>& init, std::size_t count, std::mt19937& rng, Accept accept=Accept())
+void grow_random(Matrix& A, const std::shared_ptr<weight_initializer>& init, std::size_t count, std::mt19937& rng, Accept accept=Accept())
 {
   long N = A.rows() * A.cols();
   Scalar* data = A.data();

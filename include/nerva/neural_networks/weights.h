@@ -27,20 +27,11 @@ struct weight_initializer
 
   virtual ~weight_initializer() = default;
 
-  virtual scalar operator()() const
-  {
-    return 0;
-  }
+  virtual scalar operator()() const = 0;
 
-  virtual void initialize_weights(eigen::matrix& W)
-  {
-    initialize_matrix(W, *this);
-  }
+  virtual void initialize_weights(eigen::matrix& W) const = 0;
 
-  virtual void initialize_weights(mkl::sparse_matrix_csr<scalar>& W)
-  {
-    initialize_matrix(W, *this);
-  }
+  virtual void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) const = 0;
 
   virtual void initialize_bias(eigen::vector& b)
   {
@@ -63,12 +54,12 @@ struct uniform_weight_initializer: public weight_initializer
     return dist(rng);
   }
 
-  void initialize_weights(eigen::matrix& W) override  // TODO: avoid the need for overriding this method
+  void initialize_weights(eigen::matrix& W) const override
   {
     initialize_matrix(W, *this);
   }
 
-  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) override  // TODO: avoid the need for overriding this method
+  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) const override
   {
     initialize_matrix(W, *this);
   }
@@ -90,12 +81,12 @@ struct xavier_weight_initializer: public weight_initializer
     return dist(rng);
   }
 
-  void initialize_weights(eigen::matrix& W) override
+  void initialize_weights(eigen::matrix& W) const override
   {
     initialize_matrix(W, *this);
   }
 
-  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) override
+  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) const override
   {
     initialize_matrix(W, *this);
   }
@@ -117,12 +108,12 @@ struct xavier_normalized_weight_initializer: public weight_initializer
     return dist(rng);
   }
 
-  void initialize_weights(eigen::matrix& W) override
+  void initialize_weights(eigen::matrix& W) const override
   {
     initialize_matrix(W, *this);
   }
 
-  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) override
+  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) const override
   {
     initialize_matrix(W, *this);
   }
@@ -146,12 +137,12 @@ struct he_weight_initializer: public weight_initializer
     return dist(rng);
   }
 
-  void initialize_weights(eigen::matrix& W) override
+  void initialize_weights(eigen::matrix& W) const override
   {
     initialize_matrix(W, *this);
   }
 
-  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) override
+  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) const override
   {
     initialize_matrix(W, *this);
   }
@@ -168,12 +159,12 @@ struct zero_weight_initializer: public weight_initializer
     return scalar(0);
   }
 
-  void initialize_weights(eigen::matrix& W) override
+  void initialize_weights(eigen::matrix& W) const override
   {
     initialize_matrix(W, *this);
   }
 
-  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) override
+  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) const override
   {
     initialize_matrix(W, *this);
   }
@@ -191,12 +182,12 @@ struct ten_weight_initializer: public weight_initializer
     return scalar(10);
   }
 
-  void initialize_weights(eigen::matrix& W) override
+  void initialize_weights(eigen::matrix& W) const override
   {
     initialize_matrix(W, *this);
   }
 
-  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) override
+  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) const override
   {
     initialize_matrix(W, *this);
   }
@@ -223,12 +214,12 @@ struct pytorch_weight_initializer: public weight_initializer
     b.array() = scalar(0.01);  // initialize b with small positive values
   }
 
-  void initialize_weights(eigen::matrix& W) override
+  void initialize_weights(eigen::matrix& W) const override
   {
     initialize_matrix(W, *this);
   }
 
-  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) override
+  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) const override
   {
     initialize_matrix(W, *this);
   }
@@ -331,6 +322,22 @@ void initialize_weights(weight_initialization w, Matrix& W, eigen::vector& b, st
   auto init = make_weight_initializer(w, W, rng);
   init->initialize_weights(W);
   init->initialize_bias(b);
+}
+
+template <typename Matrix, typename Function>
+void set_weights(Matrix& W, Function f)
+{
+  W = Matrix::NullaryExpr(W.rows(), W.cols(), f);
+}
+
+template <typename Scalar, typename Function>
+void set_weights(mkl::sparse_matrix_csr<Scalar>& W, Function f)
+{
+  for (auto& x: W.values())
+  {
+    x = f();
+  }
+  W.construct_csr();
 }
 
 } // namespace nerva

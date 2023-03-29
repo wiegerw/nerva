@@ -210,6 +210,40 @@ std::string layer_density_info(const multilayer_perceptron& M)
 }
 
 inline
+void set_support_random(multilayer_perceptron& M, const std::vector<double>& layer_densities, std::mt19937& rng)
+{
+  std::size_t index = 0;
+  for (auto& layer: M.layers)
+  {
+    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
+    {
+      index++;
+    }
+    if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
+    {
+      set_support_random(*slayer, layer_densities[index++], rng);
+    }
+  }
+}
+
+inline
+void set_weights_and_bias(multilayer_perceptron& M, const std::vector<weight_initialization>& weights, std::mt19937& rng)
+{
+  unsigned int index = 0;
+  for (auto& layer: M.layers)
+  {
+    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
+    {
+      set_weights_and_bias(*dlayer, weights[index++], rng);
+    }
+    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
+    {
+      set_weights_and_bias(*slayer, weights[index++], rng);
+    }
+  }
+}
+
+inline
 std::vector<eigen::matrix> mlp_weights(const multilayer_perceptron& M)
 {
   std::vector<eigen::matrix> result;
@@ -248,7 +282,7 @@ std::vector<eigen::matrix> mlp_bias(const multilayer_perceptron& M)
 // Precondition: the python interpreter must be running.
 // This can be enforced using `py::scoped_interpreter guard{};`
 inline
-void save_weights(const multilayer_perceptron& M, const std::string& filename)
+void save_weights_and_bias(const multilayer_perceptron& M, const std::string& filename)
 {
   namespace py = pybind11;
   NERVA_LOG(log::verbose) << "Saving weights and bias to file " << filename << std::endl;
@@ -287,7 +321,7 @@ void save_weights(const multilayer_perceptron& M, const std::string& filename)
 // Precondition: the python interpreter must be running.
 // This can be enforced using `py::scoped_interpreter guard{};`
 inline
-void load_weights(multilayer_perceptron& M, const std::string& filename)
+void load_weights_and_bias(multilayer_perceptron& M, const std::string& filename)
 {
   namespace py = pybind11;
   NERVA_LOG(log::verbose) << "Loading weights and bias from file " << filename << std::endl;

@@ -10,6 +10,7 @@
 #ifndef NERVA_NEURAL_NETWORKS_MKL_SPARSE_MATRIX_H
 #define NERVA_NEURAL_NETWORKS_MKL_SPARSE_MATRIX_H
 
+#include "nerva/neural_networks/functions.h"
 #include "nerva/neural_networks/mkl_dense_matrix.h"
 #include "nerva/utilities/print.h"
 #include "nerva/utilities/random.h"
@@ -480,6 +481,36 @@ struct csr_matrix_builder
     return mkl::sparse_matrix_csr<Scalar>(rows, columns, row_index, col_index, values);
   }
 };
+
+/// Creates a random sparse matrix with `nonzero_count` elements. The elements are initialized using the function `f`.
+/// \param rows The number of rows of the matrix
+/// \param columns The number of columns of the matrix
+/// \param nonzero_count The size of the support
+/// \param rng A random number generator
+/// \param f A function that is used to assign initial values to the elements. By default elements are initialized with the value 0.
+template <typename Scalar, typename Function = zero<Scalar>>
+mkl::sparse_matrix_csr<Scalar> make_random_matrix(std::size_t rows, std::size_t columns, std::size_t nonzero_count, std::mt19937& rng, Function f = Function())
+{
+  assert(nonzero_count <= rows * columns);
+  mkl::csr_matrix_builder<Scalar> builder(rows, columns, nonzero_count);
+
+  std::size_t remaining = rows * columns;  // the remaining number of positions
+  std::size_t nonzero = nonzero_count;  // the remaining number of nonzero positions
+
+  for (std::size_t i = 0; i < rows; i++)
+  {
+    for (std::size_t j = 0; j < columns; j++)
+    {
+      if ((random_real<double>(0, 1, rng) < static_cast<double>(nonzero) / remaining) || (remaining == nonzero))
+      {
+        builder.add_element(i, j, f());
+      }
+      remaining--;
+    }
+  }
+
+  return builder.result();
+}
 
 // calls f(i, j, A(i,j)) for each valid index (i, j) in A
 template <typename T, typename Function>

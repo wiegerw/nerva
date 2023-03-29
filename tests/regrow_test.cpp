@@ -71,7 +71,7 @@ void check_prune_weights(const eigen::matrix& A,
   CHECK_EQ(expected_threshold, threshold);
   CHECK_EQ(expected_threshold_count, threshold_count);
   auto A_pruned = A;
-  auto prune_count = prune_weights(A_pruned, count);
+  auto prune_count = prune_magnitude(A_pruned, count);
   eigen::print_matrix("A_pruned", A_pruned);
   CHECK_EQ(prune_count, count);
   CHECK_EQ(A_pruned, expected);
@@ -149,7 +149,7 @@ TEST_CASE("test_regrow")
   CHECK_EQ(5, prune_count);
 
   auto A_grow = A_pruned;
-  grow(A_grow, init, prune_count, rng);
+  grow_random(A_grow, init, prune_count, rng);
   eigen::print_matrix("A_grow", A_grow);
 
   long m = A.rows();

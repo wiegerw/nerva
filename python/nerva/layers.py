@@ -48,6 +48,9 @@ class Dense(Layer):
         N = self._layer.W.size
         return f'{N}/{N} (100%)'
 
+    def set_weights_and_bias(self, init: WeightInitializer) -> None:
+        self._layer.set_weights_and_bias(init.compile())
+
     def compile(self, batch_size: int, dropout_rate: float=0.0):
         """
         Compiles the model into a C++ object
@@ -165,6 +168,12 @@ class Sparse(Layer):
         layer.initialize_weights(self.weight_initializer.compile())
         self._layer = layer
         return layer
+
+    def set_support_random(self, density: float) -> None:
+        self._layer.set_support_random(density)
+
+    def set_weights_and_bias(self, init: WeightInitializer) -> None:
+        self._layer.set_weights_and_bias(init.compile())
 
     def initialize_weights(self, init: WeightInitializer) -> None:
         self._layer.initialize_weights(init.compile())
@@ -300,8 +309,15 @@ class Sequential(object):
         layers = ',\n  '.join([str(layer) for layer in self.layers])
         return f'Sequential(\n  {layers}\n)'
 
-    # def info(self):
-    #     self.compiled_model.info('M')
+    def set_support_random(self):
+        for layer in self.layers:
+            if isinstance(layer, Sparse):
+                layer.set_support_random(layer.density)
+
+    def set_weights_and_bias(self):
+        for layer in self.layers:
+            if isinstance(layer, Union[Dense, Sparse]):
+                layer.set_weights_and_bias(layer.weight_initializer)
 
     def load_weights(self, filename: str):
         self.compiled_model.import_weights_npz(filename)

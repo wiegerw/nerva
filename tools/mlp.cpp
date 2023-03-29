@@ -66,29 +66,22 @@ weight_initialization parse_weight_char(char c)
   throw std::runtime_error(std::string("could not parse weight char '") + c + "'");
 }
 
-template <typename RandomNumberGenerator>
-void set_weights(multilayer_perceptron& M, std::string weights_initialization, const std::string& architecture, RandomNumberGenerator rng)
+inline
+std::vector<weight_initialization> parse_weights(std::string weights_initialization, const std::vector<std::string>& linear_layer_specifications)
 {
   // use default weights if the weights initialization was unspecified
   if (weights_initialization.empty())
   {
-    auto B_count = std::count(architecture.begin(), architecture.end(), 'B');
-    std::size_t count = M.layers.size() - B_count;
-    weights_initialization = std::string(count, 'd');
+    weights_initialization = std::string(linear_layer_specifications.size(), 'd');
   }
 
-  unsigned int index = 0;
-  for (auto& layer: M.layers)
+  std::vector<weight_initialization> weights;
+  for (char c: weights_initialization)
   {
-    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
-    {
-      initialize_weights(parse_weight_char(weights_initialization[index++]), dlayer->W, dlayer->b, rng);
-    }
-    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
-    {
-      initialize_weights(parse_weight_char(weights_initialization[index++]), slayer->W, slayer->b, rng);
-    }
- }
+    weights.push_back(parse_weight_char(c));
+  }
+
+  return weights;
 }
 
 inline
@@ -230,16 +223,17 @@ class tool: public command_line_tool
 
       if (load_weights_file.empty())
       {
-        set_weights(M, options.weights_initialization, options.architecture, rng);
+        auto weights = parse_weights(options.weights_initialization, linear_layer_specifications);
+        set_weights_and_bias(M, weights, rng);
       }
       else
       {
-        load_weights(M, load_weights_file);
+        load_weights_and_bias(M, load_weights_file);
       }
 
       if (!save_weights_file.empty())
       {
-        save_weights(M, save_weights_file);
+        save_weights_and_bias(M, save_weights_file);
       }
 
       std::shared_ptr<loss_function> loss = parse_loss_function(options.loss_function);

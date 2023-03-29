@@ -143,6 +143,16 @@ struct less_magnitude
   }
 };
 
+// f(x) = 0
+template <typename T>
+struct zero
+{
+  T operator()() const
+  {
+    return 0;
+  }
+};
+
 } // namespace nerva
 
 #endif // NERVA_NEURAL_NETWORKS_FUNCTIONS_H
