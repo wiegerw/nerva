@@ -77,7 +77,7 @@ class MLPPyTorch(nn.Module):
         return f'{super().__str__()}\nscheduler = {self.learning_rate}\nlayer densities: {", ".join(density_info)}\n'
 
 
-class MLPPyTorchTrimmedRelu(MLPPyTorch):
+class MLPPyTorchTRelu(MLPPyTorch):
     """ PyTorch Multilayer perceptron that supports sparse layers using binary masks.
         It uses a trimmed ReLU activation function.
     """

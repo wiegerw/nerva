@@ -215,7 +215,7 @@ void set_support_random(multilayer_perceptron& M, const std::vector<double>& lay
   std::size_t index = 0;
   for (auto& layer: M.layers)
   {
-    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
+    if (dynamic_cast<dense_linear_layer*>(layer.get()))
     {
       index++;
     }

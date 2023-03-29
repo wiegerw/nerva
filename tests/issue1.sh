@@ -19,4 +19,4 @@ print_header "Nerva nonzero bias"
 ../tools/dist/mlp --seed=1 --overall-density=0.001 --sizes=3072,1024,1024,1024,10 --batch-size=100 --epochs=3 '--learning-rate=constant(0.1)' '--optimizer=nesterov(0.9)' --layers="ReLU;ReLU;ReLU;Linear" --weights=pppp --loss=softmax-cross-entropy --threads=4 --no-shuffle --verbose --dataset=cifar10 2>&1 | tee issue1b.log
 
 print_header "Nerva nonzero bias + trimmed ReLU"
-../tools/dist/mlp --seed=1 --overall-density=0.001 --sizes=3072,1024,1024,1024,10 --batch-size=100 --epochs=3 '--learning-rate=constant(0.1)' '--optimizer=nesterov(0.9)' --layers="TrimmedReLU(1e-30);TrimmedReLU(1e-30);TrimmedReLU(1e-30);Linear" --weights=pppp --loss=softmax-cross-entropy --threads=4 --no-shuffle --verbose --dataset=cifar10 2>&1 | tee issue1c.log
+../tools/dist/mlp --seed=1 --overall-density=0.001 --sizes=3072,1024,1024,1024,10 --batch-size=100 --epochs=3 '--learning-rate=constant(0.1)' '--optimizer=nesterov(0.9)' --layers="TReLU(1e-30);TReLU(1e-30);TReLU(1e-30);Linear" --weights=pppp --loss=softmax-cross-entropy --threads=4 --no-shuffle --verbose --dataset=cifar10 2>&1 | tee issue1c.log

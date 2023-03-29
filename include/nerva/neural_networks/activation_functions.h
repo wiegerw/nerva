@@ -242,7 +242,7 @@ struct trimmed_relu_activation
 
   [[nodiscard]] std::string to_string() const
   {
-    return fmt::format("TrimmedReLU({})", epsilon);
+    return fmt::format("TReLU({})", epsilon);
   }
 };
 

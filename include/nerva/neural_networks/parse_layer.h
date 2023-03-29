@@ -33,7 +33,7 @@ namespace nerva {
 // HyperbolicTangent
 // AllRelu(<alpha>)
 // LeakyRelu(<alpha>)
-// TrimmedReLU(<epsilon>)
+// TReLU(<epsilon>)
 //
 // BatchNorm
 // Dropout(<rate>)
@@ -186,7 +186,7 @@ struct layer_builder
       scalar alpha = parse_scalar_argument(layer_description);
       return std::make_shared<dense_leaky_relu_layer>(alpha, D, K, batch_size);
     }
-    else if (utilities::starts_with(layer_description, "TrimmedReLU"))
+    else if (utilities::starts_with(layer_description, "TReLU"))
     {
       scalar epsilon = parse_scalar_argument(layer_description);
       return std::make_shared<dense_trimmed_relu_layer>(epsilon, D, K, batch_size);
@@ -231,7 +231,7 @@ struct layer_builder
       scalar alpha = parse_scalar_argument(layer_description);
       return std::make_shared<sparse_leaky_relu_layer>(alpha, D, K, batch_size);
     }
-    else if (utilities::starts_with(layer_description, "TrimmedReLU"))
+    else if (utilities::starts_with(layer_description, "TReLU"))
     {
       scalar epsilon = parse_scalar_argument(layer_description);
       return std::make_shared<sparse_trimmed_relu_layer>(epsilon, D, K, batch_size);
@@ -275,7 +275,7 @@ struct layer_builder
       scalar alpha = parse_scalar_argument(layer_description);
       return std::make_shared<dense_leaky_relu_dropout_layer>(alpha, D, K, batch_size, dropout);
     }
-    else if (utilities::starts_with(layer_description, "TrimmedReLU"))
+    else if (utilities::starts_with(layer_description, "TReLU"))
     {
       scalar epsilon = parse_scalar_argument(layer_description);
       return std::make_shared<dense_trimmed_relu_dropout_layer>(epsilon, D, K, batch_size, dropout);

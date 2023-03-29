@@ -21,14 +21,14 @@ import nervalib
 from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
 from testing.torch_models import make_torch_scheduler
-from testing.models import MLPPyTorch, MLPNerva, MLPPyTorchTrimmedRelu
+from testing.models import MLPPyTorch, MLPNerva, MLPPyTorchTRelu
 from testing.training import train_nerva, train_torch, compute_accuracy_torch, compute_accuracy_nerva, \
     compute_densities, train_torch_preprocessed, train_nerva_preprocessed, measure_inference_time_torch, \
     measure_inference_time_nerva
 
 
 def make_torch_model(args, layer_sizes, densities):
-    M = MLPPyTorch(layer_sizes, densities) if args.trim_relu == 0 else MLPPyTorchTrimmedRelu(layer_sizes, densities, args.trim_relu)
+    M = MLPPyTorch(layer_sizes, densities) if args.trim_relu == 0 else MLPPyTorchTRelu(layer_sizes, densities, args.trim_relu)
     M.optimizer = optim.SGD(M.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
     M.loss = nn.CrossEntropyLoss()
     M.learning_rate = make_torch_scheduler(args, M.optimizer)
@@ -45,7 +45,7 @@ def make_nerva_model(args, layer_sizes, layer_densities):
     if args.trim_relu == 0:
         activations = [nerva.layers.ReLU()] * (n_layers - 1) + [nerva.layers.NoActivation()]
     else:
-        activations = [nerva.layers.TrimmedReLU(args.trim_relu)] * (n_layers - 1) + [nerva.layers.NoActivation()]
+        activations = [nerva.layers.TReLU(args.trim_relu)] * (n_layers - 1) + [nerva.layers.NoActivation()]
     optimizer = make_nerva_optimizer(args.momentum, args.nesterov)
     optimizers = [optimizer] * n_layers
     return MLPNerva(layer_sizes, layer_densities, optimizers, activations, loss, learning_rate, args.batch_size)

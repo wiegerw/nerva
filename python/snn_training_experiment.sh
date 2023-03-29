@@ -18,7 +18,7 @@ trim_relu=0
 
 #--- larger experiment with 3 hidden layers and trimmed ReLU ---#
 sizes="3072,1024,1024,1024,10"
-layers="TrimmedReLU(1e-30);TrimmedReLU(1e-30);TrimmedReLU(1e-30);Linear"
+layers="TReLU(1e-30);TReLU(1e-30);TReLU(1e-30);Linear"
 weights=XXXX
 trim_relu="1e-30"
 

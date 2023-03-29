@@ -31,12 +31,12 @@ class LogSoftmax(Activation):
         return 'LogSoftmax()'
 
 
-class TrimmedReLU(Activation):
+class TReLU(Activation):
     def __init__(self, epsilon: float):
         self.epsilon = epsilon
 
     def __str__(self):
-        return f'TrimmedReLU({self.epsilon})'
+        return f'TReLU({self.epsilon})'
 
 
 class LeakyReLU(Activation):

@@ -4,7 +4,7 @@
 
 from typing import Optional, List, Union, Tuple
 from nerva.activation import Activation, NoActivation, ReLU, AllReLU, Softmax, LogSoftmax, Sigmoid, HyperbolicTangent, \
-    LeakyReLU, TrimmedReLU
+    LeakyReLU, TReLU
 from nerva.optimizers import Optimizer, GradientDescent
 from nerva.weights import WeightInitializer, Xavier
 import nervalib
@@ -77,7 +77,7 @@ class Dense(Layer):
                 layer = nervalib.sigmoid_layer(self.input_size, self.units, batch_size)
             elif isinstance(self.activation, Softmax):
                 layer = nervalib.softmax_layer(self.input_size, self.units, batch_size)
-            elif isinstance(self.activation, TrimmedReLU):
+            elif isinstance(self.activation, TReLU):
                 layer = nervalib.trimmed_relu_layer(self.activation.epsilon, self.input_size, self.units, batch_size)
         else:
             if isinstance(self.activation, NoActivation):
@@ -159,7 +159,7 @@ class Sparse(Layer):
                 layer = nervalib.sparse_sigmoid_layer(self.input_size, self.units, batch_size, self.density)
             elif isinstance(self.activation, Softmax):
                 layer = nervalib.sparse_softmax_layer(self.input_size, self.units, batch_size, self.density)
-            elif isinstance(self.activation, TrimmedReLU):
+            elif isinstance(self.activation, TReLU):
                 layer = nervalib.sparse_trimmed_relu_layer(self.activation.epsilon, self.input_size, self.units, batch_size, self.density)
 
         if not layer:
