@@ -284,14 +284,8 @@ matrix_mkl mkl_sparse_dense_mat_mult(SparseMatrix& A, MKLMatrix& B)
 {
   assert(A.cols() == B.rows());
 
-  // m Specifies the number of rows of the matrix A and of the matrix C.
-  // n Specifies the number of columns of the matrix B and the number of columns of the matrix C.
-  MKL_INT m = A.rows();
-  MKL_INT n = B.cols();
-  MKL_INT k = A.cols();
-
   // the result
-  matrix_mkl C(m, n);
+  matrix_mkl C(A.rows(), B.cols());
   C.fill(0); // TODO: is this needed?
 
   double alpha = 1.0;
@@ -462,7 +456,7 @@ TEST_CASE("test_csr_matrix_standalone")
   //    {5}
   //  }
   int B_rows = 3;
-  int B_cols = 1;
+  int B_cols [[maybe_unused]] = 1;
   std::array<double, 3> B_values = { 1, 4, 5 };
 
   // dense matrix C {
@@ -832,7 +826,7 @@ TEST_CASE("test_fill_matrix")
   X = mkl::sparse_matrix_csr<scalar>(6, 4, density, rng, scalar(2));
 
   sparse_linear_layer layer(D, K, Q);
-  initialize_sparse_weights<scalar>(layer, density, rng);
+  set_support_random(layer, density, rng);
 }
 
 struct counter

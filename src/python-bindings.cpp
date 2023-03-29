@@ -256,12 +256,7 @@ PYBIND11_MODULE(nervalib, m)
     ;
 
   py::class_<sparse_linear_layer, neural_network_layer, std::shared_ptr<linear_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_linear_layer")
-    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar density)
-                  {
-                    auto layer = std::make_shared<sparse_linear_layer>(D, K, batch_size);
-                    initialize_sparse_weights<scalar>(*layer, density, nerva_rng);
-                    return layer;
-                  }))
+    .def(py::init<std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     .def_readwrite("W", &sparse_linear_layer::W)
     .def_readwrite("DW", &sparse_linear_layer::DW)
     .def_readwrite("b", &sparse_linear_layer::b)
@@ -300,76 +295,36 @@ PYBIND11_MODULE(nervalib, m)
     })
     ;
 
-  py::class_<sparse_hyperbolic_tangent_layer, sparse_linear_layer, std::shared_ptr<hyperbolic_tangent_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_hyperbolic_tangent_layer")
-    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar density)
-                  {
-                    auto layer = std::make_shared<sparse_hyperbolic_tangent_layer>(D, K, batch_size);
-                    initialize_sparse_weights<scalar>(*layer, density, nerva_rng);
-                    return layer;
-                  }))
+  py::class_<sparse_hyperbolic_tangent_layer, sparse_linear_layer, std::shared_ptr<sparse_hyperbolic_tangent_layer>>(m, "sparse_hyperbolic_tangent_layer")
+    .def(py::init<std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
 
-  py::class_<sparse_relu_layer, sparse_linear_layer, std::shared_ptr<relu_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_relu_layer")
-    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar density)
-                  {
-                    auto layer = std::make_shared<sparse_relu_layer>(D, K, batch_size);
-                    initialize_sparse_weights<scalar>(*layer, density, nerva_rng);
-                    return layer;
-                  }))
+  py::class_<sparse_relu_layer, sparse_linear_layer, std::shared_ptr<sparse_relu_layer>>(m, "sparse_relu_layer")
+    .def(py::init<std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
 
-  py::class_<sparse_trimmed_relu_layer, sparse_linear_layer, std::shared_ptr<trimmed_relu_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_trimmed_relu_layer")
-    .def(py::init([](scalar epsilon, std::size_t D, std::size_t K, std::size_t batch_size, scalar density)
-                  {
-                    auto layer = std::make_shared<sparse_trimmed_relu_layer>(epsilon, D, K, batch_size);
-                    initialize_sparse_weights<scalar>(*layer, density, nerva_rng);
-                    return layer;
-                  }))
+  py::class_<sparse_trimmed_relu_layer, sparse_linear_layer, std::shared_ptr<sparse_trimmed_relu_layer>>(m, "sparse_trimmed_relu_layer")
+    .def(py::init<scalar, std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
 
-  py::class_<sparse_leaky_relu_layer, sparse_linear_layer, std::shared_ptr<leaky_relu_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_leaky_relu_layer")
-    .def(py::init([](scalar alpha, std::size_t D, std::size_t K, std::size_t batch_size, scalar density)
-                  {
-                    auto layer = std::make_shared<sparse_leaky_relu_layer>(D, K, batch_size);
-                    initialize_sparse_weights<scalar>(*layer, density, nerva_rng);
-                    return layer;
-                  }))
+  py::class_<sparse_leaky_relu_layer, sparse_linear_layer, std::shared_ptr<sparse_leaky_relu_layer>>(m, "sparse_leaky_relu_layer")
+    .def(py::init<scalar, std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
 
-  py::class_<sparse_all_relu_layer, sparse_linear_layer, std::shared_ptr<all_relu_layer<mkl::sparse_matrix_csr<scalar>>>>(m, "sparse_all_relu_layer")
-    .def(py::init([](scalar alpha, std::size_t D, std::size_t K, std::size_t batch_size, scalar density)
-                  {
-                    auto layer = std::make_shared<sparse_all_relu_layer>(D, K, batch_size);
-                    initialize_sparse_weights<scalar>(*layer, density, nerva_rng);
-                    return layer;
-                  }))
+  py::class_<sparse_all_relu_layer, sparse_linear_layer, std::shared_ptr<sparse_all_relu_layer>>(m, "sparse_all_relu_layer")
+    .def(py::init<scalar, std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
 
   py::class_<sparse_sigmoid_layer, sparse_linear_layer, std::shared_ptr<sparse_sigmoid_layer>>(m, "sparse_sigmoid_layer")
-    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar density)
-                  {
-                    auto layer = std::make_shared<sparse_sigmoid_layer>(D, K, batch_size);
-                    initialize_sparse_weights<scalar>(*layer, density, nerva_rng);
-                    return layer;
-                  }))
+    .def(py::init<std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
 
   py::class_<sparse_softmax_layer, sparse_linear_layer, std::shared_ptr<sparse_softmax_layer>>(m, "sparse_softmax_layer")
-    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar density)
-                  {
-                    auto layer = std::make_shared<sparse_softmax_layer>(D, K, batch_size);
-                    initialize_sparse_weights<scalar>(*layer, density, nerva_rng);
-                    return layer;
-                  }))
+    .def(py::init<std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
 
   py::class_<sparse_log_softmax_layer, sparse_linear_layer, std::shared_ptr<sparse_log_softmax_layer>>(m, "sparse_log_softmax_layer")
-    .def(py::init([](std::size_t D, std::size_t K, std::size_t batch_size, scalar density)
-                  {
-                    auto layer = std::make_shared<sparse_log_softmax_layer>(D, K, batch_size);
-                    initialize_sparse_weights<scalar>(*layer, density, nerva_rng);
-                    return layer;
-                  }))
+    .def(py::init<std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
 
   //--- batch normalization layers ---//
