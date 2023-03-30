@@ -114,6 +114,7 @@ class tool: public command_line_tool
     bool no_shuffle = false;
     bool no_statistics = false;
     bool info = false;
+    bool use_global_timer = false;
 
     void add_options(lyra::cli& cli) override
     {
@@ -159,11 +160,13 @@ class tool: public command_line_tool
       // print options
       cli |= lyra::opt(options.precision, "value")["--precision"]("The precision that is used for printing.");
       cli |= lyra::opt(info)["--info"]("print some info about the multilayer_perceptron's");
+      cli |= lyra::opt(use_global_timer)["--timer"]("print timer messages");
 
       // regrow (experimental!)
       cli |= lyra::opt(options.regrow_rate, "value")["--zeta"]("The regrow rate, use 0 for no regrow.");
       cli |= lyra::opt(options.regrow_separate_positive_negative)["--separate"]("Separate negative and positive weights for regrow");
 
+      // miscellaneous
       cli |= lyra::opt(options.threads, "value")["--threads"]("The number of threads used by Eigen.");
       cli |= lyra::opt(options.gradient_step, "value")["--gradient-step"]("If positive, gradient checks will be done with the given step size");
     }
@@ -185,6 +188,10 @@ class tool: public command_line_tool
       if (no_statistics)
       {
         options.statistics = false;
+      }
+      if (use_global_timer)
+      {
+        global_timer_enable();
       }
 
       std::mt19937 rng{options.seed};

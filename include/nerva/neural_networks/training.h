@@ -18,7 +18,7 @@
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
 #include "nerva/utilities/print.h"
-#include "nerva/utilities/stopwatch.h"
+#include "nerva/neural_networks/global_timer.h"
 #include "fmt/format.h"
 #include <algorithm>
 #include <iomanip>
@@ -28,6 +28,8 @@ namespace nerva {
 template <typename EigenMatrix>
 double compute_accuracy(multilayer_perceptron& M, const EigenMatrix& Xtest, const EigenMatrix& Ttest, long Q)
 {
+  global_timer_suspend();
+
   auto is_correct = [](const eigen::vector& y, const eigen::vector& t)
   {
     auto i = std::max_element(y.begin(), y.end()) - y.begin(); // i is the index of the largest element
@@ -56,12 +58,17 @@ double compute_accuracy(multilayer_perceptron& M, const EigenMatrix& Xtest, cons
       }
     }
   }
+
+  global_timer_resume();
+
   return static_cast<double>(total_correct) / N;
 }
 
 inline
 double compute_loss(multilayer_perceptron& M, const std::shared_ptr<loss_function>& loss, const eigen::matrix& X, const eigen::matrix& T, long Q)
 {
+  global_timer_suspend();
+
   long N = X.cols(); // the number of examples
   long L = T.rows(); // the number of outputs
   auto K = N / Q;    // the number of batches
@@ -76,6 +83,9 @@ double compute_loss(multilayer_perceptron& M, const std::shared_ptr<loss_functio
     M.feedforward(Xbatch, Ybatch);
     total_loss += loss->value(Ybatch, Tbatch);
   }
+
+  global_timer_resume();
+
   return total_loss / N; // return the average loss
 }
 

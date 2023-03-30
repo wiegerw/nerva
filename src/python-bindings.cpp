@@ -10,6 +10,7 @@
 #include "nerva/neural_networks/batch_normalization_layer.h"
 #include "nerva/datasets/dataset.h"
 #include "nerva/neural_networks/dropout_layers.h"
+#include "nerva/neural_networks/global_timer.h"
 #include "nerva/neural_networks/learning_rate_schedulers.h"
 #include "nerva/neural_networks/multilayer_perceptron.h"
 #include "nerva/neural_networks/random.h"
@@ -425,6 +426,21 @@ PYBIND11_MODULE(nervalib, m)
   /////////////////////////////////////////////////////////////////////////
 
   m.def("manual_seed", manual_seed);
+
+  /////////////////////////////////////////////////////////////////////////
+  //                       global timer
+  /////////////////////////////////////////////////////////////////////////
+
+  m.def("global_timer_enable", global_timer_enable);
+  m.def("global_timer_disable", global_timer_disable);
+  m.def("global_timer_suspend", global_timer_suspend);
+  m.def("global_timer_resume", global_timer_resume);
+  m.def("global_timer_reset", global_timer_reset);
+  m.def("global_timer_display", global_timer_display);
+
+  /////////////////////////////////////////////////////////////////////////
+  //                       version
+  /////////////////////////////////////////////////////////////////////////
 
   m.attr("__version__") = "0.12";
 }

@@ -17,6 +17,7 @@ import nerva.learning_rate
 import nerva.loss
 import nerva.optimizers
 import nerva.random
+import nerva.utilities
 import nervalib
 from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
@@ -86,6 +87,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
 
     # load/save weights
+    cmdline_parser.add_argument('--weights', type=str, help='The function used for initializing weigths: Xavier, XavierNormalized, He, PyTorch')
     cmdline_parser.add_argument('--save-weights', type=str, help='Save weights and bias to a file in .npz format')
     cmdline_parser.add_argument('--load-weights', type=str, help='Load weights and bias from a file in .npz format')
 
@@ -115,17 +117,17 @@ def check_command_line_arguments(args):
 
 
 def print_command_line_arguments(args):
-    print("python3 " + " ".join(shlex.quote(arg) if " " in arg else arg for arg in sys.argv))
-    # print('')
-    # for key, value in vars(args).items():
-    #     print(f'{key} = {value}')
-    print('\n')
+    print("python3 " + " ".join(shlex.quote(arg) if " " in arg else arg for arg in sys.argv) + '\n')
 
 
 def initialize_frameworks(args):
     if args.seed:
         torch.manual_seed(args.seed)
         nerva.random.manual_seed(args.seed)
+
+    if args.threads:
+        print(f'using {args.threads} threads')
+        nerva.utilities.set_num_threads(args.threads)
 
     torch.set_printoptions(precision=args.precision, edgeitems=args.edgeitems, threshold=5, sci_mode=False, linewidth=160)
 
@@ -166,7 +168,7 @@ def main():
         print(M1)
 
         if args.save_weights:
-            M1.save_weights(args.save_weights)
+            M1.save_weights_and_bias(args.save_weights)
 
         print('\n=== Training PyTorch model ===')
         if args.preprocessed:
@@ -179,7 +181,7 @@ def main():
         print(M2)
 
         if args.load_weights:
-            M2.load_weights(args.load_weights)
+            M2.load_weights_and_bias(args.load_weights)
 
         print('\n=== Training Nerva model ===')
         if args.preprocessed:

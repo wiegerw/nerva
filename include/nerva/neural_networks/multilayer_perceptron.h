@@ -21,17 +21,13 @@
 #include "nerva/neural_networks/regrow.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
-#include "nerva/utilities/stopwatch.h"
+#include "nerva/neural_networks/global_timer.h"
 #include "fmt/format.h"
 #include <pybind11/embed.h>
 #include <cmath>
 #include <functional>
 #include <memory>
 #include <sstream>
-
-#ifdef NERVA_TIMING
-inline std::size_t timing_index = 0;
-#endif
 
 namespace nerva {
 
@@ -51,38 +47,30 @@ struct multilayer_perceptron
 
   void feedforward(eigen::matrix& result)
   {
+    global_timer_reset();
     for (std::size_t i = 0; i < layers.size() - 1; i++)
     {
       layers[i]->feedforward(layers[i+1]->X);
     }
     layers.back()->feedforward(result);
+    global_timer_display("feedforward");
   }
 
   void feedforward(const eigen::matrix& X, eigen::matrix& result)
   {
-#ifdef NERVA_TIMING
-    utilities::stopwatch watch;
-#endif
     layers.front()->X = X;
     feedforward(result);
-#ifdef NERVA_TIMING
-    auto seconds = watch.seconds(); std::cout << " feedforward" << timing_index++ << " " << seconds << std::endl;
-#endif
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY)
   {
-#ifdef NERVA_TIMING
-    utilities::stopwatch watch;
-#endif
+    global_timer_reset();
     layers.back()->backpropagate(Y, DY);
     for (auto i = layers.size() - 1; i > 0; i--)
     {
       layers[i - 1]->backpropagate(layers[i]->X, layers[i]->DX);
     }
-#ifdef NERVA_TIMING
-    auto seconds = watch.seconds(); std::cout << "backpropagate" << timing_index++ << " " << seconds << std::endl;
-#endif
+    global_timer_display("backpropagate");
   }
 
   void renew_dropout_mask(std::mt19937& rng)

@@ -8,7 +8,7 @@ from typing import List, Optional
 
 import numpy as np
 
-from nerva.utilities import StopWatch
+from nerva.utilities import StopWatch, global_timer_suspend, global_timer_resume
 from testing.datasets import create_npz_dataloaders
 from testing.numpy_utils import to_numpy, to_one_hot_numpy, l1_norm
 from testing.models import MLPPyTorch, MLPNerva
@@ -36,6 +36,7 @@ def compute_loss_torch(M: MLPPyTorch, data_loader):
 
 
 def compute_accuracy_nerva(M: MLPNerva, data_loader):
+    global_timer_suspend()
     N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
     for X, T in data_loader:
@@ -44,10 +45,12 @@ def compute_accuracy_nerva(M: MLPNerva, data_loader):
         Y = M.feedforward(X)
         predicted = Y.argmax(axis=0)  # the predicted classes for the batch
         total_correct += (predicted == T).sum().item()
+    global_timer_resume()
     return total_correct / N
 
 
 def compute_loss_nerva(M: MLPNerva, data_loader):
+    global_timer_suspend()
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
     for X, T in data_loader:
@@ -55,6 +58,7 @@ def compute_loss_nerva(M: MLPNerva, data_loader):
         T = to_one_hot_numpy(T, 10)
         Y = M.feedforward(X)
         total_loss += M.loss.value(Y, T)
+    global_timer_resume()
     return total_loss / N
 
 

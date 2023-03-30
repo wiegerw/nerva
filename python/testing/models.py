@@ -51,7 +51,7 @@ class MLPPyTorch(nn.Module):
         x = self.layers[-1](x)  # output layer does not have an activation function
         return x
 
-    def save_weights(self, filename: str):
+    def save_weights_and_bias(self, filename: str):
         print(f'Saving weights to {filename}')
         data = {}
         for i, layer in enumerate(self.layers):
@@ -59,7 +59,7 @@ class MLPPyTorch(nn.Module):
             data[f'b{i + 1}'] = layer.bias.data
         save_dict_to_npz(filename, data)
 
-    def load_weights(self, filename: str):
+    def load_weights_and_bias(self, filename: str):
         data = load_dict_from_npz(filename)
         for i, layer in enumerate(self.layers):
             layer.weight.data = data[f'W{i + 1}']
@@ -118,7 +118,7 @@ class MLPNerva(nerva.layers.Sequential):
 
         self.compile(layer_sizes[0], batch_size)
 
-    def save_weights(self, filename: str):
+    def save_weights_and_bias(self, filename: str):
         """
         Saves the weights and biases to a file in .npz format
 
@@ -127,14 +127,14 @@ class MLPNerva(nerva.layers.Sequential):
         """
         self.compiled_model.save_weights(filename)
 
-    def load_weights(self, filename: str):
+    def load_weights_and_bias(self, filename: str):
         """
         Loads the weights and biases from a file in .npz format
 
         The weight matrices are stored using the keys W1, W2, ... and the bias vectors using the keys "b1, b2, ..."
         :param filename: the name of the file
         """
-        self.compiled_model.load_weights(filename)
+        self.compiled_model.load_weights_and_bias(filename)
 
     def __str__(self):
         density_info = [layer.density_info() for layer in self.layers]

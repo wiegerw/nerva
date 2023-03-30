@@ -10,7 +10,6 @@
 #ifndef NERVA_UTILITIES_STOPWATCH_H
 #define NERVA_UTILITIES_STOPWATCH_H
 
-#include "fmt/format.h"
 #include <chrono>
 #include <iostream>
 #include <utility>
@@ -47,20 +46,6 @@ class stopwatch
 
   private:
     std::chrono::time_point<std::chrono::steady_clock> m_timestamp;
-};
-
-// Stopwatch that maintains a global counter, and supports displaying a message.
-// Every time the display method is called, the counter is incremented.
-class stopwatch_with_counter: public stopwatch
-{
-  static inline std::size_t counter = 0; // A global static counter
-
-  public:
-    void display(const std::string& label) const
-    {
-      auto s = seconds();
-      std::cout << fmt::format("{}-{} {:.6f}s", label, stopwatch_with_counter::counter++, s) << std::endl;
-    }
 };
 
 } // namespace nerva::utilities
