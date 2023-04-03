@@ -178,6 +178,7 @@ struct linear_layer: public neural_network_layer
   {
     compare_sizes(W, W1);
     W = W1;
+    reset_support();
   }
 };
 
