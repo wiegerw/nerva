@@ -168,14 +168,17 @@ def main():
         print('=== PyTorch model ===')
         print(M1)
 
+        if args.load_weights:
+            M1.load_weights_and_bias(args.load_weights)
         if args.save_weights:
             M1.save_weights_and_bias(args.save_weights)
 
-        print('\n=== Training PyTorch model ===')
-        if args.preprocessed:
-            train_torch_preprocessed(M1, args.preprocessed, args.epochs, args.batch_size)
-        else:
-            train_torch(M1, train_loader, test_loader, args.epochs)
+        if args.epochs > 0:
+            print('\n=== Training PyTorch model ===')
+            if args.preprocessed:
+                train_torch_preprocessed(M1, args.preprocessed, args.epochs, args.batch_size)
+            else:
+                train_torch(M1, train_loader, test_loader, args.epochs)
     elif args.nerva:
         M2 = make_nerva_model(args, layer_sizes, layer_densities)
         regrow = PruneGrow(args.prune, args.grow, args.grow_weights) if args.prune else None
@@ -185,12 +188,15 @@ def main():
 
         if args.load_weights:
             M2.load_weights_and_bias(args.load_weights)
+        if args.save_weights:
+            M2.save_weights_and_bias(args.save_weights)
 
-        print('\n=== Training Nerva model ===')
-        if args.preprocessed:
-            train_nerva_preprocessed(M2, args.preprocessed, args.epochs, args.batch_size, regrow)
-        else:
-            train_nerva(M2, train_loader, test_loader, args.epochs, regrow)
+        if args.epochs > 0:
+            print('\n=== Training Nerva model ===')
+            if args.preprocessed:
+                train_nerva_preprocessed(M2, args.preprocessed, args.epochs, args.batch_size, regrow)
+            else:
+                train_nerva(M2, train_loader, test_loader, args.epochs, regrow)
 
 
 if __name__ == '__main__':

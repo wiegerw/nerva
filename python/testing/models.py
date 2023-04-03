@@ -52,7 +52,7 @@ class MLPPyTorch(nn.Module):
         return x
 
     def save_weights_and_bias(self, filename: str):
-        print(f'Saving weights to {filename}')
+        print(f'Saving weights and bias to {filename}')
         data = {}
         for i, layer in enumerate(self.layers):
             data[f'W{i + 1}'] = layer.weight.data
@@ -60,6 +60,7 @@ class MLPPyTorch(nn.Module):
         save_dict_to_npz(filename, data)
 
     def load_weights_and_bias(self, filename: str):
+        print(f'Loading weights and bias from {filename}')
         data = load_dict_from_npz(filename)
         for i, layer in enumerate(self.layers):
             layer.weight.data = data[f'W{i + 1}']
@@ -125,7 +126,8 @@ class MLPNerva(nerva.layers.Sequential):
         The weight matrices should have keys W1, W2, ... and the bias vectors should have keys "b1, b2, ..."
         :param filename: the name of the file
         """
-        self.compiled_model.save_weights(filename)
+        print(f'Saving weights and bias to {filename}')
+        self.compiled_model.save_weights_and_bias(filename)
 
     def load_weights_and_bias(self, filename: str):
         """
@@ -134,6 +136,7 @@ class MLPNerva(nerva.layers.Sequential):
         The weight matrices are stored using the keys W1, W2, ... and the bias vectors using the keys "b1, b2, ..."
         :param filename: the name of the file
         """
+        print(f'Loading weights and bias from {filename}')
         self.compiled_model.load_weights_and_bias(filename)
 
     def __str__(self):

@@ -3,6 +3,17 @@ source utilities.sh
 
 # N.B. This script is still very experimental!
 
+print_header "Generate weights"
+python3 mlp.py \
+        --nerva \
+        --seed=1 \
+        --overall-density=0.01 \
+        --lr=0.1 \
+        --sizes=3072,1024,512,10 \
+        --epochs=0 \
+        --datadir=./data \
+	--save-weights="mlp-regrow.npz"
+
 print_header "Nerva-python with regrow"
 python3 mlp.py \
 	--nerva \
@@ -17,7 +28,8 @@ python3 mlp.py \
 	--datadir=./data \
 	--prune='Magnitude(0.2)' \
 	--grow='Random' \
-	--grow-weights=XavierNormalized
+	--grow-weights=XavierNormalized \
+	--load-weights="mlp-regrow.npz"
 
 print_header "Nerva-python preprocessed with regrow"
 python3 mlp.py \
@@ -33,7 +45,8 @@ python3 mlp.py \
 	--preprocessed=./cifar1 \
 	--prune='Magnitude(0.2)' \
 	--grow='Random' \
-	--grow-weights=XavierNormalized
+	--grow-weights=XavierNormalized \
+	--load-weights="mlp-regrow.npz"
 
 print_header "Nerva-c++ with regrow"
 ../tools/dist/mlp \
@@ -54,7 +67,8 @@ print_header "Nerva-c++ with regrow"
 	--verbose \
 	--prune='Magnitude(0.2)' \
 	--grow='Random' \
-	--grow-weights=XavierNormalized
+	--grow-weights=XavierNormalized \
+	--load-weights="mlp-regrow.npz"
 
 print_header "Nerva-c++ preprocessed with regrow"
 ../tools/dist/mlp \
@@ -75,5 +89,6 @@ print_header "Nerva-c++ preprocessed with regrow"
 	--verbose \
 	--prune='Magnitude(0.2)' \
 	--grow='Random' \
-	--grow-weights=XavierNormalized
+	--grow-weights=XavierNormalized \
+	--load-weights="mlp-regrow.npz"
 
