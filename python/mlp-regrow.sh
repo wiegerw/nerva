@@ -7,6 +7,7 @@ print_header "Generate weights"
 python3 mlp.py \
         --nerva \
         --seed=1 \
+	--weights="XXX" \
         --overall-density=0.01 \
         --lr=0.1 \
         --sizes=3072,1024,512,10 \
@@ -21,6 +22,7 @@ python3 mlp.py \
 	--overall-density=0.01 \
 	--lr=0.1 \
 	--sizes=3072,1024,512,10 \
+	--weights="000" \
 	--batch-size=100 \
 	--epochs=10 \
 	--momentum=0.9 \
@@ -38,6 +40,7 @@ python3 mlp.py \
 	--overall-density=0.01 \
 	--lr=0.1 \
 	--sizes=3072,1024,512,10 \
+	--weights="000" \
 	--batch-size=100 \
 	--epochs=10 \
 	--momentum=0.9 \
@@ -58,7 +61,7 @@ print_header "Nerva-c++ with regrow"
 	--learning-rate='constant(0.1)' \
 	--optimizer='nesterov(0.9)' \
 	--layers="ReLU;ReLU;Linear" \
-	--weights=xxx \
+	--weights="000" \
 	--dataset=cifar10 \
 	--size=50000 \
 	--loss=softmax-cross-entropy \
@@ -80,7 +83,7 @@ print_header "Nerva-c++ preprocessed with regrow"
 	--learning-rate='constant(0.1)' \
 	--optimizer='nesterov(0.9)' \
 	--layers="ReLU;ReLU;Linear" \
-	--weights=xxx \
+	--weights="000" \
 	--preprocessed=./cifar1 \
 	--size=50000 \
 	--loss=softmax-cross-entropy \

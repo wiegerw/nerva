@@ -7,6 +7,7 @@
 import argparse
 import shlex
 import sys
+from typing import List
 
 import torch
 import torch.nn as nn
@@ -18,6 +19,7 @@ import nerva.loss
 import nerva.optimizers
 import nerva.random
 import nerva.utilities
+import nerva.weights
 from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
 from testing.prune_grow import PruneGrow
@@ -38,7 +40,7 @@ def make_torch_model(args, layer_sizes, densities):
     return M
 
 
-def make_nerva_model(args, layer_sizes, layer_densities):
+def make_nerva_model(args, layer_sizes, layer_densities, weight_initializers: List[nerva.weights.WeightInitializer]):
     n_layers = len(layer_densities)
     loss = nerva.loss.SoftmaxCrossEntropyLoss()
     learning_rate = make_nerva_scheduler(args)
@@ -48,7 +50,28 @@ def make_nerva_model(args, layer_sizes, layer_densities):
         activations = [nerva.layers.TReLU(args.trim_relu)] * (n_layers - 1) + [nerva.layers.NoActivation()]
     optimizer = make_nerva_optimizer(args.momentum, args.nesterov)
     optimizers = [optimizer] * n_layers
-    return MLPNerva(layer_sizes, layer_densities, optimizers, activations, loss, learning_rate, args.batch_size)
+    if not weight_initializers:
+        weight_initializers = [nerva.weights.Xavier()] * n_layers
+    return MLPNerva(layer_sizes, layer_densities, optimizers, activations, loss, learning_rate, args.batch_size, weight_initializers)
+
+
+def parse_weight_initializers(text: str) -> List[nerva.weights.WeightInitializer]:
+    def parse_weight(c: str):
+        if c == 'h':
+            return nerva.weights.He()
+        elif c == 'x':
+            return nerva.weights.Xavier()
+        elif c == 'X':
+            return nerva.weights.XavierNormalized()
+        elif c == 'u':
+            return nerva.weights.Uniform()
+        elif c == 'p':
+            return nerva.weights.PyTorch()
+        elif c == '0':
+            return nerva.weights.Zero()
+        raise RuntimeError(f'unsupported weight initializer {c}')
+
+    return [parse_weight(c) for c in text]
 
 
 def make_argument_parser():
@@ -86,6 +109,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
 
     # load/save weights
+    cmdline_parser.add_argument('--weights', type=str, help='The weights for initalizing the layers: xX0...')
     cmdline_parser.add_argument('--save-weights', type=str, help='Save weights and bias to a file in .npz format')
     cmdline_parser.add_argument('--load-weights', type=str, help='Load weights and bias from a file in .npz format')
 
@@ -163,6 +187,8 @@ def main():
     else:
         layer_densities = [1.0] * (len(layer_sizes) - 1)
 
+    weight_initializers = parse_weight_initializers(args.weights)
+
     if args.torch:
         M1 = make_torch_model(args, layer_sizes, layer_densities)
         print('=== PyTorch model ===')
@@ -180,7 +206,7 @@ def main():
             else:
                 train_torch(M1, train_loader, test_loader, args.epochs)
     elif args.nerva:
-        M2 = make_nerva_model(args, layer_sizes, layer_densities)
+        M2 = make_nerva_model(args, layer_sizes, layer_densities, weight_initializers)
         regrow = PruneGrow(args.prune, args.grow, args.grow_weights) if args.prune else None
 
         print('=== Nerva python model ===')
