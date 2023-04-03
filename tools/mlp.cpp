@@ -62,6 +62,10 @@ weight_initialization parse_weight_char(char c)
   {
     return weight_initialization::tensorflow;
   }
+  else if (c == '0')
+  {
+    return weight_initialization::zero;
+  }
   throw std::runtime_error(std::string("could not parse weight char '") + c + "'");
 }
 
@@ -120,7 +124,7 @@ class tool: public command_line_tool
     // pruning + growing
     std::string prune_strategy;
     std::string grow_strategy = "Random";
-    unsigned int regrow_interval = 0;
+    std::string grow_weights = "0";
 
     void add_options(lyra::cli& cli) override
     {
@@ -170,8 +174,8 @@ class tool: public command_line_tool
 
       // pruning + growing
       cli |= lyra::opt(prune_strategy, "strategy")["--prune"]("The pruning strategy: Magnitude(<drop_fraction>), SET(<drop_fraction>) or Threshold(<value>)");
-      cli |= lyra::opt(regrow_interval, "value")["--prune-interval"]("The number of batches between pruning + growing weights (default: 1 epoch)");
       cli |= lyra::opt(grow_strategy, "strategy")["--grow"]("The growing strategy: (default: Random)");
+      cli |= lyra::opt(grow_weights, "value")["--grow-weights"]("The weight function used for growing x=Xavier, X=XavierNormalized, ...");
 
       // miscellaneous
       cli |= lyra::opt(options.threads, "value")["--threads"]("The number of threads used by Eigen.");
@@ -253,10 +257,10 @@ class tool: public command_line_tool
       std::shared_ptr<learning_rate_scheduler> learning_rate = parse_learning_rate_scheduler(options.learning_rate_scheduler);
 
       //std::shared_ptr<prune_function> prune = parse_prune_function(prune_strategy);
-      //std::shared_ptr<grow_function> grow = parse_grow_function(grow_strategy, weight_initialization::xavier_normalized, rng);
+      //std::shared_ptr<grow_function> grow = parse_grow_function(grow_strategy, parse_weight_char(grow_weights.front()), rng);
       //std::shared_ptr<regrow_function> regrow = std::make_shared<prune_and_grow>(prune, grow);
 
-      std::shared_ptr<regrow_function> regrow = parse_regrow_function(prune_strategy, weight_initialization::xavier_normalized, rng);
+      std::shared_ptr<regrow_function> regrow = parse_regrow_function(prune_strategy, parse_weight_initializer(grow_weights), rng);
 
       if (info)
       {

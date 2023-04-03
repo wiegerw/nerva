@@ -340,6 +340,36 @@ void set_weights(mkl::sparse_matrix_csr<Scalar>& W, Function f)
   W.construct_csr();
 }
 
+inline
+weight_initialization parse_weight_initializer(const std::string& text)
+{
+  if (text == "Xavier")
+  {
+    return weight_initialization::xavier;
+  }
+  else if (text == "XavierNormalized")
+  {
+    return weight_initialization::xavier_normalized;
+  }
+  else if (text == "He")
+  {
+    return weight_initialization::he;
+  }
+  else if (text == "Uniform")
+  {
+    return weight_initialization::uniform;
+  }
+  else if (text == "Zero")
+  {
+    return weight_initialization::zero;
+  }
+  else if (text == "PyTorch")
+  {
+    return weight_initialization::pytorch;
+  }
+  throw std::runtime_error("unsupported weight initialization " + text);
+}
+
 } // namespace nerva
 
 #endif // NERVA_NEURAL_NETWORKS_WEIGHTS_H

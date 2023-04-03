@@ -6,7 +6,7 @@
 
 import re
 from typing import List
-from nerva.weights import WeightInitializer, parse_weights
+from nerva.weights import WeightInitializer, parse_weight_initializer
 from nerva.layers import Sparse, Sequential
 
 
@@ -110,7 +110,7 @@ def parse_grow_strategy(strategy: str, init: WeightInitializer):
 
 class PruneGrow(RegrowFunction):
     def __init__(self, prune_strategy: str, grow_strategy: str, prune_interval: int, weights: str):
-        init = parse_weights(weights)
+        init = parse_weight_initializer(weights)
         self.prune = parse_prune_strategy(prune_strategy)
         self.grow = parse_grow_strategy(grow_strategy, init)
         self.prune_interval = prune_interval

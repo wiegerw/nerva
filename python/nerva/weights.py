@@ -56,7 +56,7 @@ class Zero(WeightInitializer):
         return 'Zero()'
 
 
-def parse_weights(text: str):
+def parse_weight_initializer(text: str):
     if text == 'Xavier':
         return Xavier()
     elif text == 'XavierNormalized':

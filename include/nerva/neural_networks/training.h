@@ -184,7 +184,7 @@ class stochastic_gradient_descent_algorithm
         watch.reset();
 
         M.renew_dropout_mask(rng);
-        if (regrow)
+        if (epoch > 0 && regrow)
         {
           (*regrow)(M);
         }
