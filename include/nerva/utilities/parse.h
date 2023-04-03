@@ -15,8 +15,13 @@
 namespace nerva::utilities {
 
 inline
-std::vector<std::string> parse_arguments(const std::string& text, unsigned int expected_size)
+std::vector<std::string> parse_arguments(const std::string& text, const std::string& name, unsigned int expected_size)
 {
+  if (!starts_with(text, name + '('))
+  {
+    return {};
+  }
+
   auto pos1 = text.find_first_of('(');
   auto pos2 = text.find_last_of(')');
   if (pos1 == std::string::npos || pos2 == std::string::npos)

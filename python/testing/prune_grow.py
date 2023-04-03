@@ -108,7 +108,7 @@ def parse_grow_strategy(strategy: str, init: WeightInitializer):
         raise RuntimeError(f"unknown grow strategy '{strategy}'")
 
 
-class RegrowNerva(RegrowFunction):
+class PruneGrow(RegrowFunction):
     def __init__(self, prune_strategy: str, grow_strategy: str, prune_interval: int, weights: str):
         init = parse_weights(weights)
         self.prune = parse_prune_strategy(prune_strategy)

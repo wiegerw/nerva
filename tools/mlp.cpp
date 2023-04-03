@@ -14,8 +14,9 @@
 #include "nerva/neural_networks/layers.h"
 #include "nerva/neural_networks/learning_rate_schedulers.h"
 #include "nerva/neural_networks/loss_functions.h"
-#include "nerva/neural_networks/sgd_options.h"
 #include "nerva/neural_networks/parse_layer.h"
+#include "nerva/neural_networks/regrow.h"
+#include "nerva/neural_networks/sgd_options.h"
 #include "nerva/neural_networks/training.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/command_line_tool.h"
@@ -116,6 +117,11 @@ class tool: public command_line_tool
     bool info = false;
     bool use_global_timer = false;
 
+    // pruning + growing
+    std::string prune_strategy;
+    std::string grow_strategy = "Random";
+    unsigned int regrow_interval = 0;
+
     void add_options(lyra::cli& cli) override
     {
       // randomness
@@ -162,9 +168,10 @@ class tool: public command_line_tool
       cli |= lyra::opt(info)["--info"]("print some info about the multilayer_perceptron's");
       cli |= lyra::opt(use_global_timer)["--timer"]("print timer messages");
 
-      // regrow (experimental!)
-      cli |= lyra::opt(options.regrow_rate, "value")["--zeta"]("The regrow rate, use 0 for no regrow.");
-      cli |= lyra::opt(options.regrow_separate_positive_negative)["--separate"]("Separate negative and positive weights for regrow");
+      // pruning + growing
+      cli |= lyra::opt(prune_strategy, "strategy")["--prune"]("The pruning strategy: Magnitude(<drop_fraction>), SET(<drop_fraction>) or Threshold(<value>)");
+      cli |= lyra::opt(regrow_interval, "value")["--prune-interval"]("The number of batches between pruning + growing weights (default: 1 epoch)");
+      cli |= lyra::opt(grow_strategy, "strategy")["--grow"]("The growing strategy: (default: Random)");
 
       // miscellaneous
       cli |= lyra::opt(options.threads, "value")["--threads"]("The number of threads used by Eigen.");
@@ -245,6 +252,12 @@ class tool: public command_line_tool
       std::shared_ptr<loss_function> loss = parse_loss_function(options.loss_function);
       std::shared_ptr<learning_rate_scheduler> learning_rate = parse_learning_rate_scheduler(options.learning_rate_scheduler);
 
+      //std::shared_ptr<prune_function> prune = parse_prune_function(prune_strategy);
+      //std::shared_ptr<grow_function> grow = parse_grow_function(grow_strategy, weight_initialization::xavier_normalized, rng);
+      //std::shared_ptr<regrow_function> regrow = std::make_shared<prune_and_grow>(prune, grow);
+
+      std::shared_ptr<regrow_function> regrow = parse_regrow_function(prune_strategy, weight_initialization::xavier_normalized, rng);
+
       if (info)
       {
         dataset.info();
@@ -261,7 +274,7 @@ class tool: public command_line_tool
       std::cout << "scheduler = " << learning_rate->to_string() << "\n";
       std::cout << "layer densities: " << layer_density_info(M) << "\n\n";
 
-      stochastic_gradient_descent_algorithm algorithm(M, dataset, options, loss, learning_rate, rng, preprocessed_dir);
+      stochastic_gradient_descent_algorithm algorithm(M, dataset, options, loss, learning_rate, rng, preprocessed_dir, regrow);
       algorithm.run();
 
 #ifdef NERVA_ENABLE_PROFILING

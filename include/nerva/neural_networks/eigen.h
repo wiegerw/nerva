@@ -179,9 +179,30 @@ struct matrix_row
 };
 
 template <typename Matrix>
+bool has_nan(const Matrix& A)
+{
+  auto rows = A.rows();
+  auto columns = A.cols();
+  for (auto i = 0; i < rows; i++)
+  {
+    for (auto j = 0; j < columns; j++)
+    {
+      if (std::isnan(A(i, j)))
+      {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+template <typename Matrix>
 void print_numpy_matrix(const std::string& name, const Matrix& x, long edgeitems=3)
 {
-  std::cout << name << "= (" << x.rows() << "x" << x.cols() << ") norm = " << x.template lpNorm<Eigen::Infinity>() << "\n";
+  std::cout << name << "= (" << x.rows() << "x" << x.cols()
+            << ") norm = " << x.template lpNorm<Eigen::Infinity>()
+            << (has_nan(x) ? " contains NaN " : "")
+            << "\n";
   long m = x.rows();
   long top = m;
   long bottom = m;

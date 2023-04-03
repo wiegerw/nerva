@@ -20,6 +20,8 @@
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/neural_networks/scalar.h"
 #include "nerva/utilities/algorithms.h"
+#include "nerva/utilities/parse.h"
+#include "nerva/utilities/parse_numbers.h"
 
 namespace nerva {
 
@@ -208,6 +210,83 @@ std::size_t prune_SET(mkl::sparse_matrix_csr<Scalar>& A, scalar zeta, Scalar val
   std::size_t count = prune_positive_weights(A, positive_count, value);
   count += prune_negative_weights(A, negative_count, value);
   return count;
+}
+
+struct prune_function
+{
+  virtual std::size_t operator()(mkl::sparse_matrix_csr<scalar>& W) const = 0;
+};
+
+struct prune_magnitude_function: public prune_function
+{
+  scalar zeta;
+
+  explicit prune_magnitude_function(scalar zeta_)
+    : zeta(zeta_)
+  {}
+
+  std::size_t operator()(mkl::sparse_matrix_csr<scalar>& W) const override
+  {
+    std::size_t count = std::lround(zeta * mkl::support_size(W));
+    return prune_magnitude(W, count, std::numeric_limits<scalar>::quiet_NaN());
+  }
+};
+
+struct prune_threshold_function: public prune_function
+{
+  scalar threshold;
+
+  explicit prune_threshold_function(scalar threshold_)
+    : threshold(threshold_)
+  {}
+
+  std::size_t operator()(mkl::sparse_matrix_csr<scalar>& W) const override
+  {
+    return prune_threshold(W, threshold, std::numeric_limits<scalar>::quiet_NaN());
+  }
+};
+
+struct prune_SET_function: public prune_function
+{
+  scalar zeta;
+
+  explicit prune_SET_function(scalar zeta_)
+    : zeta(zeta_)
+  {}
+
+  std::size_t operator()(mkl::sparse_matrix_csr<scalar>& W) const override
+  {
+    return prune_SET(W, zeta, std::numeric_limits<scalar>::quiet_NaN());
+  }
+};
+
+inline
+std::shared_ptr<prune_function> parse_prune_function(const std::string& strategy)
+{
+  std::vector<std::string> arguments;
+
+  arguments = utilities::parse_arguments(strategy, "Magnitude", 1);
+  if (!arguments.empty())
+  {
+    scalar zeta = parse_scalar(arguments.front());
+    return std::make_shared<prune_magnitude_function>(zeta);
+  }
+
+  arguments = utilities::parse_arguments(strategy, "Threshold", 1);
+  if (!arguments.empty())
+  {
+    scalar threshold = parse_scalar(arguments.front());
+    return std::make_shared<prune_threshold_function>(threshold);
+  }
+
+  arguments = utilities::parse_arguments(strategy, "SET", 1);
+  if (!arguments.empty())
+  {
+    scalar zeta = parse_scalar(arguments.front());
+    return std::make_shared<prune_SET_function>(zeta);
+  }
+
+  throw std::runtime_error(fmt::format("unknown prune strategy {}", strategy));
 }
 
 } // namespace nerva

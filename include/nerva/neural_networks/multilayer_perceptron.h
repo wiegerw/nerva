@@ -18,7 +18,6 @@
 #include "nerva/neural_networks/numpy_eigen.h"
 #include "nerva/neural_networks/layers.h"
 #include "nerva/neural_networks/loss_functions.h"
-#include "nerva/neural_networks/regrow.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
 #include "nerva/neural_networks/global_timer.h"
@@ -90,18 +89,6 @@ struct multilayer_perceptron
     for (auto& layer: layers)
     {
       layer->optimize(eta);
-    }
-  }
-
-  void regrow(scalar zeta, weight_initialization init, bool separate_positive_negative, std::mt19937& rng)
-  {
-    for (auto& layer: layers)
-    {
-      auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get());
-      if (slayer)
-      {
-        nerva::regrow(*slayer, init, zeta, separate_positive_negative, rng);
-      }
     }
   }
 

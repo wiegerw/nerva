@@ -79,6 +79,36 @@ void grow_random(mkl::sparse_matrix_csr<Scalar>& A, const std::shared_ptr<weight
   A = builder.result();  // TODO: avoid unnecessary copies
 }
 
+struct grow_function
+{
+  virtual void operator()(mkl::sparse_matrix_csr<scalar>& W, std::size_t count) const = 0;
+};
+
+struct grow_random_function: public grow_function
+{
+  weight_initialization init;
+  std::mt19937& rng;
+
+  grow_random_function(weight_initialization init_, std::mt19937& rng_)
+    : init(init_), rng(rng_)
+  {}
+
+  void operator()(mkl::sparse_matrix_csr<scalar>& W, std::size_t count) const override
+  {
+    grow_random(W, make_weight_initializer(init, W, rng), count, rng);
+  }
+};
+
+inline
+std::shared_ptr<grow_function> parse_grow_function(const std::string& strategy, weight_initialization init, std::mt19937& rng)
+{
+  if (strategy == "Random")
+  {
+    return std::make_shared<grow_random_function>(init, rng);
+  }
+  throw std::runtime_error(fmt::format("unknown grow strategy {}", strategy));
+}
+
 } // namespace nerva
 
 #endif // NERVA_NEURAL_NETWORKS_GROW_H

@@ -18,6 +18,25 @@
 
 using namespace nerva;
 
+//template <typename Matrix>
+//void regrow_threshold(Matrix& W, const std::shared_ptr<weight_initializer>& init, std::size_t count, std::mt19937& rng)
+//{
+//  using Scalar = typename Matrix::Scalar;
+//  std::size_t prune_count = prune_magnitude(W, count, std::numeric_limits<Scalar>::quiet_NaN());
+//  grow_random(W, init, prune_count, rng);
+//}
+//
+//template <typename Matrix, typename Scalar = scalar>
+//void regrow_interval(Matrix& W, const std::shared_ptr<weight_initializer>& init, std::size_t negative_count, std::size_t positive_count, std::mt19937& rng)
+//{
+//  auto nan = std::numeric_limits<Scalar>::quiet_NaN();
+//  std::size_t negative_prune_count = prune_negative_weights(W, negative_count, nan);
+//  std::size_t positive_prune_count = prune_positive_weights(W, positive_count, nan);
+//  assert(negative_prune_count == negative_count);
+//  assert(positive_prune_count == positive_count);
+//  grow_random(W, init, negative_prune_count + positive_prune_count, rng);
+//}
+
 TEST_CASE("test_nth_element")
 {
   std::vector<int> v;
@@ -180,7 +199,7 @@ TEST_CASE("test_regrow")
     std::cout << "=== regrow_threshold count = " << count << " ===" << std::endl;
     auto B = A;
     eigen::print_matrix("A", A);
-    regrow_threshold(B, init, count, rng);
+    regrow_magnitude(B, init, count, rng);
     eigen::print_matrix("B", B);
     CHECK_EQ((B.array() == 10).count(), count);
     CHECK_EQ((B.array() == 0).count(), (A.array() == 0).count());

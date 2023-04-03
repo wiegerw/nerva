@@ -14,6 +14,7 @@
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/neural_networks/learning_rate_schedulers.h"
 #include "nerva/neural_networks/loss_functions.h"
+#include "nerva/neural_networks/regrow.h"
 #include "nerva/neural_networks/sgd_options.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
@@ -126,6 +127,7 @@ class stochastic_gradient_descent_algorithm
     const std::shared_ptr<learning_rate_scheduler>& learning_rate;
     RandomNumberGenerator rng;
     std::filesystem::path preprocessed_dir;
+    const std::shared_ptr<regrow_function>& regrow;
 
   public:
     stochastic_gradient_descent_algorithm(multilayer_perceptron& M_,
@@ -134,7 +136,8 @@ class stochastic_gradient_descent_algorithm
                                           const std::shared_ptr<loss_function>& loss_,
                                           const std::shared_ptr<learning_rate_scheduler>& learning_rate_,
                                           RandomNumberGenerator rng_,
-                                          const std::string& preprocessed_dir_ = ""
+                                          const std::string& preprocessed_dir_ = "",
+                                          const std::shared_ptr<regrow_function>& regrow_ = nullptr
                                          )
       : M(M_),
         data(data_),
@@ -142,7 +145,8 @@ class stochastic_gradient_descent_algorithm
         loss(loss_),
         learning_rate(learning_rate_),
         rng(rng_),
-        preprocessed_dir(preprocessed_dir_)
+        preprocessed_dir(preprocessed_dir_),
+        regrow(regrow_)
     {}
 
     /// \brief Reloads the dataset if a directory with preprocessed data was specified.
@@ -151,16 +155,6 @@ class stochastic_gradient_descent_algorithm
       if (!preprocessed_dir.empty())
       {
         data.load((preprocessed_dir / ("epoch" + std::to_string(epoch) + ".npz")).native());
-      }
-    }
-
-    /// \brief Prune and grow the weights of sparse linear layers (experimental!)
-    void regrow_weights()
-    {
-      if (options.regrow_rate > 0)
-      {
-        std::cout << "regrow" << std::endl;
-        M.regrow(options.regrow_rate, weight_initialization::xavier, options.regrow_separate_positive_negative, rng);
       }
     }
 
@@ -190,7 +184,10 @@ class stochastic_gradient_descent_algorithm
         watch.reset();
 
         M.renew_dropout_mask(rng);
-        regrow_weights();
+        if (regrow)
+        {
+          (*regrow)(M);
+        }
 
         if (options.shuffle)
         {

@@ -13,12 +13,22 @@
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/neural_networks/functions.h"
 #include "nerva/neural_networks/layers.h"
+#include "nerva/neural_networks/multilayer_perceptron.h"
 #include "nerva/neural_networks/grow.h"
+#include "nerva/neural_networks/grow_dense.h"
 #include "nerva/neural_networks/prune.h"
+#include "nerva/neural_networks/prune_dense.h"
 #include "nerva/neural_networks/weights.h"
+#include "nerva/utilities/parse.h"
+#include "nerva/utilities/parse_numbers.h"
+#include "fmt/format.h"
 #include <algorithm>
+#include <cmath>
+#include <limits>
 #include <memory>
 #include <random>
+#include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace nerva {
@@ -29,16 +39,32 @@ namespace nerva {
 /// \param count The number of elements to be pruned
 /// \param rng A random number generator
 template <typename Matrix>
-void regrow_threshold(Matrix& W, const std::shared_ptr<weight_initializer>& init, std::size_t count, std::mt19937& rng)
+void regrow_threshold(Matrix& W, const std::shared_ptr<weight_initializer>& init, scalar threshold, std::mt19937& rng)
 {
   using Scalar = typename Matrix::Scalar;
 
   // prune elements by giving them the value NaN
-  auto nan = std::numeric_limits<Scalar>::quiet_NaN();
-  std::size_t prune_count = prune_magnitude(W, count, nan);
+  std::size_t prune_count = prune_threshold(W, threshold, std::numeric_limits<Scalar>::quiet_NaN());
+
+  // grow `prune_count` elements
+  grow_random(W, init, prune_count, rng);
+}
+
+/// Prunes `count` nonzero elements with the smallest magnitude and randomly add new elements for them.
+/// \tparam Matrix A matrix type (eigen::matrix or mkl::sparse_matrix_csr)
+/// \param A A matrix
+/// \param count The number of elements to be pruned
+/// \param rng A random number generator
+template <typename Matrix>
+void regrow_magnitude(Matrix& W, const std::shared_ptr<weight_initializer>& init, std::size_t count, std::mt19937& rng)
+{
+  using Scalar = typename Matrix::Scalar;
+
+  // prune elements by giving them the value NaN
+  std::size_t prune_count = prune_magnitude(W, count, std::numeric_limits<Scalar>::quiet_NaN());
   assert(prune_count == count);
 
-  // grow elements that are equal to zero
+  // grow `prune_count` elements
   grow_random(W, init, prune_count, rng);
 }
 
@@ -48,10 +74,10 @@ void regrow_threshold(Matrix& W, const std::shared_ptr<weight_initializer>& init
 /// \param zeta The fraction of entries in \a W that will get a new value
 /// \param rng A random number generator
 template <typename Matrix>
-void regrow_threshold(Matrix& W, const std::shared_ptr<weight_initializer>& init, scalar zeta, std::mt19937& rng)
+void regrow_magnitude(Matrix& W, const std::shared_ptr<weight_initializer>& init, scalar zeta, std::mt19937& rng)
 {
   std::size_t count = std::lround(zeta * static_cast<scalar>(support_size(W)));
-  regrow_threshold(W, init, count, rng);
+  regrow_magnitude(W, init, count, rng);
 }
 
 /// Prunes elements with the smallest magnitude and randomly add new elements for them.
@@ -102,24 +128,140 @@ std::shared_ptr<weight_initializer> create_weight_initializer(const Matrix& W, w
   }
 }
 
-/// Prunes and regrows a given fraction of the smallest elements of matrix \a W.
-/// Positive and negative entries are pruned independently.
-/// \param layer A sparse linear layer
-/// \param zeta The fraction of positive and negative entries in \a W that will get a new value
-/// \param rng A random number generator
-template <typename Scalar = scalar>
-void regrow(sparse_linear_layer& layer, weight_initialization w, scalar zeta, bool separate_positive_negative, std::mt19937& rng)
+struct regrow_function
 {
-  auto init = create_weight_initializer(layer.W, w, rng);
-  if (separate_positive_negative)
+  virtual void operator()(multilayer_perceptron& M) const = 0;
+};
+
+// Operates on sparse layers only
+struct prune_and_grow: public regrow_function
+{
+  std::shared_ptr<prune_function> prune;
+  std::shared_ptr<grow_function> grow;
+
+  prune_and_grow(std::shared_ptr<prune_function> prune_, std::shared_ptr<grow_function> grow_)
+   : prune(std::move(prune_)), grow(std::move(grow_))
+  {}
+
+  void operator()(multilayer_perceptron& M) const override
   {
-    regrow_interval(layer.W, init, zeta, rng);
+    std::cout << "=== REGROW ===" << std::endl;
+    M.info("before");
+    for (auto& layer: M.layers)
+    {
+      if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
+      {
+        std::size_t weight_count = support_size(slayer->W);
+        std::size_t count = (*prune)(slayer->W);
+        std::cout << fmt::format("regrowing {}/{} weights\n", count, weight_count);
+        (*grow)(slayer->W, count);
+      }
+    }
+    M.info("after");
   }
-  else
+};
+
+struct regrow_threshold_function: public regrow_function
+{
+  scalar threshold;
+  weight_initialization w;
+  std::mt19937& rng;
+
+  regrow_threshold_function(scalar threshold_, weight_initialization w_, std::mt19937& rng_)
+  : threshold(threshold_), w(w_), rng(rng_)
+  {}
+
+  void operator()(multilayer_perceptron& M) const override
   {
-    regrow_threshold(layer.W, init, zeta, rng);
+    for (auto& layer: M.layers)
+    {
+      if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
+      {
+        auto init = create_weight_initializer(slayer->W, w, rng);
+        regrow_threshold(slayer->W, init, threshold, rng);
+      }
+    }
   }
-  layer.reset_support();
+};
+
+struct regrow_magnitude_function: public regrow_function
+{
+  scalar zeta;
+  weight_initialization w;
+  std::mt19937& rng;
+
+  regrow_magnitude_function(scalar zeta_, weight_initialization w_, std::mt19937& rng_)
+    : zeta(zeta_), w(w_), rng(rng_)
+  {}
+
+  void operator()(multilayer_perceptron& M) const override
+  {
+    for (auto& layer: M.layers)
+    {
+      if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
+      {
+        auto init = create_weight_initializer(slayer->W, w, rng);
+        regrow_magnitude(slayer->W, init, zeta, rng);
+      }
+    }
+  }
+};
+
+struct regrow_SET_function: public regrow_function
+{
+  scalar zeta;
+  weight_initialization w;
+  std::mt19937& rng;
+
+  regrow_SET_function(scalar zeta_, weight_initialization w_, std::mt19937& rng_)
+   : zeta(zeta_), w(w_), rng(rng_)
+  {}
+
+  void operator()(multilayer_perceptron& M) const override
+  {
+    for (auto& layer: M.layers)
+    {
+      if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
+      {
+        auto init = create_weight_initializer(slayer->W, w, rng);
+        regrow_interval(slayer->W, init, zeta, rng);
+      }
+    }
+  }
+};
+
+inline
+std::shared_ptr<regrow_function> parse_regrow_function(const std::string& prune_strategy, weight_initialization w, std::mt19937& rng)
+{
+  if (prune_strategy.empty())
+  {
+    return nullptr;
+  }
+
+  std::vector<std::string> arguments;
+
+  arguments = utilities::parse_arguments(prune_strategy, "Magnitude", 1);
+  if (!arguments.empty())
+  {
+    scalar zeta = parse_scalar(arguments.front());
+    return std::make_shared<regrow_magnitude_function>(zeta, w, rng);
+  }
+
+  arguments = utilities::parse_arguments(prune_strategy, "Threshold", 1);
+  if (!arguments.empty())
+  {
+    scalar threshold = parse_scalar(arguments.front());
+    return std::make_shared<regrow_threshold_function>(threshold, w, rng);
+  }
+
+  arguments = utilities::parse_arguments(prune_strategy, "SET", 1);
+  if (!arguments.empty())
+  {
+    scalar zeta = parse_scalar(arguments.front());
+    return std::make_shared<regrow_SET_function>(zeta, w, rng);
+  }
+
+  throw std::runtime_error(fmt::format("unknown prune strategy {}", prune_strategy));
 }
 
 } // namespace nerva

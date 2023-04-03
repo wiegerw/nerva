@@ -20,7 +20,7 @@ import nerva.random
 import nerva.utilities
 from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
-from testing.prune_grow import RegrowNerva
+from testing.prune_grow import PruneGrow
 from testing.torch_models import make_torch_scheduler
 from testing.models import MLPPyTorch, MLPNerva, MLPPyTorchTRelu
 from testing.training import train_nerva, train_torch, compute_accuracy_torch, compute_accuracy_nerva, \
@@ -179,7 +179,7 @@ def main():
             train_torch(M1, train_loader, test_loader, args.epochs)
     elif args.nerva:
         M2 = make_nerva_model(args, layer_sizes, layer_densities)
-        regrow = RegrowNerva(args.prune, args.grow, args.prune_interval, args.weights) if args.prune else None
+        regrow = PruneGrow(args.prune, args.grow, args.prune_interval, args.weights) if args.prune else None
 
         print('=== Nerva python model ===')
         print(M2)
