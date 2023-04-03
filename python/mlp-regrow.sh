@@ -17,7 +17,6 @@ python3 mlp.py \
 	--datadir=./data \
 	--prune='Magnitude(0.2)' \
 	--grow='Random' \
-	--prune-interval=500 \
 	--grow-weights=XavierNormalized
 
 print_header "Nerva-python preprocessed with regrow"
@@ -34,7 +33,6 @@ python3 mlp.py \
 	--preprocessed=./cifar1 \
 	--prune='Magnitude(0.2)' \
 	--grow='Random' \
-	--prune-interval=500 \
 	--grow-weights=XavierNormalized
 
 print_header "Nerva-c++ with regrow"

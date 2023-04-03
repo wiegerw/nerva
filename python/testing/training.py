@@ -208,13 +208,14 @@ def train_nerva(M, train_loader, test_loader, epochs, regrow: Optional[RegrowFun
                 elapsed=0)
 
     for epoch in range(epochs):
+        if epoch > 0 and regrow:
+            regrow(M)
+
         lr = M.learning_rate(epoch)
         elapsed = 0.0
         for (X, T) in train_loader:
             batch_index += 1
             watch.reset()
-            if regrow:
-                regrow(M, batch_index)
             X = to_numpy(X)
             T = to_one_hot_numpy(T, n_classes)
             Y = M.feedforward(X)
@@ -251,13 +252,14 @@ def train_nerva_preprocessed(M, datadir, epochs, batch_size, regrow: Optional[Re
         if epoch > 0:
             train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch{epoch}.npz', batch_size)
 
+        if epoch > 0 and regrow:
+            regrow(M)
+
         lr = M.learning_rate(epoch)
         elapsed = 0.0
         for (X, T) in train_loader:
             batch_index += 1
             watch.reset()
-            if regrow:
-                regrow(M, batch_index)
             X = to_numpy(X)
             T = to_one_hot_numpy(T, n_classes)
             Y = M.feedforward(X)

@@ -25,7 +25,7 @@ class RegrowFunction(object):
     """
     Interface for regrowing the sparse layers of a neural network
     """
-    def __call__(self, M: Sequential, batch_index: int):
+    def __call__(self, M: Sequential):
         raise NotImplementedError
 
 
@@ -109,17 +109,15 @@ def parse_grow_strategy(strategy: str, init: WeightInitializer):
 
 
 class PruneGrow(RegrowFunction):
-    def __init__(self, prune_strategy: str, grow_strategy: str, prune_interval: int, weights: str):
+    def __init__(self, prune_strategy: str, grow_strategy: str, weights: str):
         init = parse_weight_initializer(weights)
         self.prune = parse_prune_strategy(prune_strategy)
         self.grow = parse_grow_strategy(grow_strategy, init)
-        self.prune_interval = prune_interval
 
-    def __call__(self, M: Sequential, batch_index: int):
-        if batch_index > 0 and batch_index % self.prune_interval == 0:
-            for layer in M.layers:
-                if isinstance(layer, Sparse):
-                    weight_count = layer.weight_count()
-                    count = self.prune(layer)
-                    print(f'regrowing {count}/{weight_count} weights')
-                    self.grow(layer, count)
+    def __call__(self, M: Sequential):
+        for layer in M.layers:
+            if isinstance(layer, Sparse):
+                weight_count = layer.weight_count()
+                count = self.prune(layer)
+                print(f'regrowing {count}/{weight_count} weights')
+                self.grow(layer, count)

@@ -95,7 +95,6 @@ def make_argument_parser():
 
     # pruning + growing (experimental!)
     cmdline_parser.add_argument("--prune", help="The pruning strategy: Magnitude(<rate>), SET(<rate>) or Threshold(<value>)", type=str)
-    cmdline_parser.add_argument("--prune-interval", help="The number of batches between pruning + growing weights (default: 1 epoch)", type=int)
     cmdline_parser.add_argument("--grow", help="The growing strategy: (default: Random)", type=str)
     cmdline_parser.add_argument('--grow-weights', type=str, help='The function used for growing weigths: Xavier, XavierNormalized, He, PyTorch, Zero')
 
@@ -179,7 +178,7 @@ def main():
             train_torch(M1, train_loader, test_loader, args.epochs)
     elif args.nerva:
         M2 = make_nerva_model(args, layer_sizes, layer_densities)
-        regrow = PruneGrow(args.prune, args.grow, args.prune_interval, args.grow_weights) if args.prune else None
+        regrow = PruneGrow(args.prune, args.grow, args.grow_weights) if args.prune else None
 
         print('=== Nerva python model ===')
         print(M2)
