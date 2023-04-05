@@ -65,7 +65,10 @@ void regrow_magnitude(Matrix& W, const std::shared_ptr<weight_initializer>& init
 
   // prune elements by giving them the value NaN
   std::size_t prune_count = prune_magnitude(W, count, std::numeric_limits<Scalar>::quiet_NaN());
-  assert(prune_count == count);
+  if (prune_count != count)
+  {
+    throw std::runtime_error(fmt::format("prune_magnitude failed: pruned {} instead of {} elements", prune_count, count));
+  }
 
   std::size_t weight_count = support_size(W);
   NERVA_LOG(log::verbose) << fmt::format("regrowing {}/{} weights", count, weight_count) << std::endl;

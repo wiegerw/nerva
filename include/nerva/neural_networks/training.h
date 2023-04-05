@@ -19,6 +19,7 @@
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
 #include "nerva/utilities/print.h"
+#include "nerva/utilities/timer.h"
 #include "nerva/neural_networks/global_timer.h"
 #include "fmt/format.h"
 #include <algorithm>
@@ -128,6 +129,7 @@ class stochastic_gradient_descent_algorithm
     RandomNumberGenerator rng;
     std::filesystem::path preprocessed_dir;
     const std::shared_ptr<regrow_function>& regrow;
+    utilities::map_timer timer;
 
   public:
     stochastic_gradient_descent_algorithm(multilayer_perceptron& M_,
@@ -169,7 +171,6 @@ class stochastic_gradient_descent_algorithm
       std::iota(I.begin(), I.end(), 0);
       eigen::matrix Y(L, options.batch_size);
       long K = N / options.batch_size; // the number of batches
-      utilities::stopwatch watch;
       scalar eta = learning_rate->operator()(0);
 
       compute_statistics(M, eta, loss, data, options.batch_size, -1, options.statistics, 0.0);
@@ -181,7 +182,7 @@ class stochastic_gradient_descent_algorithm
           reload_data(epoch);
         }
 
-        watch.reset();
+        timer.start(fmt::format("epoch{}", epoch));
 
         M.renew_dropout_mask(rng);
         if (epoch > 0 && regrow)
@@ -233,7 +234,7 @@ class stochastic_gradient_descent_algorithm
 
           M.optimize(eta);
         }
-        double seconds = watch.seconds();
+        double seconds = timer.seconds(fmt::format("epoch{}", epoch));
         total_training_time += seconds;
         compute_statistics(M, eta, loss, data, options.batch_size, epoch, options.statistics, seconds);
       }
