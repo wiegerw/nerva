@@ -12,7 +12,7 @@ print_header "Train CIFAR10 using the mlp tool"
                   --learning-rate='constant(0.1)' \
                   --optimizer='nesterov(0.9)' \
                   --layers='ReLU;ReLU;Linear' \
-                  --weights=xxx \
+                  --init-weights=Xavier \
                   --dataset=cifar10 \
                   --size=50000 \
                   --loss=softmax-cross-entropy \
@@ -29,7 +29,7 @@ print_header "Train CIFAR10 with preprocessed data using the mlp tool"
                   --learning-rate='constant(0.1)' \
                   --optimizer='nesterov(0.9)' \
                   --layers='ReLU;ReLU;Linear' \
-                  --weights=xxx \
+                  --init-weights=Xavier \
                   --preprocessed=./cifar1 \
                   --size=50000 \
                   --loss=softmax-cross-entropy \

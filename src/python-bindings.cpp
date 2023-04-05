@@ -375,13 +375,13 @@ PYBIND11_MODULE(nervalib, m)
   /////////////////////////////////////////////////////////////////////////
 
   py::enum_<weight_initialization>(m, "Weights")
-    .value("Default", weight_initialization::default_, "Default")
     .value("He", weight_initialization::he, "He")
     .value("Xavier", weight_initialization::xavier, "Xavier")
     .value("XavierNormalized", weight_initialization::xavier_normalized, "XavierNormalized")
     .value("Uniform", weight_initialization::uniform, "Uniform")
+    .value("PyTorch", weight_initialization::pytorch, "PyTorch")
     .value("Zero", weight_initialization::zero, "Zero")
-    .value("Ten", weight_initialization::ten, "Ten")  // used for testing
+    .value("None_", weight_initialization::none, "None")
     ;
 
   m.def("initialize_weights", initialize_weights<eigen::matrix>);

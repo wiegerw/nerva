@@ -55,23 +55,18 @@ def make_nerva_model(args, layer_sizes, layer_densities, weight_initializers: Li
     return MLPNerva(layer_sizes, layer_densities, optimizers, activations, loss, learning_rate, args.batch_size, weight_initializers)
 
 
-def parse_weight_initializers(text: str) -> List[nerva.weights.WeightInitializer]:
-    def parse_weight(c: str):
-        if c == 'h':
-            return nerva.weights.He()
-        elif c == 'x':
-            return nerva.weights.Xavier()
-        elif c == 'X':
-            return nerva.weights.XavierNormalized()
-        elif c == 'u':
-            return nerva.weights.Uniform()
-        elif c == 'p':
-            return nerva.weights.PyTorch()
-        elif c == '0':
-            return nerva.weights.Zero()
-        raise RuntimeError(f'unsupported weight initializer {c}')
+def parse_init_weights(text: str, linear_layer_count: int) -> List[nerva.weights.WeightInitializer]:
+    words = text.strip().split(';')
+    n = linear_layer_count
 
-    return [parse_weight(c) for c in text]
+    if len(words) == 1:
+        init = nerva.weights.parse_weight_initializer(words[0])
+        return [init] * n
+
+    if len(words) != n:
+        raise RuntimeError(f'the number of weight initializers ({len(words)}) does not match with the number of linear layers ({n})')
+
+    return [nerva.weights.parse_weight_initializer(word) for word in words]
 
 
 def make_argument_parser():
@@ -109,7 +104,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
 
     # load/save weights
-    cmdline_parser.add_argument('--weights', type=str, help='The weights for initalizing the layers: xX0...')
+    cmdline_parser.add_argument('--init-weights', type=str, default='None', help='The weights for initalizing the layers')
     cmdline_parser.add_argument('--save-weights', type=str, help='Save weights and bias to a file in .npz format')
     cmdline_parser.add_argument('--load-weights', type=str, help='Load weights and bias from a file in .npz format')
 
@@ -187,7 +182,7 @@ def main():
     else:
         layer_densities = [1.0] * (len(layer_sizes) - 1)
 
-    weight_initializers = parse_weight_initializers(args.weights)
+    weight_initializers = parse_init_weights(args.init_weights, len(layer_sizes) - 1)
 
     if args.torch:
         M1 = make_torch_model(args, layer_sizes, layer_densities)

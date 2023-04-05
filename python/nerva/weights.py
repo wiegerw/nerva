@@ -56,6 +56,14 @@ class Zero(WeightInitializer):
         return 'Zero()'
 
 
+class None_(WeightInitializer):
+    def compile(self):
+        return nervalib.Weights.None_
+
+    def __str__(self):
+        return 'Zero()'
+
+
 def parse_weight_initializer(text: str):
     if text == 'Xavier':
         return Xavier()
@@ -69,4 +77,6 @@ def parse_weight_initializer(text: str):
         return Zero()
     elif text == 'PyTorch':
         return PyTorch()
+    elif text == 'None':
+        return None_()
     raise RuntimeError(f"unknown weight initializer '{text}'")

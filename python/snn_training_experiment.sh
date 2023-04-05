@@ -5,21 +5,19 @@ epochs=100
 batchsize=100
 momentum=0.9
 trim_relu=0
+weights=Xavier
 
 #--- original experiment with 2 hidden layers ---#
 #sizes="3072,1024,512,10"
 #layers="ReLU;ReLU;Linear"
-#weights=XXX
 
 #--- larger experiment with 3 hidden layers ---#
 #sizes="3072,1024,1024,1024,10"
 #layers="ReLU;ReLU;ReLU;Linear"
-#weights=XXXX
 
 #--- larger experiment with 3 hidden layers and trimmed ReLU ---#
 sizes="3072,1024,1024,1024,10"
 layers="TReLU(1e-30);TReLU(1e-30);TReLU(1e-30);Linear"
-weights=XXXX
 trim_relu="1e-30"
 
 function train_sparse()
@@ -78,7 +76,7 @@ function train_sparse()
                         --learning-rate="multistep_lr($lr;50,75;0.1)" \
                         --optimizer="nesterov($momentum)" \
                         --layers="$layers" \
-                        --weights=$weights \
+                        --init-weights=$weights \
                         --loss="softmax-cross-entropy" \
                         --threads=4 \
                         --no-shuffle \
@@ -142,7 +140,7 @@ function train_dense()
                         --learning-rate="multistep_lr($lr;50,75;0.1)" \
                         --optimizer="nesterov($momentum)" \
                         --layers="$layers" \
-                        --weights=$weights \
+                        --init-weights=$weights \
                         --loss="softmax-cross-entropy" \
                         --threads=4 \
                         --verbose \

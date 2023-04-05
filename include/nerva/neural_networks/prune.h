@@ -263,6 +263,11 @@ struct prune_SET_function: public prune_function
 inline
 std::shared_ptr<prune_function> parse_prune_function(const std::string& strategy)
 {
+  if (utilities::trim_copy(strategy).empty())
+  {
+    return nullptr;
+  }
+
   std::vector<std::string> arguments;
 
   arguments = utilities::parse_arguments(strategy, "Magnitude", 1);

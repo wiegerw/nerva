@@ -32,59 +32,28 @@
 using namespace nerva;
 
 inline
-weight_initialization parse_weight_char(char c)
+std::vector<weight_initialization> parse_init_weights(const std::string& text, const std::vector<std::string>& linear_layer_specifications)
 {
-  if (c == 'd')
-  {
-    return weight_initialization::default_;
-  }
-  else if (c == 'h')
-  {
-    return weight_initialization::he;
-  }
-  else if (c == 'x')
-  {
-    return weight_initialization::xavier;
-  }
-  else if (c == 'X')
-  {
-    return weight_initialization::xavier_normalized;
-  }
-  else if (c == 'u')
-  {
-    return weight_initialization::uniform;
-  }
-  else if (c == 'p')
-  {
-    return weight_initialization::pytorch;
-  }
-  else if (c == 't')
-  {
-    return weight_initialization::tensorflow;
-  }
-  else if (c == '0')
-  {
-    return weight_initialization::zero;
-  }
-  throw std::runtime_error(std::string("could not parse weight char '") + c + "'");
-}
+  std::vector<std::string> words = utilities::regex_split(utilities::trim_copy(text), ";");
+  std::size_t n = linear_layer_specifications.size();
 
-inline
-std::vector<weight_initialization> parse_weights(std::string weights_initialization, const std::vector<std::string>& linear_layer_specifications)
-{
-  // use default weights if the weights initialization was unspecified
-  if (weights_initialization.empty())
+  if (words.size() == 1)
   {
-    weights_initialization = std::string(linear_layer_specifications.size(), 'd');
+    weight_initialization init = parse_weight_initialization(words.front());
+    return { n, init };
   }
 
-  std::vector<weight_initialization> weights;
-  for (char c: weights_initialization)
+  if (words.size() != linear_layer_specifications.size())
   {
-    weights.push_back(parse_weight_char(c));
+    throw std::runtime_error(fmt::format("the number of weight initializers ({}) does not match with the number of linear layers ({})", words.size(), n));
   }
 
-  return weights;
+  std::vector<weight_initialization> result;
+  for (const auto& word: words)
+  {
+    result.push_back(parse_weight_initialization(word));
+  }
+  return result;
 }
 
 inline
@@ -176,6 +145,7 @@ class tool: public command_line_tool
     std::string linear_layer_sizes_text;
     std::string densities_text;
     std::string layer_specifications_text;
+    std::string init_weights_text = "None";
     double overall_density = 1;
     std::string preprocessed_dir;  // a directory containing a dataset for every epoch
     bool no_shuffle = false;
@@ -186,7 +156,7 @@ class tool: public command_line_tool
     // pruning + growing
     std::string prune_strategy;
     std::string grow_strategy = "Random";
-    std::string grow_weights = "0";
+    std::string grow_weights = "Zero";
 
     void add_options(lyra::cli& cli) override
     {
@@ -217,7 +187,7 @@ class tool: public command_line_tool
       cli |= lyra::opt(options.loss_function, "value")["--loss"]("The loss function (squared-error, cross-entropy, logistic-cross-entropy)");
 
       // weights
-      cli |= lyra::opt(options.weights_initialization, "value")["--weights"]("The weight initialization (default, he, uniform, xavier, normalized_xavier, uniform)");
+      cli |= lyra::opt(init_weights_text, "value")["--init-weights"]("The weight initialization (default, he, uniform, xavier, normalized_xavier, uniform)");
       cli |= lyra::opt(load_weights_file, "value")["--load-weights"]("Loads the weights and bias from a file in .npz format");
       cli |= lyra::opt(save_weights_file, "value")["--save-weights"]("Saves the weights and bias to a file in .npz format");
 
@@ -301,8 +271,8 @@ class tool: public command_line_tool
 
       if (load_weights_file.empty())
       {
-        set_support_random(M, linear_layer_densities, rng);
-        auto weights = parse_weights(options.weights_initialization, linear_layer_specifications);
+        set_support_random(M, linear_layer_densities, rng);  // this only affects sparse layers
+        auto weights = parse_init_weights(init_weights_text, linear_layer_specifications);
         set_weights_and_bias(M, weights, rng);
       }
       else
@@ -318,7 +288,7 @@ class tool: public command_line_tool
       std::shared_ptr<loss_function> loss = parse_loss_function(options.loss_function);
       std::shared_ptr<learning_rate_scheduler> learning_rate = parse_learning_rate_scheduler(options.learning_rate_scheduler);
       std::shared_ptr<prune_function> prune = parse_prune_function(prune_strategy);
-      std::shared_ptr<grow_function> grow = parse_grow_function(grow_strategy, parse_weight_char(grow_weights.front()), rng);
+      std::shared_ptr<grow_function> grow = parse_grow_function(grow_strategy, parse_weight_initialization(grow_weights), rng);
 
       if (info)
       {

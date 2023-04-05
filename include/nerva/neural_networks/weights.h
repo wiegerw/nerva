@@ -170,6 +170,24 @@ struct zero_weight_initializer: public weight_initializer
   }
 };
 
+struct none_weight_initializer: public weight_initializer
+{
+  explicit none_weight_initializer(std::mt19937& rng)
+    : weight_initializer(rng)
+  {}
+
+  scalar operator()() const override
+  {
+    return std::numeric_limits<scalar>::quiet_NaN();
+  }
+
+  void initialize_weights(eigen::matrix& W) const override
+  {}
+
+  void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) const override
+  {}
+};
+
 // used for testing
 struct ten_weight_initializer: public weight_initializer
 {
@@ -227,15 +245,13 @@ struct pytorch_weight_initializer: public weight_initializer
 
 enum class weight_initialization
 {
-  default_,
   he,
   xavier,
   xavier_normalized,
   uniform,
   pytorch,
-  tensorflow,
   zero,
-  ten  // for testing
+  none
 };
 
 inline
@@ -243,59 +259,15 @@ std::ostream& operator<<(std::ostream& out, weight_initialization x)
 {
   switch (x)
   {
-    case weight_initialization::default_: out << "default"; break;
-    case weight_initialization::he: out << "he"; break;
-    case weight_initialization::xavier: out << "xavier"; break;
-    case weight_initialization::xavier_normalized: out << "xavier-normalized"; break;
-    case weight_initialization::uniform: out << "uniform"; break;
-    case weight_initialization::pytorch: out << "pytorch"; break;
-    case weight_initialization::tensorflow: out << "tensorflow"; break;
-    case weight_initialization::zero: out << "zero"; break;
-    case weight_initialization::ten: out << "ten"; break;
+    case weight_initialization::he: out << "He"; break;
+    case weight_initialization::xavier: out << "Xavier"; break;
+    case weight_initialization::xavier_normalized: out << "XavierNormalized"; break;
+    case weight_initialization::uniform: out << "Uniform"; break;
+    case weight_initialization::pytorch: out << "PyTorch"; break;
+    case weight_initialization::zero: out << "Zero"; break;
+    case weight_initialization::none: out << "None"; break;
   }
   return out;
-}
-
-inline
-weight_initialization parse_weight_initialization(const std::string& text)
-{
-  if (text == "default")
-  {
-    return weight_initialization::default_;
-  }
-  else if (text == "he")
-  {
-    return weight_initialization::he;
-  }
-  else if (text == "xavier")
-  {
-    return weight_initialization::xavier;
-  }
-  else if (text == "xavier-normalized")
-  {
-    return weight_initialization::xavier_normalized;
-  }
-  else if (text == "uniform")
-  {
-    return weight_initialization::uniform;
-  }
-  else if (text == "pytorch")
-  {
-    return weight_initialization::pytorch;
-  }
-  else if (text == "tensorflow")
-  {
-    return weight_initialization::tensorflow;
-  }
-  else if (text == "zero")
-  {
-    return weight_initialization::zero;
-  }
-  else if (text == "ten")
-  {
-    return weight_initialization::ten;
-  }
-  throw std::runtime_error("could not parse weight initialization '" + text + "'");
 }
 
 template <typename Matrix>
@@ -307,11 +279,9 @@ std::shared_ptr<weight_initializer> make_weight_initializer(weight_initializatio
     case weight_initialization::xavier: return std::make_shared<xavier_weight_initializer>(rng, W.cols());
     case weight_initialization::xavier_normalized: return std::make_shared<xavier_normalized_weight_initializer>(rng, W.rows(), W.cols());
     case weight_initialization::pytorch: return std::make_shared<pytorch_weight_initializer>(rng, W.rows(), W.cols());
-    case weight_initialization::default_: // TODO: implement this
-    case weight_initialization::tensorflow: // TODO: implement this
     case weight_initialization::uniform: return std::make_shared<uniform_weight_initializer>(rng);
     case weight_initialization::zero: return std::make_shared<zero_weight_initializer>(rng);
-    case weight_initialization::ten: return std::make_shared<ten_weight_initializer>(rng);
+    case weight_initialization::none: return std::make_shared<none_weight_initializer>(rng);
   }
   throw std::runtime_error("make_weight_initializer: unsupported weight initialization " + std::to_string(static_cast<int>(w)));
 }
@@ -341,7 +311,7 @@ void set_weights(mkl::sparse_matrix_csr<Scalar>& W, Function f)
 }
 
 inline
-weight_initialization parse_weight_initializer(const std::string& text)
+weight_initialization parse_weight_initialization(const std::string& text)
 {
   if (text == "Xavier")
   {
@@ -366,6 +336,10 @@ weight_initialization parse_weight_initializer(const std::string& text)
   else if (text == "PyTorch")
   {
     return weight_initialization::pytorch;
+  }
+  else if (text == "None")
+  {
+    return weight_initialization::none;
   }
   throw std::runtime_error("unsupported weight initialization " + text);
 }
