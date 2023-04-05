@@ -41,28 +41,22 @@ class map_timer
       t2 = t;
     }
 
-    /// \brief Sets the stop value for the given key, and returns the time passed since the start
     /// \returns The time difference for the given key in milliseconds
-    [[nodiscard]] long long milliseconds(const std::string& key)
+    [[nodiscard]] long long milliseconds(const std::string& key) const
     {
-      auto t = std::chrono::steady_clock::now();
-      auto& [t1, t2] = m_values[key];
-      t2 = t;
+      const auto& [t1, t2] = m_values.at(key);
       return std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
     }
 
-    /// \brief Sets the stop value for the given key, and returns the time passed since the start
     /// \returns The time difference for the given key in seconds
-    [[nodiscard]] double seconds(const std::string& key)
+    [[nodiscard]] double seconds(const std::string& key) const
     {
-      auto t = std::chrono::steady_clock::now();
-      auto& [t1, t2] = m_values[key];
-      t2 = t;
+      const auto& [t1, t2] = m_values.at(key);
       return std::chrono::duration<double>(t2 - t1).count();
     }
 
     /// \brief Returns the mapping with timer values
-    const std::map<std::string, std::pair<time, time>>& values() const
+    [[nodiscard]] const std::map<std::string, std::pair<time, time>>& values() const
     {
       return m_values;
     }

@@ -103,6 +103,62 @@ void set_optimizers(multilayer_perceptron& M, const std::string& optimizer)
   }
 }
 
+class sgd_algorithm: public stochastic_gradient_descent_algorithm<datasets::dataset>
+{
+  protected:
+    std::filesystem::path preprocessed_dir;
+    const std::shared_ptr<regrow_function>& regrow;
+    using super = stochastic_gradient_descent_algorithm<datasets::dataset>;
+    using super::data;
+    using super::M;
+    using super::rng;
+    using super::timer;
+
+  public:
+    sgd_algorithm(multilayer_perceptron& M,
+                  datasets::dataset& data,
+                  const sgd_options& options,
+                  const std::shared_ptr<loss_function>& loss,
+                  const std::shared_ptr<learning_rate_scheduler>& learning_rate,
+                  std::mt19937& rng,
+                  const std::string& preprocessed_dir_ = "",
+                  const std::shared_ptr<regrow_function>& regrow_ = nullptr
+    )
+      : super(M, data, options, loss, learning_rate, rng),
+        preprocessed_dir(preprocessed_dir_),
+        regrow(regrow_)
+    {}
+
+    /// \brief Reloads the dataset if a directory with preprocessed data was specified.
+    void reload_data(unsigned int epoch)
+    {
+      if (!preprocessed_dir.empty())
+      {
+        data.load((preprocessed_dir / ("epoch" + std::to_string(epoch) + ".npz")).native());
+      }
+    }
+
+    void on_start_training() override
+    {
+      reload_data(0);
+    }
+
+    void on_start_epoch(unsigned int epoch) override
+    {
+      if (epoch > 0)
+      {
+        reload_data(epoch);
+      }
+
+      M.renew_dropout_mask(rng);
+
+      if (epoch > 0 && regrow)
+      {
+        (*regrow)(M);
+      }
+    }
+};
+
 class tool: public command_line_tool
 {
   protected:
@@ -278,7 +334,7 @@ class tool: public command_line_tool
       std::cout << "scheduler = " << learning_rate->to_string() << "\n";
       std::cout << "layer densities: " << layer_density_info(M) << "\n\n";
 
-      stochastic_gradient_descent_algorithm algorithm(M, dataset, options, loss, learning_rate, rng, preprocessed_dir, regrow);
+      sgd_algorithm algorithm(M, dataset, options, loss, learning_rate, rng, preprocessed_dir, regrow);
       algorithm.run();
 
 #ifdef NERVA_ENABLE_PROFILING

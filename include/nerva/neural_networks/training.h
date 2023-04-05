@@ -117,7 +117,7 @@ void compute_statistics(multilayer_perceptron& M,
   std::cout << std::endl;
 }
 
-template <typename DataSet = datasets::dataset, typename RandomNumberGenerator = std::mt19937>
+template <typename DataSet = datasets::dataset>
 class stochastic_gradient_descent_algorithm
 {
   protected:
@@ -126,9 +126,7 @@ class stochastic_gradient_descent_algorithm
     const sgd_options& options;
     const std::shared_ptr<loss_function>& loss;
     const std::shared_ptr<learning_rate_scheduler>& learning_rate;
-    RandomNumberGenerator rng;
-    std::filesystem::path preprocessed_dir;
-    const std::shared_ptr<regrow_function>& regrow;
+    std::mt19937& rng;
     utilities::map_timer timer;
 
   public:
@@ -137,34 +135,58 @@ class stochastic_gradient_descent_algorithm
                                           const sgd_options& options_,
                                           const std::shared_ptr<loss_function>& loss_,
                                           const std::shared_ptr<learning_rate_scheduler>& learning_rate_,
-                                          RandomNumberGenerator rng_,
-                                          const std::string& preprocessed_dir_ = "",
-                                          const std::shared_ptr<regrow_function>& regrow_ = nullptr
+                                          std::mt19937& rng_
                                          )
       : M(M_),
         data(data_),
         options(options_),
         loss(loss_),
         learning_rate(learning_rate_),
-        rng(rng_),
-        preprocessed_dir(preprocessed_dir_),
-        regrow(regrow_)
+        rng(rng_)
     {}
 
-    /// \brief Reloads the dataset if a directory with preprocessed data was specified.
-    void reload_data(unsigned int epoch)
+    /// \brief Event function that is called at the start of training
+    virtual void on_start_training()
+    {}
+
+    /// \brief Event function that is called at the end of training
+    virtual void on_end_training()
+    {}
+
+    /// \brief Event function that is called at the start of each epoch
+    virtual void on_start_epoch(unsigned int epoch)
+    {}
+
+    /// \brief Event function that is called at the end of each epoch
+    virtual void on_end_epoch(unsigned int epoch)
+    {}
+
+    /// \brief Event function that is called at the start of each batch
+    virtual void on_start_batch()
+    {}
+
+    /// \brief Event function that is called at the end of each batch
+    virtual void on_end_batch()
+    {}
+
+    /// \brief Returns the sum of the measured times for the epochs
+    [[nodiscard]] double compute_training_time() const
     {
-      if (!preprocessed_dir.empty())
+      double result = 0;
+      for (const auto& [key, value]: timer.values())
       {
-        data.load((preprocessed_dir / ("epoch" + std::to_string(epoch) + ".npz")).native());
+        if (utilities::starts_with(key, "epoch"))
+        {
+          result += timer.seconds(key);
+        }
       }
+      return result;
     }
 
     std::pair<double, double> run()
     {
-      reload_data(0);
+      on_start_training();
 
-      double total_training_time = 0;
       long N = data.Xtrain.cols(); // the number of examples
       long L = data.Ttrain.rows(); // the number of outputs
       std::vector<long> I(N);
@@ -177,18 +199,9 @@ class stochastic_gradient_descent_algorithm
 
       for (unsigned int epoch = 0; epoch < options.epochs; ++epoch)
       {
-        if (epoch > 0)
-        {
-          reload_data(epoch);
-        }
-
-        timer.start(fmt::format("epoch{}", epoch));
-
-        M.renew_dropout_mask(rng);
-        if (epoch > 0 && regrow)
-        {
-          (*regrow)(M);
-        }
+        on_start_epoch(epoch);
+        std::string epoch_label = fmt::format("epoch{}", epoch);
+        timer.start(epoch_label);
 
         if (options.shuffle)
         {
@@ -201,6 +214,8 @@ class stochastic_gradient_descent_algorithm
 
         for (long k = 0; k < K; k++)
         {
+          on_start_batch();
+
           eigen::eigen_slice batch(I.begin() + k * options.batch_size, options.batch_size);
           auto X = data.Xtrain(Eigen::indexing::all, batch);
           auto T = data.Ttrain(Eigen::indexing::all, batch);
@@ -233,15 +248,25 @@ class stochastic_gradient_descent_algorithm
           }
 
           M.optimize(eta);
+
+          on_end_batch();
         }
-        double seconds = timer.seconds(fmt::format("epoch{}", epoch));
-        total_training_time += seconds;
+
+        timer.stop(epoch_label);
+        double seconds = timer.seconds(epoch_label);
         compute_statistics(M, eta, loss, data, options.batch_size, epoch, options.statistics, seconds);
+
+        on_end_epoch(epoch);
       }
+
       double test_accuracy = compute_accuracy(M, data.Xtest, data.Ttest, options.batch_size);
+      double training_time = compute_training_time();
       std::cout << fmt::format("Accuracy of the network on the {} test examples: {:.2f}%", data.Xtest.cols(), test_accuracy * 100.0) << std::endl;
-      std::cout << fmt::format("Total training time for the {} epochs: {:.8f}s\n", options.epochs, total_training_time);
-      return {test_accuracy, total_training_time};
+      std::cout << fmt::format("Total training time for the {} epochs: {:.8f}s\n", options.epochs, training_time);
+
+      on_end_training();
+
+      return {test_accuracy, training_time};
     }
 };
 
