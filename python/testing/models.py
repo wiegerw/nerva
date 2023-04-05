@@ -143,6 +143,9 @@ class MLPNerva(nerva.layers.Sequential):
         print(f'Loading weights and bias from {filename}')
         self.compiled_model.load_weights_and_bias(filename)
 
+    def info(self, msg):
+        self.compiled_model.info(msg)
+
     def __str__(self):
         density_info = [layer.density_info() for layer in self.layers]
         return f'{super().__str__()}\nloss = {self.loss}\nscheduler = {self.learning_rate}\nlayer densities: {", ".join(density_info)}\n'

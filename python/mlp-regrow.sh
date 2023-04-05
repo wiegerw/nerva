@@ -1,8 +1,6 @@
 #!/bin/bash
 source utilities.sh
 
-# N.B. This script is still very experimental!
-
 print_header "Generate weights"
 python3 mlp.py \
         --nerva \

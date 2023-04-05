@@ -154,6 +154,7 @@ struct prune_and_grow: public regrow_function
         std::size_t count = (*prune)(slayer->W);
         std::cout << fmt::format("regrowing {}/{} weights\n", count, weight_count);
         (*grow)(slayer->W, count);
+        slayer->reset_support();
       }
     }
   }
