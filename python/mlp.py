@@ -40,7 +40,7 @@ def make_torch_model(args, layer_sizes, densities):
     return M
 
 
-def make_nerva_model(args, layer_sizes, layer_densities, weight_initializers: List[nerva.weights.WeightInitializer]):
+def make_nerva_model(args, layer_sizes, layer_densities):
     n_layers = len(layer_densities)
     loss = nerva.loss.SoftmaxCrossEntropyLoss()
     learning_rate = make_nerva_scheduler(args)
@@ -50,9 +50,7 @@ def make_nerva_model(args, layer_sizes, layer_densities, weight_initializers: Li
         activations = [nerva.layers.TReLU(args.trim_relu)] * (n_layers - 1) + [nerva.layers.NoActivation()]
     optimizer = make_nerva_optimizer(args.momentum, args.nesterov)
     optimizers = [optimizer] * n_layers
-    if not weight_initializers:
-        weight_initializers = [nerva.weights.Xavier()] * n_layers
-    return MLPNerva(layer_sizes, layer_densities, optimizers, activations, loss, learning_rate, args.batch_size, weight_initializers)
+    return MLPNerva(layer_sizes, layer_densities, optimizers, activations, loss, learning_rate, args.batch_size)
 
 
 def parse_init_weights(text: str, linear_layer_count: int) -> List[nerva.weights.WeightInitializer]:
@@ -201,7 +199,7 @@ def main():
             else:
                 train_torch(M1, train_loader, test_loader, args.epochs)
     elif args.nerva:
-        M2 = make_nerva_model(args, layer_sizes, layer_densities, weight_initializers)
+        M2 = make_nerva_model(args, layer_sizes, layer_densities)
         regrow = PruneGrow(args.prune, args.grow, args.grow_weights) if args.prune else None
 
         print('=== Nerva python model ===')
@@ -209,6 +207,10 @@ def main():
 
         if args.load_weights:
             M2.load_weights_and_bias(args.load_weights)
+        else:
+            M2.set_support_random()
+            M2.set_weights_and_bias(weight_initializers)
+
         if args.save_weights:
             M2.save_weights_and_bias(args.save_weights)
 

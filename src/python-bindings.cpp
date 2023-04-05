@@ -359,6 +359,7 @@ PYBIND11_MODULE(nervalib, m)
     .def("info", &multilayer_perceptron::info)
     .def("save_weights_and_bias", [](const multilayer_perceptron& M, const std::string& filename) { save_weights_and_bias(M, filename); })
     .def("load_weights_and_bias", [](multilayer_perceptron& M, const std::string& filename) { load_weights_and_bias(M, filename); })
+    .def("set_weights_and_bias", [](multilayer_perceptron& M, const std::vector<weight_initialization>& weights) { set_weights_and_bias(M, weights, nerva_rng); })
     .def("weights", [](multilayer_perceptron& M) { return mlp_weights(M); })
     .def("bias", [](multilayer_perceptron& M) { return mlp_bias(M); })
     ;

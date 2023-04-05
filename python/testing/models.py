@@ -99,7 +99,7 @@ class MLPPyTorchTRelu(MLPPyTorch):
 class MLPNerva(nerva.layers.Sequential):
     """ Nerva Multilayer perceptron
     """
-    def __init__(self, layer_sizes, layer_densities, optimizers, activations, loss, learning_rate, batch_size, weight_initializers=None):
+    def __init__(self, layer_sizes, layer_densities, optimizers, activations, loss, learning_rate, batch_size):
         super().__init__()
         self.layer_sizes = layer_sizes
         self.layer_densities = layer_densities
@@ -110,16 +110,13 @@ class MLPNerva(nerva.layers.Sequential):
         assert len(layer_sizes) == n_layers + 1
         assert len(activations) == n_layers
         assert len(optimizers) == n_layers
-        if not weight_initializers:  # TODO: remove this
-            weight_initializers = [nerva.weights.Xavier()] * n_layers
-        assert len(weight_initializers) == n_layers
 
         output_sizes = layer_sizes[1:]
-        for (density, size, activation, optimizer, init) in zip(layer_densities, output_sizes, activations, optimizers, weight_initializers):
+        for (density, size, activation, optimizer) in zip(layer_densities, output_sizes, activations, optimizers):
             if density == 1.0:
-                 self.add(nerva.layers.Dense(size, activation=activation, optimizer=optimizer, weight_initializer=init))
+                 self.add(nerva.layers.Dense(size, activation=activation, optimizer=optimizer))
             else:
-                self.add(nerva.layers.Sparse(size, density, activation=activation, optimizer=optimizer, weight_initializer=init))
+                self.add(nerva.layers.Sparse(size, density, activation=activation, optimizer=optimizer))
 
         self.compile(layer_sizes[0], batch_size)
 

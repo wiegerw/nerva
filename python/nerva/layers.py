@@ -3,6 +3,8 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from typing import Optional, List, Union, Tuple
+
+import nerva.weights
 from nerva.activation import Activation, NoActivation, ReLU, AllReLU, Softmax, LogSoftmax, Sigmoid, HyperbolicTangent, \
     LeakyReLU, TReLU
 from nerva.optimizers import Optimizer, GradientDescent
@@ -18,8 +20,7 @@ class Dense(Layer):
     def __init__(self,
                  units: int,
                  activation: Activation=NoActivation(),
-                 optimizer: Optimizer=GradientDescent(),
-                 weight_initializer: WeightInitializer=Xavier()
+                 optimizer: Optimizer=GradientDescent()
                 ):
         """
         A dense layer.
@@ -37,12 +38,11 @@ class Dense(Layer):
             )
         self.activation = activation
         self.optimizer = optimizer
-        self.weight_initializer = weight_initializer
         self.input_size = -1
         self._layer = None
 
     def __str__(self):
-        return f'Dense(units={self.units}, activation={self.activation}, optimizer={self.optimizer}, weight_initializer={self.weight_initializer})'
+        return f'Dense(units={self.units}, activation={self.activation}, optimizer={self.optimizer})'
 
     def density_info(self) -> str:
         N = self._layer.W.size
@@ -99,12 +99,11 @@ class Dense(Layer):
             raise RuntimeError('Unsupported layer type')
 
         self._layer = layer
-        self.set_weights_and_bias(self.weight_initializer)  # TODO: move this step elsewhere?
         return layer
 
 
 class Sparse(Layer):
-    def __init__(self, units: int, density: float, activation: Activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()):
+    def __init__(self, units: int, density: float, activation: Activation=NoActivation(), optimizer=GradientDescent()):
         """
         A sparse layer.
 
@@ -122,12 +121,11 @@ class Sparse(Layer):
         self.density = density
         self.activation = activation
         self.optimizer = optimizer
-        self.weight_initializer = weight_initializer
         self.input_size = -1
         self._layer = None
 
     def __str__(self):
-        return f'Sparse(units={self.units}, density={self.density}, activation={self.activation}, optimizer={self.optimizer}, weight_initializer={self.weight_initializer})'
+        return f'Sparse(units={self.units}, density={self.density}, activation={self.activation}, optimizer={self.optimizer})'
 
     def density_info(self) -> str:
         n, N = self._layer.W.nonzero_count()
@@ -166,8 +164,6 @@ class Sparse(Layer):
             raise RuntimeError('Unsupported layer type')
 
         self._layer = layer
-        self.set_support_random(self.density)  # TODO: move this step elsewhere?
-        self.set_weights_and_bias(self.weight_initializer)  # TODO: move this step elsewhere?
         return layer
 
     def set_support_random(self, density: float) -> None:
@@ -314,16 +310,15 @@ class Sequential(object):
             if isinstance(layer, Sparse):
                 layer.set_support_random(layer.density)
 
-    def set_weights_and_bias(self):
-        for layer in self.layers:
-            if isinstance(layer, Union[Dense, Sparse]):
-                layer.set_weights_and_bias(layer.weight_initializer)
+    def set_weights_and_bias(self, weight_initializers: List[WeightInitializer]):
+        print(f'Initializing weights using {", ".join(str(w) for w in weight_initializers)}')
+        self.compiled_model.set_weights_and_bias([w.compile() for w in weight_initializers])
 
-    def load_weights(self, filename: str):
-        self.compiled_model.import_weights_npz(filename)
-
-    def save_weights(self, filename: str):
-        self.compiled_model.export_weights_npz(filename)
+    # def load_weights(self, filename: str):
+    #     self.compiled_model.import_weights_npz(filename)
+    #
+    # def save_weights(self, filename: str):
+    #     self.compiled_model.export_weights_npz(filename)
 
 
 def compute_sparse_layer_densities(overall_density: float, layer_sizes: List[int], erk_power_scale: float=1) -> List[float]:

@@ -18,6 +18,7 @@ import nerva.loss
 import nerva.optimizers
 import nerva.random
 import nerva.utilities
+import nerva.weights
 import nervalib
 from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
@@ -49,7 +50,11 @@ def make_nerva_model(args, layer_sizes, layer_densities):
         activations = [nerva.layers.TReLU(args.trim_relu)] * (n_layers - 1) + [nerva.layers.NoActivation()]
     optimizer = make_nerva_optimizer(args.momentum, args.nesterov)
     optimizers = [optimizer] * n_layers
-    return MLPNerva(layer_sizes, layer_densities, optimizers, activations, loss, learning_rate, args.batch_size)
+    weight_initializers = [nerva.weights.XavierNormalized()] * n_layers
+    M = MLPNerva(layer_sizes, layer_densities, optimizers, activations, loss, learning_rate, args.batch_size)
+    M.set_support_random()
+    M.set_weights_and_bias(weight_initializers)
+    return M
 
 
 def make_argument_parser():
