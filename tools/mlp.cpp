@@ -107,7 +107,8 @@ class sgd_algorithm: public stochastic_gradient_descent_algorithm<datasets::data
 {
   protected:
     std::filesystem::path preprocessed_dir;
-    const std::shared_ptr<regrow_function>& regrow;
+    std::shared_ptr<prune_and_grow> regrow;
+
     using super = stochastic_gradient_descent_algorithm<datasets::dataset>;
     using super::data;
     using super::M;
@@ -121,13 +122,18 @@ class sgd_algorithm: public stochastic_gradient_descent_algorithm<datasets::data
                   const std::shared_ptr<loss_function>& loss,
                   const std::shared_ptr<learning_rate_scheduler>& learning_rate,
                   std::mt19937& rng,
-                  const std::string& preprocessed_dir_ = "",
-                  const std::shared_ptr<regrow_function>& regrow_ = nullptr
+                  const std::string& preprocessed_dir_,
+                  const std::shared_ptr<prune_function>& prune,
+                  const std::shared_ptr<grow_function>& grow
     )
       : super(M, data, options, loss, learning_rate, rng),
-        preprocessed_dir(preprocessed_dir_),
-        regrow(regrow_)
-    {}
+        preprocessed_dir(preprocessed_dir_)
+    {
+      if (prune)
+      {
+        regrow = std::make_shared<prune_and_grow>(prune, grow);
+      }
+    }
 
     /// \brief Reloads the dataset if a directory with preprocessed data was specified.
     void reload_data(unsigned int epoch)
@@ -311,12 +317,8 @@ class tool: public command_line_tool
 
       std::shared_ptr<loss_function> loss = parse_loss_function(options.loss_function);
       std::shared_ptr<learning_rate_scheduler> learning_rate = parse_learning_rate_scheduler(options.learning_rate_scheduler);
-
-      //std::shared_ptr<prune_function> prune = parse_prune_function(prune_strategy);
-      //std::shared_ptr<grow_function> grow = parse_grow_function(grow_strategy, parse_weight_char(grow_weights.front()), rng);
-      //std::shared_ptr<regrow_function> regrow = std::make_shared<prune_and_grow>(prune, grow);
-
-      std::shared_ptr<regrow_function> regrow = parse_regrow_function(prune_strategy, parse_weight_initializer(grow_weights), rng);
+      std::shared_ptr<prune_function> prune = parse_prune_function(prune_strategy);
+      std::shared_ptr<grow_function> grow = parse_grow_function(grow_strategy, parse_weight_char(grow_weights.front()), rng);
 
       if (info)
       {
@@ -334,7 +336,7 @@ class tool: public command_line_tool
       std::cout << "scheduler = " << learning_rate->to_string() << "\n";
       std::cout << "layer densities: " << layer_density_info(M) << "\n\n";
 
-      sgd_algorithm algorithm(M, dataset, options, loss, learning_rate, rng, preprocessed_dir, regrow);
+      sgd_algorithm algorithm(M, dataset, options, loss, learning_rate, rng, preprocessed_dir, prune, grow);
       algorithm.run();
 
 #ifdef NERVA_ENABLE_PROFILING
