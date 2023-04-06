@@ -43,7 +43,7 @@ std::vector<weight_initialization> parse_init_weights(const std::string& text, c
     return { n, init };
   }
 
-  if (words.size() != linear_layer_specifications.size())
+  if (words.size() != n)
   {
     throw std::runtime_error(fmt::format("the number of weight initializers ({}) does not match with the number of linear layers ({})", words.size(), n));
   }
