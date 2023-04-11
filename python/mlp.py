@@ -7,6 +7,7 @@
 import argparse
 import shlex
 import sys
+from pathlib import Path
 from typing import List
 
 import torch
@@ -20,6 +21,8 @@ import nerva.optimizers
 import nerva.random
 import nerva.utilities
 import nerva.weights
+from nerva.pruning import PruneFunction, GrowFunction
+from nerva.training import StochasticGradientDescentAlgorithm, SGD_Options
 from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
 from testing.prune_grow import PruneGrow
@@ -151,6 +154,42 @@ def initialize_frameworks(args):
 
     # avoid 'Too many open files' error when using data loaders
     torch.multiprocessing.set_sharing_strategy('file_system')
+
+
+class SGD(StochasticGradientDescentAlgorithm):
+    def __init__(self,
+                 M: nerva.layers.Sequential,
+                 train_loader,
+                 test_loader,
+                 options: SGD_Options,
+                 loss: nerva.loss.LossFunction,
+                 learning_rate: nerva.learning_rate.LearningRateScheduler,
+                 preprocessed_dir: str,
+                 prune: PruneFunction,
+                 grow: GrowFunction
+                ):
+        super().__init__(M, train_loader, test_loader, options, loss, learning_rate)
+        self.preprocessed_dir = preprocessed_dir
+        self.regrow = PruneGrow(prune, grow) if prune else None
+
+        def reload_data(self, epoch) -> None:
+            """
+            Reloads the dataset if a directory with preprocessed data was specified.
+            """
+            if self.preprocessed_dir:
+                path = Path(preprocessed_dir) / f'epoch{epoch}.npz'
+                self.train_loader = None # TODO
+
+        def on_start_training(self):
+            self.reload_data(0)
+
+        def on_start_epoch(self, epoch):
+            if epoch > 0:
+                self.reload_data(epoch)
+                self.M.renew_dropout_mask()
+
+            if epoch > 0 and self.regrow:
+                self.regrow(self.M)
 
 
 def main():
