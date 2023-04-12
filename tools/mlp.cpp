@@ -296,10 +296,6 @@ class tool: public command_line_tool
         M.info("before training");
       }
 
-#ifdef NERVA_ENABLE_PROFILING
-      CALLGRIND_START_INSTRUMENTATION;
-#endif
-
       std::cout << "=== Nerva c++ model ===" << "\n";
       std::cout << M.to_string();
       std::cout << "loss = " << loss->to_string() << "\n";
@@ -307,6 +303,11 @@ class tool: public command_line_tool
       std::cout << "layer densities: " << layer_density_info(M) << "\n\n";
 
       sgd_algorithm algorithm(M, dataset, options, loss, learning_rate, rng, preprocessed_dir, prune, grow);
+
+#ifdef NERVA_ENABLE_PROFILING
+      CALLGRIND_START_INSTRUMENTATION;
+#endif
+
       algorithm.run();
 
 #ifdef NERVA_ENABLE_PROFILING

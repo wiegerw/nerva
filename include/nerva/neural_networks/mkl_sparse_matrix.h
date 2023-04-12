@@ -193,37 +193,6 @@ class sparse_matrix_csr
       construct_csr();
     }
 
-    sparse_matrix_csr(long rows, long cols, double density, std::mt19937& rng, T value = 0)
-      : m_rows(rows), m_columns(cols)
-    {
-      long nonzero_count = std::lround(density * rows * cols);
-      assert(0 < nonzero_count && nonzero_count <= rows * cols);
-      m_values.reserve(nonzero_count);
-      m_col_index.reserve(nonzero_count);
-      m_row_index.push_back(0);
-
-      long remaining = rows * cols;  // the remaining number of positions
-      long nonzero = nonzero_count;  // the remaining number of nonzero positions
-
-      for (auto i = 0; i < m_rows; i++)
-      {
-        long row_count = 0;
-        for (auto j = 0; j < m_columns; j++)
-        {
-          if ((random_real<double>(0, 1, rng) < static_cast<double>(nonzero) / remaining) || (remaining == nonzero))
-          {
-            m_col_index.push_back(static_cast<long>(j));
-            m_values.push_back(value);
-            row_count++;
-            nonzero--;
-          }
-          remaining--;
-        }
-        m_row_index.push_back(m_row_index.back() + row_count);
-      }
-      construct_csr(false);
-    }
-
     sparse_matrix_csr(const sparse_matrix_csr& A)
      : m_rows(A.m_rows),
        m_columns(A.m_columns),

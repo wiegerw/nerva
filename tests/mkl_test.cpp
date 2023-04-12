@@ -652,7 +652,7 @@ void check_csr()
 
   // dense matrix B
   MKL_INT B_rows = 3;
-  MKL_INT B_cols = 1;
+  // MKL_INT B_cols = 1;
   float B_values[4] = {1, 2, 3};
 
   // dense matrix C
@@ -806,6 +806,14 @@ TEST_CASE("test_addition")
   test_matrix_addition(1000, 900, 1200, 1.0);
 }
 
+template <typename Scalar, typename Function = zero<Scalar>>
+mkl::sparse_matrix_csr<Scalar> make_csr_matrix(std::size_t rows, std::size_t columns, double density, std::mt19937& rng, Scalar value)
+{
+std::cout << "=== make_csr_matrix " << rows << 'x' << columns << std::endl;
+  std::size_t nonzero_count = std::lround(density * rows * columns);
+  return mkl::make_random_matrix<Scalar>(rows, columns, nonzero_count, rng, [value]() { return value; });
+}
+
 TEST_CASE("test_fill_matrix")
 {
   auto seed = std::random_device{}();
@@ -814,16 +822,16 @@ TEST_CASE("test_fill_matrix")
   long D = 4;   // input size
   long K = 6;   // output size
   long Q = 2;   // batch size
-  scalar density = 1;
+  double density = 1;
 
-  mkl::sparse_matrix_csr<scalar> W(6, 4, density, rng, scalar(2));
+  mkl::sparse_matrix_csr<scalar> W = make_csr_matrix(6, 4, density, rng, scalar(2));
   mkl::sparse_matrix_csr<scalar> W1 = W;
 
   mkl::sparse_matrix_csr<scalar> W2;
   W2 = W;
 
   mkl::sparse_matrix_csr<scalar> X(6, 4);
-  X = mkl::sparse_matrix_csr<scalar>(6, 4, density, rng, scalar(2));
+  X = make_csr_matrix(6, 4, density, rng, scalar(2));
 
   sparse_linear_layer layer(D, K, Q);
   set_support_random(layer, density, rng);
@@ -908,10 +916,10 @@ TEST_CASE("test_assign_matrix_product")
 
   long m = B.rows();
   long n = C.cols();
-  float density = 1.0;
+  double density = 1.0;
   auto seed = std::random_device{}();
   std::mt19937 rng{seed};
-  mkl::sparse_matrix_csr<scalar> A1(m, n, density, rng);
+  mkl::sparse_matrix_csr<scalar> A1 = make_csr_matrix(m, n, density, rng, scalar(0));
   mkl::sdd_product_batch(A1, B, C, 2);
 
   eigen::print_cpp_matrix("A", A);
