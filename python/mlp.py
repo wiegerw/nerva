@@ -21,15 +21,13 @@ import nerva.optimizers
 import nerva.random
 import nerva.utilities
 import nerva.weights
-from nerva.pruning import PruneFunction, GrowFunction
-from nerva.training import StochasticGradientDescentAlgorithm, SGD_Options
-from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
+from nerva.pruning import PruneFunction, GrowFunction, PruneGrow, parse_prune_function, parse_grow_function
+from nerva.training import StochasticGradientDescentAlgorithm, SGD_Options, compute_densities
+from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, create_npz_dataloaders
 from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
-from testing.prune_grow import PruneGrow
 from testing.torch_models import make_torch_scheduler
 from testing.models import MLPPyTorch, MLPNerva, MLPPyTorchTRelu
-from testing.training import train_nerva, train_torch, compute_accuracy_torch, compute_accuracy_nerva, \
-    compute_densities, train_torch_preprocessed, train_nerva_preprocessed
+from testing.training import train_torch, train_torch_preprocessed
 
 
 def make_torch_model(args, layer_sizes, densities):
@@ -172,24 +170,25 @@ class SGD(StochasticGradientDescentAlgorithm):
         self.preprocessed_dir = preprocessed_dir
         self.regrow = PruneGrow(prune, grow) if prune else None
 
-        def reload_data(self, epoch) -> None:
-            """
-            Reloads the dataset if a directory with preprocessed data was specified.
-            """
-            if self.preprocessed_dir:
-                path = Path(preprocessed_dir) / f'epoch{epoch}.npz'
-                self.train_loader = None # TODO
+    def reload_data(self, epoch) -> None:
+        """
+        Reloads the dataset if a directory with preprocessed data was specified.
+        """
+        if self.preprocessed_dir:
+            path = Path(self.preprocessed_dir) / f'epoch{epoch}.npz'
+            self.train_loader, self.test_loader = create_npz_dataloaders(str(path), self.options.batch_size)
 
-        def on_start_training(self):
-            self.reload_data(0)
+    def on_start_training(self) -> None:
+        self.reload_data(0)
 
-        def on_start_epoch(self, epoch):
-            if epoch > 0:
-                self.reload_data(epoch)
-                self.M.renew_dropout_mask()
+    def on_start_epoch(self, epoch):
+        if epoch > 0:
+            self.reload_data(epoch)
 
-            if epoch > 0 and self.regrow:
-                self.regrow(self.M)
+        if epoch > 0 and self.regrow:
+            self.regrow(self.M)
+
+        # TODO: renew dropout masks
 
 
 def main():
@@ -209,6 +208,8 @@ def main():
             train_loader, test_loader = create_cifar10_augmented_dataloaders(args.batch_size, args.batch_size, args.datadir)
         else:
             train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
+    else:
+        train_loader, test_loader = None, None
 
     layer_sizes = [int(s) for s in args.sizes.split(',')]
 
@@ -239,7 +240,6 @@ def main():
                 train_torch(M1, train_loader, test_loader, args.epochs)
     elif args.nerva:
         M2 = make_nerva_model(args, layer_sizes, layer_densities)
-        regrow = PruneGrow(args.prune, args.grow, args.grow_weights) if args.prune else None
 
         print('=== Nerva python model ===')
         print(M2)
@@ -255,10 +255,17 @@ def main():
 
         if args.epochs > 0:
             print('\n=== Training Nerva model ===')
-            if args.preprocessed:
-                train_nerva_preprocessed(M2, args.preprocessed, args.epochs, args.batch_size, regrow)
-            else:
-                train_nerva(M2, train_loader, test_loader, args.epochs, regrow)
+            options = SGD_Options()
+            options.epochs = args.epochs
+            options.batch_size = args.batch_size
+            options.shuffle = False
+            options.statistics = True
+            options.debug = False
+            options.gradient_step = 0
+            prune = parse_prune_function(args.prune)
+            grow = parse_grow_function(args.grow, nerva.weights.parse_weight_initializer(args.grow_weights))
+            algorithm = SGD(M2, train_loader, test_loader, options, M2.loss, M2.learning_rate, args.preprocessed, prune, grow)
+            algorithm.run()
 
 
 if __name__ == '__main__':

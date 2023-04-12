@@ -72,7 +72,7 @@ class PruneSET(PruneFunction):
         return layer.prune_SET(self.zeta)
 
 
-def parse_prune_strategy(strategy: str):
+def parse_prune_function(strategy: str):
     arguments = parse_arguments(strategy, 'Magnitude', 1)
     if arguments:
         return PruneMagnitude(float(arguments[0]))
@@ -101,7 +101,7 @@ class GrowRandom(GrowFunction):
         layer.grow_random(count, self.init)
 
 
-def parse_grow_strategy(strategy: str, init: WeightInitializer):
+def parse_grow_function(strategy: str, init: WeightInitializer):
     if strategy == 'Random':
         return GrowRandom(init)
     else:
@@ -109,10 +109,9 @@ def parse_grow_strategy(strategy: str, init: WeightInitializer):
 
 
 class PruneGrow(RegrowFunction):
-    def __init__(self, prune_strategy: str, grow_strategy: str, weights: str):
-        init = parse_weight_initializer(weights)
-        self.prune = parse_prune_strategy(prune_strategy)
-        self.grow = parse_grow_strategy(grow_strategy, init)
+    def __init__(self, prune: PruneFunction, grow: GrowFunction):
+        self.prune = prune
+        self.grow = grow
 
     def __call__(self, M: Sequential):
         for layer in M.layers:

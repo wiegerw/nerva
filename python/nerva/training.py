@@ -179,7 +179,7 @@ class StochasticGradientDescentAlgorithm(object):
     def run(self):
         M = self.M
         options = self.options
-        n_classes = M.layers[-1].output_size()
+        n_classes = M.layers[-1].units
 
         self.on_start_training()
 
