@@ -97,17 +97,29 @@ void regrow_magnitude(Matrix& W, const std::shared_ptr<weight_initializer>& init
 /// \param negative_count The number of elements with negative values to be pruned
 /// \param positive_count The number of elements with positive values to be pruned
 /// \param rng A random number generator
-template <typename Matrix, typename Scalar = scalar>
+template <typename Matrix, typename Scalar = scalar, bool LimitPruneCount = true>
 void regrow_interval(Matrix& W, const std::shared_ptr<weight_initializer>& init, std::size_t negative_count, std::size_t positive_count, std::mt19937& rng)
 {
   using eigen::support_size;
+  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<Scalar>>::value;
 
   // prune elements by giving them the value NaN
   auto nan = std::numeric_limits<Scalar>::quiet_NaN();
-  std::size_t negative_prune_count = prune_negative_weights(W, negative_count, nan);
-  std::size_t positive_prune_count = prune_positive_weights(W, positive_count, nan);
-  assert(negative_prune_count == negative_count);
-  assert(positive_prune_count == positive_count);
+
+  std::size_t negative_prune_count;
+  std::size_t positive_prune_count;
+  if constexpr (IsSparse)
+  {
+    negative_prune_count = prune_negative_weights<Scalar, LimitPruneCount>(W, negative_count, nan);
+    positive_prune_count = prune_positive_weights<Scalar, LimitPruneCount>(W, positive_count, nan);
+  }
+  else
+  {
+    negative_prune_count = prune_negative_weights(W, negative_count, nan);
+    positive_prune_count = prune_positive_weights(W, positive_count, nan);
+    assert(negative_prune_count == negative_count);
+    assert(positive_prune_count == positive_count);
+  }
 
   std::size_t weight_count = support_size(W);
   NERVA_LOG(log::verbose) << fmt::format("regrowing {}/{} weights", negative_prune_count + positive_prune_count, weight_count) << std::endl;

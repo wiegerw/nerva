@@ -268,7 +268,7 @@ TEST_CASE("test2")
       // sparse matrices
       std::cout << "--- sparse ---" << std::endl;
       auto B1 = mkl::to_csr(A);
-      regrow_interval(B1, init, negative_count, positive_count, rng);
+      regrow_interval<mkl::sparse_matrix_csr<scalar>, scalar, false>(B1, init, negative_count, positive_count, rng);
       eigen::print_matrix("B1", mkl::to_eigen(B1));
       auto B2 = mkl::to_eigen(B1);
       CHECK_EQ((B2.array() == 10).count(), negative_count + positive_count);

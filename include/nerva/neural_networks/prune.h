@@ -201,10 +201,13 @@ std::size_t prune_magnitude(mkl::sparse_matrix_csr<Scalar>& A, std::size_t count
 /// \param count The maximum number of elements to be pruned
 /// \param value The value that is assigned to the pruned elements (default 0)
 /// \return The number of elements that have been pruned
-template <typename T>
+template <typename T, bool LimitPruneCount = true>
 std::size_t prune_positive_weights(mkl::sparse_matrix_csr<T>& A, std::size_t count, T value = 0)
 {
-  count = limit_prune_count(A, count);
+  if constexpr (LimitPruneCount)
+  {
+    count = limit_prune_count(A, count);
+  }
   return prune_magnitude_with_threshold(A, count, accept_positive(), value);
 }
 
@@ -213,10 +216,13 @@ std::size_t prune_positive_weights(mkl::sparse_matrix_csr<T>& A, std::size_t cou
 /// \param count The maximum number of elements to be pruned
 /// \param value The value that is assigned to the pruned elements (default 0)
 /// \return The number of elements that have been pruned
-template <typename T>
+template <typename T, bool LimitPruneCount = true>
 std::size_t prune_negative_weights(mkl::sparse_matrix_csr<T>& A, std::size_t count, T value = 0)
 {
-  count = limit_prune_count(A, count);
+  if constexpr (LimitPruneCount)
+  {
+    count = limit_prune_count(A, count);
+  }
   return prune_magnitude_with_threshold(A, count, accept_negative(), value);
 }
 
@@ -236,12 +242,15 @@ std::size_t prune_threshold(mkl::sparse_matrix_csr<Scalar>& A, scalar threshold,
 /// \param zeta The fraction of positive and negative elements to be pruned
 /// \param value The value that is assigned to the pruned elements (default 0)
 /// \return The number of elements that have been pruned
-template <typename Scalar>
+template <typename Scalar, bool LimitPruneCount = true>
 std::size_t prune_SET(mkl::sparse_matrix_csr<Scalar>& A, scalar zeta, Scalar value = 0)
 {
   std::size_t negative_count = std::lround(zeta * mkl::count_negative_elements(A));
   std::size_t positive_count = std::lround(zeta * mkl::count_positive_elements(A));
-  std::tie(negative_count, positive_count) = limit_prune_counts(A, negative_count, positive_count);
+  if constexpr (LimitPruneCount)
+  {
+    std::tie(negative_count, positive_count) = limit_prune_counts(A, negative_count, positive_count);
+  }
   std::size_t count = prune_positive_weights(A, positive_count, value);
   count += prune_negative_weights(A, negative_count, value);
   return count;
