@@ -174,11 +174,12 @@ class sparse_matrix_csr
     }
 
     // Creates a sparse matrix with empty support
-    explicit sparse_matrix_csr(long rows = 1, long cols = 1)
+    explicit sparse_matrix_csr(long rows = 1, long cols = 1, std::size_t size = 1)
       : m_rows(rows), m_columns(cols), m_row_index(rows + 1, 0)
     {
-      m_col_index.reserve(1);  // to make sure that the data pointer has a value
-      m_values.reserve(1);   // to make sure that the data pointer has a value
+      assert(size > 0);  // this is needed due to a limitation of MKL
+      m_col_index.reserve(size);
+      m_values.reserve(size);
       construct_csr();
     }
 
@@ -213,8 +214,9 @@ class sparse_matrix_csr
       construct_csr(false);
     }
 
-    sparse_matrix_csr& operator=(const sparse_matrix_csr& A)  // TODO: use move operations
+    sparse_matrix_csr& operator=(const sparse_matrix_csr& A)
     {
+      // N.B. No move operations are used, since we want to keep using the originally allocated memory
       m_rows = A.m_rows;
       m_columns = A.m_columns;
       m_row_index = A.m_row_index;

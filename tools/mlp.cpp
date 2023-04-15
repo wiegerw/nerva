@@ -236,6 +236,10 @@ class tool: public command_line_tool
       {
         global_timer_enable();
       }
+      if (options.threads >= 1 && options.threads <= 8)
+      {
+        omp_set_num_threads(options.threads);
+      }
 
       std::mt19937 rng{options.seed};
 
@@ -258,24 +262,14 @@ class tool: public command_line_tool
       auto linear_layer_specifications = filter_sequence(layer_specifications, is_linear_layer);
       auto linear_layer_sizes = compute_linear_layer_sizes(linear_layer_sizes_text, linear_layer_specifications);
       auto linear_layer_densities = compute_linear_layer_densities(densities_text, overall_density, linear_layer_specifications, linear_layer_sizes);
-
-      if (options.threads >= 1 && options.threads <= 8)
-      {
-        omp_set_num_threads(options.threads);
-      }
+      auto linear_layer_weights = parse_init_weights(init_weights_text, linear_layer_specifications);
 
       // construct the multilayer perceptron M
       multilayer_perceptron M;
-      M.layers = construct_layers(layer_specifications, linear_layer_sizes, linear_layer_densities, options.batch_size, rng);
+      M.layers = construct_layers(layer_specifications, linear_layer_sizes, linear_layer_densities, linear_layer_weights, options.batch_size, rng);
       set_optimizers(M, options.optimizer);
 
-      if (load_weights_file.empty())
-      {
-        set_support_random(M, linear_layer_densities, rng);  // this only affects sparse layers
-        auto weights = parse_init_weights(init_weights_text, linear_layer_specifications);
-        set_weights_and_bias(M, weights, rng);
-      }
-      else
+      if (!load_weights_file.empty())
       {
         load_weights_and_bias(M, load_weights_file);
       }

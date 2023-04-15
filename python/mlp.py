@@ -262,8 +262,8 @@ def main():
             options.statistics = True
             options.debug = False
             options.gradient_step = 0
-            prune = parse_prune_function(args.prune)
-            grow = parse_grow_function(args.grow, nerva.weights.parse_weight_initializer(args.grow_weights))
+            prune = parse_prune_function(args.prune) if args.prune else None
+            grow = parse_grow_function(args.grow, nerva.weights.parse_weight_initializer(args.grow_weights)) if args.grow else None
             algorithm = SGD(M2, train_loader, test_loader, options, M2.loss, M2.learning_rate, args.preprocessed, prune, grow)
             algorithm.run()
 

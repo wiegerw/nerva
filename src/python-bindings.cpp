@@ -13,6 +13,7 @@
 #include "nerva/neural_networks/global_timer.h"
 #include "nerva/neural_networks/learning_rate_schedulers.h"
 #include "nerva/neural_networks/multilayer_perceptron.h"
+#include "nerva/neural_networks/parse_layer.h"
 #include "nerva/neural_networks/random.h"
 #include "nerva/neural_networks/regrow.h"
 #include "nerva/neural_networks/training.h"
@@ -342,6 +343,20 @@ PYBIND11_MODULE(nervalib, m)
     ;
 
   m.def("compute_sparse_layer_densities", compute_sparse_layer_densities);
+
+  m.def("make_linear_layer", [](const std::string& layer_description,
+                                std::size_t D,
+                                std::size_t K,
+                                long batch_size,
+                                double density,
+                                weight_initialization w,
+                                double dropout_rate
+                               )
+  {
+    layer_builder builder(nerva_rng);
+    builder.dropout_rate = dropout_rate;
+    return builder.make_linear_layer(layer_description, D, K, batch_size, density, w);
+  });
 
   /////////////////////////////////////////////////////////////////////////
   //                       multilayer perceptron

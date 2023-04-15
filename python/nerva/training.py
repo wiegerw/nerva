@@ -205,7 +205,7 @@ class StochasticGradientDescentAlgorithm(object):
 
             self.timer.stop(epoch_label)
             seconds = self.timer.seconds(epoch_label)
-            compute_statistics(M, lr, self.loss, self.train_loader, self.test_loader, epoch, options.statistics, seconds)
+            compute_statistics(M, lr, self.loss, self.train_loader, self.test_loader, epoch + 1, options.statistics, seconds)
 
             self.on_end_epoch(epoch)
 

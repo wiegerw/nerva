@@ -4,7 +4,6 @@
 
 from typing import Optional, List, Union, Tuple
 
-import nerva.weights
 from nerva.activation import Activation, NoActivation, ReLU, AllReLU, Softmax, LogSoftmax, Sigmoid, HyperbolicTangent, \
     LeakyReLU, TReLU
 from nerva.optimizers import Optimizer, GradientDescent
@@ -108,7 +107,8 @@ class Sparse(Layer):
         A sparse layer.
 
         :param units: the number of outputs of the layer
-        :param density: the density of the layer. This is a number between 0.0 (fully sparse) and 1.0 (fully dense).
+        :param density: a hint for the maximum density of the layer. This is a number between 0.0 (fully sparse) and
+         1.0 (fully dense). Memory will be reserved to store a matrix with the given density.
         :param activation: the activation function
         :param optimizer: the optimizer
         """
@@ -125,7 +125,7 @@ class Sparse(Layer):
         self._layer = None
 
     def __str__(self):
-        return f'Sparse(units={self.units}, density={self.density}, activation={self.activation}, optimizer={self.optimizer})'
+        return f'Sparse(units={self.units}, activation={self.activation}, optimizer={self.optimizer})'
 
     def density_info(self) -> str:
         n, N = self._layer.W.nonzero_count()
