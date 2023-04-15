@@ -13,6 +13,7 @@ from typing import List
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import nerva.activation
 import nerva.dataset
 import nerva.layers
 import nerva.learning_rate
@@ -46,9 +47,9 @@ def make_nerva_model(args, layer_sizes, layer_densities):
     loss = nerva.loss.SoftmaxCrossEntropyLoss()
     learning_rate = make_nerva_scheduler(args)
     if args.trim_relu == 0:
-        activations = [nerva.layers.ReLU()] * (n_layers - 1) + [nerva.layers.NoActivation()]
+        activations = [nerva.activation.ReLU()] * (n_layers - 1) + [nerva.activation.NoActivation()]
     else:
-        activations = [nerva.layers.TReLU(args.trim_relu)] * (n_layers - 1) + [nerva.layers.NoActivation()]
+        activations = [nerva.activation.TReLU(args.trim_relu)] * (n_layers - 1) + [nerva.activation.NoActivation()]
     optimizer = make_nerva_optimizer(args.momentum, args.nesterov)
     optimizers = [optimizer] * n_layers
     return MLPNerva(layer_sizes, layer_densities, optimizers, activations, loss, learning_rate, args.batch_size)
