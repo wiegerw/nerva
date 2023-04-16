@@ -2,6 +2,8 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
+import re
+
 class Activation(object):
     pass
 
@@ -58,3 +60,31 @@ class AllReLU(Activation):
 class HyperbolicTangent(Activation):
     def __str__(self):
         return 'HyperbolicTangent()'
+
+
+def parse_activation(text: str) -> Activation:
+    if text == 'ReLU':
+        return ReLU()
+    elif text == 'Sigmoid':
+        return Sigmoid()
+    elif text == 'Softmax':
+        return Softmax()
+    elif text == 'LogSoftmax':
+        return LogSoftmax()
+    elif text == 'HyperbolicTangent':
+        return HyperbolicTangent()
+    elif text.startswith('TReLU'):
+        m = re.match(r'TReLU\((.*)\)', text)
+        alpha = float(m.group(1))
+        return TReLU(alpha)
+    elif text.startswith('LeakyReLU'):
+        m = re.match(r'LeakyReLU\((.*)\)', text)
+        alpha = float(m.group(1))
+        return LeakyReLU(alpha)
+    elif text.startswith('AllReLU'):
+        m = re.match(r'AllReLU\((.*)\)', text)
+        alpha = float(m.group(1))
+        return AllReLU(alpha)
+    elif text == 'Linear':
+        return NoActivation()
+    raise RuntimeError(f"could not parse activation '{text}'")

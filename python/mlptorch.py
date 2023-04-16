@@ -7,48 +7,26 @@
 import argparse
 import shlex
 import sys
-from pathlib import Path
-from typing import List
 
-import nerva.activation
-import nerva.dataset
-import nerva.layers
-import nerva.learning_rate
-import nerva.loss
-import nerva.optimizers
-import nerva.random
-import nerva.utilities
-import nerva.weights
-import nervalib
-from nerva.pruning import PruneFunction, GrowFunction, PruneGrow, parse_prune_function, parse_grow_function
-from nerva.training import StochasticGradientDescentAlgorithm, SGD_Options, compute_densities
-from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, create_npz_dataloaders
-from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
-from testing.models import MLPNerva
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from nerva.training import compute_densities
+from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
+from testing.torch_models import make_torch_scheduler
+from testing.models import MLPPyTorch, MLPPyTorchTRelu
+from testing.training import train_torch, train_torch_preprocessed
 
 
-def make_nerva_model(args, linear_layer_sizes, linear_layer_densities, linear_layer_specifications, linear_layer_weights):
-    n_layers = len(linear_layer_densities)
-    loss = nerva.loss.SoftmaxCrossEntropyLoss()
-    learning_rate = make_nerva_scheduler(args)
-    activations = [nerva.activation.parse_activation(text) for text in linear_layer_specifications]
-    optimizer = make_nerva_optimizer(args.momentum, args.nesterov)
-    optimizers = [optimizer] * n_layers
-    return MLPNerva(linear_layer_sizes, linear_layer_densities, optimizers, activations, loss, learning_rate, args.batch_size)
-
-
-def parse_init_weights(text: str, linear_layer_count: int) -> List[nerva.weights.WeightInitializer]:
-    words = text.strip().split(';')
-    n = linear_layer_count
-
-    if len(words) == 1:
-        init = nerva.weights.parse_weight_initializer(words[0])
-        return [init] * n
-
-    if len(words) != n:
-        raise RuntimeError(f'the number of weight initializers ({len(words)}) does not match with the number of linear layers ({n})')
-
-    return [nerva.weights.parse_weight_initializer(word) for word in words]
+def make_torch_model(args, linear_layer_sizes, densities):
+    M = MLPPyTorch(linear_layer_sizes, densities) if args.trim_relu == 0 else MLPPyTorchTRelu(linear_layer_sizes, densities, args.trim_relu)
+    M.optimizer = optim.SGD(M.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
+    M.loss = nn.CrossEntropyLoss()
+    M.learning_rate = make_torch_scheduler(args, M.optimizer)
+    for layer in M.layers:
+        nn.init.xavier_uniform_(layer.weight)
+    M.apply_masks()
+    return M
 
 
 def make_argument_parser():
@@ -61,6 +39,7 @@ def make_argument_parser():
     cmdline_parser.add_argument('--sizes', type=str, default='3072,128,64,10', help='A comma separated list of layer sizes, e.g. "3072,128,64,10".')
     cmdline_parser.add_argument('--densities', type=str, help='A comma separated list of layer densities, e.g. "0.05,0.05,1.0".')
     cmdline_parser.add_argument('--overall-density', type=float, default=1.0, help='The overall density of the layers.')
+    cmdline_parser.add_argument('--trim-relu', type=float, default=0.0, help='The threshold for trimming ReLU outputs.')
     cmdline_parser.add_argument('--layers', type=str, help='A semi-colon separated lists of layers.')
 
     # optimizer
@@ -90,11 +69,6 @@ def make_argument_parser():
     cmdline_parser.add_argument("--precision", help="The precision used for printing matrices", type=int, default=8)
     cmdline_parser.add_argument("--edgeitems", help="The edgeitems used for printing matrices", type=int, default=3)
 
-    # pruning + growing (experimental!)
-    cmdline_parser.add_argument("--prune", help="The pruning strategy: Magnitude(<rate>), SET(<rate>) or Threshold(<value>)", type=str)
-    cmdline_parser.add_argument("--grow", help="The growing strategy: (default: Random)", type=str)
-    cmdline_parser.add_argument('--grow-weights', type=str, help='The function used for growing weigths: Xavier, XavierNormalized, He, PyTorch, Zero')
-
     # multi-threading
     cmdline_parser.add_argument("--threads", help="The number of threads being used", type=int)
 
@@ -121,47 +95,12 @@ def print_command_line_arguments(args):
 
 def initialize_frameworks(args):
     if args.seed:
-        nerva.random.manual_seed(args.seed)
+        torch.manual_seed(args.seed)
 
-    if args.timer:
-        nerva.utilities.global_timer_enable()
+    torch.set_printoptions(precision=args.precision, edgeitems=args.edgeitems, threshold=5, sci_mode=False, linewidth=160)
 
-
-class SGD(StochasticGradientDescentAlgorithm):
-    def __init__(self,
-                 M: nerva.layers.Sequential,
-                 train_loader,
-                 test_loader,
-                 options: SGD_Options,
-                 loss: nerva.loss.LossFunction,
-                 learning_rate: nerva.learning_rate.LearningRateScheduler,
-                 preprocessed_dir: str,
-                 prune: PruneFunction,
-                 grow: GrowFunction
-                ):
-        super().__init__(M, train_loader, test_loader, options, loss, learning_rate)
-        self.preprocessed_dir = preprocessed_dir
-        self.regrow = PruneGrow(prune, grow) if prune else None
-
-    def reload_data(self, epoch) -> None:
-        """
-        Reloads the dataset if a directory with preprocessed data was specified.
-        """
-        if self.preprocessed_dir:
-            path = Path(self.preprocessed_dir) / f'epoch{epoch}.npz'
-            self.train_loader, self.test_loader = create_npz_dataloaders(str(path), self.options.batch_size)
-
-    def on_start_training(self) -> None:
-        self.reload_data(0)
-
-    def on_start_epoch(self, epoch):
-        if epoch > 0:
-            self.reload_data(epoch)
-
-        if epoch > 0 and self.regrow:
-            self.regrow(self.M)
-
-        # TODO: renew dropout masks
+    # avoid 'Too many open files' error when using data loaders
+    torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 def main():
@@ -193,34 +132,21 @@ def main():
     else:
         linear_layer_densities = [1.0] * (len(linear_layer_sizes) - 1)
 
-    layer_specifications = args.layers.split(';')
-    linear_layer_specifications = [spec for spec in layer_specifications if nervalib.is_linear_layer(spec)]
-    linear_layer_weights = parse_init_weights(args.init_weights, len(linear_layer_sizes) - 1)
-
-    M = make_nerva_model(args, linear_layer_sizes, linear_layer_densities, linear_layer_specifications, linear_layer_weights)
-
-    print('=== Nerva python model ===')
+    M = make_torch_model(args, linear_layer_sizes, linear_layer_densities)
+    print('=== PyTorch model ===')
     print(M)
 
     if args.load_weights:
         M.load_weights_and_bias(args.load_weights)
-
     if args.save_weights:
         M.save_weights_and_bias(args.save_weights)
 
     if args.epochs > 0:
-        print('\n=== Training Nerva model ===')
-        options = SGD_Options()
-        options.epochs = args.epochs
-        options.batch_size = args.batch_size
-        options.shuffle = False
-        options.statistics = True
-        options.debug = False
-        options.gradient_step = 0
-        prune = parse_prune_function(args.prune) if args.prune else None
-        grow = parse_grow_function(args.grow, nerva.weights.parse_weight_initializer(args.grow_weights)) if args.grow else None
-        algorithm = SGD(M, train_loader, test_loader, options, M.loss, M.learning_rate, args.preprocessed, prune, grow)
-        algorithm.run()
+        print('\n=== Training PyTorch model ===')
+        if args.preprocessed:
+            train_torch_preprocessed(M, args.preprocessed, args.epochs, args.batch_size)
+        else:
+            train_torch(M, train_loader, test_loader, args.epochs)
 
 
 if __name__ == '__main__':
