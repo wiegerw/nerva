@@ -2,13 +2,27 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from typing import List
+from typing import List, Union
 from nerva.learning_rate import LearningRateScheduler
 from nerva.loss import LossFunction
 import nerva.layers
+import nervalib
 from nerva.utilities import StopWatch
 from testing.numpy_utils import to_numpy, to_one_hot_numpy, l1_norm
+import numpy as np
+import torch
 
+
+def torch_inf_norm(x: torch.Tensor):
+    return torch.abs(x).max().item()
+
+def pp(name: str, x: Union[torch.Tensor, np.ndarray]):
+    if isinstance(x, np.ndarray):
+        x = torch.Tensor(x)
+    if len(x.shape) == 1:
+        print(f'{name} ({x.shape[0]}) norm = {torch_inf_norm(x)}\n{x.data}')
+    else:
+        print(f'{name} ({x.shape[0]}x{x.shape[1]}) norm = {torch_inf_norm(x)}\n{x.data}')
 
 def compute_densities(overall_density: float, sizes: List[int], erk_power_scale: float = 1.0) -> List[float]:
     layer_shapes = [(sizes[i], sizes[i+1]) for i in range(len(sizes) - 1)]
@@ -193,14 +207,26 @@ class StochasticGradientDescentAlgorithm(object):
 
             lr = self.learning_rate(epoch)  # update the learning at the start of each epoch
 
-            for (X, T) in self.train_loader:
+            for k, (X, T) in enumerate(self.train_loader):
                 self.on_start_batch()
                 X = to_numpy(X)
                 T = to_one_hot_numpy(T, n_classes)
                 Y = M.feedforward(X)
                 DY = self.loss.gradient(Y, T) / options.batch_size
+
+                if options.debug:
+                    print(f'epoch: {epoch} batch: {k}')
+                    nervalib.print_model_info(M.compiled_model)
+                    pp("X", X.T)
+                    pp("Y", Y.T)
+                    pp("DY", DY.T)
+
                 M.backpropagate(Y, DY)
                 M.optimize(lr)
+
+                if options.debug:
+                    nervalib.print_model_info(M.compiled_model)
+
                 self.on_end_batch()
 
             self.timer.stop(epoch_label)

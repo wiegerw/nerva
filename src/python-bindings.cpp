@@ -385,6 +385,7 @@ PYBIND11_MODULE(nervalib, m)
     ;
 
   m.def("save_model_weights_to_npy", save_model_weights_to_npy);
+  m.def("print_model_info", print_model_info);
 
   /////////////////////////////////////////////////////////////////////////
   //                       weights

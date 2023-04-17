@@ -49,5 +49,5 @@ def parse_optimizer(text: str) -> Optimizer:
     elif text.startswith('Nesterov'):
         m = re.match(r'Nesterov\((.*)\)', text)
         momentum = float(m.group(1))
-        return Momentum(momentum)
+        return Nesterov(momentum)
     raise RuntimeError(f"could not parse optimizer '{text}'")

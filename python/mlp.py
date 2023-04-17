@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import List
 
+import torch
+
 import nerva.activation
 import nerva.dataset
 import nerva.layers
@@ -96,6 +98,7 @@ def make_argument_parser():
     # print options
     cmdline_parser.add_argument("--precision", help="The precision used for printing matrices", type=int, default=8)
     cmdline_parser.add_argument("--edgeitems", help="The edgeitems used for printing matrices", type=int, default=3)
+    cmdline_parser.add_argument("--debug", help="print debug information", action="store_true")
 
     # pruning + growing (experimental!)
     cmdline_parser.add_argument("--prune", help="The pruning strategy: Magnitude(<rate>), SET(<rate>) or Threshold(<value>)", type=str)
@@ -132,6 +135,11 @@ def initialize_frameworks(args):
 
     if args.timer:
         nerva.utilities.global_timer_enable()
+
+    torch.set_printoptions(precision=args.precision, edgeitems=args.edgeitems, threshold=5, sci_mode=False, linewidth=160)
+
+    # avoid 'Too many open files' error when using data loaders
+    torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 class SGD(StochasticGradientDescentAlgorithm):
@@ -231,7 +239,7 @@ def main():
         options.batch_size = args.batch_size
         options.shuffle = False
         options.statistics = True
-        options.debug = False
+        options.debug = args.debug
         options.gradient_step = 0
         prune = parse_prune_function(args.prune) if args.prune else None
         grow = parse_grow_function(args.grow, nerva.weights.parse_weight_initializer(args.grow_weights)) if args.grow else None

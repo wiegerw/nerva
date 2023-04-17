@@ -91,7 +91,7 @@ struct momentum_optimizer: public gradient_descent_optimizer<Matrix>
      delta_b(b.size()),
      mu(mu_)
   {
-    if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+    if constexpr (IsSparse)
     {
       reset_support();
     }
@@ -109,7 +109,7 @@ struct momentum_optimizer: public gradient_descent_optimizer<Matrix>
 
   void update(scalar eta) override
   {
-    if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+    if constexpr (IsSparse)
     {
       mkl::ss_sum(delta_W, DW, mu, -eta);
       mkl::ss_sum(W, delta_W, scalar(1), scalar(1));

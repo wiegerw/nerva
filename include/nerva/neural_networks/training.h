@@ -221,14 +221,6 @@ class stochastic_gradient_descent_algorithm
           auto T = data.Ttrain(Eigen::indexing::all, batch);
           M.feedforward(X, Y);
 
-          if (options.debug)
-          {
-            std::cout << "epoch: " << epoch << " batch: " << k << std::endl;
-            print_model_info(M);
-            eigen::print_numpy_matrix("X", X.transpose());
-            eigen::print_numpy_matrix("Y", Y.transpose());
-          }
-
           if (options.gradient_step > 0)
           {
             DY = loss->gradient(Y, T);
@@ -240,6 +232,15 @@ class stochastic_gradient_descent_algorithm
             DY = loss->gradient(Y, T) / options.batch_size;  // pytorch does it like this
           }
 
+          if (options.debug)
+          {
+            std::cout << "epoch: " << epoch << " batch: " << k << std::endl;
+            print_model_info(M);
+            eigen::print_numpy_matrix("X", X.transpose());
+            eigen::print_numpy_matrix("Y", Y.transpose());
+            eigen::print_numpy_matrix("DY", DY.transpose());
+          }
+
           M.backpropagate(Y, DY);
 
           if (options.gradient_step > 0)
@@ -248,6 +249,11 @@ class stochastic_gradient_descent_algorithm
           }
 
           M.optimize(eta);
+
+          if (options.debug)
+          {
+            print_model_info(M);
+          }
 
           on_end_batch();
         }
