@@ -1,91 +1,94 @@
 #!/bin/bash
 source utilities.sh
 
-print_header "Generate weights"
-python3 mlp.py \
-        --nerva \
-        --seed=1 \
-	--init-weights=Xavier \
-        --overall-density=0.01 \
-        --lr=0.1 \
-        --sizes=3072,1024,512,10 \
-        --epochs=0 \
-        --datadir=./data \
-	--save-weights="mlp-regrow.npz"
+seed=1
+init_weights=XavierNormalized
+density=0.01
+sizes="3072,1024,512,10"
+layers="ReLU;ReLU;Linear"
+optimizers="Nesterov(0.9)"
+learning_rate="Constant(0.1)"
+loss=SoftmaxCrossEntropy
+batch_size=100
+epochs=3
+prune="Magnitude(0.2)"
+grow=Random
+grow_weights=XavierNormalized
 
 print_header "Nerva-python with regrow"
-python3 mlp.py \
-	--nerva \
-	--seed=1 \
-	--overall-density=0.01 \
-	--lr=0.1 \
-	--sizes=3072,1024,512,10 \
-	--batch-size=100 \
-	--epochs=10 \
-	--momentum=0.9 \
-	--nesterov \
+python3 -u mlp.py \
+	--seed=$seed \
+	--overall-density=$density \
+	--batch-size=$batch_size \
+	--epochs=$epochs \
+	--sizes=$sizes \
+	--layers=$layers \
+	--optimizers=$optimizers \
+	--init-weights=$init_weights \
+	--learning-rate=$learning_rate \
+	--loss=$loss \
+	--prune=$prune \
+	--grow=$grow \
+	--grow-weights=$grow_weights \
 	--datadir=./data \
-	--prune='Magnitude(0.2)' \
-	--grow='Random' \
-	--grow-weights=XavierNormalized \
-	--load-weights="mlp-regrow.npz"
+	2>&1 | tee mlp-regrow1.log
 
 print_header "Nerva-python preprocessed with regrow"
-python3 mlp.py \
-	--nerva \
-	--seed=1 \
-	--overall-density=0.01 \
-	--lr=0.1 \
-	--sizes=3072,1024,512,10 \
-	--batch-size=100 \
-	--epochs=10 \
-	--momentum=0.9 \
-	--nesterov \
+python3 -u mlp.py \
+	--seed=$seed \
+	--overall-density=$density \
+	--batch-size=$batch_size \
+	--epochs=$epochs \
+	--sizes=$sizes \
+	--layers=$layers \
+	--optimizers=$optimizers \
+	--init-weights=$init_weights \
+	--learning-rate=$learning_rate \
+	--loss=$loss \
+	--prune=$prune \
+	--grow=$grow \
+	--grow-weights=$grow_weights \
 	--preprocessed=./cifar1 \
-	--prune='Magnitude(0.2)' \
-	--grow='Random' \
-	--grow-weights=XavierNormalized \
-	--load-weights="mlp-regrow.npz"
+	2>&1 | tee mlp-regrow2.log
 
 print_header "Nerva-c++ with regrow"
 ../tools/dist/mlp \
-	--seed=1 \
-	--overall-density=0.01 \
-	--sizes='3072,1024,512,10' \
-	--batch-size=100 \
-	--epochs=10 \
-	--learning-rate='constant(0.1)' \
-	--optimizer='nesterov(0.9)' \
-	--layers="ReLU;ReLU;Linear" \
+	--seed=$seed \
+	--overall-density=$density \
+	--batch-size=$batch_size \
+	--epochs=$epochs \
+	--sizes=$sizes \
+	--layers=$layers \
+	--optimizers=$optimizers \
+	--init-weights=$init_weights \
+	--learning-rate=$learning_rate \
+	--loss=$loss \
+	--prune=$prune \
+	--grow=$grow \
+	--grow-weights=$grow_weights \
 	--dataset=cifar10 \
-	--size=50000 \
-	--loss=softmax-cross-entropy \
 	--threads=4 \
 	--no-shuffle \
 	--verbose \
-	--prune='Magnitude(0.2)' \
-	--grow='Random' \
-	--grow-weights=XavierNormalized \
-	--load-weights="mlp-regrow.npz"
+	2>&1 | tee mlp-regrow3.log
 
 print_header "Nerva-c++ preprocessed with regrow"
 ../tools/dist/mlp \
-	--seed=1 \
-	--overall-density=0.01 \
-	--sizes='3072,1024,512,10' \
-	--batch-size=100 \
-	--epochs=10 \
-	--learning-rate='constant(0.1)' \
-	--optimizer='nesterov(0.9)' \
-	--layers="ReLU;ReLU;Linear" \
+	--seed=$seed \
+	--overall-density=$density \
+	--batch-size=$batch_size \
+	--epochs=$epochs \
+	--sizes=$sizes \
+	--layers=$layers \
+	--optimizers=$optimizers \
+	--init-weights=$init_weights \
+	--learning-rate=$learning_rate \
+	--loss=$loss \
+	--prune=$prune \
+	--grow=$grow \
+	--grow-weights=$grow_weights \
 	--preprocessed=./cifar1 \
-	--size=50000 \
-	--loss=softmax-cross-entropy \
 	--threads=4 \
 	--no-shuffle \
 	--verbose \
-	--prune='Magnitude(0.2)' \
-	--grow='Random' \
-	--grow-weights=XavierNormalized \
-	--load-weights="mlp-regrow.npz"
-
+	2>&1 | tee mlp-regrow4.log
