@@ -549,16 +549,16 @@ void set_optimizer(linear_layer<Matrix>& layer, const std::string& text)
     return parse_scalar(text.substr(startpos + 1, endpos - startpos - 1));
   };
 
-  if (text == "gradient-descent")
+  if (text == "GradientDescent")
   {
     layer.optimizer = std::make_shared<gradient_descent_optimizer<Matrix>>(layer.W, layer.DW, layer.b, layer.Db);
   }
-  else if (utilities::starts_with(text, "momentum"))  // e.g. "momentum(0.9)"
+  else if (utilities::starts_with(text, "Momentum"))  // e.g. "momentum(0.9)"
   {
     scalar mu = parse_argument();
     layer.optimizer = std::make_shared<momentum_optimizer<Matrix>>(layer.W, layer.DW, layer.b, layer.Db, mu);
   }
-  else if (utilities::starts_with(text, "nesterov"))
+  else if (utilities::starts_with(text, "Nesterov"))
   {
     scalar mu = parse_argument();
     layer.optimizer = std::make_shared<nesterov_optimizer<Matrix>>(layer.W, layer.DW, layer.b, layer.Db, mu);

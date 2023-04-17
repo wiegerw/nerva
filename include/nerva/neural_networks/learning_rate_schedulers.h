@@ -149,7 +149,7 @@ struct exponential_scheduler: public learning_rate_scheduler
 inline
 std::shared_ptr<learning_rate_scheduler> parse_constant_scheduler(const std::string& text)
 {
-  std::regex re{R"(constant\((.*?)\))"};
+  std::regex re{R"(Constant\((.*?)\))"};
   std::smatch m;
   bool result = std::regex_match(text, m, re);
   if (!result)
@@ -163,7 +163,7 @@ std::shared_ptr<learning_rate_scheduler> parse_constant_scheduler(const std::str
 inline
 std::shared_ptr<learning_rate_scheduler> parse_multistep_lr_scheduler(const std::string& text)
 {
-  std::regex re{R"(multistep_lr\((.*?);(.*?);(.*?)\))"};
+  std::regex re{R"(MultistepLR\((.*?);(.*?);(.*?)\))"};
   std::smatch m;
   bool result = std::regex_match(text, m, re);
   if (!result)
@@ -179,7 +179,7 @@ std::shared_ptr<learning_rate_scheduler> parse_multistep_lr_scheduler(const std:
 inline
 std::shared_ptr<learning_rate_scheduler> parse_time_based_scheduler(const std::string& text)
 {
-  std::regex re{R"(time_based\((.*?),(.*?)\))"};
+  std::regex re{R"(TimeBased\((.*?),(.*?)\))"};
   std::smatch m;
   bool result = std::regex_match(text, m, re);
   if (!result)
@@ -194,7 +194,7 @@ std::shared_ptr<learning_rate_scheduler> parse_time_based_scheduler(const std::s
 inline
 std::shared_ptr<learning_rate_scheduler> parse_step_based_scheduler(const std::string& text)
 {
-  std::regex re{R"(step_based\((.*?),(.*?),(.*?)\))"};
+  std::regex re{R"(StepBased\((.*?),(.*?),(.*?)\))"};
   std::smatch m;
   bool result = std::regex_match(text, m, re);
   if (!result)
@@ -225,23 +225,23 @@ std::shared_ptr<learning_rate_scheduler> parse_exponential_scheduler(const std::
 inline
 std::shared_ptr<learning_rate_scheduler> parse_learning_rate_scheduler(const std::string& text)
 {
-  if (utilities::starts_with(text, "constant"))
+  if (utilities::starts_with(text, "Constant"))
   {
     return parse_constant_scheduler(text);
   }
-  else if (utilities::starts_with(text, "multistep_lr"))
+  else if (utilities::starts_with(text, "MultistepLR"))
   {
     return parse_multistep_lr_scheduler(text);
   }
-  else if (utilities::starts_with(text, "time_based"))
+  else if (utilities::starts_with(text, "TimeBased"))
   {
     return parse_time_based_scheduler(text);
   }
-  else if (utilities::starts_with(text, "step_based"))
+  else if (utilities::starts_with(text, "StepBased"))
   {
     return parse_step_based_scheduler(text);
   }
-  else if (utilities::starts_with(text, "exponential"))
+  else if (utilities::starts_with(text, "Exponential"))
   {
     return parse_exponential_scheduler(text);
   }

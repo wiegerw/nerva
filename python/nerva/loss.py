@@ -19,7 +19,7 @@ class CrossEntropyLoss(nervalib.cross_entropy_loss):
         return 'CrossEntropyLoss()'
 
 
-class LossFuncLogisticCrossEntropyLosstion(nervalib.logistic_cross_entropy_loss):
+class LogisticCrossEntropyLoss(nervalib.logistic_cross_entropy_loss):
     def __str__(self):
         return 'LogisticCrossEntropyLoss()'
 
@@ -27,3 +27,16 @@ class LossFuncLogisticCrossEntropyLosstion(nervalib.logistic_cross_entropy_loss)
 class SoftmaxCrossEntropyLoss(nervalib.softmax_cross_entropy_loss):
     def __str__(self):
         return 'SoftmaxCrossEntropyLoss()'
+
+
+def parse_loss_function(text: str) -> LossFunction:
+    if text == "SquaredError":
+        return SquaredErrorLoss()
+    elif text == "CrossEntropy":
+        return CrossEntropyLoss()
+    elif text == "LogisticCrossEntropy":
+        return LogisticCrossEntropyLoss()
+    elif text == "SoftmaxCrossEntropy":
+        return SoftmaxCrossEntropyLoss()
+    else:
+        raise RuntimeError(f"unknown loss function '{text}'")

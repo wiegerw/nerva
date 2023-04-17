@@ -343,7 +343,7 @@ PYBIND11_MODULE(nervalib, m)
     ;
 
   m.def("compute_sparse_layer_densities", compute_sparse_layer_densities);
-
+  m.def("is_linear_layer", is_linear_layer);
   m.def("make_linear_layer", [](const std::string& layer_description,
                                 std::size_t D,
                                 std::size_t K,

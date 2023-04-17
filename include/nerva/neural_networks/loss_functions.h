@@ -216,25 +216,25 @@ struct logistic_cross_entropy_loss: public loss_function
 inline
 std::shared_ptr<loss_function> parse_loss_function(const std::string& text)
 {
-  if (text == "squared-error")
+  if (text == "SquaredError")
   {
     return std::make_shared<squared_error_loss>();
   }
-  else if (text == "cross-entropy")
+  else if (text == "CrossEntropy")
   {
     return std::make_shared<cross_entropy_loss>();
   }
-  else if (text == "logistic-cross-entropy")
+  else if (text == "LogisticCrossEntropy")
   {
     return std::make_shared<logistic_cross_entropy_loss>();
   }
-  else if (text == "softmax-cross-entropy")
+  else if (text == "SoftmaxCrossEntropy")
   {
     return std::make_shared<softmax_cross_entropy_loss>();
   }
   else
   {
-    throw std::runtime_error("Unknown loss function '" + text + "'");
+    throw std::runtime_error("unknown loss function '" + text + "'");
   }
 }
 

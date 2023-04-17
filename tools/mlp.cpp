@@ -178,7 +178,7 @@ class tool: public command_line_tool
       cli |= lyra::opt(no_statistics)["--no-statistics"]("Do not compute statistics during training.");
 
       // optimizer
-      cli |= lyra::opt(options.optimizer, "value")["--optimizer"]("The optimizer (gradient-descent, momentum(<mu>), nesterov(<mu>))");
+      cli |= lyra::opt(options.optimizer, "value")["--optimizers"]("The optimizer (GradientDescent, Momentum(<mu>), Nesterov(<mu>))");
 
       // learning rate
       cli |= lyra::opt(options.learning_rate_scheduler, "value")["--learning-rate"]("The learning rate scheduler (default: constant(0.0001))");

@@ -23,18 +23,7 @@ import nervalib
 from nerva.pruning import PruneFunction, GrowFunction, PruneGrow, parse_prune_function, parse_grow_function
 from nerva.training import StochasticGradientDescentAlgorithm, SGD_Options, compute_densities
 from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, create_npz_dataloaders
-from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
 from testing.models import MLPNerva
-
-
-def make_nerva_model(args, linear_layer_sizes, linear_layer_densities, linear_layer_specifications, linear_layer_weights):
-    n_layers = len(linear_layer_densities)
-    loss = nerva.loss.SoftmaxCrossEntropyLoss()
-    learning_rate = make_nerva_scheduler(args)
-    activations = [nerva.activation.parse_activation(text) for text in linear_layer_specifications]
-    optimizer = make_nerva_optimizer(args.momentum, args.nesterov)
-    optimizers = [optimizer] * n_layers
-    return MLPNerva(linear_layer_sizes, linear_layer_densities, optimizers, activations, loss, learning_rate, args.batch_size)
 
 
 def parse_init_weights(text: str, linear_layer_count: int) -> List[nerva.weights.WeightInitializer]:
@@ -51,6 +40,24 @@ def parse_init_weights(text: str, linear_layer_count: int) -> List[nerva.weights
     return [nerva.weights.parse_weight_initializer(word) for word in words]
 
 
+def parse_optimizers(text: str, linear_layer_count: int) -> List[nerva.optimizers.Optimizer]:
+    words = text.strip().split(';')
+    n = linear_layer_count
+
+    if len(words) == 0:
+        optimizer = nerva.optimizers.GradientDescent()
+        return [optimizer] * n
+
+    if len(words) == 1:
+        optimizer = nerva.optimizers.parse_optimizer(words[0])
+        return [optimizer] * n
+
+    if len(words) != n:
+        raise RuntimeError(f'the number of weight initializers ({len(words)}) does not match with the number of linear layers ({n})')
+
+    return [nerva.optimizers.parse_optimizer(word) for word in words]
+
+
 def make_argument_parser():
     cmdline_parser = argparse.ArgumentParser()
 
@@ -63,18 +70,18 @@ def make_argument_parser():
     cmdline_parser.add_argument('--overall-density', type=float, default=1.0, help='The overall density of the layers.')
     cmdline_parser.add_argument('--layers', type=str, help='A semi-colon separated lists of layers.')
 
-    # optimizer
-    cmdline_parser.add_argument('--momentum', type=float, default=0.9, help='the momentum value (default: off)')
-    cmdline_parser.add_argument("--nesterov", help="apply nesterov", action="store_true")
-
     # learning rate
-    cmdline_parser.add_argument("--lr", help="The initial learning rate", type=float, default=0.1)
-    cmdline_parser.add_argument("--scheduler", type=str, help="The learning rate scheduler (constant,multistep)", default="multistep")
-    cmdline_parser.add_argument('--gamma', type=float, default=0.1, help='The learning rate decay (default: 0.1)')
+    cmdline_parser.add_argument("--learning-rate", type=str, help="The learning rate scheduler")
+
+    # loss function
+    cmdline_parser.add_argument('--loss', type=str, help='The loss function')
 
     # training
     cmdline_parser.add_argument("--epochs", help="The number of epochs", type=int, default=100)
     cmdline_parser.add_argument("--batch-size", help="The batch size", type=int, default=1)
+
+    # optimizer
+    cmdline_parser.add_argument("--optimizers", type=str, help="The optimizer (GradientDescent, Momentum(<mu>), Nesterov(<mu>))", default="GradientDescent")
 
     # dataset
     cmdline_parser.add_argument('--datadir', type=str, default='', help='the data directory (default: ./data)')
@@ -82,7 +89,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
 
     # load/save weights
-    cmdline_parser.add_argument('--init-weights', type=str, default='None', help='The weights for initalizing the layers')
+    cmdline_parser.add_argument('--init-weights', type=str, default='None', help='The initial weights for the layers')
     cmdline_parser.add_argument('--save-weights', type=str, help='Save weights and bias to a file in .npz format')
     cmdline_parser.add_argument('--load-weights', type=str, help='Load weights and bias from a file in .npz format')
 
@@ -172,10 +179,6 @@ def main():
 
     initialize_frameworks(args)
 
-    if args.scheduler == 'multistep' and args.epochs <= 10:
-        print('Setting gamma to 1.0')
-        args.gamma = 1.0
-
     if args.datadir:
         if args.augmented:
             train_loader, test_loader = create_cifar10_augmented_dataloaders(args.batch_size, args.batch_size, args.datadir)
@@ -196,8 +199,21 @@ def main():
     layer_specifications = args.layers.split(';')
     linear_layer_specifications = [spec for spec in layer_specifications if nervalib.is_linear_layer(spec)]
     linear_layer_weights = parse_init_weights(args.init_weights, len(linear_layer_sizes) - 1)
+    linear_layer_optimizers = parse_optimizers(args.optimizers, len(linear_layer_sizes) - 1)
 
-    M = make_nerva_model(args, linear_layer_sizes, linear_layer_densities, linear_layer_specifications, linear_layer_weights)
+    loss = nerva.loss.parse_loss_function(args.loss)
+    learning_rate = nerva.learning_rate.parse_learning_rate(args.learning_rate)
+    activations = [nerva.activation.parse_activation(text) for text in linear_layer_specifications]
+
+    M = MLPNerva(linear_layer_sizes,
+                 linear_layer_densities,
+                 linear_layer_optimizers,
+                 linear_layer_weights,
+                 activations,
+                 loss,
+                 learning_rate,
+                 args.batch_size
+                )
 
     print('=== Nerva python model ===')
     print(M)
