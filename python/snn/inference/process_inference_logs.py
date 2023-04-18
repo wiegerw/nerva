@@ -3,6 +3,7 @@
 import pathlib
 import re
 import sys
+from typing import List
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -50,9 +51,7 @@ def set_log_scale(x_axis: str):
                    ['0.5', '0.8', '0.9', '0.95', '0.99', '0.995', '0.999'])
 
 
-def make_time_vs_density_plot(df: pd.DataFrame, filename: str):
-    path = pathlib.Path(filename)
-
+def make_time_vs_density_plot(df: pd.DataFrame, paths: List[pathlib.Path]):
     palette = sns.color_palette()
     color_nerva = palette[0]
     color_torch = palette[1]
@@ -98,8 +97,9 @@ def make_time_vs_density_plot(df: pd.DataFrame, filename: str):
     plt.legend()
 
     # Save the plot
-    print(f'Saving plot to {path}')
-    plt.savefig(path, bbox_inches='tight')
+    for path in paths:
+        print(f'Saving plot to {path}')
+        plt.savefig(path, bbox_inches='tight')
     plt.close()
 
 
@@ -118,4 +118,7 @@ if __name__ == '__main__':
     # sort by sparsity
     df = df.sort_values(by=['framework', 'sparsity'])
 
-    make_time_vs_density_plot(df, './seed123-inference-vs-sparsity.pdf')
+    pdf_file = pathlib.Path('./seed123-inference-vs-sparsity.pdf')
+    svg_file = pdf_file.with_suffix('.svg')
+    make_time_vs_density_plot(df, [pdf_file, svg_file])
+

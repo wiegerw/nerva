@@ -6,6 +6,7 @@ import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from typing import List
 
 
 def parse_logfile(path: pathlib.Path) -> pd.DataFrame:
@@ -90,7 +91,7 @@ def set_log_scale(x_axis: str):
                    ['0.5', '0.8', '0.9', '0.95', '0.99', '0.995', '0.999'])
 
 
-def make_acc_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str = 'density', log_scale: bool = False):
+def make_acc_vs_density_plot(df: pd.DataFrame, paths: List[pathlib.Path], x_axis: str = 'density', log_scale: bool = False):
     palette = sns.color_palette()
     frameworks = {'nerva': {'label': 'Nerva', 'color': palette[0]},
                   'torch': {'label': 'PyTorch', 'color': palette[1]}}
@@ -120,12 +121,13 @@ def make_acc_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str =
     plt.title(f'Accuracy vs {xlabel}')
     # Add a legend to the plot. Make sure nerva is presented as Nerva and torch as PyTorch
     plt.legend()
-    # Save the plot
-    plt.savefig(path, bbox_inches='tight')
+    # Save the plots
+    for path in paths:
+        plt.savefig(path, bbox_inches='tight')
     plt.close()
 
 
-def make_time_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str = 'density', log_scale: bool = False, with50: bool = True):
+def make_time_vs_density_plot(df: pd.DataFrame, paths: List[pathlib.Path], x_axis: str = 'density', log_scale: bool = False, with50: bool = True):
     palette = sns.color_palette()
     frameworks = {'nerva': {'label': 'Nerva', 'color': palette[0]},
                   'torch': {'label': 'PyTorch', 'color': palette[1]}}
@@ -160,8 +162,9 @@ def make_time_vs_density_plot(df: pd.DataFrame, path: pathlib.Path, x_axis: str 
     plt.title(f'Time vs {xlabel}')
     # Add a legend to the plot
     plt.legend()
-    # Save the plot
-    plt.savefig(path, bbox_inches='tight')
+    # Save the plots
+    for path in paths:
+        plt.savefig(path, bbox_inches='tight')
     plt.close()
 
 
@@ -175,13 +178,17 @@ def main(folder, x_axis):
     with50 = False
     name50 = 'with50' if with50 else 'without50'
 
-    filename = f'./{folder}-time-vs-{x_axis}_{name50}.pdf'
-    print(f'Creating {filename}')
-    make_time_vs_density_plot(df_time, pathlib.Path(filename), x_axis, with50=with50)  # log_scale=True)
+    pdf_file = pathlib.Path(f'./{folder}-time-vs-{x_axis}_{name50}.pdf')
+    svg_file = pdf_file.with_suffix('.svg')
+    print(f'Creating {pdf_file}')
+    print(f'Creating {svg_file}')
+    make_time_vs_density_plot(df_time, [pdf_file, svg_file], x_axis, with50=with50)  # log_scale=True)
 
-    filename = f'./{folder}-accuracy-vs-{x_axis}.pdf'
-    print(f'Creating {filename}')
-    make_acc_vs_density_plot(df_acc, pathlib.Path(filename), x_axis, log_scale=True)
+    pdf_file = pathlib.Path(f'./{folder}-accuracy-vs-{x_axis}.pdf')
+    svg_file = pdf_file.with_suffix('.svg')
+    print(f'Creating {pdf_file}')
+    print(f'Creating {svg_file}')
+    make_acc_vs_density_plot(df_acc, [pdf_file, svg_file], x_axis, log_scale=True)
 
 
 if __name__ == '__main__':
