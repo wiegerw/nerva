@@ -250,11 +250,6 @@ class stochastic_gradient_descent_algorithm
 
           M.optimize(eta);
 
-          if (options.debug)
-          {
-            print_model_info(M);
-          }
-
           on_end_batch();
         }
 

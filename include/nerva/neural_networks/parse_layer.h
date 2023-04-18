@@ -34,6 +34,7 @@ namespace nerva {
 // AllRelu(<alpha>)
 // LeakyRelu(<alpha>)
 // TReLU(<epsilon>)
+// SReLU
 //
 // BatchNorm
 // Dropout(<rate>)
@@ -78,6 +79,19 @@ scalar parse_scalar_argument(const std::string& text)
 {
   std::vector<std::string> arguments = parse_arguments(text, 1);
   return parse_scalar(arguments.front());
+}
+
+template <int N>
+std::array<scalar, N> parse_scalar_arguments(const std::string& text)
+{
+  std::vector<std::string> arguments = parse_arguments(text, 1);
+  assert(arguments.size() == N);
+  std::array<scalar, N> result;
+  for (int i = 0; i < N; i++)
+  {
+    result[i] = parse_scalar(arguments[i]);
+  }
+  return result;
 }
 
 template <typename Predicate, typename T>
@@ -221,12 +235,12 @@ struct layer_builder
     {
       return std::make_shared<sparse_hyperbolic_tangent_layer>(D, K, batch_size);
     }
-    else if (utilities::starts_with(layer_description, "AllRelu"))
+    else if (utilities::starts_with(layer_description, "AllReLU"))
     {
       scalar alpha = parse_scalar_argument(layer_description);
       return std::make_shared<sparse_trimmed_relu_layer>(alpha, D, K, batch_size);
     }
-    else if (utilities::starts_with(layer_description, "LeakyRelu"))
+    else if (utilities::starts_with(layer_description, "LeakyReLU"))
     {
       scalar alpha = parse_scalar_argument(layer_description);
       return std::make_shared<sparse_leaky_relu_layer>(alpha, D, K, batch_size);
@@ -235,6 +249,11 @@ struct layer_builder
     {
       scalar epsilon = parse_scalar_argument(layer_description);
       return std::make_shared<sparse_trimmed_relu_layer>(epsilon, D, K, batch_size);
+    }
+    else if (utilities::starts_with(layer_description, "SReLU"))
+    {
+      const auto [a_l, t_l, a_r, t_r] = parse_scalar_arguments<4>(layer_description);
+      return std::make_shared<sparse_srelu_layer>(D, K, batch_size, a_l, t_l, a_r, t_r);
     }
     throw std::runtime_error("unsupported sparse layer '" + layer_description + "'");
   }

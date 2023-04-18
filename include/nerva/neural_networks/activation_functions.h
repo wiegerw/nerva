@@ -313,6 +313,103 @@ struct all_relu_activation
   }
 };
 
+struct srelu
+{
+  scalar a_l;
+  scalar t_l;
+  scalar a_r;
+  scalar t_r;
+
+  explicit srelu(scalar a_l_ = 1, scalar t_l_ = 0, scalar a_r_ = 1, scalar t_r_ = 0)
+   : a_l(a_l_), t_l(t_l_), a_r(a_r_), t_r(t_r_)
+  {}
+
+  scalar operator()(scalar x) const
+  {
+    if (x <= t_l)
+    {
+      return t_l + a_l * (x - t_l);
+    }
+    else if (x < t_r)
+    {
+      return x;
+    }
+    else
+    {
+      return t_r + a_r * (x - t_r);
+    }
+  }
+
+  template <typename Matrix>
+  auto operator()(const Matrix& x) const
+  {
+    return x.unaryExpr(*this);
+  }
+};
+
+struct srelu_prime
+{
+  scalar a_l;
+  scalar t_l;
+  scalar a_r;
+  scalar t_r;
+
+  explicit srelu_prime(scalar a_l_ = 1, scalar t_l_ = 0, scalar a_r_ = 1, scalar t_r_ = 0)
+  : a_l(a_l_), t_l(t_l_), a_r(a_r_), t_r(t_r_)
+  {}
+
+  scalar operator()(scalar x) const
+  {
+    if (x <= t_l)
+    {
+      return a_l;
+    }
+    else if (x < t_r)
+    {
+      return 1;
+    }
+    else
+    {
+      return a_r;
+    }
+  }
+
+  template <typename Matrix>
+  auto operator()(const Matrix& x) const
+  {
+    return x.unaryExpr(*this);
+  }
+};
+
+struct srelu_activation
+{
+  scalar a_l;
+  scalar t_l;
+  scalar a_r;
+  scalar t_r;
+
+  explicit srelu_activation(scalar a_l_ = 1, scalar t_l_ = 0, scalar a_r_ = 1, scalar t_r_ = 0)
+  : a_l(a_l_), t_l(t_l_), a_r(a_r_), t_r(t_r_)
+  {}
+
+  template <typename Matrix>
+  auto operator()(const Matrix& X) const
+  {
+    return srelu(a_l, t_l, a_r, t_r)(X);
+  }
+
+  template <typename Matrix>
+  auto prime(const Matrix& X) const
+  {
+    return srelu_prime(a_l, t_l, a_r, t_r)(X);
+  }
+
+  [[nodiscard]] std::string to_string() const
+  {
+    return "SReLU()";
+  }
+};
+
 struct hyperbolic_tangent
 {
   scalar operator()(scalar x) const

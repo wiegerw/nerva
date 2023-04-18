@@ -224,9 +224,6 @@ class StochasticGradientDescentAlgorithm(object):
                 M.backpropagate(Y, DY)
                 M.optimize(lr)
 
-                if options.debug:
-                    nervalib.print_model_info(M.compiled_model)
-
                 self.on_end_batch()
 
             self.timer.stop(epoch_label)

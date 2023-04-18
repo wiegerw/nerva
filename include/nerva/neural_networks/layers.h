@@ -413,6 +413,54 @@ using dense_all_relu_layer = all_relu_layer<eigen::matrix>;
 using sparse_all_relu_layer = all_relu_layer<mkl::sparse_matrix_csr<scalar>>;
 
 template <typename Matrix>
+struct srelu_layer : public activation_layer<Matrix, srelu_activation>
+{
+  using super = activation_layer<Matrix, srelu_activation>;
+  using super::backpropagate;
+  using super::optimize;
+  using super::Z;
+  using super::act;
+
+  scalar Da_l = 0;
+  scalar Dt_l = 0;
+  scalar Da_r = 0;
+  scalar Dt_r = 0;
+
+  explicit srelu_layer(std::size_t D, std::size_t K, std::size_t Q, scalar a_l = 1, scalar t_l = 0, scalar a_r = 1, scalar t_r = 0)
+    : super(srelu_activation(a_l, t_l, a_r, t_r), D, K, Q)
+  {}
+
+  void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
+  {
+    super::backpropagate(Y, DY);
+
+    auto A_l = Z.unaryExpr([this](scalar x) { return std::min(x - act.t_l, scalar(0)); });
+    Da_l = DY.cwiseProduct(A_l).sum();
+
+    auto A_r = Z.unaryExpr([this](scalar x) { return std::max(x - act.t_r, scalar(0)); });
+    Da_r = DY.cwiseProduct(A_r).sum();
+
+    auto T_l = Z.unaryExpr([this](scalar x) { return x <= act.t_l ? scalar(1) - act.a_l : scalar(0); });
+    Dt_l = DY.cwiseProduct(T_l).sum();
+
+    auto T_r = Z.unaryExpr([this](scalar x) { return x >= act.t_r ? scalar(1) - act.a_r : scalar(0); });
+    Dt_r = DY.cwiseProduct(T_r).sum();
+  }
+
+  void optimize(scalar eta) override
+  {
+    super::optimize(eta);
+    act.a_l -= eta * Da_l;
+    act.a_r -= eta * Da_r;
+    act.t_l -= eta * Dt_l;
+    act.t_r -= eta * Dt_r;
+  }
+};
+
+using dense_srelu_layer = srelu_layer<eigen::matrix>;
+using sparse_srelu_layer = srelu_layer<mkl::sparse_matrix_csr<scalar>>;
+
+template <typename Matrix>
 struct softmax_layer : public linear_layer<Matrix>
 {
   using super = linear_layer<Matrix>;
