@@ -315,28 +315,28 @@ struct all_relu_activation
 
 struct srelu
 {
-  scalar a_l;
-  scalar t_l;
-  scalar a_r;
-  scalar t_r;
+  scalar al;
+  scalar tl;
+  scalar ar;
+  scalar tr;
 
-  explicit srelu(scalar a_l_ = 1, scalar t_l_ = 0, scalar a_r_ = 1, scalar t_r_ = 0)
-   : a_l(a_l_), t_l(t_l_), a_r(a_r_), t_r(t_r_)
+  explicit srelu(scalar al_ = 1, scalar tl_ = 0, scalar ar_ = 1, scalar tr_ = 0)
+   : al(al_), tl(tl_), ar(ar_), tr(tr_)
   {}
 
   scalar operator()(scalar x) const
   {
-    if (x <= t_l)
+    if (x <= tl)
     {
-      return t_l + a_l * (x - t_l);
+      return tl + al * (x - tl);
     }
-    else if (x < t_r)
+    else if (x < tr)
     {
       return x;
     }
     else
     {
-      return t_r + a_r * (x - t_r);
+      return tr + ar * (x - tr);
     }
   }
 
@@ -349,28 +349,28 @@ struct srelu
 
 struct srelu_prime
 {
-  scalar a_l;
-  scalar t_l;
-  scalar a_r;
-  scalar t_r;
+  scalar al;
+  scalar tl;
+  scalar ar;
+  scalar tr;
 
-  explicit srelu_prime(scalar a_l_ = 1, scalar t_l_ = 0, scalar a_r_ = 1, scalar t_r_ = 0)
-  : a_l(a_l_), t_l(t_l_), a_r(a_r_), t_r(t_r_)
+  explicit srelu_prime(scalar al_ = 1, scalar tl_ = 0, scalar ar_ = 1, scalar tr_ = 0)
+  : al(al_), tl(tl_), ar(ar_), tr(tr_)
   {}
 
   scalar operator()(scalar x) const
   {
-    if (x <= t_l)
+    if (x <= tl)
     {
-      return a_l;
+      return al;
     }
-    else if (x < t_r)
+    else if (x < tr)
     {
       return 1;
     }
     else
     {
-      return a_r;
+      return ar;
     }
   }
 
@@ -383,30 +383,30 @@ struct srelu_prime
 
 struct srelu_activation
 {
-  scalar a_l;
-  scalar t_l;
-  scalar a_r;
-  scalar t_r;
+  scalar al;
+  scalar tl;
+  scalar ar;
+  scalar tr;
 
-  explicit srelu_activation(scalar a_l_ = 1, scalar t_l_ = 0, scalar a_r_ = 1, scalar t_r_ = 0)
-  : a_l(a_l_), t_l(t_l_), a_r(a_r_), t_r(t_r_)
+  explicit srelu_activation(scalar al_ = 1, scalar tl_ = 0, scalar ar_ = 1, scalar tr_ = 0)
+  : al(al_), tl(tl_), ar(ar_), tr(tr_)
   {}
 
   template <typename Matrix>
   auto operator()(const Matrix& X) const
   {
-    return srelu(a_l, t_l, a_r, t_r)(X);
+    return srelu(al, tl, ar, tr)(X);
   }
 
   template <typename Matrix>
   auto prime(const Matrix& X) const
   {
-    return srelu_prime(a_l, t_l, a_r, t_r)(X);
+    return srelu_prime(al, tl, ar, tr)(X);
   }
 
   [[nodiscard]] std::string to_string() const
   {
-    return "SReLU()";
+    return fmt::format("SReLU({},{},{},{})", al, tl, ar, tr);
   }
 };
 

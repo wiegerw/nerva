@@ -34,7 +34,7 @@ namespace nerva {
 // AllRelu(<alpha>)
 // LeakyRelu(<alpha>)
 // TReLU(<epsilon>)
-// SReLU
+// SReLU(<al>,<tl>,<ar>,<tr>)
 //
 // BatchNorm
 // Dropout(<rate>)
@@ -84,7 +84,7 @@ scalar parse_scalar_argument(const std::string& text)
 template <int N>
 std::array<scalar, N> parse_scalar_arguments(const std::string& text)
 {
-  std::vector<std::string> arguments = parse_arguments(text, 1);
+  std::vector<std::string> arguments = parse_arguments(text, N);
   assert(arguments.size() == N);
   std::array<scalar, N> result;
   for (int i = 0; i < N; i++)
@@ -252,8 +252,8 @@ struct layer_builder
     }
     else if (utilities::starts_with(layer_description, "SReLU"))
     {
-      const auto [a_l, t_l, a_r, t_r] = parse_scalar_arguments<4>(layer_description);
-      return std::make_shared<sparse_srelu_layer>(D, K, batch_size, a_l, t_l, a_r, t_r);
+      const auto [al, tl, ar, tr] = parse_scalar_arguments<4>(layer_description);
+      return std::make_shared<sparse_srelu_layer>(D, K, batch_size, al, tl, ar, tr);
     }
     throw std::runtime_error("unsupported sparse layer '" + layer_description + "'");
   }

@@ -65,7 +65,10 @@ class Dense(Layer):
         :param dropout_rate: the dropout rate
         :return:
         """
-        layer = nervalib.make_linear_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, 1.0, self.weight_initializer.compile(), dropout_rate)
+        if dropout_rate == 0.0:
+            layer = nervalib.make_dense_linear_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, self.weight_initializer.compile())
+        else:
+            layer = nervalib.make_linear_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, 1.0, self.weight_initializer.compile(), dropout_rate)
         self._layer = layer
         return layer
 
@@ -109,7 +112,7 @@ class Sparse(Layer):
         :param dropout_rate: the dropout rate
         :return:
         """
-        layer = nervalib.make_linear_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, self.density, self.weight_initializer.compile(), 0.0)
+        layer = nervalib.make_sparse_linear_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, self.density, self.weight_initializer.compile())
         self._layer = layer
         return layer
 

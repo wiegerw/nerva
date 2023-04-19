@@ -57,6 +57,17 @@ class AllReLU(Activation):
         return f'AllReLU({self.alpha})'
 
 
+class SReLU(Activation):
+    def __init__(self, al: float, tl: float, ar: float, tr: float):
+        self.al = al
+        self.tl = tl
+        self.ar = ar
+        self.tr = tr
+
+    def __str__(self):
+        return f'SReLU({self.al},{self.tl},{self.ar},{self.tr})'
+
+
 class HyperbolicTangent(Activation):
     def __str__(self):
         return 'HyperbolicTangent()'
@@ -87,4 +98,11 @@ def parse_activation(text: str) -> Activation:
         return AllReLU(alpha)
     elif text == 'Linear':
         return NoActivation()
+    elif text.startswith('SReLU'):
+        m = re.match(r'SReLU\((.*),(.*),(.*),(.*)\)', text)
+        al = float(m.group(1))
+        tl = float(m.group(2))
+        ar = float(m.group(3))
+        tr = float(m.group(4))
+        return SReLU(al, tl, ar, tr)
     raise RuntimeError(f"could not parse activation '{text}'")
