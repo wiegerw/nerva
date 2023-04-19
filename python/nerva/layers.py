@@ -264,11 +264,28 @@ class Sequential(object):
         print(f'Initializing weights using {", ".join(str(w) for w in weight_initializers)}')
         self.compiled_model.set_weights_and_bias([w.compile() for w in weight_initializers])
 
-    # def load_weights(self, filename: str):
-    #     self.compiled_model.import_weights_npz(filename)
-    #
-    # def save_weights(self, filename: str):
-    #     self.compiled_model.export_weights_npz(filename)
+    def load_weights_and_bias(self, filename: str):
+        """
+        Loads the weights and biases from a file in .npz format
+
+        The weight matrices are stored using the keys W1, W2, ... and the bias vectors using the keys "b1, b2, ..."
+        :param filename: the name of the file
+        """
+        print(f'Loading weights and bias from {filename}')
+        self.compiled_model.import_weights_npz(filename)
+
+    def save_weights_and_bias(self, filename: str):
+        """
+        Loads the weights and biases from a file in .npz format
+
+        The weight matrices are stored using the keys W1, W2, ... and the bias vectors using the keys "b1, b2, ..."
+        :param filename: the name of the file
+        """
+        print(f'Saving weights and bias to {filename}')
+        self.compiled_model.export_weights_npz(filename)
+
+    def info(self, msg):
+        self.compiled_model.info(msg)
 
 
 def compute_sparse_layer_densities(overall_density: float, layer_sizes: List[int], erk_power_scale: float=1) -> List[float]:

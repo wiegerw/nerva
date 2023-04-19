@@ -3,18 +3,31 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from typing import List, Union
+
 from nerva.learning_rate import LearningRateScheduler
 from nerva.loss import LossFunction
-import nerva.layers
-import nervalib
-from nerva.utilities import StopWatch
-from testing.numpy_utils import to_numpy, to_one_hot_numpy, l1_norm
+from nerva.layers import Sequential
+from nerva.utilities import MapTimer
+
 import numpy as np
 import torch
 
 
+def flatten_numpy(x: np.ndarray) -> np.ndarray:
+    shape = x.shape
+    return x.reshape(shape[0], -1)
+
+def to_numpy(x: torch.Tensor) -> np.ndarray:
+    return np.asfortranarray(x.detach().numpy().T)
+
+
+def to_one_hot_numpy(x: np.ndarray, n_classes: int):
+    return flatten_numpy(np.asfortranarray(np.eye(n_classes)[x].T))
+
+
 def torch_inf_norm(x: torch.Tensor):
     return torch.abs(x).max().item()
+
 
 def pp(name: str, x: Union[torch.Tensor, np.ndarray]):
     if isinstance(x, np.ndarray):
@@ -130,7 +143,7 @@ class SGD_Options:
 
 class StochasticGradientDescentAlgorithm(object):
     def __init__(self,
-                 M: nerva.layers.Sequential,
+                 M: Sequential,
                  train_loader,
                  test_loader,
                  options: SGD_Options,
@@ -143,7 +156,7 @@ class StochasticGradientDescentAlgorithm(object):
         self.options = options
         self.loss = loss
         self.learning_rate = learning_rate
-        self.timer = nerva.utilities.MapTimer()
+        self.timer = MapTimer()
 
     def on_start_training(self) -> None:
         """
@@ -216,7 +229,7 @@ class StochasticGradientDescentAlgorithm(object):
 
                 if options.debug:
                     print(f'epoch: {epoch} batch: {k}')
-                    nervalib.print_model_info(M.compiled_model)
+                    M.info('MLP')
                     pp("X", X.T)
                     pp("Y", Y.T)
                     pp("DY", DY.T)

@@ -121,29 +121,6 @@ class MLPNerva(nerva.layers.Sequential):
 
         self.compile(layer_sizes[0], batch_size)
 
-    def save_weights_and_bias(self, filename: str):
-        """
-        Saves the weights and biases to a file in .npz format
-
-        The weight matrices should have keys W1, W2, ... and the bias vectors should have keys "b1, b2, ..."
-        :param filename: the name of the file
-        """
-        print(f'Saving weights and bias to {filename}')
-        self.compiled_model.save_weights_and_bias(filename)
-
-    def load_weights_and_bias(self, filename: str):
-        """
-        Loads the weights and biases from a file in .npz format
-
-        The weight matrices are stored using the keys W1, W2, ... and the bias vectors using the keys "b1, b2, ..."
-        :param filename: the name of the file
-        """
-        print(f'Loading weights and bias from {filename}')
-        self.compiled_model.load_weights_and_bias(filename)
-
-    def info(self, msg):
-        self.compiled_model.info(msg)
-
     def __str__(self):
         density_info = [layer.density_info() for layer in self.layers]
         return f'{super().__str__()}\nloss = {self.loss}\nscheduler = {self.learning_rate}\nlayer densities: {", ".join(density_info)}\n'

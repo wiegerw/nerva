@@ -24,8 +24,37 @@ import nerva.weights
 import nervalib
 from nerva.pruning import PruneFunction, GrowFunction, PruneGrow, parse_prune_function, parse_grow_function
 from nerva.training import StochasticGradientDescentAlgorithm, SGD_Options, compute_densities
-from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, create_npz_dataloaders
-from testing.models import MLPNerva
+from nerva.dataset import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, create_npz_dataloaders
+
+
+class MLPNerva(nerva.layers.Sequential):
+    """ Nerva Multilayer perceptron
+    """
+    def __init__(self, layer_sizes, layer_densities, optimizers, linear_layer_weights, activations, loss, learning_rate, batch_size):
+        super().__init__()
+        self.layer_sizes = layer_sizes
+        self.layer_densities = layer_densities
+        self.loss = loss
+        self.learning_rate = learning_rate
+
+        n_layers = len(layer_densities)
+        assert len(layer_sizes) == n_layers + 1
+        assert len(activations) == n_layers
+        assert len(optimizers) == n_layers
+        assert len(linear_layer_weights) == n_layers
+
+        output_sizes = layer_sizes[1:]
+        for (density, size, activation, optimizer, weight_initializer) in zip(layer_densities, output_sizes, activations, optimizers, linear_layer_weights):
+            if density == 1.0:
+                self.add(nerva.layers.Dense(size, activation=activation, optimizer=optimizer, weight_initializer=weight_initializer))
+            else:
+                self.add(nerva.layers.Sparse(size, density, activation=activation, optimizer=optimizer, weight_initializer=weight_initializer))
+
+        self.compile(layer_sizes[0], batch_size)
+
+    def __str__(self):
+        density_info = [layer.density_info() for layer in self.layers]
+        return f'{super().__str__()}\nloss = {self.loss}\nscheduler = {self.learning_rate}\nlayer densities: {", ".join(density_info)}\n'
 
 
 def parse_init_weights(text: str, linear_layer_count: int) -> List[nerva.weights.WeightInitializer]:
