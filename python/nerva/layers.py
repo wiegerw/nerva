@@ -66,9 +66,9 @@ class Dense(Layer):
         :return:
         """
         if dropout_rate == 0.0:
-            layer = nervalib.make_dense_linear_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, self.weight_initializer.compile())
+            layer = nervalib.make_dense_linear_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, self.weight_initializer.compile(), self.optimizer.compile())
         else:
-            layer = nervalib.make_linear_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, 1.0, self.weight_initializer.compile(), dropout_rate)
+            layer = nervalib.make_linear_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, 1.0, self.weight_initializer.compile(), self.optimizer.compile(), dropout_rate)
         self._layer = layer
         return layer
 
@@ -112,7 +112,7 @@ class Sparse(Layer):
         :param dropout_rate: the dropout rate
         :return:
         """
-        layer = nervalib.make_sparse_linear_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, self.density, self.weight_initializer.compile())
+        layer = nervalib.make_sparse_linear_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, self.density, self.weight_initializer.compile(), self.optimizer.compile())
         self._layer = layer
         return layer
 
@@ -234,7 +234,6 @@ class Sequential(object):
                 if i + 1 < n and isinstance(self.layers[i+1], Dropout):
                     dropout_rate = self.layers[i+1].rate
                 cpp_layer = layer.compile(batch_size, dropout_rate)
-                cpp_layer.set_optimizer(layer.optimizer.compile())
                 M.append_layer(cpp_layer)
             elif isinstance(layer, (BatchNormalization, SimpleBatchNormalization, AffineTransform)):
                 layer.input_size = input_size
@@ -272,7 +271,7 @@ class Sequential(object):
         :param filename: the name of the file
         """
         print(f'Loading weights and bias from {filename}')
-        self.compiled_model.import_weights_npz(filename)
+        self.compiled_model.load_weights_and_bias(filename)
 
     def save_weights_and_bias(self, filename: str):
         """
@@ -282,7 +281,7 @@ class Sequential(object):
         :param filename: the name of the file
         """
         print(f'Saving weights and bias to {filename}')
-        self.compiled_model.export_weights_npz(filename)
+        self.compiled_model.save_weights_and_bias(filename)
 
     def info(self, msg):
         self.compiled_model.info(msg)

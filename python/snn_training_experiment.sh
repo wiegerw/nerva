@@ -6,6 +6,8 @@ batchsize=100
 momentum=0.9
 trim_relu=0
 weights=Xavier
+loss=SoftmaxCrossEntropy
+optimizers="Nesterov(0.9)"
 
 #--- original experiment with 2 hidden layers ---#
 #sizes="3072,1024,512,10"
@@ -73,11 +75,11 @@ function train_sparse()
                         --sizes="$sizes" \
                         --batch-size=$batchsize \
                         --epochs=$epochs \
-                        --learning-rate="multistep_lr($lr;50,75;0.1)" \
-                        --optimizer="nesterov($momentum)" \
+                        --learning-rate="MultistepLR($lr;50,75;0.1)" \
+                        --optimizers=$optimizers \
                         --layers="$layers" \
                         --init-weights=$weights \
-                        --loss="softmax-cross-entropy" \
+                        --loss=$loss \
                         --threads=4 \
                         --no-shuffle \
                         --verbose \
@@ -137,11 +139,11 @@ function train_dense()
                         --sizes="$sizes" \
                         --batch-size=$batchsize \
                         --epochs=$epochs \
-                        --learning-rate="multistep_lr($lr;50,75;0.1)" \
-                        --optimizer="nesterov($momentum)" \
+                        --learning-rate="MultistepLR($lr;50,75;0.1)" \
+                        --optimizers=$optimizers \
                         --layers="$layers" \
                         --init-weights=$weights \
-                        --loss="softmax-cross-entropy" \
+                        --loss=$loss \
                         --threads=4 \
                         --verbose \
                         --preprocessed=./cifar$seed \

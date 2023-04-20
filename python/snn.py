@@ -11,6 +11,7 @@ import sys
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import nerva.activation
 import nerva.dataset
 import nerva.layers
 import nerva.learning_rate
@@ -45,16 +46,13 @@ def make_nerva_model(args, layer_sizes, layer_densities):
     loss = nerva.loss.SoftmaxCrossEntropyLoss()
     learning_rate = make_nerva_scheduler(args)
     if args.trim_relu == 0:
-        activations = [nerva.layers.ReLU()] * (n_layers - 1) + [nerva.layers.NoActivation()]
+        activations = [nerva.activation.ReLU()] * (n_layers - 1) + [nerva.activation.NoActivation()]
     else:
-        activations = [nerva.layers.TReLU(args.trim_relu)] * (n_layers - 1) + [nerva.layers.NoActivation()]
+        activations = [nerva.activation.TReLU(args.trim_relu)] * (n_layers - 1) + [nerva.activation.NoActivation()]
     optimizer = make_nerva_optimizer(args.momentum, args.nesterov)
     optimizers = [optimizer] * n_layers
     weight_initializers = [nerva.weights.XavierNormalized()] * n_layers
-    M = MLPNerva(layer_sizes, layer_densities, optimizers, activations, loss, learning_rate, args.batch_size)
-    M.set_support_random()
-    M.set_weights_and_bias(weight_initializers)
-    return M
+    return MLPNerva(layer_sizes, layer_densities, optimizers, weight_initializers, activations, loss, learning_rate, args.batch_size)
 
 
 def make_argument_parser():
@@ -130,9 +128,9 @@ def initialize_frameworks(args):
         torch.manual_seed(args.seed)
         nerva.random.manual_seed(args.seed)
 
-    if args.threads:
-        print(f'using {args.threads} threads')
-        nerva.utilities.set_num_threads(args.threads)
+    # if args.threads:
+    #    print(f'using {args.threads} threads')
+    #    nerva.utilities.set_num_threads(args.threads)
 
     torch.set_printoptions(precision=args.precision, edgeitems=args.edgeitems, threshold=5, sci_mode=False, linewidth=160)
 

@@ -57,6 +57,21 @@ std::vector<weight_initialization> parse_init_weights(const std::string& text, c
 }
 
 inline
+std::vector<std::string> parse_optimizers(const std::string& text, std::size_t linear_layer_count)
+{
+  std::vector<std::string> words = utilities::regex_split(text, "\\s*,\\s*");
+  if (words.empty())
+  {
+    return {linear_layer_count, "GradientDescent"};
+  }
+  if (words.size() == 1)
+  {
+    return {linear_layer_count, words.front()};
+  }
+  return words;
+}
+
+inline
 void set_optimizers(multilayer_perceptron& M, const std::string& optimizer)
 {
   for (auto& layer: M.layers)
@@ -263,11 +278,11 @@ class tool: public command_line_tool
       auto linear_layer_sizes = compute_linear_layer_sizes(linear_layer_sizes_text, linear_layer_specifications);
       auto linear_layer_densities = compute_linear_layer_densities(densities_text, overall_density, linear_layer_specifications, linear_layer_sizes);
       auto linear_layer_weights = parse_init_weights(init_weights_text, linear_layer_specifications);
+      auto linear_layer_optimizers = parse_optimizers(options.optimizer, linear_layer_specifications.size());
 
       // construct the multilayer perceptron M
       multilayer_perceptron M;
-      M.layers = construct_layers(layer_specifications, linear_layer_sizes, linear_layer_densities, linear_layer_weights, options.batch_size, rng);
-      set_optimizers(M, options.optimizer);
+      M.layers = construct_layers(layer_specifications, linear_layer_sizes, linear_layer_densities, linear_layer_weights, linear_layer_optimizers, options.batch_size, rng);
 
       if (!load_weights_file.empty())
       {

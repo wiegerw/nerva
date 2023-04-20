@@ -12,7 +12,7 @@ loss=SoftmaxCrossEntropy
 batch_size=100
 epochs=5
 
-print_header "Train CIFAR10 using the mlp tool"
+print_header "Train CIFAR10 using mlp.cpp"
 ../tools/dist/mlp \
 	--seed=$seed \
 	--overall-density=$density \
@@ -24,13 +24,13 @@ print_header "Train CIFAR10 using the mlp tool"
 	--init-weights=$init_weights \
 	--learning-rate=$learning_rate \
 	--loss=$loss \
-	--dataset=cifar10 \
+	--preprocessed=cifar$seed \
 	--threads=4 \
 	--no-shuffle \
 	--verbose \
 	2>&1 | tee mlp-srelu1.log
 
-print_header "Train CIFAR10 using a sparse Nerva model"
+print_header "Train CIFAR10 using mlp.py"
 python3 -u mlp.py \
 	--seed=$seed \
 	--overall-density=$density \
@@ -42,5 +42,5 @@ python3 -u mlp.py \
 	--init-weights=$init_weights \
 	--learning-rate=$learning_rate \
 	--loss=$loss \
-	--datadir=./data \
+	--preprocessed=cifar$seed \
 	2>&1 | tee mlp-srelu2.log

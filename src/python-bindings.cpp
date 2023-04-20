@@ -350,23 +350,26 @@ PYBIND11_MODULE(nervalib, m)
                                 long batch_size,
                                 double density,
                                 weight_initialization w,
+                                const std::string& optimizer,
                                 double dropout_rate
                                )
   {
     layer_builder builder(nerva_rng);
     builder.dropout_rate = dropout_rate;
-    return builder.make_linear_layer(layer_description, D, K, batch_size, density, w);
+    return builder.make_linear_layer(layer_description, D, K, batch_size, density, w, optimizer);
   });
   m.def("make_dense_linear_layer", [](const std::string& layer_description,
                                       std::size_t D,
                                       std::size_t K,
                                       long batch_size,
-                                      weight_initialization w
+                                      weight_initialization w,
+                                      const std::string& optimizer
   )
   {
     layer_builder builder(nerva_rng);
     auto layer = builder.make_dense_linear_layer(layer_description, D, K, batch_size);
     set_weights_and_bias(*layer, w, nerva_rng);
+    set_optimizer(*layer, optimizer);
     return layer;
   });
   m.def("make_sparse_linear_layer", [](const std::string& layer_description,
@@ -374,13 +377,15 @@ PYBIND11_MODULE(nervalib, m)
                                       std::size_t K,
                                       long batch_size,
                                       double density,
-                                      weight_initialization w
+                                      weight_initialization w,
+                                      const std::string& optimizer
   )
   {
     layer_builder builder(nerva_rng);
     auto layer = builder.make_sparse_linear_layer(layer_description, D, K, batch_size);
     set_support_random(*layer, density, nerva_rng);
     set_weights_and_bias(*layer, w, nerva_rng);
+    set_optimizer(*layer, optimizer);
     return layer;
   });
 

@@ -307,7 +307,8 @@ struct layer_builder
                                                           std::size_t K,
                                                           long batch_size,
                                                           double density,
-                                                          weight_initialization w
+                                                          weight_initialization w,
+                                                          const std::string& optimizer
                                                          )
   {
     if (dropout_rate == 0)
@@ -316,6 +317,7 @@ struct layer_builder
       {
         std::shared_ptr<dense_linear_layer> layer = make_dense_linear_layer(layer_description, D, K, batch_size);
         set_weights_and_bias(*layer, w, rng);
+        set_optimizer(*layer, optimizer);
         return layer;
       }
       else
@@ -323,6 +325,7 @@ struct layer_builder
         std::shared_ptr<sparse_linear_layer> layer =  make_sparse_linear_layer(layer_description, D, K, batch_size);
         set_support_random(*layer, density, rng);
         set_weights_and_bias(*layer, w, rng);
+        set_optimizer(*layer, optimizer);
         return layer;
       }
     }
@@ -331,6 +334,7 @@ struct layer_builder
       std::shared_ptr<neural_network_layer> layer = make_dense_linear_dropout_layer(layer_description, D, K, batch_size, dropout_rate);
       std::shared_ptr<dense_linear_layer> dlayer(dynamic_cast<dense_linear_layer*>(layer.get()));
       set_weights_and_bias(*dlayer, w, rng);
+      set_optimizer(*dlayer, optimizer);
       return layer;
     }
   }
@@ -339,6 +343,7 @@ struct layer_builder
                                                            const std::vector<std::size_t>& linear_layer_sizes,
                                                            const std::vector<double>& linear_layer_densities,
                                                            const std::vector<weight_initialization>& linear_layer_weights,
+                                                           const std::vector<std::string>& linear_layer_optimizers,
                                                            long batch_size)
   {
     std::vector<std::shared_ptr<neural_network_layer>> result;
@@ -357,7 +362,7 @@ struct layer_builder
       }
       else if (is_linear_layer(layer))
       {
-        result.push_back(make_linear_layer(layer, linear_layer_sizes[i], linear_layer_sizes[i + 1], batch_size, linear_layer_densities[i], linear_layer_weights[i]));
+        result.push_back(make_linear_layer(layer, linear_layer_sizes[i], linear_layer_sizes[i + 1], batch_size, linear_layer_densities[i], linear_layer_weights[i], linear_layer_optimizers[i]));
         i++;
       }
     }
@@ -370,12 +375,13 @@ std::vector<std::shared_ptr<neural_network_layer>> construct_layers(const std::v
                                                                     const std::vector<std::size_t>& linear_layer_sizes,
                                                                     const std::vector<double>& linear_layer_densities,
                                                                     const std::vector<weight_initialization>& linear_layer_weights,
+                                                                    const std::vector<std::string>& linear_layer_optimizers,
                                                                     long batch_size,
                                                                     std::mt19937& rng
 )
 {
   layer_builder builder(rng);
-  return builder.build(layer_specifications, linear_layer_sizes, linear_layer_densities, linear_layer_weights, batch_size);
+  return builder.build(layer_specifications, linear_layer_sizes, linear_layer_densities, linear_layer_weights, linear_layer_optimizers, batch_size);
 }
 
 } // namespace nerva

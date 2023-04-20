@@ -10,9 +10,9 @@ optimizers="Nesterov(0.9)"
 learning_rate="Constant(0.1)"
 loss=SoftmaxCrossEntropy
 batch_size=100
-epochs=1
+epochs=5
 
-print_header "Train CIFAR10 using a sparse Nerva model"
+print_header "Train CIFAR10 using mlp.py"
 python3 -u mlp.py \
 	--seed=$seed \
 	--overall-density=$density \
@@ -27,7 +27,7 @@ python3 -u mlp.py \
 	--datadir=./data \
 	2>&1 | tee mlp1.log
 
-print_header "Train CIFAR10 using the mlp tool"
+print_header "Train CIFAR10 using mlp.cpp"
 ../tools/dist/mlp \
 	--seed=$seed \
 	--overall-density=$density \
