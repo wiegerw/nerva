@@ -8,6 +8,7 @@ from nerva.learning_rate import LearningRateScheduler
 from nerva.loss import LossFunction
 from nerva.layers import Sequential
 from nerva.utilities import MapTimer
+import nervalib
 
 import numpy as np
 import torch
@@ -33,9 +34,9 @@ def pp(name: str, x: Union[torch.Tensor, np.ndarray]):
     if isinstance(x, np.ndarray):
         x = torch.Tensor(x)
     if len(x.shape) == 1:
-        print(f'{name} ({x.shape[0]}) norm = {torch_inf_norm(x)}\n{x.data}')
+        print(f'{name} ({x.shape[0]}) norm = {torch_inf_norm(x):.8f}\n{x.data}')
     else:
-        print(f'{name} ({x.shape[0]}x{x.shape[1]}) norm = {torch_inf_norm(x)}\n{x.data}')
+        print(f'{name} ({x.shape[0]}x{x.shape[1]}) norm = {torch_inf_norm(x):.8f}\n{x.data}')
 
 def compute_densities(overall_density: float, sizes: List[int], erk_power_scale: float = 1.0) -> List[float]:
     layer_shapes = [(sizes[i], sizes[i+1]) for i in range(len(sizes) - 1)]
@@ -229,7 +230,7 @@ class StochasticGradientDescentAlgorithm(object):
 
                 if options.debug:
                     print(f'epoch: {epoch} batch: {k}')
-                    M.info('MLP')
+                    nervalib.print_model_info(M.compiled_model)
                     pp("X", X.T)
                     pp("Y", Y.T)
                     pp("DY", DY.T)

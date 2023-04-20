@@ -199,10 +199,8 @@ bool has_nan(const Matrix& A)
 template <typename Matrix>
 void print_numpy_matrix(const std::string& name, const Matrix& x, long edgeitems=3)
 {
-  std::cout << name << "= (" << x.rows() << "x" << x.cols()
-            << ") norm = " << x.template lpNorm<Eigen::Infinity>()
-            << (has_nan(x) ? " contains NaN " : "")
-            << "\n";
+  std::cout << fmt::format("{} ({}x{}) norm = {:.8f} {}\n", name, x.rows(), x.cols(), x.template lpNorm<Eigen::Infinity>(), (has_nan(x) ? " contains NaN " : ""));
+
   long m = x.rows();
   long top = m;
   long bottom = m;
