@@ -6,7 +6,7 @@
 
 import re
 from typing import List
-from nerva.weights import WeightInitializer, parse_weight_initializer
+from nerva.weights import WeightInitializer
 from nerva.layers import Sparse, Sequential
 
 

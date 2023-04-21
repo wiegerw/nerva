@@ -11,7 +11,7 @@ import numpy as np
 from keras.datasets import cifar10
 from keras.utils import np_utils
 from nerva.activation import ReLU, NoActivation
-from nerva.dataset import DataSet
+from nerva.datasets import DataSet
 from nerva.layers import Sequential, Dense, Dropout, Sparse, BatchNormalization
 from nerva.learning_rate import ConstantScheduler
 from nerva.loss import SoftmaxCrossEntropyLoss

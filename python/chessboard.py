@@ -18,7 +18,7 @@ from nerva.learning_rate import ConstantScheduler
 from nerva.loss import SquaredErrorLoss
 from nerva.optimizers import GradientDescent
 from nerva.random import manual_seed
-from nerva.training import compute_accuracy, compute_statistics, compute_densities
+from nerva.training import compute_accuracy, compute_statistics, compute_sparse_layer_densities
 from nerva.utilities import StopWatch
 from nerva.weights import Xavier
 
@@ -84,7 +84,7 @@ def create_model(overall_density: float):
         model.add(Dense(output_sizes[1], activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
         model.add(Dense(output_sizes[2], activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))
     else:
-        densities = compute_densities(overall_density, layer_sizes)
+        densities = compute_sparse_layer_densities(overall_density, layer_sizes)
         model.add(Sparse(output_sizes[0], densities[0], activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
         model.add(Sparse(output_sizes[1], densities[1], activation=ReLU(), optimizer=GradientDescent(), weight_initializer=Xavier()))
         model.add(Sparse(output_sizes[2], densities[2], activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()))

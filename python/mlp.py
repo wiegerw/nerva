@@ -13,7 +13,6 @@ from typing import List
 import torch
 
 import nerva.activation
-import nerva.dataset
 import nerva.layers
 import nerva.learning_rate
 import nerva.loss
@@ -23,8 +22,8 @@ import nerva.utilities
 import nerva.weights
 import nervalib
 from nerva.pruning import PruneFunction, GrowFunction, PruneGrow, parse_prune_function, parse_grow_function
-from nerva.training import StochasticGradientDescentAlgorithm, SGD_Options, compute_densities
-from nerva.dataset import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, create_npz_dataloaders
+from nerva.training import StochasticGradientDescentAlgorithm, SGD_Options, compute_sparse_layer_densities
+from nerva.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, create_npz_dataloaders
 
 
 class MLPNerva(nerva.layers.Sequential):
@@ -229,7 +228,7 @@ def main():
     if args.densities:
         linear_layer_densities = list(float(d) for d in args.densities.split(','))
     elif args.overall_density:
-        linear_layer_densities = compute_densities(args.overall_density, linear_layer_sizes)
+        linear_layer_densities = compute_sparse_layer_densities(args.overall_density, linear_layer_sizes)
     else:
         linear_layer_densities = [1.0] * (len(linear_layer_sizes) - 1)
 

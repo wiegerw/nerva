@@ -1,92 +1,28 @@
-# Copyright 2022 Wieger Wesselink.
+# Copyright 2022 - 2023 Wieger Wesselink.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from typing import List, Union
+from typing import List
 
+from nerva.datasets import DataLoader
 from nerva.learning_rate import LearningRateScheduler
 from nerva.loss import LossFunction
-from nerva.layers import Sequential
-from nerva.utilities import MapTimer
+from nerva.layers import Sequential, print_model_info
+from nerva.utilities import MapTimer, to_numpy, to_one_hot_numpy, pp
 import nervalib
 
-import numpy as np
-import torch
+
+def compute_sparse_layer_densities(overall_density: float, sizes: List[int], erk_power_scale: float = 1.0) -> List[float]:
+    """
+    Computes suitable densities for a number of linear layers.
+    :param overall_density: the overall density of the layers
+    :param sizes: the input and output sizes of  the layers
+    :param erk_power_scale:
+    """
+    return nervalib.compute_sparse_layer_densities(overall_density, sizes, erk_power_scale)
 
 
-def flatten_numpy(x: np.ndarray) -> np.ndarray:
-    shape = x.shape
-    return x.reshape(shape[0], -1)
-
-def to_numpy(x: torch.Tensor) -> np.ndarray:
-    return np.asfortranarray(x.detach().numpy().T)
-
-
-def to_one_hot_numpy(x: np.ndarray, n_classes: int):
-    return flatten_numpy(np.asfortranarray(np.eye(n_classes)[x].T))
-
-
-def torch_inf_norm(x: torch.Tensor):
-    return torch.abs(x).max().item()
-
-
-def pp(name: str, x: Union[torch.Tensor, np.ndarray]):
-    if isinstance(x, np.ndarray):
-        x = torch.Tensor(x)
-    if len(x.shape) == 1:
-        print(f'{name} ({x.shape[0]}) norm = {torch_inf_norm(x):.8f}\n{x.data}')
-    else:
-        print(f'{name} ({x.shape[0]}x{x.shape[1]}) norm = {torch_inf_norm(x):.8f}\n{x.data}')
-
-def compute_densities(overall_density: float, sizes: List[int], erk_power_scale: float = 1.0) -> List[float]:
-    layer_shapes = [(sizes[i], sizes[i+1]) for i in range(len(sizes) - 1)]
-    n = len(layer_shapes)  # the number of layers
-
-    if overall_density == 1.0:
-        return [1.0] * n
-
-    dense_layers = set()
-
-    while True:
-        divisor = 0
-        rhs = 0
-        raw_probabilities = [0.0] * n
-        for i, (rows, columns) in enumerate(layer_shapes):
-            n_param = rows * columns
-            n_zeros = n_param * (1 - overall_density)
-            n_ones = n_param * overall_density
-            if i in dense_layers:
-                rhs -= n_zeros
-            else:
-                rhs += n_ones
-                raw_probabilities[i] = ((rows + columns) / (rows * columns)) ** erk_power_scale
-                divisor += raw_probabilities[i] * n_param
-        epsilon = rhs / divisor
-        max_prob = max(raw_probabilities)
-        max_prob_one = max_prob * epsilon
-        if max_prob_one > 1:
-            for j, mask_raw_prob in enumerate(raw_probabilities):
-                if mask_raw_prob == max_prob:
-                    dense_layers.add(j)
-        else:
-            break
-
-    # Compute the densities
-    densities = [0.0] * n
-    total_nonzero = 0.0
-    for i, (rows, columns) in enumerate(layer_shapes):
-        n_param = rows * columns
-        if i in dense_layers:
-            densities[i] = 1.0
-        else:
-            probability_one = epsilon * raw_probabilities[i]
-            densities[i] = probability_one
-        total_nonzero += densities[i] * n_param
-
-    return densities
-
-
-def compute_accuracy(M, data_loader):
+def compute_accuracy(M: Sequential, data_loader: DataLoader):
     N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
     for X, T in data_loader:
@@ -98,7 +34,7 @@ def compute_accuracy(M, data_loader):
     return total_correct / N
 
 
-def compute_loss(M, data_loader, loss):
+def compute_loss(M: Sequential, data_loader: DataLoader, loss: LossFunction):
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
     for X, T in data_loader:
@@ -145,8 +81,8 @@ class SGD_Options:
 class StochasticGradientDescentAlgorithm(object):
     def __init__(self,
                  M: Sequential,
-                 train_loader,
-                 test_loader,
+                 train_loader: DataLoader,
+                 test_loader: DataLoader,
                  options: SGD_Options,
                  loss: LossFunction,
                  learning_rate: LearningRateScheduler
@@ -230,7 +166,7 @@ class StochasticGradientDescentAlgorithm(object):
 
                 if options.debug:
                     print(f'epoch: {epoch} batch: {k}')
-                    nervalib.print_model_info(M.compiled_model)
+                    print_model_info(M)
                     pp("X", X.T)
                     pp("Y", Y.T)
                     pp("DY", DY.T)

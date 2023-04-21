@@ -1,4 +1,4 @@
-# Copyright 2022 Wieger Wesselink.
+# Copyright 2022 - 2023 Wieger Wesselink.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
@@ -289,3 +289,11 @@ class Sequential(object):
 
 def compute_sparse_layer_densities(overall_density: float, layer_sizes: List[int], erk_power_scale: float=1) -> List[float]:
     return nervalib.compute_sparse_layer_densities(overall_density, layer_sizes, erk_power_scale)
+
+
+def print_model_info(M: Sequential) -> None:
+    """
+    Prints detailed information about a multilayer perceptron
+    :param M: a multilayer perceptron
+    """
+    nervalib.print_model_info(M.compiled_model)

@@ -11,7 +11,7 @@ import sys
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from nerva.training import compute_densities
+from nerva.training import compute_sparse_layer_densities
 from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
 from testing.torch_models import make_torch_scheduler
 from testing.models import MLPPyTorch, MLPPyTorchTRelu
@@ -128,7 +128,7 @@ def main():
     if args.densities:
         linear_layer_densities = list(float(d) for d in args.densities.split(','))
     elif args.overall_density:
-        linear_layer_densities = compute_densities(args.overall_density, linear_layer_sizes)
+        linear_layer_densities = compute_sparse_layer_densities(args.overall_density, linear_layer_sizes)
     else:
         linear_layer_densities = [1.0] * (len(linear_layer_sizes) - 1)
 
