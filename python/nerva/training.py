@@ -23,6 +23,8 @@ def compute_sparse_layer_densities(overall_density: float, sizes: List[int], erk
 
 
 def compute_accuracy(M: Sequential, data_loader: DataLoader):
+    nervalib.global_timer_suspend()
+
     N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
     for X, T in data_loader:
@@ -31,10 +33,14 @@ def compute_accuracy(M: Sequential, data_loader: DataLoader):
         Y = M.feedforward(X)
         predicted = Y.argmax(axis=0)  # the predicted classes for the batch
         total_correct += (predicted == T).sum().item()
+
+    nervalib.global_timer_resume()
     return total_correct / N
 
 
 def compute_loss(M: Sequential, data_loader: DataLoader, loss: LossFunction):
+    nervalib.global_timer_suspend()
+
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
     for X, T in data_loader:
@@ -42,6 +48,8 @@ def compute_loss(M: Sequential, data_loader: DataLoader, loss: LossFunction):
         T = to_one_hot_numpy(T, 10)
         Y = M.feedforward(X)
         total_loss += loss.value(Y, T)
+
+    nervalib.global_timer_resume()
     return total_loss / N
 
 
@@ -57,12 +65,14 @@ def print_epoch(epoch, lr, loss, train_accuracy, test_accuracy, elapsed):
 
 def compute_statistics(M, lr, loss, train_loader, test_loader, epoch, print_statistics, elapsed_seconds):
     if print_statistics:
-        training_loss = compute_loss(M, train_loader, loss)
-        training_accuracy = compute_accuracy(M, train_loader)
+        train_loss = compute_loss(M, train_loader, loss)
+        train_accuracy = compute_accuracy(M, train_loader)
         test_accuracy = compute_accuracy(M, test_loader)
-        print_epoch(epoch, lr, training_loss, training_accuracy, test_accuracy, elapsed_seconds)
+        print_epoch(epoch, lr, train_loss, train_accuracy, test_accuracy, elapsed_seconds)
+        return train_accuracy, test_accuracy
     else:
         print(f'epoch {epoch:3}')
+        return None, None
 
 
 class SGD_Options:
@@ -135,7 +145,7 @@ class StochasticGradientDescentAlgorithm(object):
         Returns the sum of the measured times for the epochs
         """
         result = 0.0
-        for key, value in self.timer.values().items():
+        for key, value in self.timer.values.items():
             if key.startswith("epoch"):
                 result += self.timer.seconds(key)
         return result
@@ -178,8 +188,12 @@ class StochasticGradientDescentAlgorithm(object):
 
             self.timer.stop(epoch_label)
             seconds = self.timer.seconds(epoch_label)
-            compute_statistics(M, lr, self.loss, self.train_loader, self.test_loader, epoch + 1, options.statistics, seconds)
+            train_accuracy, test_accuracy = compute_statistics(M, lr, self.loss, self.train_loader, self.test_loader, epoch + 1, options.statistics, seconds)
 
             self.on_end_epoch(epoch)
+
+        training_time = self.compute_training_time()
+        print(f'Accuracy of the network on the {self.test_loader.dataset.shape[0]} test examples: {test_accuracy * 100.0:.2f}%')
+        print(f'Total training time for the {options.epochs} epochs: {training_time:.8f}s\n')
 
         self.on_end_training()
