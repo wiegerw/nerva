@@ -262,7 +262,7 @@ class stochastic_gradient_descent_algorithm
 
       double test_accuracy = compute_accuracy(M, data.Xtest, data.Ttest, options.batch_size);
       double training_time = compute_training_time();
-      std::cout << fmt::format("Accuracy of the network on the {} test examples: {:.2f}%", data.Xtest.cols(), test_accuracy * 100.0) << std::endl;
+      // std::cout << fmt::format("Accuracy of the network on the {} test examples: {:.2f}%", data.Xtest.cols(), test_accuracy * 100.0) << std::endl;
       std::cout << fmt::format("Total training time for the {} epochs: {:.8f}s\n", options.epochs, training_time);
 
       on_end_training();

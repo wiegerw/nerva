@@ -344,20 +344,6 @@ PYBIND11_MODULE(nervalib, m)
 
   m.def("compute_sparse_layer_densities", compute_sparse_layer_densities);
   m.def("is_linear_layer", is_linear_layer);
-  m.def("make_linear_layer", [](const std::string& layer_description,
-                                std::size_t D,
-                                std::size_t K,
-                                long batch_size,
-                                double density,
-                                weight_initialization w,
-                                const std::string& optimizer,
-                                double dropout_rate
-                               )
-  {
-    layer_builder builder(nerva_rng);
-    builder.dropout_rate = dropout_rate;
-    return builder.make_linear_layer(layer_description, D, K, batch_size, density, w, optimizer);
-  });
   m.def("make_dense_linear_layer", [](const std::string& layer_description,
                                       std::size_t D,
                                       std::size_t K,
@@ -370,6 +356,22 @@ PYBIND11_MODULE(nervalib, m)
     auto layer = builder.make_dense_linear_layer(layer_description, D, K, batch_size);
     set_weights_and_bias(*layer, w, nerva_rng);
     set_optimizer(*layer, optimizer);
+    return layer;
+  });
+  m.def("make_dense_linear_dropout_layer", [](const std::string& layer_description,
+                                              std::size_t D,
+                                              std::size_t K,
+                                              long batch_size,
+                                              weight_initialization w,
+                                              const std::string& optimizer,
+                                              scalar dropout_rate
+  )
+  {
+    layer_builder builder(nerva_rng);
+    auto layer = builder.make_dense_linear_dropout_layer(layer_description, D, K, batch_size, dropout_rate);
+    auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get());
+    set_weights_and_bias(*dlayer, w, nerva_rng);
+    set_optimizer(*dlayer, optimizer);
     return layer;
   });
   m.def("make_sparse_linear_layer", [](const std::string& layer_description,
@@ -438,7 +440,7 @@ PYBIND11_MODULE(nervalib, m)
   //                       training
   /////////////////////////////////////////////////////////////////////////
 
-  py::class_<sgd_options>(m, "SGDOptions")
+  py::class_<sgd_options>(m, "sgd_options")
     .def(py::init<>(), py::return_value_policy::copy)
     .def_readwrite("batch_size", &sgd_options::batch_size)
     .def_readwrite("epochs", &sgd_options::epochs)
@@ -448,10 +450,20 @@ PYBIND11_MODULE(nervalib, m)
     .def("info", &sgd_options::info)
     ;
 
-//  py::class_<stochastic_gradient_descent_algorithm<datasets::dataset_view, std::mt19937>>(m, "SGD_Algorithm")
-//    .def(py::init<multilayer_perceptron&, datasets::dataset_view&, const sgd_options&, const std::shared_ptr<loss_function>&, const std::shared_ptr<learning_rate_scheduler>&, std::mt19937, const std::string&>(), py::return_value_policy::copy)
-//    .def("run", &stochastic_gradient_descent_algorithm<datasets::dataset_view, std::mt19937>::run)
-//    ;
+  py::class_<stochastic_gradient_descent_algorithm<datasets::dataset_view>>(m, "stochastic_gradient_descent_algorithm")
+    .def(py::init(
+         [](multilayer_perceptron& M,
+            datasets::dataset_view& data,
+            const sgd_options& options,
+            const std::shared_ptr<loss_function>& loss,
+            const std::shared_ptr<learning_rate_scheduler>& learning_rate
+         )
+         {
+           return new stochastic_gradient_descent_algorithm<datasets::dataset_view>(M, data, options, loss, learning_rate, nerva_rng);
+         }
+        ))
+    .def("run", &stochastic_gradient_descent_algorithm<datasets::dataset_view>::run)
+    ;
 
   m.def("compute_loss", compute_loss);
   m.def("compute_accuracy", compute_accuracy<datasets::matrix_ref>);

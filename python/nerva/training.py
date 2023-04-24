@@ -69,14 +69,13 @@ def compute_statistics(M, lr, loss, train_loader, test_loader, epoch, print_stat
         train_accuracy = compute_accuracy(M, train_loader)
         test_accuracy = compute_accuracy(M, test_loader)
         print_epoch(epoch, lr, train_loss, train_accuracy, test_accuracy, elapsed_seconds)
-        return train_accuracy, test_accuracy
     else:
         print(f'epoch {epoch:3}')
-        return None, None
 
 
-class SGD_Options:
+class SGDOptions(nervalib.sgd_options):
     def __init__(self):
+        super().__init__()
         self.epochs = 100
         self.batch_size = 1
         self.shuffle = True
@@ -85,7 +84,7 @@ class SGD_Options:
         self.gradient_step = 0
 
     def info(self):
-        pass # implementation of info() method goes here
+        super().info()
 
 
 class StochasticGradientDescentAlgorithm(object):
@@ -93,7 +92,7 @@ class StochasticGradientDescentAlgorithm(object):
                  M: Sequential,
                  train_loader: DataLoader,
                  test_loader: DataLoader,
-                 options: SGD_Options,
+                 options: SGDOptions,
                  loss: LossFunction,
                  learning_rate: LearningRateScheduler
                 ):
@@ -188,12 +187,11 @@ class StochasticGradientDescentAlgorithm(object):
 
             self.timer.stop(epoch_label)
             seconds = self.timer.seconds(epoch_label)
-            train_accuracy, test_accuracy = compute_statistics(M, lr, self.loss, self.train_loader, self.test_loader, epoch + 1, options.statistics, seconds)
+            compute_statistics(M, lr, self.loss, self.train_loader, self.test_loader, epoch + 1, options.statistics, seconds)
 
             self.on_end_epoch(epoch)
 
         training_time = self.compute_training_time()
-        print(f'Accuracy of the network on the {self.test_loader.dataset.shape[0]} test examples: {test_accuracy * 100.0:.2f}%')
         print(f'Total training time for the {options.epochs} epochs: {training_time:.8f}s\n')
 
         self.on_end_training()

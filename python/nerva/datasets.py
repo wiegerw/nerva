@@ -141,7 +141,7 @@ class TorchDataLoader(object):
     A data loader with an interface similar to torch.utils.data.DataLoader.
     """
 
-    def __init__(self, Xdata: torch.Tensor, Tdata: torch.Tensor, batch_size: int):
+    def __init__(self, Xdata: torch.Tensor, Tdata: torch.IntTensor, batch_size: int):
         """
         :param Xdata: a dataset
         :param Tdata: the targets for the dataset

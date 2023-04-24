@@ -22,7 +22,7 @@ import nerva.utilities
 import nerva.weights
 import nervalib
 from nerva.pruning import PruneFunction, GrowFunction, PruneGrow, parse_prune_function, parse_grow_function
-from nerva.training import StochasticGradientDescentAlgorithm, SGD_Options, compute_sparse_layer_densities
+from nerva.training import StochasticGradientDescentAlgorithm, SGDOptions, compute_sparse_layer_densities
 from nerva.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, create_npz_dataloaders
 
 
@@ -175,7 +175,7 @@ class SGD(StochasticGradientDescentAlgorithm):
                  M: nerva.layers.Sequential,
                  train_loader,
                  test_loader,
-                 options: SGD_Options,
+                 options: SGDOptions,
                  loss: nerva.loss.LossFunction,
                  learning_rate: nerva.learning_rate.LearningRateScheduler,
                  preprocessed_dir: str,
@@ -262,7 +262,7 @@ def main():
 
     if args.epochs > 0:
         print('\n=== Training Nerva model ===')
-        options = SGD_Options()
+        options = SGDOptions()
         options.epochs = args.epochs
         options.batch_size = args.batch_size
         options.shuffle = False
