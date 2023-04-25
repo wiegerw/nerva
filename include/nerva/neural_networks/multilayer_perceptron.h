@@ -72,18 +72,6 @@ struct multilayer_perceptron
     global_timer_display("backpropagate");
   }
 
-  void renew_dropout_mask(std::mt19937& rng)
-  {
-    for (auto& layer: layers)
-    {
-      auto dlayer = dynamic_cast<dropout_layer<eigen::matrix>*>(layer.get());
-      if (dlayer)
-      {
-        dlayer->renew(rng);
-      }
-    }
-  }
-
   void optimize(scalar eta)
   {
     for (auto& layer: layers)
@@ -214,6 +202,19 @@ void set_weights_and_bias(multilayer_perceptron& M, const std::vector<weight_ini
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
       set_weights_and_bias(*slayer, weights[index++], rng);
+    }
+  }
+}
+
+inline
+void renew_dropout_masks(multilayer_perceptron& M, std::mt19937& rng)
+{
+  for (auto& layer: M.layers)
+  {
+    auto dlayer = dynamic_cast<dropout_layer<eigen::matrix>*>(layer.get());
+    if (dlayer)
+    {
+      dlayer->renew(rng);
     }
   }
 }

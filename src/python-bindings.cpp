@@ -409,7 +409,6 @@ PYBIND11_MODULE(nervalib, m)
     .def_readwrite("layers", &multilayer_perceptron::layers)
     .def("feedforward", [](multilayer_perceptron& M, const eigen::matrix& X) { eigen::matrix Y; M.feedforward(X, Y); return Y; })
     .def("backpropagate", &multilayer_perceptron::backpropagate)
-    .def("renew_dropout_mask", &multilayer_perceptron::renew_dropout_mask)
     .def("optimize", &multilayer_perceptron::optimize)
     .def("append_layer", [](multilayer_perceptron& M, const std::shared_ptr<neural_network_layer>& layer) { M.layers.push_back(layer); })
     .def("info", &multilayer_perceptron::info)
@@ -427,6 +426,7 @@ PYBIND11_MODULE(nervalib, m)
 
   m.def("save_model_weights_to_npy", save_model_weights_to_npy);
   m.def("print_model_info", print_model_info);
+  m.def("renew_dropout_masks", renew_dropout_masks);
 
   /////////////////////////////////////////////////////////////////////////
   //                       weights

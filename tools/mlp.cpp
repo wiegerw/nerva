@@ -140,7 +140,7 @@ class sgd_algorithm: public stochastic_gradient_descent_algorithm<datasets::data
         reload_data(epoch);
       }
 
-      M.renew_dropout_mask(rng);
+      renew_dropout_masks(M, rng);
 
       if (epoch > 0 && regrow)
       {

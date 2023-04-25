@@ -468,7 +468,7 @@ TEST_CASE("test_dropout_relu")
   layer3->W = W3;
   layer3->b = b3;
 
-  M.renew_dropout_mask(rng);
+  renew_dropout_masks(M, rng);
   auto dlayer = dynamic_cast<relu_dropout_layer<eigen::matrix>*>(M.layers[0].get());
   if (dlayer)
   {
@@ -540,7 +540,7 @@ TEST_CASE("test_dropout_linear")
   layer3->W = W3;
   layer3->b = b3;
 
-  M.renew_dropout_mask(rng);
+  renew_dropout_masks(M, rng);
   auto dlayer = dynamic_cast<linear_dropout_layer<eigen::matrix>*>(M.layers[2].get());
   if (dlayer)
   {
@@ -612,7 +612,7 @@ TEST_CASE("test_dropout_sigmoid")
   layer3->W = W3;
   layer3->b = b3;
 
-  M.renew_dropout_mask(rng);
+  renew_dropout_masks(M, rng);
   auto dlayer = dynamic_cast<sigmoid_dropout_layer<eigen::matrix>*>(M.layers[0].get());
   if (dlayer)
   {
