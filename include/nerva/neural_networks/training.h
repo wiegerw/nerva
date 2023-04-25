@@ -71,6 +71,12 @@ double compute_loss(multilayer_perceptron& M, const std::shared_ptr<loss_functio
 {
   global_timer_suspend();
 
+  if (has_nan(M))
+  {
+    print_model_info(M);
+    throw std::runtime_error("the multilayer perceptron contains NaN values");
+  }
+
   long N = X.cols(); // the number of examples
   long L = T.rows(); // the number of outputs
   auto K = N / Q;    // the number of batches

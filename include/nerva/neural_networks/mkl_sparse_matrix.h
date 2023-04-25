@@ -503,6 +503,19 @@ void traverse_elements(const sparse_matrix_csr<T>& A, Function f)
   }
 }
 
+template <typename T>
+bool has_nan(const sparse_matrix_csr<T>& A)
+{
+  for (auto x: A.values())
+  {
+    if (std::isnan(x))
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
 } // namespace nerva::mkl
 
 #endif // NERVA_NEURAL_NETWORKS_MKL_SPARSE_MATRIX_H

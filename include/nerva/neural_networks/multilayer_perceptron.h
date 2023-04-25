@@ -254,6 +254,30 @@ std::vector<eigen::matrix> mlp_bias(const multilayer_perceptron& M)
   return result;
 }
 
+inline
+bool has_nan(const multilayer_perceptron& M)
+{
+  std::vector<eigen::matrix> result;
+  for (auto& layer: M.layers)
+  {
+    if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
+    {
+      if (eigen::has_nan(dlayer->W))
+      {
+        return true;
+      }
+    }
+    else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
+    {
+      if (mkl::has_nan(slayer->W))
+      {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 // Precondition: the python interpreter must be running.
 // This can be enforced using `py::scoped_interpreter guard{};`
 inline
