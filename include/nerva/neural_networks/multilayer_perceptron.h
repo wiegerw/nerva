@@ -278,6 +278,26 @@ bool has_nan(const multilayer_perceptron& M)
   return false;
 }
 
+inline
+void print_srelu_layers(multilayer_perceptron& M)
+{
+  for (auto& layer: M.layers)
+  {
+    if (auto dlayer = dynamic_cast<dense_srelu_layer*>(layer.get()))
+    {
+      std::cout << dlayer->act.to_string() << std::endl;
+    }
+    else if (auto slayer = dynamic_cast<sparse_srelu_layer*>(layer.get()))
+    {
+      std::cout << slayer->act.to_string() << std::endl;
+    }
+    else if (auto player = dynamic_cast<dense_srelu_dropout_layer*>(layer.get()))
+    {
+      std::cout << player->act.to_string() << std::endl;
+    }
+  }
+}
+
 // Precondition: the python interpreter must be running.
 // This can be enforced using `py::scoped_interpreter guard{};`
 inline
