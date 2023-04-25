@@ -10,6 +10,7 @@
 #ifndef NERVA_NEURAL_NETWORKS_MASKING_H
 #define NERVA_NEURAL_NETWORKS_MASKING_H
 
+#include "nerva/neural_networks/multilayer_perceptron.h"
 #include <Eigen/Dense>
 #include <stdexcept>
 
@@ -43,6 +44,44 @@ void apply_binary_mask(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Mat
   }
   A = A.cwiseProduct(mask.cast<Scalar>());
 }
+
+class mlp_masking
+{
+    using boolean_matrix = Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic>;
+
+  protected:
+    std::vector<boolean_matrix> masks;
+
+  public:
+    explicit mlp_masking(const multilayer_perceptron& M)
+    {
+      // create a binary mask for every sparse linear layer in M
+      for (auto& layer: M.layers)
+      {
+        if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
+        {
+          masks.push_back(create_binary_mask(mkl::to_eigen(slayer->W)));
+        }
+      }
+    }
+
+    // applies the masks to the dense linear layers in M
+    void apply(multilayer_perceptron& M)
+    {
+      int unsigned index = 0;
+      for (auto& layer: M.layers)
+      {
+        if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
+        {
+          apply_binary_mask(dlayer->W, masks[index++]);
+          if (index >= masks.size())
+          {
+            break;
+          }
+        }
+      }
+    }
+};
 
 } // namespace nerva
 

@@ -15,7 +15,7 @@
 #include "nerva/datasets/make_dataset.h"
 #include "nerva/neural_networks/layers.h"
 #include "nerva/neural_networks/loss_functions.h"
-#include "nerva/neural_networks/multilayer_perceptron.h"
+#include "nerva/neural_networks/mlp_algorithms.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
 #include <random>
