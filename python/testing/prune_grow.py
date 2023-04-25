@@ -23,7 +23,7 @@ def parse_arguments(text: str, name: str, n: int) -> List[str]:
 
 class RegrowFunction(object):
     """
-    Interface for regrowing the sparse layers of a neural network
+    Interface for pruning + growing the sparse layers of a neural network
     """
     def __call__(self, M: Sequential):
         raise NotImplementedError
@@ -119,5 +119,5 @@ class PruneGrow(RegrowFunction):
             if isinstance(layer, Sparse):
                 weight_count = layer.weight_count()
                 count = self.prune(layer)
-                print(f'regrowing {count}/{weight_count} weights')
+                print(f'pruning + growing {count}/{weight_count} weights')
                 self.grow(layer, count)

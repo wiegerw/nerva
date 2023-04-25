@@ -187,7 +187,7 @@ PYBIND11_MODULE(nervalib, m)
     .def(py::init<std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
 
-  py::class_<dense_trimmed_relu_layer, dense_linear_layer, std::shared_ptr<dense_trimmed_relu_layer>>(m, "trimmed_relu_layer")
+  py::class_<dense_trelu_layer, dense_linear_layer, std::shared_ptr<dense_trelu_layer>>(m, "trimmed_relu_layer")
     .def(py::init<scalar, std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
 
@@ -244,6 +244,14 @@ PYBIND11_MODULE(nervalib, m)
 
   py::class_<dense_hyperbolic_tangent_dropout_layer, dense_linear_layer, std::shared_ptr<dense_hyperbolic_tangent_dropout_layer>>(m, "hyperbolic_tangent_dropout_layer")
     .def(py::init<std::size_t, std::size_t, std::size_t, scalar>(), py::return_value_policy::copy)
+    ;
+
+  py::class_<dense_trelu_dropout_layer, dense_linear_layer, std::shared_ptr<dense_trelu_dropout_layer>>(m, "trelu_dropout_layer")
+    .def(py::init<scalar, std::size_t, std::size_t, std::size_t, scalar>(), py::return_value_policy::copy)
+    ;
+
+  py::class_<dense_srelu_dropout_layer, dense_linear_layer, std::shared_ptr<dense_srelu_dropout_layer>>(m, "srelu_dropout_layer")
+    .def(py::init<std::size_t, std::size_t, std::size_t, scalar, scalar, scalar, scalar, scalar>(), py::return_value_policy::copy)
     ;
 
   //--- sparse layers ---//
@@ -305,7 +313,7 @@ PYBIND11_MODULE(nervalib, m)
     .def(py::init<std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
 
-  py::class_<sparse_trimmed_relu_layer, sparse_linear_layer, std::shared_ptr<sparse_trimmed_relu_layer>>(m, "sparse_trimmed_relu_layer")
+  py::class_<sparse_trelu_layer, sparse_linear_layer, std::shared_ptr<sparse_trelu_layer>>(m, "sparse_trimmed_relu_layer")
     .def(py::init<scalar, std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
     ;
 

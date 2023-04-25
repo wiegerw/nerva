@@ -259,17 +259,30 @@ struct leaky_relu_dropout_layer: public activation_dropout_layer<Matrix, leaky_r
 using dense_leaky_relu_dropout_layer = leaky_relu_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
-struct trimmed_relu_dropout_layer: public activation_dropout_layer<Matrix, trimmed_relu_activation>
+struct trelu_dropout_layer: public activation_dropout_layer<Matrix, trimmed_relu_activation>
 {
   using super = activation_dropout_layer<Matrix, trimmed_relu_activation>;
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
-  trimmed_relu_dropout_layer(scalar epsilon, std::size_t D, std::size_t K, std::size_t Q, scalar p)
+  trelu_dropout_layer(scalar epsilon, std::size_t D, std::size_t K, std::size_t Q, scalar p)
     : super(trimmed_relu_activation(epsilon), D, K, Q, p)
   {}
 };
-using dense_trimmed_relu_dropout_layer = trimmed_relu_dropout_layer<eigen::matrix>;
+using dense_trelu_dropout_layer = trelu_dropout_layer<eigen::matrix>;
+
+template <typename Matrix>
+struct srelu_dropout_layer: public activation_dropout_layer<Matrix, srelu_activation>
+{
+  using super = activation_dropout_layer<Matrix, srelu_activation>;
+  using super::to_string;
+  using dropout_layer<Matrix>::p;
+
+  srelu_dropout_layer(std::size_t D, std::size_t K, std::size_t Q, scalar p, scalar al = 1, scalar tl = 0, scalar ar = 1, scalar tr = 0)
+    : super(srelu_activation(al, tl, ar, tr), D, K, Q, p)
+  {}
+};
+using dense_srelu_dropout_layer = srelu_dropout_layer<eigen::matrix>;
 
 } // namespace nerva
 

@@ -47,7 +47,7 @@ void regrow_threshold(Matrix& W, const std::shared_ptr<weight_initializer>& init
   std::size_t prune_count = prune_threshold(W, threshold, std::numeric_limits<Scalar>::quiet_NaN());
 
   std::size_t weight_count = support_size(W);
-  NERVA_LOG(log::verbose) << fmt::format("regrowing {}/{} weights", prune_count, weight_count) << std::endl;
+  NERVA_LOG(log::verbose) << fmt::format("pruning + growing {}/{} weights", prune_count, weight_count) << std::endl;
 
   // grow `prune_count` elements
   grow_random(W, init, prune_count, rng);
@@ -72,7 +72,7 @@ void regrow_magnitude(Matrix& W, const std::shared_ptr<weight_initializer>& init
   }
 
   std::size_t weight_count = support_size(W);
-  NERVA_LOG(log::verbose) << fmt::format("regrowing {}/{} weights", count, weight_count) << std::endl;
+  NERVA_LOG(log::verbose) << fmt::format("pruning + growing {}/{} weights", count, weight_count) << std::endl;
 
   // grow `prune_count` elements
   grow_random(W, init, prune_count, rng);
@@ -122,7 +122,7 @@ void regrow_interval(Matrix& W, const std::shared_ptr<weight_initializer>& init,
   }
 
   std::size_t weight_count = support_size(W);
-  NERVA_LOG(log::verbose) << fmt::format("regrowing {}/{} weights", negative_prune_count + positive_prune_count, weight_count) << std::endl;
+  NERVA_LOG(log::verbose) << fmt::format("pruning + growing {}/{} weights", negative_prune_count + positive_prune_count, weight_count) << std::endl;
 
   // grow elements that are equal to zero
   grow_random(W, init, negative_prune_count + positive_prune_count, rng);
@@ -164,7 +164,7 @@ struct prune_and_grow: public regrow_function
       {
         std::size_t weight_count = support_size(slayer->W);
         std::size_t count = (*prune)(slayer->W);
-        std::cout << fmt::format("regrowing {}/{} weights\n", count, weight_count);
+        std::cout << fmt::format("pruning + growing {}/{} weights\n", count, weight_count);
         (*grow)(slayer->W, count);
         slayer->reset_support();
       }

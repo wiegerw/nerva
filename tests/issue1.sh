@@ -13,10 +13,10 @@ PYTHONPATH=../python
 # used to solve this problem.
 
 print_header "Nerva zero bias"
-../tools/dist/mlp --seed=1 --overall-density=0.001 --sizes=3072,1024,1024,1024,10 --batch-size=100 --epochs=3 '--learning-rate=constant(0.1)' '--optimizer=nesterov(0.9)' --layers="ReLU;ReLU;ReLU;Linear" --weights=XXXX --loss=softmax-cross-entropy --threads=4 --no-shuffle --verbose --dataset=cifar10 2>&1 | tee issue1a.log
+../tools/dist/mlp --seed=1 --overall-density=0.001 --sizes=3072,1024,1024,1024,10 --batch-size=100 --epochs=3 '--learning-rate=Constant(0.1)' '--optimizers=Nesterov(0.9)' --layers="ReLU;ReLU;ReLU;Linear" --init-weights=XavierNormalized --loss=SoftmaxCrossEntropy --threads=4 --no-shuffle --verbose --dataset=cifar10 2>&1 | tee issue1a.log
 
 print_header "Nerva nonzero bias"
-../tools/dist/mlp --seed=1 --overall-density=0.001 --sizes=3072,1024,1024,1024,10 --batch-size=100 --epochs=3 '--learning-rate=constant(0.1)' '--optimizer=nesterov(0.9)' --layers="ReLU;ReLU;ReLU;Linear" --weights=pppp --loss=softmax-cross-entropy --threads=4 --no-shuffle --verbose --dataset=cifar10 2>&1 | tee issue1b.log
+../tools/dist/mlp --seed=1 --overall-density=0.001 --sizes=3072,1024,1024,1024,10 --batch-size=100 --epochs=3 '--learning-rate=Constant(0.1)' '--optimizers=Nesterov(0.9)' --layers="ReLU;ReLU;ReLU;Linear" --init-weights=PyTorch --loss=SoftmaxCrossEntropy --threads=4 --no-shuffle --verbose --dataset=cifar10 2>&1 | tee issue1b.log
 
 print_header "Nerva nonzero bias + trimmed ReLU"
-../tools/dist/mlp --seed=1 --overall-density=0.001 --sizes=3072,1024,1024,1024,10 --batch-size=100 --epochs=3 '--learning-rate=constant(0.1)' '--optimizer=nesterov(0.9)' --layers="TReLU(1e-30);TReLU(1e-30);TReLU(1e-30);Linear" --weights=pppp --loss=softmax-cross-entropy --threads=4 --no-shuffle --verbose --dataset=cifar10 2>&1 | tee issue1c.log
+../tools/dist/mlp --seed=1 --overall-density=0.001 --sizes=3072,1024,1024,1024,10 --batch-size=100 --epochs=3 '--learning-rate=Constant(0.1)' '--optimizers=Nesterov(0.9)' --layers="TReLU(1e-30);TReLU(1e-30);TReLU(1e-30);Linear" --init-weights=PyTorch --loss=SoftmaxCrossEntropy --threads=4 --no-shuffle --verbose --dataset=cifar10 2>&1 | tee issue1c.log

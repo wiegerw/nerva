@@ -193,7 +193,7 @@ struct layer_builder
     else if (utilities::starts_with(layer_description, "AllRelu"))
     {
       scalar alpha = parse_scalar_argument(layer_description);
-      return std::make_shared<dense_trimmed_relu_layer>(alpha, D, K, batch_size);
+      return std::make_shared<dense_trelu_layer>(alpha, D, K, batch_size);
     }
     else if (utilities::starts_with(layer_description, "LeakyRelu"))
     {
@@ -203,7 +203,12 @@ struct layer_builder
     else if (utilities::starts_with(layer_description, "TReLU"))
     {
       scalar epsilon = parse_scalar_argument(layer_description);
-      return std::make_shared<dense_trimmed_relu_layer>(epsilon, D, K, batch_size);
+      return std::make_shared<dense_trelu_layer>(epsilon, D, K, batch_size);
+    }
+    else if (utilities::starts_with(layer_description, "SReLU"))
+    {
+      const auto [al, tl, ar, tr] = parse_scalar_arguments<4>(layer_description);
+      return std::make_shared<dense_srelu_layer>(D, K, batch_size, al, tl, ar, tr);
     }
     throw std::runtime_error("unsupported dense layer '" + layer_description + "'");
   }
@@ -238,7 +243,7 @@ struct layer_builder
     else if (utilities::starts_with(layer_description, "AllReLU"))
     {
       scalar alpha = parse_scalar_argument(layer_description);
-      return std::make_shared<sparse_trimmed_relu_layer>(alpha, D, K, batch_size);
+      return std::make_shared<sparse_trelu_layer>(alpha, D, K, batch_size);
     }
     else if (utilities::starts_with(layer_description, "LeakyReLU"))
     {
@@ -248,7 +253,7 @@ struct layer_builder
     else if (utilities::starts_with(layer_description, "TReLU"))
     {
       scalar epsilon = parse_scalar_argument(layer_description);
-      return std::make_shared<sparse_trimmed_relu_layer>(epsilon, D, K, batch_size);
+      return std::make_shared<sparse_trelu_layer>(epsilon, D, K, batch_size);
     }
     else if (utilities::starts_with(layer_description, "SReLU"))
     {
@@ -287,7 +292,7 @@ struct layer_builder
     else if (utilities::starts_with(layer_description, "AllRelu"))
     {
       scalar alpha = parse_scalar_argument(layer_description);
-      return std::make_shared<dense_trimmed_relu_dropout_layer>(alpha, D, K, batch_size, dropout);
+      return std::make_shared<dense_trelu_dropout_layer>(alpha, D, K, batch_size, dropout);
     }
     else if (utilities::starts_with(layer_description, "LeakyRelu"))
     {
@@ -297,7 +302,12 @@ struct layer_builder
     else if (utilities::starts_with(layer_description, "TReLU"))
     {
       scalar epsilon = parse_scalar_argument(layer_description);
-      return std::make_shared<dense_trimmed_relu_dropout_layer>(epsilon, D, K, batch_size, dropout);
+      return std::make_shared<dense_trelu_dropout_layer>(epsilon, D, K, batch_size, dropout);
+    }
+    else if (utilities::starts_with(layer_description, "SReLU"))
+    {
+      const auto [al, tl, ar, tr] = parse_scalar_arguments<4>(layer_description);
+      return std::make_shared<dense_srelu_dropout_layer>(D, K, batch_size, dropout, al, tl, ar, tr);
     }
     throw std::runtime_error("unsupported dropout layer '" + layer_description + "'");
   }

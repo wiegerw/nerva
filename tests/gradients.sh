@@ -1,37 +1,35 @@
 #!/bin/bash
 source ../python/utilities.sh
 
+seed=12345
 dataset=cifar10
 sizes="3072,8,4,10"
-
-weights=xxx
+init_weights=XavierNormalized
 layers="ReLU;ReLU;Linear"
-
-seed=12345
 epochs=1
-lr=0.001
+learning_rate="Constant(0.001)"
 size=50
-loss="softmax-cross-entropy"
-algorithm=sgd
+loss="SoftmaxCrossEntropy"
 batch_size=5
 gradient_step=0.00001
-optimizer="gradient-descent"
+optimizers="GradientDescent"
 dropout=0
 
 function run()
 {
   extra_args=$1
 
-  ../tools/dist/mlpd --epochs=$epochs \
+  ../tools/dist/mlpd \
+               --epochs=$epochs \
                --layers="$layers" \
                --sizes=$sizes \
                --dataset=$dataset \
-               --weights=$weights \
+               --init-weights=$init_weights \
                --batch-size=$batch_size \
-               --learning-rate="constant($lr)" \
-               --optimizer=$optimizer \
+               --learning-rate="$learning_rate" \
+               --optimizers=$optimizers \
                --size=$size \
-               --loss="softmax-cross-entropy" \
+               --loss=$loss \
                --normalize \
                --threads=4 \
                --verbose \
@@ -47,8 +45,12 @@ function run_dataset()
   layers="ReLU;ReLU;Linear"
   run
 
+  print_header "srelu"
+  layers="SReLU(1,0,1,0);ReLU;Linear"
+  run
+
   print_header "softmax layer"
-  layers="ZReLU;Linear"
+  layers="Softmax;ReLU;Linear"
   run
 
   print_header "momentum"
