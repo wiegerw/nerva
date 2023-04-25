@@ -320,7 +320,7 @@ struct srelu
   scalar ar;
   scalar tr;
 
-  explicit srelu(scalar al_ = 1, scalar tl_ = 0, scalar ar_ = 1, scalar tr_ = 0)
+  explicit srelu(scalar al_ = 0, scalar tl_ = 0, scalar ar_ = 0, scalar tr_ = 1)
    : al(al_), tl(tl_), ar(ar_), tr(tr_)
   {}
 
@@ -354,7 +354,7 @@ struct srelu_prime
   scalar ar;
   scalar tr;
 
-  explicit srelu_prime(scalar al_ = 1, scalar tl_ = 0, scalar ar_ = 1, scalar tr_ = 0)
+  explicit srelu_prime(scalar al_ = 0, scalar tl_ = 0, scalar ar_ = 0, scalar tr_ = 1)
   : al(al_), tl(tl_), ar(ar_), tr(tr_)
   {}
 
@@ -388,7 +388,7 @@ struct srelu_activation
   scalar ar;
   scalar tr;
 
-  explicit srelu_activation(scalar al_ = 1, scalar tl_ = 0, scalar ar_ = 1, scalar tr_ = 0)
+  explicit srelu_activation(scalar al_ = 0, scalar tl_ = 0, scalar ar_ = 0, scalar tr_ = 1)
   : al(al_), tl(tl_), ar(ar_), tr(tr_)
   {}
 

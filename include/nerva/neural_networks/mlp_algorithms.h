@@ -177,19 +177,24 @@ bool has_nan(const multilayer_perceptron& M)
 inline
 void print_srelu_layers(multilayer_perceptron& M)
 {
+  unsigned int index = 1;
+
   for (auto& layer: M.layers)
   {
     if (auto dlayer = dynamic_cast<dense_srelu_layer*>(layer.get()))
     {
-      std::cout << dlayer->act.to_string() << std::endl;
+      std::cout << "layer " << index << ' ' << dlayer->act.to_string() << std::endl;
+      index++;
     }
     else if (auto slayer = dynamic_cast<sparse_srelu_layer*>(layer.get()))
     {
-      std::cout << slayer->act.to_string() << std::endl;
+      std::cout << "layer " << index << ' ' << slayer->act.to_string() << std::endl;
+      index++;
     }
     else if (auto player = dynamic_cast<dense_srelu_dropout_layer*>(layer.get()))
     {
-      std::cout << player->act.to_string() << std::endl;
+      std::cout << "layer " << index << ' ' << player->act.to_string() << std::endl;
+      index++;
     }
   }
 }

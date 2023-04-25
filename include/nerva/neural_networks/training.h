@@ -248,17 +248,17 @@ class stochastic_gradient_descent_algorithm
             eigen::print_numpy_matrix("DY", DY.transpose());
           }
 
-//          if (eigen::has_nan(Y))
-//          {
-//            eigen::print_numpy_matrix("Y", Y.transpose());
-//            throw std::runtime_error("the output Y contains NaN values");
-//          }
-//
-//          if (eigen::has_nan(DY))
-//          {
-//            eigen::print_numpy_matrix("DY", DY.transpose());
-//            throw std::runtime_error("the gradient DY contains NaN values");
-//          }
+          if (eigen::has_nan(Y))
+          {
+            eigen::print_numpy_matrix("Y", Y.transpose());
+            throw std::runtime_error("the output Y contains NaN values");
+          }
+
+          if (eigen::has_nan(DY))
+          {
+            eigen::print_numpy_matrix("DY", DY.transpose());
+            throw std::runtime_error("the gradient DY contains NaN values");
+          }
 
           M.backpropagate(Y, DY);
 

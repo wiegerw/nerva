@@ -58,7 +58,7 @@ class AllReLU(Activation):
 
 
 class SReLU(Activation):
-    def __init__(self, al: float, tl: float, ar: float, tr: float):
+    def __init__(self, al: float = 0, tl: float = 0, ar: float = 0, tr: float = 1):
         self.al = al
         self.tl = tl
         self.ar = ar

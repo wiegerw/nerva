@@ -148,6 +148,11 @@ class sgd_algorithm: public stochastic_gradient_descent_algorithm<datasets::data
         (*regrow)(M);
       }
     }
+
+//    void on_end_batch() override
+//    {
+//      print_srelu_layers(M);
+//    }
 };
 
 class tool: public command_line_tool

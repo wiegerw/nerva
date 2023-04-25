@@ -13,12 +13,9 @@ loss="SoftmaxCrossEntropy"
 batch_size=5
 gradient_step=0.00001
 optimizers="GradientDescent"
-dropout=0
 
 function run()
 {
-  extra_args=$1
-
   ../tools/dist/mlpd \
                --epochs=$epochs \
                --layers="$layers" \
@@ -35,8 +32,7 @@ function run()
                --verbose \
                --no-shuffle \
                --seed=$seed \
-               --gradient-step=$gradient_step \
-               $1
+               --gradient-step=$gradient_step
 }
 
 function run_dataset()
@@ -46,7 +42,7 @@ function run_dataset()
   run
 
   print_header "srelu"
-  layers="SReLU(1,0,1,0);ReLU;Linear"
+  layers="SReLU(0,0,0,1);ReLU;Linear"
   run
 
   print_header "softmax layer"
@@ -55,17 +51,17 @@ function run_dataset()
 
   print_header "momentum"
   layers="ReLU;ReLU;Linear"
-  optimizer="momentum(0.8)"
+  optimizers="Momentum(0.8)"
   run
 
   print_header "nesterov"
   layers="ReLU;ReLU;Linear"
-  optimizer="nesterov(0.8)"
+  optimizers="Nesterov(0.8)"
   run
 
   print_header "batch normalization 1"
   layers="BatchNorm;ReLU;BatchNorm;ReLU;Linear"
-  optimizer="gradient-descent"
+  optimizers="GradientDescent"
   run
 
   print_header "dropout"
