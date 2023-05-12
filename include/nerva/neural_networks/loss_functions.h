@@ -124,7 +124,7 @@ struct softmax_cross_entropy_loss: public loss_function
   template <typename Target>
   scalar operator()(const eigen::vector& y, const Target& t) const
   {
-    eigen::vector softmax_y = softmax()(y);
+    eigen::vector softmax_y = softmax_colwise()(y);
     auto log_softmax_y = softmax_y.unaryExpr([](scalar x) { return std::log(x); });
     return -t.transpose() * log_softmax_y;
   }
@@ -132,31 +132,31 @@ struct softmax_cross_entropy_loss: public loss_function
   template <typename Target>
   scalar operator()(const eigen::matrix& Y, const Target& T) const  // TODO: can the return type become auto?
   {
-    eigen::matrix log_softmax_Y = log_softmax()(Y);
+    eigen::matrix log_softmax_Y = log_softmax_colwise()(Y);
     return (-T.cwiseProduct(log_softmax_Y).colwise().sum()).sum();
   }
 
   template <typename Target>
   eigen::vector gradient_vector(const eigen::vector& y, const Target& t) const
   {
-    return softmax()(y) - t;
+    return softmax_colwise()(y) - t;
   }
 
   template <typename Target>
   eigen::matrix gradient_matrix(const eigen::matrix& Y, const Target& T) const  // TODO: can the return type become auto?
   {
-    return softmax()(Y) - T;
+    return softmax_colwise()(Y) - T;
   }
 
   [[nodiscard]] scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
-    eigen::matrix log_softmax_Y = log_softmax()(Y);
+    eigen::matrix log_softmax_Y = log_softmax_colwise()(Y);
     return (-T.cwiseProduct(log_softmax_Y).colwise().sum()).sum();
   }
 
   [[nodiscard]] eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
-    return softmax()(Y) - T;
+    return softmax_colwise()(Y) - T;
   }
 
   [[nodiscard]] std::string to_string() const override

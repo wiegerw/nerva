@@ -460,7 +460,7 @@ struct hyperbolic_tangent_activation
   }
 };
 
-struct softmax
+struct softmax_colwise
 {
   [[nodiscard]] eigen::vector value(const eigen::vector& x) const
   {
@@ -480,11 +480,11 @@ struct softmax
   }
 };
 
-struct softmax_prime
+struct softmax_colwise_prime
 {
   [[nodiscard]] eigen::vector value(const eigen::vector& x) const
   {
-    return softmax()(x).unaryExpr([](scalar t) { return t * (scalar(1) - t); });
+    return softmax_colwise()(x).unaryExpr([](scalar t) { return t * (scalar(1) - t); });
   }
 
   eigen::matrix operator()(const eigen::matrix& X) const
@@ -493,18 +493,18 @@ struct softmax_prime
   }
 };
 
-struct softmax_activation
+struct softmax_colwise_activation
 {
   template <typename Matrix>
   auto operator()(const Matrix& X) const
   {
-    return softmax()(X);
+    return softmax_colwise()(X);
   }
 
   template <typename Matrix>
   auto prime(const Matrix& X) const
   {
-    return softmax_prime()(X);
+    return softmax_colwise_prime()(X);
   }
 
   [[nodiscard]] std::string to_string() const
@@ -513,7 +513,7 @@ struct softmax_activation
   }
 };
 
-struct log_softmax
+struct log_softmax_colwise
 {
   [[nodiscard]] eigen::vector value(const eigen::vector& x) const
   {
@@ -531,12 +531,12 @@ struct log_softmax
   }
 };
 
-struct log_softmax_prime
+struct log_softmax_colwise_prime
 {
   [[nodiscard]] eigen::vector value(const eigen::vector& x) const
   {
     long K = x.size();
-    auto softmax_x = softmax()(x);
+    auto softmax_x = softmax_colwise()(x);
     return eigen::matrix::Identity(K, K) - x.transpose().colwise().replicate(K);
   }
 
@@ -546,18 +546,111 @@ struct log_softmax_prime
   }
 };
 
-struct log_softmax_activation
+struct log_softmax_colwise_activation
 {
   template <typename Matrix>
   auto operator()(const Matrix& X) const
   {
-    return log_softmax()(X);
+    return log_softmax_colwise()(X);
   }
 
   template <typename Matrix>
   auto prime(const Matrix& X) const
   {
-    return log_softmax_prime()(X);
+    return log_softmax_colwise_prime()(X);
+  }
+
+  [[nodiscard]] std::string to_string() const
+  {
+    return "LogSoftmax()";
+  }
+};
+
+struct softmax_rowwise
+{
+  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
+  {
+    return softmax_colwise().value(x.transpose()).transpose();
+  }
+
+  // see also https://gist.github.com/WilliamTambellini/8294f211800e16791d47f3cf59472a49
+  eigen::matrix operator()(const eigen::matrix& X) const
+  {
+    return softmax_colwise()(X.transpose()).transpose();
+  }
+};
+
+struct softmax_rowwise_prime
+{
+  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
+  {
+    return softmax_colwise_prime().value(x.transpose()).transpose();
+  }
+
+  eigen::matrix operator()(const eigen::matrix& X) const
+  {
+    return softmax_colwise_prime()(X.transpose()).transpose();
+  }
+};
+
+struct softmax_rowwise_activation
+{
+  template <typename Matrix>
+  auto operator()(const Matrix& X) const
+  {
+    return softmax_rowwise()(X);
+  }
+
+  template <typename Matrix>
+  auto prime(const Matrix& X) const
+  {
+    return softmax_rowwise_prime()(X);
+  }
+
+  [[nodiscard]] std::string to_string() const
+  {
+    return "Softmax()";
+  }
+};
+
+struct log_softmax_rowwise
+{
+  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
+  {
+    return log_softmax_colwise().value(x.transpose()).transpose();
+  }
+
+  eigen::matrix operator()(const eigen::matrix& X) const
+  {
+    return log_softmax_colwise()(X.transpose()).transpose();
+  }
+};
+
+struct log_softmax_rowwise_prime
+{
+  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
+  {
+    return log_softmax_colwise_prime().value(x.transpose()).transpose();
+  }
+
+  eigen::matrix operator()(const eigen::matrix& X) const
+  {
+    return log_softmax_colwise_prime()(X.transpose()).transpose();
+  }
+};
+
+struct log_softmax_rowwise_activation
+{
+  template <typename Matrix>
+  auto operator()(const Matrix& X) const
+  {
+    return log_softmax_rowwise()(X);
+  }
+
+  template <typename Matrix>
+  auto prime(const Matrix& X) const
+  {
+    return log_softmax_rowwise_prime()(X);
   }
 
   [[nodiscard]] std::string to_string() const

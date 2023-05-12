@@ -486,13 +486,13 @@ struct softmax_layer : public linear_layer<Matrix>
       auto Q = X.cols();
       mkl::dsd_product(Z, W, X);
       Z += b.rowwise().replicate(Q);
-      result = softmax()(Z);
+      result = softmax_colwise()(Z);
     }
     else
     {
       auto Q = X.cols();
       Z = W * X + b.rowwise().replicate(Q);
-      result = softmax()(Z);
+      result = softmax_colwise()(Z);
     }
   }
 
@@ -546,13 +546,13 @@ struct log_softmax_layer : public linear_layer<Matrix>
       auto Q = X.cols();
       mkl::dsd_product(Z, W, X);
       Z += b.rowwise().replicate(Q);
-      result = log_softmax()(Z);
+      result = log_softmax_colwise()(Z);
     }
     else
     {
       auto Q = X.cols();
       Z = W * X + b.rowwise().replicate(Q);
-      result = log_softmax()(Z);
+      result = log_softmax_colwise()(Z);
     }
   }
 
@@ -561,7 +561,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
     if constexpr (IsSparse)
     {
       auto K = Y.rows();
-      auto softmax_Z = softmax()(Z);
+      auto softmax_Z = softmax_colwise()(Z);
       DZ = DY - softmax_Z.cwiseProduct(DY.colwise().sum().colwise().replicate(K));
       mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
       Db = DZ.rowwise().sum();
@@ -570,7 +570,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
     else
     {
       auto K = Y.rows();
-      auto softmax_Z = softmax()(Z);
+      auto softmax_Z = softmax_colwise()(Z);
       DZ = DY - softmax_Z.cwiseProduct(DY.colwise().sum().colwise().replicate(K));
       DW = DZ * X.transpose();
       Db = DZ.rowwise().sum();
