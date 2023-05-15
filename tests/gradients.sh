@@ -49,6 +49,10 @@ function run_dataset()
   layers="Softmax;ReLU;Linear"
   run
 
+  print_header "logsoftmax layer"
+  layers="LogSoftmax;ReLU;Linear"
+  run
+
   print_header "momentum"
   layers="ReLU;ReLU;Linear"
   optimizers="Momentum(0.8)"
