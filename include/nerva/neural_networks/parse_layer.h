@@ -243,17 +243,17 @@ struct layer_builder
     else if (utilities::starts_with(layer_description, "AllReLU"))
     {
       scalar alpha = parse_scalar_argument(layer_description);
-      return std::make_shared<sparse_trelu_layer>(alpha, D, K, batch_size);
+      return std::make_shared<sparse_trelu_layer>(D, K, batch_size, alpha);
     }
     else if (utilities::starts_with(layer_description, "LeakyReLU"))
     {
       scalar alpha = parse_scalar_argument(layer_description);
-      return std::make_shared<sparse_leaky_relu_layer>(alpha, D, K, batch_size);
+      return std::make_shared<sparse_leaky_relu_layer>(D, K, batch_size, alpha);
     }
     else if (utilities::starts_with(layer_description, "TReLU"))
     {
       scalar epsilon = parse_scalar_argument(layer_description);
-      return std::make_shared<sparse_trelu_layer>(epsilon, D, K, batch_size);
+      return std::make_shared<sparse_trelu_layer>(D, K, batch_size, epsilon);
     }
     else if (utilities::starts_with(layer_description, "SReLU"))
     {

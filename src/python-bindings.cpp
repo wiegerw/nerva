@@ -189,15 +189,15 @@ PYBIND11_MODULE(nervalib, m)
     ;
 
   py::class_<dense_trelu_layer, dense_linear_layer, std::shared_ptr<dense_trelu_layer>>(m, "trimmed_relu_layer")
-    .def(py::init<scalar, std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
+    .def(py::init<std::size_t, std::size_t, std::size_t, scalar>(), py::return_value_policy::copy)
     ;
 
   py::class_<dense_all_relu_layer, dense_linear_layer, std::shared_ptr<dense_all_relu_layer>>(m, "all_relu_layer")
-    .def(py::init<scalar, std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
+    .def(py::init<std::size_t, std::size_t, std::size_t, scalar>(), py::return_value_policy::copy)
     ;
 
   py::class_<dense_leaky_relu_layer, dense_linear_layer, std::shared_ptr<dense_leaky_relu_layer>>(m, "leaky_relu_layer")
-    .def(py::init<scalar, std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
+    .def(py::init<std::size_t, std::size_t, std::size_t, scalar>(), py::return_value_policy::copy)
     ;
 
   py::class_<dense_sigmoid_layer, dense_linear_layer, std::shared_ptr<dense_sigmoid_layer>>(m, "sigmoid_layer")
@@ -232,7 +232,7 @@ PYBIND11_MODULE(nervalib, m)
     ;
 
   py::class_<dense_leaky_relu_dropout_layer, dense_linear_layer, std::shared_ptr<dense_leaky_relu_dropout_layer>>(m, "leaky_relu_dropout_layer")
-    .def(py::init<scalar, std::size_t, std::size_t, std::size_t, scalar>(), py::return_value_policy::copy)
+    .def(py::init<std::size_t, std::size_t, std::size_t, scalar, scalar>(), py::return_value_policy::copy)
     ;
 
   py::class_<dense_sigmoid_dropout_layer, dense_linear_layer, std::shared_ptr<dense_sigmoid_dropout_layer>>(m, "sigmoid_dropout_layer")
@@ -248,7 +248,7 @@ PYBIND11_MODULE(nervalib, m)
     ;
 
   py::class_<dense_trelu_dropout_layer, dense_linear_layer, std::shared_ptr<dense_trelu_dropout_layer>>(m, "trelu_dropout_layer")
-    .def(py::init<scalar, std::size_t, std::size_t, std::size_t, scalar>(), py::return_value_policy::copy)
+    .def(py::init<std::size_t, std::size_t, std::size_t, scalar, scalar>(), py::return_value_policy::copy)
     ;
 
   py::class_<dense_srelu_dropout_layer, dense_linear_layer, std::shared_ptr<dense_srelu_dropout_layer>>(m, "srelu_dropout_layer")
@@ -315,15 +315,15 @@ PYBIND11_MODULE(nervalib, m)
     ;
 
   py::class_<sparse_trelu_layer, sparse_linear_layer, std::shared_ptr<sparse_trelu_layer>>(m, "sparse_trimmed_relu_layer")
-    .def(py::init<scalar, std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
+    .def(py::init<std::size_t, std::size_t, std::size_t, scalar>(), py::return_value_policy::copy)
     ;
 
   py::class_<sparse_leaky_relu_layer, sparse_linear_layer, std::shared_ptr<sparse_leaky_relu_layer>>(m, "sparse_leaky_relu_layer")
-    .def(py::init<scalar, std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
+    .def(py::init<std::size_t, std::size_t, std::size_t, scalar>(), py::return_value_policy::copy)
     ;
 
   py::class_<sparse_all_relu_layer, sparse_linear_layer, std::shared_ptr<sparse_all_relu_layer>>(m, "sparse_all_relu_layer")
-    .def(py::init<scalar, std::size_t, std::size_t, std::size_t>(), py::return_value_policy::copy)
+    .def(py::init<std::size_t, std::size_t, std::size_t, scalar>(), py::return_value_policy::copy)
     ;
 
   py::class_<sparse_sigmoid_layer, sparse_linear_layer, std::shared_ptr<sparse_sigmoid_layer>>(m, "sparse_sigmoid_layer")

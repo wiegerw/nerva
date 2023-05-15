@@ -56,7 +56,7 @@ struct neural_network_layer
   eigen::matrix X;  // the input
   eigen::matrix DX; // the gradient of the input
 
-  explicit neural_network_layer(std::size_t D, std::size_t N = 1)
+  explicit neural_network_layer(std::size_t D, std::size_t N)
    : X(D, N), DX(D, N)
   {}
 
@@ -88,7 +88,7 @@ struct linear_layer: public neural_network_layer
   eigen::vector Db;
   std::shared_ptr<layer_optimizer> optimizer;
 
-  explicit linear_layer(std::size_t D, std::size_t K, std::size_t N = 1)
+  explicit linear_layer(std::size_t D, std::size_t K, std::size_t N)
    : super(D, N), W(K, D), b(K), DW(K, D), Db(K)
   {}
 
@@ -221,7 +221,7 @@ struct sigmoid_layer : public linear_layer<Matrix>
   eigen::matrix Z;
   eigen::matrix DZ;
 
-  sigmoid_layer(std::size_t D, std::size_t K, std::size_t N = 1)
+  sigmoid_layer(std::size_t D, std::size_t K, std::size_t N)
       : super(D, K, N), Z(K, N), DZ(K, N)
   {}
 
@@ -294,7 +294,7 @@ struct activation_layer : public linear_layer<Matrix>
   eigen::matrix Z;
   eigen::matrix DZ;
 
-  explicit activation_layer(ActivationFunction act_, std::size_t D, std::size_t K, std::size_t N = 1)
+  explicit activation_layer(std::size_t D, std::size_t K, std::size_t N, ActivationFunction act_)
    : super(D, K, N), act(act_), Z(K, N), DZ(K, N)
   {}
 
@@ -352,8 +352,8 @@ struct hyperbolic_tangent_layer : public activation_layer<Matrix, hyperbolic_tan
 {
   using super = activation_layer<Matrix, hyperbolic_tangent_activation>;
 
-  explicit hyperbolic_tangent_layer(std::size_t D, std::size_t K, std::size_t N = 1)
-   : super(hyperbolic_tangent_activation(), D, K, N)
+  explicit hyperbolic_tangent_layer(std::size_t D, std::size_t K, std::size_t N)
+   : super(D, K, N, hyperbolic_tangent_activation())
   {}
 };
 
@@ -365,8 +365,8 @@ struct relu_layer : public activation_layer<Matrix, relu_activation>
 {
   using super = activation_layer<Matrix, relu_activation>;
 
-  explicit relu_layer(std::size_t D, std::size_t K, std::size_t N = 1)
-      : super(relu_activation(), D, K, N)
+  explicit relu_layer(std::size_t D, std::size_t K, std::size_t N)
+      : super(D, K, N, relu_activation())
   {}
 };
 
@@ -378,8 +378,8 @@ struct trelu_layer : public activation_layer<Matrix, trimmed_relu_activation>
 {
   using super = activation_layer<Matrix, trimmed_relu_activation>;
 
-  explicit trelu_layer(scalar epsilon, std::size_t D, std::size_t K, std::size_t N = 1)
-    : super(trimmed_relu_activation(epsilon), D, K, N)
+  explicit trelu_layer(std::size_t D, std::size_t K, std::size_t N, scalar epsilon)
+    : super(D, K, N, trimmed_relu_activation(epsilon))
   {}
 };
 
@@ -391,8 +391,8 @@ struct leaky_relu_layer : public activation_layer<Matrix, leaky_relu_activation>
 {
   using super = activation_layer<Matrix, leaky_relu_activation>;
 
-  explicit leaky_relu_layer(scalar alpha, std::size_t D, std::size_t K, std::size_t N = 1)
-      : super(leaky_relu_activation(alpha), D, K, N)
+  explicit leaky_relu_layer(std::size_t D, std::size_t K, std::size_t N, scalar alpha)
+      : super(D, K, N, leaky_relu_activation(alpha))
   {}
 };
 
@@ -404,8 +404,8 @@ struct all_relu_layer : public activation_layer<Matrix, all_relu_activation>
 {
   using super = activation_layer<Matrix, all_relu_activation>;
 
-  explicit all_relu_layer(scalar alpha, std::size_t D, std::size_t K, std::size_t N = 1)
-      : super(all_relu_activation(alpha), D, K, N)
+  explicit all_relu_layer(std::size_t D, std::size_t K, std::size_t N, scalar alpha)
+      : super(D, K, N, all_relu_activation(alpha))
   {}
 };
 
@@ -427,7 +427,7 @@ struct srelu_layer : public activation_layer<Matrix, srelu_activation>
   scalar Dtr = 0;
 
   explicit srelu_layer(std::size_t D, std::size_t K, std::size_t N, scalar al = 1, scalar tl = 0, scalar ar = 1, scalar tr = 0)
-    : super(srelu_activation(al, tl, ar, tr), D, K, N)
+    : super(D, K, N, srelu_activation(al, tl, ar, tr))
   {}
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
@@ -475,7 +475,7 @@ struct softmax_layer : public linear_layer<Matrix>
   eigen::matrix Z;
   eigen::matrix DZ;
 
-  softmax_layer(std::size_t D, std::size_t K, std::size_t N = 1)
+  softmax_layer(std::size_t D, std::size_t K, std::size_t N)
       : super(D, K, N), Z(K, N), DZ(K, N)
   {}
 
@@ -535,7 +535,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
   eigen::matrix Z;
   eigen::matrix DZ;
 
-  log_softmax_layer(std::size_t D, std::size_t K, std::size_t N = 1)
+  log_softmax_layer(std::size_t D, std::size_t K, std::size_t N)
     : super(D, K, N), Z(K, N), DZ(K, N)
   {}
 
