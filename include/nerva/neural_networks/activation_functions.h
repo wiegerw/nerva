@@ -531,21 +531,6 @@ struct log_softmax_colwise
   }
 };
 
-struct log_softmax_colwise_prime
-{
-  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
-  {
-    long K = x.size();
-    auto softmax_x = softmax_colwise()(x);
-    return eigen::matrix::Identity(K, K) - x.transpose().colwise().replicate(K);
-  }
-
-  eigen::matrix operator()(const eigen::matrix& X) const
-  {
-    throw std::runtime_error("log_softmax_prime is unsupported for matrices");
-  }
-};
-
 struct log_softmax_colwise_activation
 {
   template <typename Matrix>
@@ -557,7 +542,7 @@ struct log_softmax_colwise_activation
   template <typename Matrix>
   auto prime(const Matrix& X) const
   {
-    return log_softmax_colwise_prime()(X);
+    throw std::runtime_error("log_softmax_prime is unsupported");
   }
 
   [[nodiscard]] std::string to_string() const
@@ -626,19 +611,6 @@ struct log_softmax_rowwise
   }
 };
 
-struct log_softmax_rowwise_prime
-{
-  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
-  {
-    return log_softmax_colwise_prime().value(x.transpose()).transpose();
-  }
-
-  eigen::matrix operator()(const eigen::matrix& X) const
-  {
-    return log_softmax_colwise_prime()(X.transpose()).transpose();
-  }
-};
-
 struct log_softmax_rowwise_activation
 {
   template <typename Matrix>
@@ -650,7 +622,7 @@ struct log_softmax_rowwise_activation
   template <typename Matrix>
   auto prime(const Matrix& X) const
   {
-    return log_softmax_rowwise_prime()(X);
+    throw std::runtime_error("log_softmax_prime is unsupported");
   }
 
   [[nodiscard]] std::string to_string() const

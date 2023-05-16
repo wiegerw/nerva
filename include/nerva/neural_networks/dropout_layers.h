@@ -194,27 +194,27 @@ struct relu_dropout_layer: public activation_dropout_layer<Matrix, relu_activati
 using dense_relu_dropout_layer = relu_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
-struct softmax_dropout_layer: public activation_dropout_layer<Matrix, softmax_colwise_activation>
+struct softmax_dropout_layer: public softmax_layer<Matrix>, dropout_layer<Matrix>
 {
-  using super = activation_dropout_layer<Matrix, softmax_colwise_activation>;
+  using super = softmax_layer<Matrix>;
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
   softmax_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
-    : super(D, K, N, p, softmax_colwise_activation())
+    : super(D, K, N), dropout_layer<Matrix>(D, K, p)
   {}
 };
 using dense_softmax_dropout_layer = softmax_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
-struct log_softmax_dropout_layer: public activation_dropout_layer<Matrix, log_softmax_colwise_activation>
+struct log_softmax_dropout_layer: public log_softmax_layer<Matrix>, dropout_layer<Matrix>
 {
-  using super = activation_dropout_layer<Matrix, log_softmax_colwise_activation>;
+  using super = log_softmax_layer<Matrix>;
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
   log_softmax_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
-    : super(D, K, N, p, log_softmax_colwise_activation())
+    : super(D, K, N), dropout_layer<Matrix>(D, K, p)
   {}
 };
 using dense_log_softmax_dropout_layer = log_softmax_dropout_layer<eigen::matrix>;
