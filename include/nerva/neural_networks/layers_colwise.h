@@ -465,13 +465,13 @@ struct softmax_layer : public linear_layer<Matrix>
       auto N = X.cols();
       mkl::dsd_product(Z, W, X);
       Z += b.rowwise().replicate(N);
-      result = softmax_colwise()(Z);
+      result = stable_softmax_colwise()(Z);
     }
     else
     {
       auto N = X.cols();
       Z = W * X + b.rowwise().replicate(N);
-      result = softmax_colwise()(Z);
+      result = stable_softmax_colwise()(Z);
     }
   }
 
@@ -525,13 +525,13 @@ struct log_softmax_layer : public linear_layer<Matrix>
       auto N = X.cols();
       mkl::dsd_product(Z, W, X);
       Z += b.rowwise().replicate(N);
-      result = log_softmax_colwise()(Z);
+      result = stable_log_softmax_colwise()(Z);
     }
     else
     {
       auto N = X.cols();
       Z = W * X + b.rowwise().replicate(N);
-      result = log_softmax_colwise()(Z);
+      result = stable_log_softmax_colwise()(Z);
     }
   }
 

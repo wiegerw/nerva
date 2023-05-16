@@ -161,15 +161,15 @@ TEST_CASE("test_softmax")
     {3.0, 4.0, 9.0}
   };
 
-  eigen::matrix Y = softmax_colwise()(X);
+  eigen::matrix Y = stable_softmax_colwise()(X);
 
   eigen::matrix x1 = X.col(0);
   eigen::matrix x2 = X.col(1);
   eigen::matrix x3 = X.col(2);
 
-  eigen::matrix y1 = softmax_colwise()(x1);
-  eigen::matrix y2 = softmax_colwise()(x2);
-  eigen::matrix y3 = softmax_colwise()(x3);
+  eigen::matrix y1 = stable_softmax_colwise()(x1);
+  eigen::matrix y2 = stable_softmax_colwise()(x2);
+  eigen::matrix y3 = stable_softmax_colwise()(x3);
 
   eigen::print_numpy_matrix("Y", Y);
   eigen::print_numpy_matrix("y1", y1);
