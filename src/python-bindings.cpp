@@ -485,16 +485,10 @@ PYBIND11_MODULE(nervalib, m)
 
   m.def("relu", [](const eigen::matrix_ref<scalar>& X) { return relu_activation()(X); });
   m.def("sigmoid", [](const eigen::matrix_ref<scalar>& X) { return sigmoid_activation()(X); });
-
-  m.def("softmax", [](const eigen::matrix_ref<scalar>& X) { return stable_softmax_colwise()(X); });
-  m.def("softmax_prime", [](const eigen::matrix_ref<scalar>& X) { return stable_softmax_colwise_prime()(X); });
-
-  m.def("softmax_rowwise", [](const eigen::matrix_ref<scalar>& X) { return stable_softmax_rowwise()(X); });
-  m.def("softmax_rowwise_prime", [](const eigen::matrix_ref<scalar>& X) { return stable_softmax_rowwise_prime()(X); });
-
-  m.def("log_softmax", [](const eigen::matrix_ref<scalar>& X) { return stable_log_softmax_colwise()(X); });
-  m.def("log_softmax_rowwise", [](const eigen::matrix_ref<scalar>& X) { return stable_log_softmax_rowwise()(X); });
-
+  m.def("stable_softmax", [](const eigen::matrix_ref<scalar>& X) { return stable_softmax_colwise()(X); });
+  m.def("stable_softmax_rowwise", [](const eigen::matrix_ref<scalar>& X) { return stable_softmax_rowwise()(X); });
+  m.def("stable_log_softmax", [](const eigen::matrix_ref<scalar>& X) { return stable_log_softmax_colwise()(X); });
+  m.def("stable_log_softmax_rowwise", [](const eigen::matrix_ref<scalar>& X) { return stable_log_softmax_rowwise()(X); });
   m.def("hyperbolic_tangent", [](const eigen::matrix_ref<scalar>& X) { return hyperbolic_tangent_activation()(X); });
 
   /////////////////////////////////////////////////////////////////////////

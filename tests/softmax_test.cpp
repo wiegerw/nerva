@@ -26,15 +26,19 @@ TEST_CASE("test_softmax_colwise")
   };
 
   eigen::matrix softmax_X = stable_softmax_colwise()(X);
+  eigen::matrix softmax_X1 = softmax_colwise()(X);
+
+  CHECK_LE((softmax_X - softmax_X1).squaredNorm(), 1e-10);
+
   eigen::matrix log_softmax_X = stable_log_softmax_colwise()(X);
   eigen::matrix log_softmax_X1 = softmax_X.unaryExpr([](auto t) { return std::log(t); });
-
-  print_numpy_matrix("X", X);
-  print_numpy_matrix("softmax_X", softmax_X);
-  print_numpy_matrix("log_softmax_X", log_softmax_X);
-  print_numpy_matrix("log_softmax_X1", log_softmax_X1);
-
   CHECK_LE((log_softmax_X - log_softmax_X1).squaredNorm(), 1e-10);
+
+//  print_numpy_matrix("X", X);
+  print_numpy_matrix("softmax_X", softmax_X);
+  print_numpy_matrix("softmax_X1", softmax_X1);
+//  print_numpy_matrix("log_softmax_X", log_softmax_X);
+//  print_numpy_matrix("log_softmax_X1", log_softmax_X1);
 }
 
 TEST_CASE("test_softmax_rowwise")

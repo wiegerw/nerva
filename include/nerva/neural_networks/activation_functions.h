@@ -460,6 +460,23 @@ struct hyperbolic_tangent_activation
   }
 };
 
+// N.B. Numerically unstable!
+struct softmax_colwise
+{
+  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
+  {
+    auto E = x.array().exp();
+    return E / E.sum();
+  }
+
+  eigen::matrix operator()(const eigen::matrix& X) const
+  {
+    auto m = X.rows();
+    auto E = X.array().exp();
+    return E.cwiseProduct(E.colwise().sum().inverse().colwise().replicate(m));
+  }
+};
+
 struct stable_softmax_colwise
 {
   [[nodiscard]] eigen::vector value(const eigen::vector& x) const
@@ -480,36 +497,21 @@ struct stable_softmax_colwise
   }
 };
 
-struct stable_softmax_colwise_prime
+// N.B. Numerically unstable!
+struct log_softmax_colwise
 {
   [[nodiscard]] eigen::vector value(const eigen::vector& x) const
   {
-    return stable_softmax_colwise()(x).unaryExpr([](scalar t) { return t * (scalar(1) - t); });
+    auto N = x.size();
+    auto e = x.array().exp().colwise().sum().log();
+    return x.array() - e.colwise().replicate(N);
   }
 
   eigen::matrix operator()(const eigen::matrix& X) const
   {
-    return X.diagonal() - X * X.transpose();
-  }
-};
-
-struct softmax_colwise_activation
-{
-  template <typename Matrix>
-  auto operator()(const Matrix& X) const
-  {
-    return stable_softmax_colwise()(X);
-  }
-
-  template <typename Matrix>
-  auto prime(const Matrix& X) const
-  {
-    return stable_softmax_colwise_prime()(X);
-  }
-
-  [[nodiscard]] std::string to_string() const
-  {
-    return "Softmax()";
+    auto N = X.cols();
+    auto E = X.array().exp().colwise().sum().log();
+    return X.array() - E.colwise().replicate(N);
   }
 };
 
@@ -531,23 +533,17 @@ struct stable_log_softmax_colwise
   }
 };
 
-struct log_softmax_colwise_activation
+// N.B. Numerically unstable!
+struct softmax_rowwise
 {
-  template <typename Matrix>
-  auto operator()(const Matrix& X) const
+  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
   {
-    return stable_log_softmax_colwise()(X);
+    return softmax_colwise().value(x.transpose()).transpose();
   }
 
-  template <typename Matrix>
-  auto prime(const Matrix& X) const
+  eigen::matrix operator()(const eigen::matrix& X) const
   {
-    throw std::runtime_error("log_softmax_prime is unsupported");
-  }
-
-  [[nodiscard]] std::string to_string() const
-  {
-    return "LogSoftmax()";
+    return softmax_colwise()(X.transpose()).transpose();
   }
 };
 
@@ -565,39 +561,6 @@ struct stable_softmax_rowwise
   }
 };
 
-struct stable_softmax_rowwise_prime
-{
-  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
-  {
-    return stable_softmax_colwise_prime().value(x.transpose()).transpose();
-  }
-
-  eigen::matrix operator()(const eigen::matrix& X) const
-  {
-    return stable_softmax_colwise_prime()(X.transpose()).transpose();
-  }
-};
-
-struct softmax_rowwise_activation
-{
-  template <typename Matrix>
-  auto operator()(const Matrix& X) const
-  {
-    return stable_softmax_rowwise()(X);
-  }
-
-  template <typename Matrix>
-  auto prime(const Matrix& X) const
-  {
-    return stable_softmax_rowwise_prime()(X);
-  }
-
-  [[nodiscard]] std::string to_string() const
-  {
-    return "Softmax()";
-  }
-};
-
 struct stable_log_softmax_rowwise
 {
   [[nodiscard]] eigen::vector value(const eigen::vector& x) const
@@ -608,26 +571,6 @@ struct stable_log_softmax_rowwise
   eigen::matrix operator()(const eigen::matrix& X) const
   {
     return stable_log_softmax_colwise()(X.transpose()).transpose();
-  }
-};
-
-struct log_softmax_rowwise_activation
-{
-  template <typename Matrix>
-  auto operator()(const Matrix& X) const
-  {
-    return stable_log_softmax_rowwise()(X);
-  }
-
-  template <typename Matrix>
-  auto prime(const Matrix& X) const
-  {
-    throw std::runtime_error("log_softmax_prime is unsupported");
-  }
-
-  [[nodiscard]] std::string to_string() const
-  {
-    return "LogSoftmax()";
   }
 };
 
