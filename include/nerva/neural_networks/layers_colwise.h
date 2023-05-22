@@ -537,11 +537,10 @@ struct log_softmax_layer : public linear_layer<Matrix>
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
-    // TODO: fix the computation for DZ (it fails the gradient tests)
     if constexpr (IsSparse)
     {
       auto K = Y.rows();
-      DZ = DY - (Y.transpose() * DY).diagonal().transpose().colwise().replicate(K);
+      DZ = DY - stable_softmax_colwise()(Z).cwiseProduct(DY.colwise().sum().colwise().replicate(K));
       mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
       Db = DZ.rowwise().sum();
       mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
@@ -549,7 +548,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
     else
     {
       auto K = Y.rows();
-      DZ = DY - (Y.transpose() * DY).diagonal().transpose().colwise().replicate(K);
+      DZ = DY - stable_softmax_colwise()(Z).cwiseProduct(DY.colwise().sum().colwise().replicate(K));
       DW = DZ * X.transpose();
       Db = DZ.rowwise().sum();
       DX = W.transpose() * DZ;
