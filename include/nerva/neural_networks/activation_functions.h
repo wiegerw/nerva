@@ -501,12 +501,16 @@ struct stable_softmax_colwise
   eigen::matrix operator()(const eigen::matrix& X) const
   {
     using eigen::colwise_sum;
+    using eigen::colwise_replicate;
     using eigen::exp;
+    using eigen::hadamard;
 
     auto c = X.colwise().maxCoeff().eval();
     auto x_minus_c = X.rowwise() - c;
     auto E = exp(x_minus_c.array());
-    return E.rowwise() / colwise_sum(E);
+    auto m = X.rows();
+    return hadamard(E, colwise_replicate(inverse(colwise_sum(E)), m));
+    // return E.rowwise() / colwise_sum(E);
   }
 };
 

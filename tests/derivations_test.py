@@ -69,14 +69,14 @@ def rowwise_sum(X: Matrix) -> Matrix:
     return Matrix(rows)
 
 
-def colwise_replicate(X: Matrix, n: int) -> Matrix:
+def rowwise_replicate(X: Matrix, n: int) -> Matrix:
     rows, cols = X.shape
     assert cols == 1
     rows = [[X[i, 0]] * n for i in range(rows)]
     return Matrix(rows)
 
 
-def rowwise_replicate(X: Matrix, n: int) -> Matrix:
+def colwise_replicate(X: Matrix, n: int) -> Matrix:
     rows, cols = X.shape
     assert rows == 1
     columns = [[X[0, j]] * n for j in range(cols)]
@@ -97,7 +97,7 @@ def squared_error(X: Matrix) -> float:
 
 
 #-------------------------------------#
-#           softmax functions colwise
+#           softmax colwise
 #-------------------------------------#
 
 def softmax_colwise1(X: Matrix) -> Matrix:
@@ -113,31 +113,15 @@ def softmax_colwise1(X: Matrix) -> Matrix:
 def softmax_colwise2(X: Matrix) -> Matrix:
     m, n = X.shape
     E = exp(X)
-    return hadamard(E, rowwise_replicate(inverse(colwise_sum(E)), m))
+    return hadamard(E, colwise_replicate(inverse(colwise_sum(E)), m))
 
 
 # stable softmax
 def softmax_colwise3(X: Matrix) -> Matrix:
     m, n = X.shape
     c = Matrix(sp.symarray('C', (1, n), real=True))
-    E = exp(X - rowwise_replicate(c, m))
-    return hadamard(E, rowwise_replicate(inverse(colwise_sum(E)), m))
-
-
-def log_softmax_colwise1(X: Matrix) -> Matrix:
-    return log(softmax_colwise1(X))
-
-
-def log_softmax_colwise2(X: Matrix) -> Matrix:
-    m, n = X.shape
-    return X - rowwise_replicate(log(colwise_sum(exp(X))), m)
-
-
-def log_softmax_colwise3(X: Matrix) -> Matrix:
-    m, n = X.shape
-    c = Matrix(sp.symarray('C', (1, n), real=True))
-    Y = X - rowwise_replicate(c, m)
-    return Y - rowwise_replicate(log(colwise_sum(exp(Y))), m)
+    E = exp(X - colwise_replicate(c, m))
+    return hadamard(E, colwise_replicate(inverse(colwise_sum(E)), m))
 
 
 def softmax_colwise_derivative1(x: Matrix) -> Matrix:
@@ -151,6 +135,26 @@ def softmax_colwise_derivative2(x: Matrix) -> Matrix:
     return Diag(y) - y * y.T
 
 
+#-------------------------------------#
+#           log_softmax colwise
+#-------------------------------------#
+
+def log_softmax_colwise1(X: Matrix) -> Matrix:
+    return log(softmax_colwise1(X))
+
+
+def log_softmax_colwise2(X: Matrix) -> Matrix:
+    m, n = X.shape
+    return X - colwise_replicate(log(colwise_sum(exp(X))), m)
+
+
+def log_softmax_colwise3(X: Matrix) -> Matrix:
+    m, n = X.shape
+    c = Matrix(sp.symarray('C', (1, n), real=True))
+    Y = X - colwise_replicate(c, m)
+    return Y - colwise_replicate(log(colwise_sum(exp(Y))), m)
+
+
 def log_softmax_colwise_derivative1(x: Matrix) -> Matrix:
     return log_softmax_colwise1(x).jacobian(x)
 
@@ -158,11 +162,11 @@ def log_softmax_colwise_derivative1(x: Matrix) -> Matrix:
 def log_softmax_colwise_derivative2(x: Matrix) -> Matrix:
     m, n = x.shape
     assert n == 1
-    return sp.eye(m) - rowwise_replicate(softmax_colwise2(x).T, m)
+    return sp.eye(m) - colwise_replicate(softmax_colwise2(x).T, m)
 
 
 #-------------------------------------#
-#           softmax functions rowwise
+#           softmax rowwise
 #-------------------------------------#
 
 def softmax_rowwise1(X: Matrix) -> Matrix:
@@ -178,31 +182,15 @@ def softmax_rowwise1(X: Matrix) -> Matrix:
 def softmax_rowwise2(X: Matrix) -> Matrix:
     m, n = X.shape
     E = exp(X)
-    return hadamard(E, rowwise_replicate(inverse(rowwise_sum(E)), m))
+    return hadamard(E, colwise_replicate(inverse(rowwise_sum(E)), m))
 
 
 # stable softmax
 def softmax_rowwise3(X: Matrix) -> Matrix:
     m, n = X.shape
     c = Matrix(sp.symarray('C', (1, n), real=True))
-    E = exp(X - rowwise_replicate(c, m))
-    return hadamard(E, rowwise_replicate(inverse(rowwise_sum(E)), m))
-
-
-def log_softmax_rowwise1(X: Matrix) -> Matrix:
-    return log(softmax_rowwise1(X))
-
-
-def log_softmax_rowwise2(X: Matrix) -> Matrix:
-    m, n = X.shape
-    return X - rowwise_replicate(log(rowwise_sum(exp(X))), m)
-
-
-def log_softmax_rowwise3(X: Matrix) -> Matrix:
-    m, n = X.shape
-    c = Matrix(sp.symarray('C', (1, n), real=True))
-    Y = X - rowwise_replicate(c, m)
-    return Y - rowwise_replicate(log(rowwise_sum(exp(Y))), m)
+    E = exp(X - colwise_replicate(c, m))
+    return hadamard(E, colwise_replicate(inverse(rowwise_sum(E)), m))
 
 
 def softmax_rowwise_derivative1(x: Matrix) -> Matrix:
@@ -216,6 +204,26 @@ def softmax_rowwise_derivative2(x: Matrix) -> Matrix:
     return Diag(y) - y * y.T
 
 
+#-------------------------------------#
+#           log_softmax rowwise
+#-------------------------------------#
+
+def log_softmax_rowwise1(X: Matrix) -> Matrix:
+    return log(softmax_rowwise1(X))
+
+
+def log_softmax_rowwise2(X: Matrix) -> Matrix:
+    m, n = X.shape
+    return X - colwise_replicate(log(rowwise_sum(exp(X))), m)
+
+
+def log_softmax_rowwise3(X: Matrix) -> Matrix:
+    m, n = X.shape
+    c = Matrix(sp.symarray('C', (1, n), real=True))
+    Y = X - colwise_replicate(c, m)
+    return Y - colwise_replicate(log(rowwise_sum(exp(Y))), m)
+
+
 def log_softmax_rowwise_derivative1(x: Matrix) -> Matrix:
     return log_softmax_rowwise1(x).jacobian(x)
 
@@ -223,7 +231,7 @@ def log_softmax_rowwise_derivative1(x: Matrix) -> Matrix:
 def log_softmax_rowwise_derivative2(x: Matrix) -> Matrix:
     m, n = x.shape
     assert n == 1
-    return sp.eye(m) - rowwise_replicate(softmax_rowwise2(x).T, m)
+    return sp.eye(m) - colwise_replicate(softmax_rowwise2(x).T, m)
 
 
 class TestDerivations(TestCase):
@@ -285,12 +293,12 @@ class TestDerivations(TestCase):
 
         DY_Z = substitute(diff(fY, Y), Y, Y_Z)
         DZ = diff(fZ, Z)
-        DZ1 = hadamard(Y_Z, DY_Z - rowwise_replicate(diag(Y_Z.T * DY_Z), m))
+        DZ1 = hadamard(Y_Z, DY_Z - colwise_replicate(diag(Y_Z.T * DY_Z), m))
 
         u = sp.simplify(DZ - DZ1)
         self.assertEqual(u, sp.zeros(m, n))
 
-    def log_softmax_layer_test(self):
+    def test_log_softmax_layer(self):
         m = 3
         n = 2
 
@@ -305,10 +313,18 @@ class TestDerivations(TestCase):
         DY = diff(f_Y, Y)
         DY_Z = substitute(DY, Y, Y_Z)
         DZ1 = diff(f_Z, Z)
-        DZ2 = DY_Z - hadamard(softmax_colwise1(Z), rowwise_replicate(colwise_sum(DY_Z), m))
+        DZ2 = DY_Z - hadamard(softmax_colwise1(Z), colwise_replicate(colwise_sum(DY_Z), m))
 
         u = sp.simplify(DZ1 - DZ2)
         self.assertEqual(u, sp.zeros(m, n))
+
+
+    def test_matrix_operations(self):
+        A = Matrix([[1, 2, 3]])
+        B = colwise_replicate(A, 2)
+        C = Matrix([[1, 2, 3],
+                    [1, 2, 3]])
+        self.assertEqual(B, C)
 
 
 if __name__ == '__main__':
