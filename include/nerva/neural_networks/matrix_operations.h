@@ -10,7 +10,7 @@
 #ifndef NERVA_NEURAL_NETWORKS_MATRIX_OPERATIONS_H
 #define NERVA_NEURAL_NETWORKS_MATRIX_OPERATIONS_H
 
-namespace nerva {
+namespace nerva::eigen {
 
 template <class Matrix>
 auto exp(const Matrix& X)
@@ -25,9 +25,9 @@ auto log(const Matrix& X)
 }
 
 template <class Matrix>
-auto div(const Matrix& X)
+auto inverse(const Matrix& X)
 {
-  return 1 / X.array();
+  return X.array().inverse();
 }
 
 template <class Matrix>
@@ -72,6 +72,6 @@ auto rowwise_replicate(const Matrix& X, long n)
   return X.rowwise().replicate(n);
 }
 
-} // namespace nerva
+} // namespace nerva::eigen
 
 #endif // NERVA_NEURAL_NETWORKS_MATRIX_OPERATIONS_H

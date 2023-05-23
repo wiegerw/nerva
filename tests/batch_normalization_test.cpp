@@ -26,8 +26,10 @@ eigen::matrix standardize_column_data1(const eigen::matrix& x, double epsilon = 
 inline
 eigen::matrix standardize_column_data2(const eigen::matrix& x, double epsilon = 1e-20)
 {
+  using eigen::diag;
+
   eigen::matrix R = x.colwise() - x.rowwise().mean();
-  auto Sigma = (R * R.transpose()).diagonal().array() / x.cols();
+  auto Sigma = diag(R * R.transpose()).array() / x.cols();
   return R.array().colwise() / (Sigma + epsilon).sqrt();
 }
 

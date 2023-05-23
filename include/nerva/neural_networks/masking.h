@@ -38,11 +38,12 @@ void apply_binary_mask(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Mat
                        const Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic>& mask
                       )
 {
+  using eigen::hadamard;
   if (A.rows() != mask.rows() || A.cols() != mask.cols())
   {
     throw std::runtime_error("Could not apply binary mask, because the dimensions do not match.");
   }
-  A = A.cwiseProduct(mask.cast<Scalar>());
+  A = hadamard(A, mask.cast<Scalar>());
 }
 
 class mlp_masking

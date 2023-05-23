@@ -465,15 +465,23 @@ struct softmax_colwise
 {
   [[nodiscard]] eigen::vector value(const eigen::vector& x) const
   {
-    auto E = x.array().exp();
+    using eigen::exp;
+
+    auto E = exp(x);
     return E / E.sum();
   }
 
   eigen::matrix operator()(const eigen::matrix& X) const
   {
+    using eigen::colwise_replicate;
+    using eigen::colwise_sum;
+    using eigen::exp;
+    using eigen::hadamard;
+    using eigen::inverse;
+
     auto m = X.rows();
-    auto E = X.array().exp();
-    return E.cwiseProduct(E.colwise().sum().inverse().colwise().replicate(m));
+    auto E = exp(X);
+    return hadamard(E, colwise_replicate(inverse(colwise_sum(E)), m));
   }
 };
 
@@ -481,19 +489,24 @@ struct stable_softmax_colwise
 {
   [[nodiscard]] eigen::vector value(const eigen::vector& x) const
   {
+    using eigen::exp;
+
     // use the log-sum-exp trick to make the computation robust, see also https://en.wikipedia.org/wiki/LogSumExp
     scalar c = x.maxCoeff();
-    auto E = ((x.array() - c)).exp();
+    auto E = exp((x.array() - c));
     return E / E.sum();
   }
 
   // see also https://gist.github.com/WilliamTambellini/8294f211800e16791d47f3cf59472a49
   eigen::matrix operator()(const eigen::matrix& X) const
   {
+    using eigen::colwise_sum;
+    using eigen::exp;
+
     auto c = X.colwise().maxCoeff().eval();
     auto x_minus_c = X.rowwise() - c;
-    auto E = x_minus_c.array().exp();
-    return E.rowwise() / E.colwise().sum();
+    auto E = exp(x_minus_c.array());
+    return E.rowwise() / colwise_sum(E);
   }
 };
 
@@ -502,16 +515,26 @@ struct log_softmax_colwise
 {
   [[nodiscard]] eigen::vector value(const eigen::vector& x) const
   {
+    using eigen::colwise_replicate;
+    using eigen::colwise_sum;
+    using eigen::exp;
+    using eigen::log;
+
     auto N = x.size();
-    auto e = x.array().exp().colwise().sum().log();
-    return x.array() - e.colwise().replicate(N);
+    auto e = log(colwise_sum(exp(x)));
+    return x.array() - colwise_replicate(e, N);
   }
 
   eigen::matrix operator()(const eigen::matrix& X) const
   {
+    using eigen::colwise_replicate;
+    using eigen::colwise_sum;
+    using eigen::exp;
+    using eigen::log;
+
     auto N = X.cols();
-    auto E = X.array().exp().colwise().sum().log();
-    return X.array() - E.colwise().replicate(N);
+    auto E = colwise_sum(log(exp(X)));
+    return X.array() - colwise_replicate(E, N);
   }
 };
 
@@ -519,17 +542,23 @@ struct stable_log_softmax_colwise
 {
   [[nodiscard]] eigen::vector value(const eigen::vector& x) const
   {
+    using eigen::exp;
+
     auto c = x.array().maxCoeff();
-    auto E = std::log((x.array() - c).exp().sum());
+    auto E = std::log(exp(x.array() - c).sum());
     return x.array() - c - E;
   }
 
   eigen::matrix operator()(const eigen::matrix& X) const
   {
+    using eigen::colwise_sum;
+    using eigen::exp;
+    using eigen::log;
+
     auto c = X.colwise().maxCoeff().eval();
     auto x_minus_c = X.rowwise() - c;
-    auto E = x_minus_c.array().exp();
-    return x_minus_c.array().rowwise() - E.colwise().sum().log();
+    auto E = exp(x_minus_c);
+    return x_minus_c.array().rowwise() - log(colwise_sum(E));
   }
 };
 

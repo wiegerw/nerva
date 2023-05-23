@@ -54,26 +54,34 @@ struct batch_normalization_layer: public neural_network_layer
 
   void feedforward(eigen::matrix& result) override
   {
+    using eigen::rowwise_replicate;
+    using eigen::hadamard;
+
     auto N = X.cols();
     scalar epsilon = 1e-20;
     R = X.colwise() - X.rowwise().mean();
     Sigma = R.array().square().rowwise().sum() / N;
-    Z = eigen::power_minus_half(Sigma, epsilon).rowwise().replicate(N).cwiseProduct(R);
-    result = gamma.rowwise().replicate(N).cwiseProduct(Z) + beta.rowwise().replicate(N);
+    Z = hadamard(rowwise_replicate(eigen::power_minus_half(Sigma, epsilon), N), R);
+    result = hadamard(rowwise_replicate(gamma, N), Z) + rowwise_replicate(beta, N);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
+    using eigen::diag;
+    using eigen::hadamard;
+    using eigen::rowwise_replicate;
+    using eigen::rowwise_sum;
+
     auto N = X.cols();
     scalar epsilon = 1e-20;
-    Dbeta = DY.rowwise().sum();
-    Dgamma = DY.cwiseProduct(Z).rowwise().sum();
-    DZ = gamma.rowwise().replicate(N).cwiseProduct(DY);
+    Dbeta = rowwise_sum(DY);
+    Dgamma = hadamard(DY, Z).rowwise().sum();
+    DZ = hadamard(rowwise_replicate(gamma, N), DY);
 
     // TODO: attempts to reuse the computation power_minus_half(Sigma, epsilon) make the code run slower with g++-12. Why?
     Sigma_power_minus_half = eigen::power_minus_half(Sigma, epsilon);
-    diag_DZ_Zt = (DZ * Z.transpose()).diagonal() / N;
-    DX = Sigma_power_minus_half.rowwise().replicate(N).cwiseProduct((-diag_DZ_Zt.rowwise().replicate(N).cwiseProduct(Z) + DZ * (eigen::matrix::Identity(N, N) - eigen::matrix::Constant(N, N, scalar(1) / N))));
+    diag_DZ_Zt = diag(DZ * Z.transpose()) / N;
+    DX = hadamard(rowwise_replicate(Sigma_power_minus_half, N), (hadamard(rowwise_replicate(-diag_DZ_Zt, N), Z) + DZ * (eigen::matrix::Identity(N, N) - eigen::matrix::Constant(N, N, scalar(1) / N))));
   }
 };
 
@@ -106,20 +114,28 @@ struct simple_batch_normalization_layer: public neural_network_layer
 
   void feedforward(eigen::matrix& result) override
   {
+    using eigen::hadamard;
+    using eigen::rowwise_replicate;
+
     auto N = X.cols();
     scalar epsilon = 1e-20;
     R = X.colwise() - X.rowwise().mean();
     Sigma = R.array().square().rowwise().sum() / N;
-    result = eigen::power_minus_half(Sigma, epsilon).rowwise().replicate(N).cwiseProduct(R);
+    result = hadamard(rowwise_replicate(eigen::power_minus_half(Sigma, epsilon), N), R);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
+    using eigen::diag;
+    using eigen::Diag;
+    using eigen::hadamard;
+    using eigen::rowwise_replicate;
+
     auto N = X.cols();
     scalar epsilon = 1e-20;
     Sigma_power_minus_half = eigen::power_minus_half(Sigma, epsilon) / N;  // N.B. Also divide by N for efficiency reasons
-    diag_DY_Yt = (DY * Y.transpose()).diagonal();
-    DX = Sigma_power_minus_half.rowwise().replicate(N).cwiseProduct(((-diag_DY_Yt).asDiagonal() * Y + DY * (N * eigen::matrix::Identity(N, N) - eigen::matrix::Constant(N, N, scalar(1)))));
+    diag_DY_Yt = diag(DY * Y.transpose());
+    DX = hadamard(rowwise_replicate(Sigma_power_minus_half, N), (Diag(-diag_DY_Yt) * Y + DY * (N * eigen::matrix::Identity(N, N) - eigen::matrix::Constant(N, N, scalar(1)))));
   }
 };
 
@@ -158,16 +174,23 @@ struct affine_layer: public neural_network_layer
 
   void feedforward(eigen::matrix& result) override
   {
+    using eigen::hadamard;
+    using eigen::rowwise_replicate;
+
     auto N = X.cols();
-    result = gamma.rowwise().replicate(N).cwiseProduct(X) + beta.rowwise().replicate(N);
+    result = hadamard(rowwise_replicate(gamma, N), X) + rowwise_replicate(beta, N);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
+    using eigen::hadamard;
+    using eigen::rowwise_replicate;
+    using eigen::rowwise_sum;
+
     auto N = X.cols();
-    DX = gamma.rowwise().replicate(N).cwiseProduct(DY);
-    Dbeta = DY.rowwise().sum();
-    Dgamma = DY.cwiseProduct(X).rowwise().sum();
+    DX = hadamard(rowwise_replicate(gamma, N), DY);
+    Dbeta = rowwise_sum(DY);
+    Dgamma = hadamard(DY, X).rowwise().sum();
   }
 };
 

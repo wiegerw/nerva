@@ -60,22 +60,28 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
 
   void feedforward(eigen::matrix& result) override
   {
+    using eigen::rowwise_replicate;
+    using eigen::hadamard;
+
     auto N = X.cols();
-    result = W.cwiseProduct(R) * X + b.rowwise().replicate(N);
+    result = hadamard(W, R) * X + rowwise_replicate(b, N);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
+    using eigen::hadamard;
+    using eigen::rowwise_sum;
+
     if constexpr (std::is_same<Matrix, eigen::matrix>::value)
     {
-      DW = (DY * X.transpose()).cwiseProduct(R);
+      DW = hadamard(DY * X.transpose(), R);
     }
     else
     {
       // TODO
     }
-    Db = DY.rowwise().sum();
-    DX = W.cwiseProduct(R).transpose() * DY;
+    Db = rowwise_sum(DY);
+    DX = hadamard(W, R).transpose() * DY;
   }
 };
 
@@ -108,24 +114,28 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
 
   void feedforward(eigen::matrix& result) override
   {
+    using eigen::rowwise_replicate;
+    using eigen::hadamard;
+
     auto N = X.cols();
-    Z = W.cwiseProduct(R) * X + b.rowwise().replicate(N);
+    Z = hadamard(W, R) * X + rowwise_replicate(b, N);
     result = sigmoid()(Z);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
-    DZ = DY.cwiseProduct(eigen::x_times_one_minus_x(Y));
+    using eigen::hadamard;
+    DZ = hadamard(DY, eigen::x_times_one_minus_x(Y));
     if constexpr (std::is_same<Matrix, eigen::matrix>::value)
     {
-      DW = (DZ * X.transpose()).cwiseProduct(R);
+      DW = hadamard(DZ * X.transpose(), R);
     }
     else
     {
       // TODO
     }
     Db = DZ.rowwise().sum();
-    DX = W.cwiseProduct(R).transpose() * DZ;
+    DX = hadamard(W, R).transpose() * DZ;
   }
 };
 
@@ -159,24 +169,28 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
 
   void feedforward(eigen::matrix& result) override
   {
+    using eigen::rowwise_replicate;
+    using eigen::hadamard;
+
     auto N = X.cols();
-    Z = W.cwiseProduct(R) * X + b.rowwise().replicate(N);
+    Z = hadamard(W, R) * X + rowwise_replicate(b, N);
     result = act(Z);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
-    DZ = DY.cwiseProduct(act.prime(Z));
+    using eigen::hadamard;
+    DZ = hadamard(DY, act.prime(Z));
     if constexpr (std::is_same<Matrix, eigen::matrix>::value)
     {
-      DW = (DZ * X.transpose()).cwiseProduct(R);
+      DW = hadamard(DZ * X.transpose(), R);
     }
     else
     {
       // TODO
     }
     Db = DZ.rowwise().sum();
-    DX = W.cwiseProduct(R).transpose() * DZ;
+    DX = hadamard(W, R).transpose() * DZ;
   }
 };
 
