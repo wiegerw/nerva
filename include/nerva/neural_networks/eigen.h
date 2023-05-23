@@ -12,6 +12,7 @@
 
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
+#include "nerva/neural_networks/matrix_operations.h"
 #include "nerva/neural_networks/scalar.h"
 #include "nerva/utilities/text_utility.h"
 #include "fmt/format.h"
