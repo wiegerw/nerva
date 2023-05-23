@@ -27,6 +27,15 @@ def substitute(expr, X: Matrix, Y: Matrix):
     return expr.subs(substitutions)
 
 
+def jacobian(X: Matrix, Y: Matrix) -> Matrix:
+    m, n = X.shape
+    assert m == 1 or n == 1
+    if n == 1:
+        return X.jacobian(Y)
+    else:
+        return X.jacobian(Y).T
+
+
 def exp(x: Matrix) -> Matrix:
     return x.applyfunc(lambda x: sp.exp(x))
 
@@ -42,12 +51,12 @@ def inverse(x: Matrix) -> Matrix:
 def diag(X: Matrix) -> Matrix:
     m, n = X.shape
     assert m == n
-    return Matrix([[X[i, i] for i in range(m)]])
+    return Matrix([[X[i, i] for i in range(m)]]).T
 
 
 def Diag(x: Matrix) -> Matrix:
     m, n = x.shape
-    assert n == 1
+    assert m == 1 or n == 1
     return sp.diag(*x)
 
 
@@ -57,14 +66,12 @@ def hadamard(x: Matrix, y: Matrix) -> Matrix:
 
 def colwise_sum(X: Matrix) -> Matrix:
     m, n = X.shape
-
     columns = [sum(X[:, j]) for j in range(n)]
     return Matrix(columns).T
 
 
 def rowwise_sum(X: Matrix) -> Matrix:
     m, n = X.shape
-
     rows = [sum(X[i, :]) for i in range(m)]
     return Matrix(rows)
 
@@ -125,7 +132,7 @@ def softmax_colwise3(X: Matrix) -> Matrix:
 
 
 def softmax_colwise_derivative1(x: Matrix) -> Matrix:
-    return softmax_colwise1(x).jacobian(x)
+    return jacobian(softmax_colwise1(x), x)
 
 
 def softmax_colwise_derivative2(x: Matrix) -> Matrix:
@@ -156,7 +163,7 @@ def log_softmax_colwise3(X: Matrix) -> Matrix:
 
 
 def log_softmax_colwise_derivative1(x: Matrix) -> Matrix:
-    return log_softmax_colwise1(x).jacobian(x)
+    return jacobian(log_softmax_colwise1(x), x)
 
 
 def log_softmax_colwise_derivative2(x: Matrix) -> Matrix:
@@ -194,14 +201,18 @@ def softmax_rowwise3(X: Matrix) -> Matrix:
 
 
 def softmax_rowwise_derivative1(x: Matrix) -> Matrix:
-    return softmax_rowwise1(x).jacobian(x)
+    return jacobian(softmax_rowwise1(x), x)
 
 
 def softmax_rowwise_derivative2(x: Matrix) -> Matrix:
+    return softmax_colwise_derivative1(x.T).T
+
+
+def softmax_rowwise_derivative3(x: Matrix) -> Matrix:
     m, n = x.shape
-    assert n == 1
+    assert m == 1
     y = softmax_rowwise1(x)
-    return Diag(y) - y * y.T
+    return Diag(y) - y.T * y
 
 
 #-------------------------------------#
@@ -225,13 +236,17 @@ def log_softmax_rowwise3(X: Matrix) -> Matrix:
 
 
 def log_softmax_rowwise_derivative1(x: Matrix) -> Matrix:
-    return log_softmax_rowwise1(x).jacobian(x)
+    return jacobian(log_softmax_rowwise1(x), x)
 
 
 def log_softmax_rowwise_derivative2(x: Matrix) -> Matrix:
+    return log_softmax_colwise_derivative1(x.T).T
+
+
+def log_softmax_rowwise_derivative3(x: Matrix) -> Matrix:
     m, n = x.shape
-    assert n == 1
-    return sp.eye(m) - colwise_replicate(softmax_rowwise2(x).T, m)
+    assert m == 1
+    return sp.eye(n) - rowwise_replicate(softmax_rowwise2(x).T, n)
 
 
 class TestDerivations(TestCase):
@@ -240,70 +255,72 @@ class TestDerivations(TestCase):
         n = 2
         X = Matrix(sp.symarray('X', (m, n), real=True))
 
-        softmax1 = softmax_colwise1(X)
-        softmax2 = softmax_colwise2(X)
-        softmax3 = softmax_colwise3(X)
-        log_softmax1 = log_softmax_colwise1(X)
-        log_softmax2 = log_softmax_colwise2(X)
-        log_softmax3 = log_softmax_colwise3(X)
+        y1 = softmax_colwise1(X)
+        y2 = softmax_colwise2(X)
+        y3 = softmax_colwise3(X)
+        self.assertEqual(sp.simplify(y1 - y2), sp.zeros(m, n))
+        self.assertEqual(sp.simplify(y1 - y3), sp.zeros(m, n))
 
-        u = sp.simplify(softmax1 - softmax2)
-        self.assertEqual(u, sp.zeros(m, n))
-
-        u = sp.simplify(softmax1 - softmax3)
-        self.assertEqual(u, sp.zeros(m, n))
-
-        u = sp.simplify(log_softmax1 - log_softmax2)
-        self.assertEqual(u, sp.zeros(m, n))
-
-        u = sp.simplify(log_softmax1 - log_softmax3)
-        self.assertEqual(u, sp.zeros(m, n))
+        y1 = log_softmax_colwise1(X)
+        y2 = log_softmax_colwise2(X)
+        y3 = log_softmax_colwise3(X)
+        self.assertEqual(sp.simplify(y1 - y2), sp.zeros(m, n))
+        self.assertEqual(sp.simplify(y1 - y3), sp.zeros(m, n))
 
     def test_softmax_rowwise(self):
         m = 2
         n = 3
         X = Matrix(sp.symarray('X', (m, n), real=True))
 
-        softmax1 = softmax_rowwise1(X)
-        softmax2 = softmax_rowwise2(X)
-        softmax3 = softmax_rowwise3(X)
-        log_softmax1 = log_softmax_rowwise1(X)
-        log_softmax2 = log_softmax_rowwise2(X)
-        log_softmax3 = log_softmax_rowwise3(X)
+        y1 = softmax_rowwise1(X)
+        y2 = softmax_rowwise2(X)
+        y3 = softmax_rowwise3(X)
+        self.assertEqual(sp.simplify(y1 - y2), sp.zeros(m, n))
+        self.assertEqual(sp.simplify(y1 - y3), sp.zeros(m, n))
 
-        u = sp.simplify(softmax1 - softmax2)
-        self.assertEqual(u, sp.zeros(m, n))
+        y1 = log_softmax_rowwise1(X)
+        y2 = log_softmax_rowwise2(X)
+        y3 = log_softmax_rowwise3(X)
+        self.assertEqual(sp.simplify(y1 - y2), sp.zeros(m, n))
+        self.assertEqual(sp.simplify(y1 - y3), sp.zeros(m, n))
 
-        u = sp.simplify(softmax1 - softmax3)
-        self.assertEqual(u, sp.zeros(m, n))
-
-        u = sp.simplify(log_softmax1 - log_softmax2)
-        self.assertEqual(u, sp.zeros(m, n))
-
-        u = sp.simplify(log_softmax1 - log_softmax3)
-        self.assertEqual(u, sp.zeros(m, n))
-
-    def test_softmax_derivative(self):
+    def test_softmax_colwise_derivative(self):
         x = Matrix(sp.symbols('x y z'), real=True)
         m, n = x.shape
 
-        deriv_softmax1 = sp.simplify(softmax_colwise_derivative1(x))
-        deriv_softmax2 = sp.simplify(softmax_colwise_derivative2(x))
+        y1 = sp.simplify(softmax_colwise_derivative1(x))
+        y2 = sp.simplify(softmax_colwise_derivative2(x))
+        self.assertEqual(sp.simplify(y1 - y2), sp.zeros(m, m))
 
-        u = sp.simplify(deriv_softmax1 - deriv_softmax2)
-        self.assertEqual(u, sp.zeros(m, m))
-
-    def test_log_softmax_derivative(self):
+    def test_log_softmax_colwise_derivative(self):
         x = Matrix(sp.symbols('x y z'), real=True)
         m, n = x.shape
 
-        deriv_softmax1 = sp.simplify(log_softmax_colwise_derivative1(x))
-        deriv_softmax2 = sp.simplify(log_softmax_colwise_derivative2(x))
+        y1 = sp.simplify(log_softmax_colwise_derivative1(x))
+        y2 = sp.simplify(log_softmax_colwise_derivative2(x))
+        self.assertEqual(sp.simplify(y1 - y2), sp.zeros(m, m))
 
-        u = sp.simplify(deriv_softmax1 - deriv_softmax2)
-        self.assertEqual(u, sp.zeros(m, m))
+    def test_softmax_rowwise_derivative(self):
+        x = Matrix(sp.symbols('x y z'), real=True).T
+        m, n = x.shape
 
-    def test_softmax_layer(self):
+        y1 = sp.simplify(softmax_rowwise_derivative1(x))
+        y2 = sp.simplify(softmax_rowwise_derivative2(x))
+        y3 = sp.simplify(softmax_rowwise_derivative3(x))
+        self.assertEqual(sp.simplify(y1 - y2), sp.zeros(n, n))
+        self.assertEqual(sp.simplify(y1 - y3), sp.zeros(n, n))
+
+    def test_log_softmax_rowwise_derivative(self):
+        x = Matrix(sp.symbols('x y z'), real=True).T
+        m, n = x.shape
+
+        y1 = sp.simplify(log_softmax_rowwise_derivative1(x))
+        y2 = sp.simplify(log_softmax_rowwise_derivative2(x))
+        y3 = sp.simplify(log_softmax_rowwise_derivative3(x))
+        self.assertEqual(sp.simplify(y1 - y2), sp.zeros(n, n))
+        self.assertEqual(sp.simplify(y1 - y3), sp.zeros(n, n))
+
+    def test_softmax_layer_colwise(self):
         m = 3
         n = 2
 
@@ -312,17 +329,16 @@ class TestDerivations(TestCase):
 
         Y_Z = softmax_colwise1(Z)
 
-        fY = squared_error(Y)
-        fZ = squared_error(Y_Z)
+        f_Y = squared_error(Y)
+        f_Z = squared_error(Y_Z)
 
-        DY_Z = substitute(diff(fY, Y), Y, Y_Z)
-        DZ = diff(fZ, Z)
-        DZ1 = hadamard(Y_Z, DY_Z - colwise_replicate(diag(Y_Z.T * DY_Z), m))
+        DY_Z = substitute(diff(f_Y, Y), Y, Y_Z)
+        DZ1 = diff(f_Z, Z)
+        DZ2 = hadamard(Y_Z, DY_Z - colwise_replicate(diag(Y_Z.T * DY_Z).T, m))
 
-        u = sp.simplify(DZ - DZ1)
-        self.assertEqual(u, sp.zeros(m, n))
+        self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
 
-    def test_log_softmax_layer(self):
+    def test_log_softmax_layer_colwise(self):
         m = 3
         n = 2
 
@@ -339,9 +355,25 @@ class TestDerivations(TestCase):
         DZ1 = diff(f_Z, Z)
         DZ2 = DY_Z - hadamard(softmax_colwise1(Z), colwise_replicate(colwise_sum(DY_Z), m))
 
-        u = sp.simplify(DZ1 - DZ2)
-        self.assertEqual(u, sp.zeros(m, n))
+        self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
 
+    def test_softmax_layer_rowwise(self):
+        m = 2
+        n = 3
+
+        Y = Matrix(sp.symarray('Y', (m, n), real=True))
+        Z = Matrix(sp.symarray('Z', (m, n), real=True))
+
+        Y_Z = softmax_rowwise1(Z)
+
+        f_Y = squared_error(Y)
+        f_Z = squared_error(Y_Z)
+
+        DY_Z = substitute(diff(f_Y, Y), Y, Y_Z)
+        DZ1 = diff(f_Z, Z)
+        DZ2 = hadamard(Y_Z, DY_Z - rowwise_replicate(diag(DY_Z * Y_Z.T), n))
+
+        self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
 
     def test_matrix_operations(self):
         A = Matrix([[1, 2, 3]])
