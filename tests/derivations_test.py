@@ -6,6 +6,7 @@
 
 # see also https://docs.sympy.org/latest/modules/matrices/matrices.html
 
+from typing import List
 from unittest import TestCase
 
 import sympy as sp
@@ -14,6 +15,10 @@ from sympy import Matrix, matrix_multiply_elementwise
 #-------------------------------------#
 #           matrix functions
 #-------------------------------------#
+
+def join_columns(columns: List[Matrix]) -> Matrix:
+    return Matrix([x.T for x in columns]).T
+
 
 def diff(f, X: Matrix):
     m, n = X.shape
@@ -248,7 +253,6 @@ def log_softmax_rowwise_derivative3(x: Matrix) -> Matrix:
     assert m == 1
     return sp.eye(n) - rowwise_replicate(softmax_rowwise2(x).T, n)
 
-
 class TestDerivations(TestCase):
     def test_softmax_colwise(self):
         m = 3
@@ -381,6 +385,48 @@ class TestDerivations(TestCase):
         C = Matrix([[1, 2, 3],
                     [1, 2, 3]])
         self.assertEqual(B, C)
+
+
+class TestLemmas(TestCase):
+    def test_lemma1(self):
+        m = 2
+        n = 3
+
+        X = Matrix(sp.symarray('X', (m, n), real=True))
+        Y = Matrix(sp.symarray('Y', (m, n), real=True))
+        Z1 = join_columns([X.col(j) * X.col(j).T * Y.col(j) for j in range(n)])
+        Z2 = hadamard(X, colwise_replicate(diag(X.T * Y).T, m))
+        self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
+
+    def test_lemma2(self):
+        m = 2
+        n = 3
+
+        X = Matrix(sp.symarray('X', (m, n), real=True))
+        Y = Matrix(sp.symarray('Y', (m, n), real=True))
+        Z1 = join_columns([colwise_replicate(X.col(j).T, m) * Y.col(j) for j in range(n)])
+        Z2 = colwise_replicate(diag(X.T * Y).T, m)
+        self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
+
+    def test_lemma3(self):
+        m = 2
+        n = 3
+
+        X = Matrix(sp.symarray('X', (m, n), real=True))
+        Y = Matrix(sp.symarray('Y', (m, n), real=True))
+        Z1 = Matrix([X.row(i) * Y.row(i).T * Y.row(i) for i in range(m)])
+        Z2 = hadamard(Y, rowwise_replicate(diag(X * Y.T), n))
+        self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
+
+    def test_lemma4(self):
+        m = 2
+        n = 3
+
+        X = Matrix(sp.symarray('X', (m, n), real=True))
+        Y = Matrix(sp.symarray('Y', (m, n), real=True))
+        Z1 = Matrix([X.row(i) * rowwise_replicate(Y.row(i).T, n) for i in range(m)])
+        Z2 = rowwise_replicate(diag(X * Y.T), n)
+        self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
 
 if __name__ == '__main__':
