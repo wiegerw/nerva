@@ -397,24 +397,22 @@ class TestDerivations(TestCase):
 
         self.assertEqual(sp.simplify(DZ - diff(f_Z, Z_vars)), sp.zeros(m, n))
 
-    # TODO: fix this test
     def test_log_softmax_layer_rowwise(self):
-        m = 1
-        n = 2
+        m = 2
+        n = 3
 
         Y_vars = Matrix(sp.symarray('Y', (m, n), real=True))
         Z_vars = Matrix(sp.symarray('Z', (m, n), real=True))
 
         Y = log_softmax_rowwise(Z_vars)
 
-        #f_Y = squared_error(Y_vars)
-        f_Y = sum(Y_vars)
+        f_Y = squared_error(Y_vars)
         f_Z = substitute(f_Y, Y_vars, Y)
         DY = substitute(diff(f_Y, Y_vars), Y_vars, Y)
 
-        DZ = DY - repeat_column(diag(DY * softmax_rowwise(Z_vars).T), n)
+        DZ = DY - hadamard(softmax_rowwise(Z_vars), repeat_column(sum_rows(DY), n))
 
-        # self.assertEqual(sp.simplify(DZ - diff(f_Z, Z_vars)), sp.zeros(m, n))
+        self.assertEqual(sp.simplify(DZ - diff(f_Z, Z_vars)), sp.zeros(m, n))
 
 
     def test_matrix_operations(self):
