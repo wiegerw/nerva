@@ -13,6 +13,24 @@
 namespace nerva::eigen {
 
 template <class Matrix>
+bool is_column_vector(const Matrix& x)
+{
+  return x.cols() == 1;
+}
+
+template <class Matrix>
+bool is_row_vector(const Matrix& x)
+{
+  return x.rows() == 1;
+}
+
+template <class Matrix>
+bool is_square(const Matrix& X)
+{
+  return X.rows() == X.cols();
+}
+
+template <class Matrix>
 auto exp(const Matrix& X)
 {
   return X.array().exp();
@@ -33,12 +51,14 @@ auto inverse(const Matrix& X)
 template <class Matrix>
 auto diag(const Matrix& X)
 {
+  assert(is_square(X));
   return X.diagonal();
 }
 
 template <class Matrix>
 auto Diag(const Matrix& x)
 {
+  assert(is_column_vector(x) || is_row_vector(x));
   return x.asDiagonal();
 }
 
@@ -49,27 +69,29 @@ auto hadamard(const Matrix1& X, const Matrix2& Y)
 }
 
 template <typename Matrix>
-auto colwise_sum(const Matrix& X)
+auto sum_columns(const Matrix& X)
 {
   return X.colwise().sum();
 }
 
 template <typename Matrix>
-auto rowwise_sum(const Matrix& X)
+auto sum_rows(const Matrix& X)
 {
   return X.rowwise().sum();
 }
 
 template <typename Matrix>
-auto colwise_replicate(const Matrix& X, long m)
+auto repeat_row(const Matrix& x, long m)
 {
-  return X.colwise().replicate(m);
+  assert(is_row_vector(x));
+  return x.colwise().replicate(m);
 }
 
 template <typename Matrix>
-auto rowwise_replicate(const Matrix& X, long n)
+auto repeat_column(const Matrix& x, long n)
 {
-  return X.rowwise().replicate(n);
+  assert(is_column_vector(x));
+  return x.rowwise().replicate(n);
 }
 
 } // namespace nerva::eigen

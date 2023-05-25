@@ -74,8 +74,8 @@ def inverse(x: Matrix) -> Matrix:
 
 
 def diag(X: Matrix) -> Matrix:
+    assert is_square(X)
     m, n = X.shape
-    assert m == n
     return Matrix([[X[i, i] for i in range(m)]]).T
 
 
@@ -85,29 +85,30 @@ def Diag(x: Matrix) -> Matrix:
 
 
 def hadamard(x: Matrix, y: Matrix) -> Matrix:
+    assert x.shape == y.shape
     return matrix_multiply_elementwise(x, y)
 
 
-def colwise_sum(X: Matrix) -> Matrix:
+def sum_columns(X: Matrix) -> Matrix:
     m, n = X.shape
-    columns = [sum(X[:, j]) for j in range(n)]
+    columns = [sum(X.col(j)) for j in range(n)]
     return Matrix(columns).T
 
 
-def rowwise_sum(X: Matrix) -> Matrix:
+def sum_rows(X: Matrix) -> Matrix:
     m, n = X.shape
-    rows = [sum(X[i, :]) for i in range(m)]
+    rows = [sum(X.row(i)) for i in range(m)]
     return Matrix(rows)
 
 
-def rowwise_replicate(x: Matrix, n: int) -> Matrix:
+def repeat_column(x: Matrix, n: int) -> Matrix:
     assert is_column_vector(x)
     rows, cols = x.shape
     rows = [[x[i, 0]] * n for i in range(rows)]
     return Matrix(rows)
 
 
-def colwise_replicate(x: Matrix, n: int) -> Matrix:
+def repeat_row(x: Matrix, n: int) -> Matrix:
     assert is_row_vector(x)
     rows, cols = x.shape
     columns = [[x[0, j]] * n for j in range(cols)]
@@ -124,7 +125,7 @@ def squared_error(X: Matrix) -> float:
     def f(x: Matrix) -> float:
         return sp.sqrt(sum(xi * xi for xi in x))
 
-    return sum(f(X[:, j]) for j in range(n))
+    return sum(f(X.col(j)) for j in range(n))
 
 
 #-------------------------------------#
@@ -138,21 +139,21 @@ def softmax_colwise1(X: Matrix) -> Matrix:
         e = exp(x)
         return e / sum(e)
 
-    return Matrix([softmax(X[:, j]).T for j in range(n)]).T
+    return Matrix([softmax(X.col(j)).T for j in range(n)]).T
 
 
 def softmax_colwise2(X: Matrix) -> Matrix:
     m, n = X.shape
     E = exp(X)
-    return hadamard(E, colwise_replicate(inverse(colwise_sum(E)), m))
+    return hadamard(E, repeat_row(inverse(sum_columns(E)), m))
 
 
 # stable softmax
 def softmax_colwise3(X: Matrix) -> Matrix:
     m, n = X.shape
     c = Matrix(sp.symarray('C', (1, n), real=True))
-    E = exp(X - colwise_replicate(c, m))
-    return hadamard(E, colwise_replicate(inverse(colwise_sum(E)), m))
+    E = exp(X - repeat_row(c, m))
+    return hadamard(E, repeat_row(inverse(sum_columns(E)), m))
 
 
 def softmax_colwise_derivative1(x: Matrix) -> Matrix:
@@ -175,14 +176,14 @@ def log_softmax_colwise1(X: Matrix) -> Matrix:
 
 def log_softmax_colwise2(X: Matrix) -> Matrix:
     m, n = X.shape
-    return X - colwise_replicate(log(colwise_sum(exp(X))), m)
+    return X - repeat_row(log(sum_columns(exp(X))), m)
 
 
 def log_softmax_colwise3(X: Matrix) -> Matrix:
     m, n = X.shape
     c = Matrix(sp.symarray('C', (1, n), real=True))
-    Y = X - colwise_replicate(c, m)
-    return Y - colwise_replicate(log(colwise_sum(exp(Y))), m)
+    Y = X - repeat_row(c, m)
+    return Y - repeat_row(log(sum_columns(exp(Y))), m)
 
 
 def log_softmax_colwise_derivative1(x: Matrix) -> Matrix:
@@ -192,7 +193,7 @@ def log_softmax_colwise_derivative1(x: Matrix) -> Matrix:
 def log_softmax_colwise_derivative2(x: Matrix) -> Matrix:
     assert is_column_vector(x)
     m, n = x.shape
-    return sp.eye(m) - colwise_replicate(softmax_colwise2(x).T, m)
+    return sp.eye(m) - repeat_row(softmax_colwise2(x).T, m)
 
 
 #-------------------------------------#
@@ -206,21 +207,21 @@ def softmax_rowwise1(X: Matrix) -> Matrix:
         e = exp(x)
         return e / sum(e)
 
-    return Matrix([softmax(X[i, :]) for i in range(m)])
+    return join_rows([softmax(X.row(i)) for i in range(m)])
 
 
 def softmax_rowwise2(X: Matrix) -> Matrix:
     m, n = X.shape
     E = exp(X)
-    return hadamard(E, rowwise_replicate(inverse(rowwise_sum(E)), n))
+    return hadamard(E, repeat_column(inverse(sum_rows(E)), n))
 
 
 # stable softmax
 def softmax_rowwise3(X: Matrix) -> Matrix:
     m, n = X.shape
     c = Matrix(sp.symarray('C', (m, 1), real=True))
-    E = exp(X - rowwise_replicate(c, n))
-    return hadamard(E, rowwise_replicate(inverse(rowwise_sum(E)), n))
+    E = exp(X - repeat_column(c, n))
+    return hadamard(E, repeat_column(inverse(sum_rows(E)), n))
 
 
 def softmax_rowwise_derivative1(x: Matrix) -> Matrix:
@@ -249,14 +250,14 @@ def log_softmax_rowwise1(X: Matrix) -> Matrix:
 
 def log_softmax_rowwise2(X: Matrix) -> Matrix:
     m, n = X.shape
-    return X - rowwise_replicate(log(rowwise_sum(exp(X))), n)
+    return X - repeat_column(log(sum_rows(exp(X))), n)
 
 
 def log_softmax_rowwise3(X: Matrix) -> Matrix:
     m, n = X.shape
     c = Matrix(sp.symarray('C', (m, 1), real=True))
-    Y = X - rowwise_replicate(c, n)
-    return Y - rowwise_replicate(log(rowwise_sum(exp(Y))), n)
+    Y = X - repeat_column(c, n)
+    return Y - repeat_column(log(sum_rows(exp(Y))), n)
 
 
 def log_softmax_rowwise_derivative1(x: Matrix) -> Matrix:
@@ -272,7 +273,7 @@ def log_softmax_rowwise_derivative2(x: Matrix) -> Matrix:
 def log_softmax_rowwise_derivative3(x: Matrix) -> Matrix:
     assert is_row_vector(x)
     m, n = x.shape
-    return sp.eye(n) - rowwise_replicate(softmax_rowwise2(x).T, n)
+    return sp.eye(n) - repeat_column(softmax_rowwise2(x).T, n)
 
 
 class TestDerivations(TestCase):
@@ -360,7 +361,7 @@ class TestDerivations(TestCase):
 
         DY_Z = substitute(diff(f_Y, Y), Y, Y_Z)
         DZ1 = diff(f_Z, Z)
-        DZ2 = hadamard(Y_Z, DY_Z - colwise_replicate(diag(Y_Z.T * DY_Z).T, m))
+        DZ2 = hadamard(Y_Z, DY_Z - repeat_row(diag(Y_Z.T * DY_Z).T, m))
 
         self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
 
@@ -379,7 +380,7 @@ class TestDerivations(TestCase):
         DY = diff(f_Y, Y)
         DY_Z = substitute(DY, Y, Y_Z)
         DZ1 = diff(f_Z, Z)
-        DZ2 = DY_Z - hadamard(softmax_colwise1(Z), colwise_replicate(colwise_sum(DY_Z), m))
+        DZ2 = DY_Z - hadamard(softmax_colwise1(Z), repeat_row(sum_columns(DY_Z), m))
 
         self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
 
@@ -397,13 +398,13 @@ class TestDerivations(TestCase):
 
         DY_Z = substitute(diff(f_Y, Y), Y, Y_Z)
         DZ1 = diff(f_Z, Z)
-        DZ2 = hadamard(Y_Z, DY_Z - rowwise_replicate(diag(DY_Z * Y_Z.T), n))
+        DZ2 = hadamard(Y_Z, DY_Z - repeat_column(diag(DY_Z * Y_Z.T), n))
 
         self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
 
     def test_matrix_operations(self):
         A = Matrix([[1, 2, 3]])
-        B = colwise_replicate(A, 2)
+        B = repeat_row(A, 2)
         C = Matrix([[1, 2, 3],
                     [1, 2, 3]])
         self.assertEqual(B, C)
@@ -417,7 +418,7 @@ class TestLemmas(TestCase):
         X = Matrix(sp.symarray('X', (m, n), real=True))
         Y = Matrix(sp.symarray('Y', (m, n), real=True))
         Z1 = join_columns([X.col(j) * X.col(j).T * Y.col(j) for j in range(n)])
-        Z2 = hadamard(X, colwise_replicate(diag(X.T * Y).T, m))
+        Z2 = hadamard(X, repeat_row(diag(X.T * Y).T, m))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
     def test_lemma2(self):
@@ -426,8 +427,8 @@ class TestLemmas(TestCase):
 
         X = Matrix(sp.symarray('X', (m, n), real=True))
         Y = Matrix(sp.symarray('Y', (m, n), real=True))
-        Z1 = join_columns([colwise_replicate(X.col(j).T, m) * Y.col(j) for j in range(n)])
-        Z2 = colwise_replicate(diag(X.T * Y).T, m)
+        Z1 = join_columns([repeat_row(X.col(j).T, m) * Y.col(j) for j in range(n)])
+        Z2 = repeat_row(diag(X.T * Y).T, m)
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
     def test_lemma3(self):
@@ -437,7 +438,7 @@ class TestLemmas(TestCase):
         X = Matrix(sp.symarray('X', (m, n), real=True))
         Y = Matrix(sp.symarray('Y', (m, n), real=True))
         Z1 = join_rows([X.row(i) * Y.row(i).T * Y.row(i) for i in range(m)])
-        Z2 = hadamard(Y, rowwise_replicate(diag(X * Y.T), n))
+        Z2 = hadamard(Y, repeat_column(diag(X * Y.T), n))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
     def test_lemma4(self):
@@ -446,8 +447,8 @@ class TestLemmas(TestCase):
 
         X = Matrix(sp.symarray('X', (m, n), real=True))
         Y = Matrix(sp.symarray('Y', (m, n), real=True))
-        Z1 = join_rows([X.row(i) * rowwise_replicate(Y.row(i).T, n) for i in range(m)])
-        Z2 = rowwise_replicate(diag(X * Y.T), n)
+        Z1 = join_rows([X.row(i) * repeat_column(Y.row(i).T, n) for i in range(m)])
+        Z2 = repeat_column(diag(X * Y.T), n)
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
 

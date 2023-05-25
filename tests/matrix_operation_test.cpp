@@ -11,17 +11,16 @@
 
 #include "doctest/doctest.h"
 #include "nerva/neural_networks/eigen.h"
-#include <iostream>
 
 using namespace nerva;
 
-TEST_CASE("test_colwise_replicate")
+TEST_CASE("test_repeat_row")
 {
   eigen::matrix A {
     {1, 2, 3}
   };
 
-  eigen::matrix B = eigen::colwise_replicate(A, 2);
+  eigen::matrix B = eigen::repeat_row(A, 2);
 
   eigen::matrix C {
     {1, 2, 3},
