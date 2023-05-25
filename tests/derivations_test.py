@@ -16,8 +16,29 @@ from sympy import Matrix, matrix_multiply_elementwise
 #           matrix functions
 #-------------------------------------#
 
+def is_column_vector(x: Matrix) -> bool:
+    m, n = x.shape
+    return n == 1
+
+
+def is_row_vector(x: Matrix) -> bool:
+    m, n = x.shape
+    return m == 1
+
+
+def is_square(X: Matrix) -> bool:
+    m, n = X.shape
+    return m == n
+
+
 def join_columns(columns: List[Matrix]) -> Matrix:
+    assert all(is_column_vector(column) for column in columns)
     return Matrix([x.T for x in columns]).T
+
+
+def join_rows(rows: List[Matrix]) -> Matrix:
+    assert all(is_row_vector(row) for row in rows)
+    return Matrix(rows)
 
 
 def diff(f, X: Matrix):
@@ -26,19 +47,18 @@ def diff(f, X: Matrix):
 
 
 def substitute(expr, X: Matrix, Y: Matrix):
+    assert X.shape == Y.shape
     m, n = X.shape
-    assert m, n == Y.shape
     substitutions = ((X[i, j], Y[i, j]) for i in range(m) for j in range(n))
     return expr.subs(substitutions)
 
 
-def jacobian(X: Matrix, Y: Matrix) -> Matrix:
-    m, n = X.shape
-    assert m == 1 or n == 1
-    if n == 1:
-        return X.jacobian(Y)
+def jacobian(x: Matrix, y) -> Matrix:
+    assert is_column_vector(x) or is_row_vector(x)
+    if is_column_vector(x):
+        return x.jacobian(y)
     else:
-        return X.jacobian(Y).T
+        return x.jacobian(y).T
 
 
 def exp(x: Matrix) -> Matrix:
@@ -60,8 +80,7 @@ def diag(X: Matrix) -> Matrix:
 
 
 def Diag(x: Matrix) -> Matrix:
-    m, n = x.shape
-    assert m == 1 or n == 1
+    assert is_column_vector(x) or is_row_vector(x)
     return sp.diag(*x)
 
 
@@ -81,17 +100,17 @@ def rowwise_sum(X: Matrix) -> Matrix:
     return Matrix(rows)
 
 
-def rowwise_replicate(X: Matrix, n: int) -> Matrix:
-    rows, cols = X.shape
-    assert cols == 1
-    rows = [[X[i, 0]] * n for i in range(rows)]
+def rowwise_replicate(x: Matrix, n: int) -> Matrix:
+    assert is_column_vector(x)
+    rows, cols = x.shape
+    rows = [[x[i, 0]] * n for i in range(rows)]
     return Matrix(rows)
 
 
-def colwise_replicate(X: Matrix, n: int) -> Matrix:
-    rows, cols = X.shape
-    assert rows == 1
-    columns = [[X[0, j]] * n for j in range(cols)]
+def colwise_replicate(x: Matrix, n: int) -> Matrix:
+    assert is_row_vector(x)
+    rows, cols = x.shape
+    columns = [[x[0, j]] * n for j in range(cols)]
     return Matrix(columns).T
 
 
@@ -141,8 +160,7 @@ def softmax_colwise_derivative1(x: Matrix) -> Matrix:
 
 
 def softmax_colwise_derivative2(x: Matrix) -> Matrix:
-    m, n = x.shape
-    assert n == 1
+    assert is_column_vector(x)
     y = softmax_colwise1(x)
     return Diag(y) - y * y.T
 
@@ -172,8 +190,8 @@ def log_softmax_colwise_derivative1(x: Matrix) -> Matrix:
 
 
 def log_softmax_colwise_derivative2(x: Matrix) -> Matrix:
+    assert is_column_vector(x)
     m, n = x.shape
-    assert n == 1
     return sp.eye(m) - colwise_replicate(softmax_colwise2(x).T, m)
 
 
@@ -206,16 +224,17 @@ def softmax_rowwise3(X: Matrix) -> Matrix:
 
 
 def softmax_rowwise_derivative1(x: Matrix) -> Matrix:
+    assert is_row_vector(x)
     return jacobian(softmax_rowwise1(x), x)
 
 
 def softmax_rowwise_derivative2(x: Matrix) -> Matrix:
+    assert is_row_vector(x)
     return softmax_colwise_derivative1(x.T).T
 
 
 def softmax_rowwise_derivative3(x: Matrix) -> Matrix:
-    m, n = x.shape
-    assert m == 1
+    assert is_row_vector(x)
     y = softmax_rowwise1(x)
     return Diag(y) - y.T * y
 
@@ -241,17 +260,20 @@ def log_softmax_rowwise3(X: Matrix) -> Matrix:
 
 
 def log_softmax_rowwise_derivative1(x: Matrix) -> Matrix:
+    assert is_row_vector(x)
     return jacobian(log_softmax_rowwise1(x), x)
 
 
 def log_softmax_rowwise_derivative2(x: Matrix) -> Matrix:
+    assert is_row_vector(x)
     return log_softmax_colwise_derivative1(x.T).T
 
 
 def log_softmax_rowwise_derivative3(x: Matrix) -> Matrix:
+    assert is_row_vector(x)
     m, n = x.shape
-    assert m == 1
     return sp.eye(n) - rowwise_replicate(softmax_rowwise2(x).T, n)
+
 
 class TestDerivations(TestCase):
     def test_softmax_colwise(self):
@@ -414,7 +436,7 @@ class TestLemmas(TestCase):
 
         X = Matrix(sp.symarray('X', (m, n), real=True))
         Y = Matrix(sp.symarray('Y', (m, n), real=True))
-        Z1 = Matrix([X.row(i) * Y.row(i).T * Y.row(i) for i in range(m)])
+        Z1 = join_rows([X.row(i) * Y.row(i).T * Y.row(i) for i in range(m)])
         Z2 = hadamard(Y, rowwise_replicate(diag(X * Y.T), n))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
@@ -424,7 +446,7 @@ class TestLemmas(TestCase):
 
         X = Matrix(sp.symarray('X', (m, n), real=True))
         Y = Matrix(sp.symarray('Y', (m, n), real=True))
-        Z1 = Matrix([X.row(i) * rowwise_replicate(Y.row(i).T, n) for i in range(m)])
+        Z1 = join_rows([X.row(i) * rowwise_replicate(Y.row(i).T, n) for i in range(m)])
         Z2 = rowwise_replicate(diag(X * Y.T), n)
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
