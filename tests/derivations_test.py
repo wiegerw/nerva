@@ -86,7 +86,12 @@ def Diag(x: Matrix) -> Matrix:
 
 def hadamard(x: Matrix, y: Matrix) -> Matrix:
     assert x.shape == y.shape
-    return matrix_multiply_elementwise(x, y)
+    m, n = x.shape
+    return Matrix([[x[i, j] * y[i, j] for j in range(n)] for i in range(m)])
+    # return matrix_multiply_elementwise(x, y)  ==> this may cause errors:
+    #     def mul_elementwise(A, B):
+    # >       assert A.domain == B.domain
+    # E       AssertionError
 
 
 def sum_columns(X: Matrix) -> Matrix:
@@ -126,6 +131,12 @@ def squared_error(X: Matrix):
         return sp.sqrt(sum(xi * xi for xi in x))
 
     return sum(f(X.col(j)) for j in range(n))
+
+
+def sum_elements(X: Matrix):
+    m, n = X.shape
+
+    return sum(X[i, j] for i in range(m) for j in range(n))
 
 
 #-------------------------------------#
@@ -378,7 +389,7 @@ class TestSoftmaxLayers(TestCase):
         Y = softmax_colwise(Z_vars)
 
         f_Y = squared_error(Y_vars)
-        f_Z = substitute(f_Y, Y_vars, Y)
+        f_Z = squared_error(Y)
         DY = substitute(diff(f_Y, Y_vars), Y_vars, Y)
 
         DZ = hadamard(Y, DY - repeat_row(diag(Y.T * DY).T, m))
@@ -395,7 +406,7 @@ class TestSoftmaxLayers(TestCase):
         Y = log_softmax_colwise(Z_vars)
 
         f_Y = squared_error(Y_vars)
-        f_Z = substitute(f_Y, Y_vars, Y)
+        f_Z = squared_error(Y)
         DY = substitute(diff(f_Y, Y_vars), Y_vars, Y)
 
         DZ = DY - hadamard(softmax_colwise(Z_vars), repeat_row(sum_columns(DY), m))
@@ -429,7 +440,7 @@ class TestSoftmaxLayers(TestCase):
         Y = log_softmax_rowwise(Z_vars)
 
         f_Y = squared_error(Y_vars)
-        f_Z = substitute(f_Y, Y_vars, Y)
+        f_Z = squared_error(Y)
         DY = substitute(diff(f_Y, Y_vars), Y_vars, Y)
 
         DZ = DY - hadamard(softmax_rowwise(Z_vars), repeat_column(sum_rows(DY), n))
