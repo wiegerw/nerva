@@ -6,14 +6,14 @@
 
 # see also https://docs.sympy.org/latest/modules/matrices/matrices.html
 
-from typing import List
+from typing import List, Union
 from unittest import TestCase
 
 import sympy as sp
 from sympy import Matrix, matrix_multiply_elementwise
 
 #-------------------------------------#
-#           matrix functions
+#           matrix operations
 #-------------------------------------#
 
 def is_column_vector(x: Matrix) -> bool:
@@ -119,7 +119,7 @@ def repeat_row(x: Matrix, n: int) -> Matrix:
 #           loss functions
 #-------------------------------------#
 
-def squared_error(X: Matrix) -> float:
+def squared_error(X: Matrix):
     m, n = X.shape
 
     def f(x: Matrix) -> float:
@@ -215,6 +215,10 @@ def softmax_rowwise1(X: Matrix) -> Matrix:
     return join_rows([softmax(X.row(i)) for i in range(m)])
 
 
+def softmax_rowwise2(X: Matrix) -> Matrix:
+    return softmax_colwise(X.T).T
+
+
 def stable_softmax_rowwise(X: Matrix) -> Matrix:
     m, n = X.shape
     c = Matrix(sp.symarray('C', (m, 1), real=True))
@@ -230,12 +234,12 @@ def softmax_rowwise_derivative(x: Matrix) -> Matrix:
 
 def softmax_rowwise_derivative1(x: Matrix) -> Matrix:
     assert is_row_vector(x)
-    return jacobian(softmax_rowwise1(x), x)
+    return jacobian(softmax_rowwise(x), x)
 
 
 def softmax_rowwise_derivative2(x: Matrix) -> Matrix:
     assert is_row_vector(x)
-    return softmax_colwise_derivative1(x.T).T
+    return softmax_colwise_derivative(x.T).T
 
 
 #-------------------------------------#
@@ -248,7 +252,11 @@ def log_softmax_rowwise(X: Matrix) -> Matrix:
 
 
 def log_softmax_rowwise1(X: Matrix) -> Matrix:
-    return log(softmax_rowwise1(X))
+    return log(softmax_rowwise(X))
+
+
+def log_softmax_rowwise2(X: Matrix) -> Matrix:
+    return log_softmax_colwise(X.T).T
 
 
 def stable_log_softmax_rowwise(X: Matrix) -> Matrix:
@@ -266,15 +274,15 @@ def log_softmax_rowwise_derivative(x: Matrix) -> Matrix:
 
 def log_softmax_rowwise_derivative1(x: Matrix) -> Matrix:
     assert is_row_vector(x)
-    return jacobian(log_softmax_rowwise1(x), x)
+    return jacobian(log_softmax_rowwise(x), x)
 
 
 def log_softmax_rowwise_derivative2(x: Matrix) -> Matrix:
     assert is_row_vector(x)
-    return log_softmax_colwise_derivative1(x.T).T
+    return log_softmax_colwise_derivative(x.T).T
 
 
-class TestDerivations(TestCase):
+class TestSoftmax(TestCase):
     def test_softmax_colwise(self):
         m = 3
         n = 2
@@ -299,15 +307,19 @@ class TestDerivations(TestCase):
 
         y1 = softmax_rowwise(X)
         y2 = softmax_rowwise1(X)
-        y3 = stable_softmax_rowwise(X)
+        y3 = softmax_rowwise2(X)
+        y4 = stable_softmax_rowwise(X)
         self.assertEqual(sp.simplify(y1 - y2), sp.zeros(m, n))
         self.assertEqual(sp.simplify(y1 - y3), sp.zeros(m, n))
+        self.assertEqual(sp.simplify(y1 - y4), sp.zeros(m, n))
 
         y1 = log_softmax_rowwise(X)
         y2 = log_softmax_rowwise1(X)
-        y3 = stable_log_softmax_rowwise(X)
+        y3 = log_softmax_rowwise2(X)
+        y4 = stable_log_softmax_rowwise(X)
         self.assertEqual(sp.simplify(y1 - y2), sp.zeros(m, n))
         self.assertEqual(sp.simplify(y1 - y3), sp.zeros(m, n))
+        self.assertEqual(sp.simplify(y1 - y4), sp.zeros(m, n))
 
     def test_softmax_colwise_derivative(self):
         x = Matrix(sp.symbols('x y z'), real=True)
@@ -345,6 +357,17 @@ class TestDerivations(TestCase):
         self.assertEqual(sp.simplify(y1 - y2), sp.zeros(n, n))
         self.assertEqual(sp.simplify(y1 - y3), sp.zeros(n, n))
 
+
+class TestMatrixOperations(TestCase):
+    def test_matrix_operations(self):
+        A = Matrix([[1, 2, 3]])
+        B = repeat_row(A, 2)
+        C = Matrix([[1, 2, 3],
+                    [1, 2, 3]])
+        self.assertEqual(B, C)
+
+
+class TestSoftmaxLayers(TestCase):
     def test_softmax_layer_colwise(self):
         m = 3
         n = 2
@@ -379,7 +402,6 @@ class TestDerivations(TestCase):
 
         self.assertEqual(sp.simplify(DZ - diff(f_Z, Z_vars)), sp.zeros(m, n))
 
-
     def test_softmax_layer_rowwise(self):
         m = 2
         n = 3
@@ -413,14 +435,6 @@ class TestDerivations(TestCase):
         DZ = DY - hadamard(softmax_rowwise(Z_vars), repeat_column(sum_rows(DY), n))
 
         self.assertEqual(sp.simplify(DZ - diff(f_Z, Z_vars)), sp.zeros(m, n))
-
-
-    def test_matrix_operations(self):
-        A = Matrix([[1, 2, 3]])
-        B = repeat_row(A, 2)
-        C = Matrix([[1, 2, 3],
-                    [1, 2, 3]])
-        self.assertEqual(B, C)
 
 
 class TestLemmas(TestCase):
