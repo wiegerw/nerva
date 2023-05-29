@@ -449,7 +449,7 @@ class TestSoftmaxLayers(TestCase):
 
 
 class TestLemmas(TestCase):
-    def test_lemma1(self):
+    def test_lemma_colwise1(self):
         m = 2
         n = 3
 
@@ -459,7 +459,7 @@ class TestLemmas(TestCase):
         Z2 = hadamard(X, repeat_row(diag(X.T * Y).T, m))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
-    def test_lemma2(self):
+    def test_lemma_colwise2(self):
         m = 2
         n = 3
 
@@ -469,7 +469,17 @@ class TestLemmas(TestCase):
         Z2 = repeat_row(diag(X.T * Y).T, m)
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
-    def test_lemma3(self):
+    def test_lemma_colwise3(self):
+        m = 2
+        n = 3
+
+        X = Matrix(sp.symarray('X', (m, n), real=True))
+        Y = Matrix(sp.symarray('Y', (m, n), real=True))
+        Z1 = join_columns([repeat_column(X.col(j), m) * Y.col(j) for j in range(n)])
+        Z2 = hadamard(X, repeat_row(sum_columns(Y), m))
+        self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
+
+    def test_lemma_rowwise1(self):
         m = 2
         n = 3
 
@@ -479,7 +489,7 @@ class TestLemmas(TestCase):
         Z2 = hadamard(Y, repeat_column(diag(X * Y.T), n))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
-    def test_lemma4(self):
+    def test_lemma_rowwise2(self):
         m = 2
         n = 3
 
@@ -489,6 +499,15 @@ class TestLemmas(TestCase):
         Z2 = repeat_column(diag(X * Y.T), n)
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
+    def test_lemma_rowwise3(self):
+        m = 2
+        n = 3
+
+        X = Matrix(sp.symarray('X', (m, n), real=True))
+        Y = Matrix(sp.symarray('Y', (m, n), real=True))
+        Z1 = join_rows([X.row(i) * repeat_row(Y.row(i), n) for i in range(m)])
+        Z2 = hadamard(Y, repeat_column(sum_rows(X), n))
+        self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
 if __name__ == '__main__':
     import unittest
