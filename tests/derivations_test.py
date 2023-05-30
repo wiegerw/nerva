@@ -41,7 +41,13 @@ def join_rows(rows: List[Matrix]) -> Matrix:
     return Matrix(rows)
 
 
-def diff(f, X: Matrix):
+def diff(f, X: Matrix) -> Matrix:
+    """
+    Returns the derivative of a matrix function
+    :param f: a real-valued function
+    :param X: a matrix
+    :return: the derivative of f
+    """
     m, n = X.shape
     return Matrix([[sp.diff(f, X[i, j]) for j in range(n)] for i in range(m)])
 
@@ -508,6 +514,29 @@ class TestLemmas(TestCase):
         Z1 = join_rows([X.row(i) * repeat_row(Y.row(i), n) for i in range(m)])
         Z2 = hadamard(Y, repeat_column(sum_rows(X), n))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
+
+
+class TestDerivatives(TestCase):
+    def test_derivative_gx_x_colwise(self):
+        n = 3
+        x = Matrix(sp.symbols('x:{}'.format(n)))
+        self.assertTrue(is_column_vector(x))
+
+        g = sp.Function('g', real=True)(*x)
+        J1 = jacobian(g * x, x)
+        J2 = x * jacobian(Matrix([[g]]), x) + g * sp.eye(n)
+        self.assertEqual(sp.simplify(J1 - J2), sp.zeros(n, n))
+
+    def test_derivative_gx_x_rowwise(self):
+        n = 3
+        x = Matrix(sp.symbols('x:{}'.format(n))).T
+        self.assertTrue(is_row_vector(x))
+
+        g = sp.Function('g', real=True)(*x)
+        J1 = jacobian(g * x, x).T
+        J2 = x.T * jacobian(Matrix([[g]]), x) + g * sp.eye(n)
+        self.assertEqual(sp.simplify(J1 - J2), sp.zeros(n, n))
+
 
 if __name__ == '__main__':
     import unittest
