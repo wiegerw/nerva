@@ -6,11 +6,11 @@
 
 # see also https://docs.sympy.org/latest/modules/matrices/matrices.html
 
-from typing import List, Union
+from typing import List
 from unittest import TestCase
 
 import sympy as sp
-from sympy import Matrix, matrix_multiply_elementwise
+from sympy import Matrix
 
 #-------------------------------------#
 #           matrix operations
@@ -61,10 +61,7 @@ def substitute(expr, X: Matrix, Y: Matrix):
 
 def jacobian(x: Matrix, y) -> Matrix:
     assert is_column_vector(x) or is_row_vector(x)
-    if is_column_vector(x):
-        return x.jacobian(y)
-    else:
-        return x.jacobian(y).T
+    return x.jacobian(y)
 
 
 def exp(x: Matrix) -> Matrix:
@@ -192,7 +189,7 @@ def log_softmax_colwise(X: Matrix) -> Matrix:
 
 
 def log_softmax_colwise1(X: Matrix) -> Matrix:
-    return log(softmax_colwise1(X))
+    return log(softmax_colwise(X))
 
 
 def stable_log_softmax_colwise(X: Matrix) -> Matrix:
@@ -209,7 +206,7 @@ def log_softmax_colwise_derivative(x: Matrix) -> Matrix:
 
 
 def log_softmax_colwise_derivative1(x: Matrix) -> Matrix:
-    return jacobian(log_softmax_colwise1(x), x)
+    return jacobian(log_softmax_colwise(x), x)
 
 
 #-------------------------------------#
@@ -245,7 +242,7 @@ def stable_softmax_rowwise(X: Matrix) -> Matrix:
 
 def softmax_rowwise_derivative(x: Matrix) -> Matrix:
     assert is_row_vector(x)
-    y = softmax_rowwise1(x)
+    y = softmax_rowwise(x)
     return Diag(y) - y.T * y
 
 
@@ -286,7 +283,7 @@ def stable_log_softmax_rowwise(X: Matrix) -> Matrix:
 def log_softmax_rowwise_derivative(x: Matrix) -> Matrix:
     assert is_row_vector(x)
     m, n = x.shape
-    return sp.eye(n) - repeat_column(softmax_rowwise(x).T, n)
+    return sp.eye(n) - repeat_row(softmax_rowwise(x), n)
 
 
 def log_softmax_rowwise_derivative1(x: Matrix) -> Matrix:
@@ -296,7 +293,7 @@ def log_softmax_rowwise_derivative1(x: Matrix) -> Matrix:
 
 def log_softmax_rowwise_derivative2(x: Matrix) -> Matrix:
     assert is_row_vector(x)
-    return log_softmax_colwise_derivative(x.T).T
+    return log_softmax_colwise_derivative(x.T)
 
 
 class TestSoftmax(TestCase):
@@ -533,7 +530,7 @@ class TestDerivatives(TestCase):
         self.assertTrue(is_row_vector(x))
 
         g = sp.Function('g', real=True)(*x)
-        J1 = jacobian(g * x, x).T
+        J1 = jacobian(g * x, x)
         J2 = x.T * jacobian(Matrix([[g]]), x) + g * sp.eye(n)
         self.assertEqual(sp.simplify(J1 - J2), sp.zeros(n, n))
 
