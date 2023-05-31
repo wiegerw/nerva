@@ -124,7 +124,7 @@ def repeat_row(x: Matrix, n: int) -> Matrix:
 
 
 #-------------------------------------#
-#           loss functions
+#           loss_z functions
 #-------------------------------------#
 
 def squared_error(X: Matrix):
@@ -300,7 +300,7 @@ class TestSoftmax(TestCase):
     def test_softmax_colwise(self):
         m = 3
         n = 2
-        X = Matrix(sp.symarray('X', (m, n), real=True))
+        X = Matrix(sp.symarray('x', (m, n), real=True))
 
         y1 = softmax_colwise(X)
         y2 = softmax_colwise1(X)
@@ -317,7 +317,7 @@ class TestSoftmax(TestCase):
     def test_softmax_rowwise(self):
         m = 2
         n = 3
-        X = Matrix(sp.symarray('X', (m, n), real=True))
+        X = Matrix(sp.symarray('x', (m, n), real=True))
 
         y1 = softmax_rowwise(X)
         y2 = softmax_rowwise1(X)
@@ -386,69 +386,65 @@ class TestSoftmaxLayers(TestCase):
         m = 3
         n = 2
 
-        Y_vars = Matrix(sp.symarray('Y', (m, n), real=True))
-        Z_vars = Matrix(sp.symarray('Z', (m, n), real=True))
+        y = Matrix(sp.symarray('y', (m, n), real=True))
+        z = Matrix(sp.symarray('z', (m, n), real=True))
 
-        Y = softmax_colwise(Z_vars)
+        Y = softmax_colwise(z)
+        loss_y = squared_error(y)
+        loss_z = substitute(loss_y, y, Y)
+        DY = substitute(diff(loss_y, y), y, Y)
+        DZ1 = hadamard(Y, DY - repeat_row(diag(Y.T * DY).T, m))
+        DZ2 = diff(loss_z, z)
 
-        f_Y = squared_error(Y_vars)
-        f_Z = squared_error(Y)
-        DY = substitute(diff(f_Y, Y_vars), Y_vars, Y)
-
-        DZ = hadamard(Y, DY - repeat_row(diag(Y.T * DY).T, m))
-
-        self.assertEqual(sp.simplify(DZ - diff(f_Z, Z_vars)), sp.zeros(m, n))
+        self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
 
     def test_log_softmax_layer_colwise(self):
         m = 3
         n = 2
 
-        Y_vars = Matrix(sp.symarray('Y', (m, n), real=True))
-        Z_vars = Matrix(sp.symarray('Z', (m, n), real=True))
+        y = Matrix(sp.symarray('y', (m, n), real=True))
+        z = Matrix(sp.symarray('z', (m, n), real=True))
 
-        Y = log_softmax_colwise(Z_vars)
+        Y = log_softmax_colwise(z)
+        loss_y = squared_error(y)
+        loss_z = substitute(loss_y, y, Y)
+        DY = substitute(diff(loss_y, y), y, Y)
+        DZ1 = DY - hadamard(softmax_colwise(z), repeat_row(sum_columns(DY), m))
+        DZ2 = diff(loss_z, z)
 
-        f_Y = squared_error(Y_vars)
-        f_Z = squared_error(Y)
-        DY = substitute(diff(f_Y, Y_vars), Y_vars, Y)
-
-        DZ = DY - hadamard(softmax_colwise(Z_vars), repeat_row(sum_columns(DY), m))
-
-        self.assertEqual(sp.simplify(DZ - diff(f_Z, Z_vars)), sp.zeros(m, n))
+        self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
 
     def test_softmax_layer_rowwise(self):
         m = 2
         n = 3
 
-        Y_vars = Matrix(sp.symarray('Y', (m, n), real=True))
-        Z_vars = Matrix(sp.symarray('Z', (m, n), real=True))
+        y = Matrix(sp.symarray('y', (m, n), real=True))
+        z = Matrix(sp.symarray('z', (m, n), real=True))
 
-        Y = softmax_rowwise(Z_vars)
+        Y = softmax_rowwise(z)
+        loss_y = squared_error(y)
+        loss_z = substitute(loss_y, y, Y)
+        DY = substitute(diff(loss_y, y), y, Y)
+        DZ1 = hadamard(Y, DY - repeat_column(diag(DY * Y.T), n))
+        DZ2 = diff(loss_z, z)
 
-        f_Y = squared_error(Y_vars)
-        f_Z = substitute(f_Y, Y_vars, Y)
-        DY = substitute(diff(f_Y, Y_vars), Y_vars, Y)
-
-        DZ = hadamard(Y, DY - repeat_column(diag(DY * Y.T), n))
-
-        self.assertEqual(sp.simplify(DZ - diff(f_Z, Z_vars)), sp.zeros(m, n))
+        self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
 
     def test_log_softmax_layer_rowwise(self):
         m = 2
         n = 3
 
-        Y_vars = Matrix(sp.symarray('Y', (m, n), real=True))
-        Z_vars = Matrix(sp.symarray('Z', (m, n), real=True))
+        y = Matrix(sp.symarray('y', (m, n), real=True))
+        z = Matrix(sp.symarray('z', (m, n), real=True))
 
-        Y = log_softmax_rowwise(Z_vars)
+        Y = log_softmax_rowwise(z)
+        loss_y = squared_error(y)
+        loss_z = substitute(loss_y, y, Y)
+        DY = substitute(diff(loss_y, y), y, Y)
+        DZ1 = DY - hadamard(softmax_rowwise(z), repeat_column(sum_rows(DY), n))
+        DZ2 = diff(loss_z, z)
 
-        f_Y = squared_error(Y_vars)
-        f_Z = squared_error(Y)
-        DY = substitute(diff(f_Y, Y_vars), Y_vars, Y)
-
-        DZ = DY - hadamard(softmax_rowwise(Z_vars), repeat_column(sum_rows(DY), n))
-
-        self.assertEqual(sp.simplify(DZ - diff(f_Z, Z_vars)), sp.zeros(m, n))
+        self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
 
 
 class TestLemmas(TestCase):
@@ -456,8 +452,8 @@ class TestLemmas(TestCase):
         m = 2
         n = 3
 
-        X = Matrix(sp.symarray('X', (m, n), real=True))
-        Y = Matrix(sp.symarray('Y', (m, n), real=True))
+        X = Matrix(sp.symarray('x', (m, n), real=True))
+        Y = Matrix(sp.symarray('y', (m, n), real=True))
         Z1 = join_columns([X.col(j) * X.col(j).T * Y.col(j) for j in range(n)])
         Z2 = hadamard(X, repeat_row(diag(X.T * Y).T, m))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
@@ -466,8 +462,8 @@ class TestLemmas(TestCase):
         m = 2
         n = 3
 
-        X = Matrix(sp.symarray('X', (m, n), real=True))
-        Y = Matrix(sp.symarray('Y', (m, n), real=True))
+        X = Matrix(sp.symarray('x', (m, n), real=True))
+        Y = Matrix(sp.symarray('y', (m, n), real=True))
         Z1 = join_columns([repeat_row(X.col(j).T, m) * Y.col(j) for j in range(n)])
         Z2 = repeat_row(diag(X.T * Y).T, m)
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
@@ -476,8 +472,8 @@ class TestLemmas(TestCase):
         m = 2
         n = 3
 
-        X = Matrix(sp.symarray('X', (m, n), real=True))
-        Y = Matrix(sp.symarray('Y', (m, n), real=True))
+        X = Matrix(sp.symarray('x', (m, n), real=True))
+        Y = Matrix(sp.symarray('y', (m, n), real=True))
         Z1 = join_columns([repeat_column(X.col(j), m) * Y.col(j) for j in range(n)])
         Z2 = hadamard(X, repeat_row(sum_columns(Y), m))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
@@ -486,8 +482,8 @@ class TestLemmas(TestCase):
         m = 2
         n = 3
 
-        X = Matrix(sp.symarray('X', (m, n), real=True))
-        Y = Matrix(sp.symarray('Y', (m, n), real=True))
+        X = Matrix(sp.symarray('x', (m, n), real=True))
+        Y = Matrix(sp.symarray('y', (m, n), real=True))
         Z1 = join_rows([X.row(i) * Y.row(i).T * Y.row(i) for i in range(m)])
         Z2 = hadamard(Y, repeat_column(diag(X * Y.T), n))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
@@ -496,8 +492,8 @@ class TestLemmas(TestCase):
         m = 2
         n = 3
 
-        X = Matrix(sp.symarray('X', (m, n), real=True))
-        Y = Matrix(sp.symarray('Y', (m, n), real=True))
+        X = Matrix(sp.symarray('x', (m, n), real=True))
+        Y = Matrix(sp.symarray('y', (m, n), real=True))
         Z1 = join_rows([X.row(i) * repeat_column(Y.row(i).T, n) for i in range(m)])
         Z2 = repeat_column(diag(X * Y.T), n)
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
@@ -506,8 +502,8 @@ class TestLemmas(TestCase):
         m = 2
         n = 3
 
-        X = Matrix(sp.symarray('X', (m, n), real=True))
-        Y = Matrix(sp.symarray('Y', (m, n), real=True))
+        X = Matrix(sp.symarray('x', (m, n), real=True))
+        Y = Matrix(sp.symarray('y', (m, n), real=True))
         Z1 = join_rows([X.row(i) * repeat_row(Y.row(i), n) for i in range(m)])
         Z2 = hadamard(Y, repeat_column(sum_rows(X), n))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
