@@ -124,7 +124,7 @@ def repeat_row(x: Matrix, n: int) -> Matrix:
 
 
 #-------------------------------------#
-#           loss_z functions
+#           loss(z) functions
 #-------------------------------------#
 
 def squared_error(X: Matrix):
@@ -385,66 +385,91 @@ class TestSoftmaxLayers(TestCase):
     def test_softmax_layer_colwise(self):
         m = 3
         n = 2
+        loss = squared_error
 
         y = Matrix(sp.symarray('y', (m, n), real=True))
         z = Matrix(sp.symarray('z', (m, n), real=True))
 
         Y = softmax_colwise(z)
-        loss_y = squared_error(y)
-        loss_z = substitute(loss_y, y, Y)
-        DY = substitute(diff(loss_y, y), y, Y)
+        DY = substitute(diff(loss(y), y), y, Y)
         DZ1 = hadamard(Y, DY - repeat_row(diag(Y.T * DY).T, m))
-        DZ2 = diff(loss_z, z)
+        DZ2 = diff(loss(Y), z)
 
         self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
 
     def test_log_softmax_layer_colwise(self):
         m = 3
         n = 2
+        loss = squared_error
 
         y = Matrix(sp.symarray('y', (m, n), real=True))
         z = Matrix(sp.symarray('z', (m, n), real=True))
 
         Y = log_softmax_colwise(z)
-        loss_y = squared_error(y)
-        loss_z = substitute(loss_y, y, Y)
-        DY = substitute(diff(loss_y, y), y, Y)
+        DY = substitute(diff(loss(y), y), y, Y)
         DZ1 = DY - hadamard(softmax_colwise(z), repeat_row(sum_columns(DY), m))
-        DZ2 = diff(loss_z, z)
+        DZ2 = diff(loss(Y), z)
 
         self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
 
     def test_softmax_layer_rowwise(self):
         m = 2
         n = 3
+        loss = squared_error
 
         y = Matrix(sp.symarray('y', (m, n), real=True))
         z = Matrix(sp.symarray('z', (m, n), real=True))
 
         Y = softmax_rowwise(z)
-        loss_y = squared_error(y)
-        loss_z = substitute(loss_y, y, Y)
-        DY = substitute(diff(loss_y, y), y, Y)
+        DY = substitute(diff(loss(y), y), y, Y)
         DZ1 = hadamard(Y, DY - repeat_column(diag(DY * Y.T), n))
-        DZ2 = diff(loss_z, z)
+        DZ2 = diff(loss(Y), z)
 
         self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
 
     def test_log_softmax_layer_rowwise(self):
         m = 2
         n = 3
+        loss = squared_error
 
         y = Matrix(sp.symarray('y', (m, n), real=True))
         z = Matrix(sp.symarray('z', (m, n), real=True))
 
         Y = log_softmax_rowwise(z)
-        loss_y = squared_error(y)
-        loss_z = substitute(loss_y, y, Y)
-        DY = substitute(diff(loss_y, y), y, Y)
+        DY = substitute(diff(loss(y), y), y, Y)
         DZ1 = DY - hadamard(softmax_rowwise(z), repeat_column(sum_rows(DY), n))
-        DZ2 = diff(loss_z, z)
+        DZ2 = diff(loss(Y), z)
 
         self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
+
+
+class TestBatchNormalization(TestCase):
+    def test_batchnorm_colwise(self):
+        D = 1
+        N = 2
+        loss = sum_elements
+
+        x = Matrix(sp.symarray('x', (D, N), real=True))
+        y = Matrix(sp.symarray('y', (D, N), real=True))
+
+        X = x
+        mu = sum_columns(X) / N
+        R = X - repeat_row(mu, D)
+        Sigma = diag(R * R.T) / N
+        Sigma_power_minus_half = Sigma.applyfunc(lambda t: 1 / sp.sqrt(t))
+        Y = hadamard(R, repeat_column(Sigma_power_minus_half, N))
+
+        DY = substitute(diff(loss(y), y), y, Y)
+        DX1 = hadamard(repeat_column(Sigma_power_minus_half, N) / N, -hadamard(Y, repeat_column(diag(DY * Y.T), N)) + DY * (N * sp.eye(N) - sp.ones(N, N)))
+        DX2 = diff(loss(Y), x)
+
+        x_ = Matrix([[7, 19]])
+        d1 = sp.simplify(substitute(DX1, x, x_))
+        d2 = sp.simplify(substitute(DX2, x, x_))
+        print(d1)
+        print(d2)
+        #self.assertEqual(d1, d2)
+        #self.assertEqual(sp.simplify(DX1 - DX2), sp.zeros(D, N))
 
 
 class TestLemmas(TestCase):
