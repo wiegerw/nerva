@@ -115,7 +115,7 @@ auto identity(long n)
 template <typename Matrix>
 auto ones(long m, long n)
 {
-  return Matrix::Constant(n, n, 1);
+  return Matrix::Constant(m, n, 1);
 }
 
 } // namespace nerva::eigen

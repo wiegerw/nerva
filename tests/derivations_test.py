@@ -123,6 +123,24 @@ def repeat_row(x: Matrix, n: int) -> Matrix:
     return Matrix(columns).T
 
 
+def rowwise_mean(X: Matrix) -> Matrix:
+    m, n = X.shape
+    return sum_rows(X) / n
+
+
+def colwise_mean(X: Matrix) -> Matrix:
+    m, n = X.shape
+    return sum_columns(X) / m
+
+
+def identity(n: int) -> Matrix:
+    return sp.eye(n)
+
+
+def ones(m: int, n: int) -> Matrix:
+    return sp.ones(m, n)
+
+
 #-------------------------------------#
 #           loss(z) functions
 #-------------------------------------#
@@ -444,7 +462,7 @@ class TestSoftmaxLayers(TestCase):
 
 
 class TestBatchNormalization(TestCase):
-    def test_batchnorm_colwise(self):
+    def test_batchnorm_layer_colwise(self):
         D = 1
         N = 2
         loss = sum_elements
@@ -453,23 +471,16 @@ class TestBatchNormalization(TestCase):
         y = Matrix(sp.symarray('y', (D, N), real=True))
 
         X = x
-        mu = sum_columns(X) / N
-        R = X - repeat_row(mu, D)
+        R = X - repeat_column(rowwise_mean(X), N)
         Sigma = diag(R * R.T) / N
         Sigma_power_minus_half = Sigma.applyfunc(lambda t: 1 / sp.sqrt(t))
-        Y = hadamard(R, repeat_column(Sigma_power_minus_half, N))
+        Y = hadamard(repeat_column(Sigma_power_minus_half, N), R)
 
         DY = substitute(diff(loss(y), y), y, Y)
-        DX1 = hadamard(repeat_column(Sigma_power_minus_half, N) / N, -hadamard(Y, repeat_column(diag(DY * Y.T), N)) + DY * (N * sp.eye(N) - sp.ones(N, N)))
+        DX1 = hadamard(repeat_column(Sigma_power_minus_half / N, N), hadamard(Y, repeat_column(-diag(DY * Y.T), N)) + DY * (N * identity(N) - ones(N, N)))
         DX2 = diff(loss(Y), x)
 
-        x_ = Matrix([[7, 19]])
-        d1 = sp.simplify(substitute(DX1, x, x_))
-        d2 = sp.simplify(substitute(DX2, x, x_))
-        print(d1)
-        print(d2)
-        #self.assertEqual(d1, d2)
-        #self.assertEqual(sp.simplify(DX1 - DX2), sp.zeros(D, N))
+        self.assertEqual(sp.simplify(DX1 - DX2), sp.zeros(D, N))
 
 
 class TestLemmas(TestCase):
