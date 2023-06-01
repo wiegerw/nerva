@@ -94,6 +94,18 @@ auto repeat_column(const Matrix& x, long n)
   return x.rowwise().replicate(n);
 }
 
+template <typename Matrix>
+auto identity(long n)
+{
+  return Matrix::Identity(n, n);
+}
+
+template <typename Matrix>
+auto ones(long m, long n)
+{
+  return Matrix::Constant(n, n, 1);
+}
+
 } // namespace nerva::eigen
 
 #endif // NERVA_NEURAL_NETWORKS_MATRIX_OPERATIONS_H

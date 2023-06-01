@@ -15,7 +15,6 @@
 
 namespace nerva {
 
-template <typename Matrix>
 struct batch_normalization_layer: public neural_network_layer
 {
   using super = neural_network_layer;
@@ -85,10 +84,9 @@ struct batch_normalization_layer: public neural_network_layer
   }
 };
 
-using dense_batch_normalization_layer = batch_normalization_layer<eigen::matrix>;
+using dense_batch_normalization_layer = batch_normalization_layer;
 
 // batch normalization without an affine transformation
-template <typename Matrix>
 struct simple_batch_normalization_layer: public neural_network_layer
 {
   using super = neural_network_layer;
@@ -139,9 +137,8 @@ struct simple_batch_normalization_layer: public neural_network_layer
   }
 };
 
-using dense_simple_batch_normalization_layer = simple_batch_normalization_layer<eigen::matrix>;
+using dense_simple_batch_normalization_layer = simple_batch_normalization_layer;
 
-template <typename Matrix>
 struct affine_layer: public neural_network_layer
 {
   using super = neural_network_layer;
@@ -194,7 +191,7 @@ struct affine_layer: public neural_network_layer
   }
 };
 
-using dense_affine_layer = affine_layer<eigen::matrix>;
+using dense_affine_layer = affine_layer;
 
 } // namespace nerva
 
