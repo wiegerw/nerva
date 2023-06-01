@@ -174,6 +174,15 @@ def hyperbolic_tangent_prime(x):
     return 1 - y * y
 
 
+def sigmoid(x):
+    return 1 / (1 + sp.exp(-x))
+
+
+def sigmoid_prime(x):
+    y = sigmoid(x)
+    return y * (1 - y)
+
+
 #-------------------------------------#
 #           loss functions
 #-------------------------------------#
@@ -504,89 +513,160 @@ class TestLinearLayers(TestCase):
         self.assertTrue(equal_matrices(Db, Db1))
         self.assertTrue(equal_matrices(DX, DX1))
 
+    def test_sigmoid_layer_colwise(self):
+        D = 3
+        N = 2
+        K = 2
+        loss = squared_error
+        act = sigmoid
+
+        # variables
+        x = matrix('x', D, N)
+        y = matrix('y', K, N)
+        z = matrix('z', K, N)
+        w = matrix('w', K, D)
+        b = matrix('b', K, 1)
+
+        # feedforward
+        X = x
+        W = w
+        Z = W * X + repeat_column(b, N)
+        Y = Z.applyfunc(act)
+
+        # backpropagation
+        DY = substitute(diff(loss(y), y), y, Y)
+        DZ = hadamard(DY, hadamard(Y, ones(K, N) - Y))
+        DW = DZ * X.T
+        Db = sum_rows(DZ)
+        DX = W.T * DZ
+
+        # symbolic computations
+        DZ1 = substitute(diff(loss(z.applyfunc(act)), z), z, Z)
+        DW1 = diff(loss(Y), w)
+        Db1 = diff(loss(Y), b)
+        DX1 = diff(loss(Y), x)
+
+        self.assertTrue(equal_matrices(DZ, DZ1))
+        self.assertTrue(equal_matrices(DW, DW1))
+        self.assertTrue(equal_matrices(Db, Db1))
+        self.assertTrue(equal_matrices(DX, DX1))
+
 
 class TestSoftmaxLayers(TestCase):
     def test_softmax_layer_colwise(self):
-        m = 3
-        n = 2
+        K = 3
+        N = 2
         loss = squared_error
 
-        y = Matrix(sp.symarray('y', (m, n), real=True))
-        z = Matrix(sp.symarray('z', (m, n), real=True))
+        # variables
+        y = matrix('y', K, N)
+        z = matrix('z', K, N)
 
-        Y = softmax_colwise(z)
+        # feedforward
+        Z = z
+        Y = softmax_colwise(Z)
+
+        # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DZ1 = hadamard(Y, DY - repeat_row(diag(Y.T * DY).T, m))
-        DZ2 = diff(loss(Y), z)
+        DZ = hadamard(Y, DY - repeat_row(diag(Y.T * DY).T, K))
 
-        self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
+        # symbolic computations
+        DZ1 = diff(loss(Y), z)
+
+        self.assertTrue(equal_matrices(DZ, DZ1))
 
     def test_log_softmax_layer_colwise(self):
-        m = 3
-        n = 2
+        K = 3
+        N = 2
         loss = squared_error
 
-        y = Matrix(sp.symarray('y', (m, n), real=True))
-        z = Matrix(sp.symarray('z', (m, n), real=True))
+        # variables
+        y = matrix('y', K, N)
+        z = matrix('z', K, N)
 
-        Y = log_softmax_colwise(z)
+        # feedforward
+        Z = z
+        Y = log_softmax_colwise(Z)
+
+        # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DZ1 = DY - hadamard(softmax_colwise(z), repeat_row(sum_columns(DY), m))
-        DZ2 = diff(loss(Y), z)
+        DZ = DY - hadamard(softmax_colwise(z), repeat_row(sum_columns(DY), K))
 
-        self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
+        # symbolic computations
+        DZ1 = diff(loss(Y), z)
+
+        self.assertTrue(equal_matrices(DZ, DZ1))
 
     def test_softmax_layer_rowwise(self):
-        m = 2
-        n = 3
+        K = 2
+        N = 3
         loss = squared_error
 
-        y = Matrix(sp.symarray('y', (m, n), real=True))
-        z = Matrix(sp.symarray('z', (m, n), real=True))
+        # variables
+        y = matrix('y', K, N)
+        z = matrix('z', K, N)
 
-        Y = softmax_rowwise(z)
+        # feedforward
+        Z = z
+        Y = softmax_rowwise(Z)
+
+        # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DZ1 = hadamard(Y, DY - repeat_column(diag(DY * Y.T), n))
-        DZ2 = diff(loss(Y), z)
+        DZ = hadamard(Y, DY - repeat_column(diag(DY * Y.T), N))
 
-        self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
+        # symbolic computations
+        DZ1 = diff(loss(Y), z)
+
+        self.assertTrue(equal_matrices(DZ, DZ1))
 
     def test_log_softmax_layer_rowwise(self):
-        m = 2
-        n = 3
+        K = 2
+        N = 3
         loss = squared_error
 
-        y = Matrix(sp.symarray('y', (m, n), real=True))
-        z = Matrix(sp.symarray('z', (m, n), real=True))
+        # variables
+        y = matrix('y', K, N)
+        z = matrix('z', K, N)
 
-        Y = log_softmax_rowwise(z)
+        # feedforward
+        Z = z
+        Y = log_softmax_rowwise(Z)
+
+        # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DZ1 = DY - hadamard(softmax_rowwise(z), repeat_column(sum_rows(DY), n))
-        DZ2 = diff(loss(Y), z)
+        DZ = DY - hadamard(softmax_rowwise(z), repeat_column(sum_rows(DY), N))
 
-        self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
+        # symbolic computations
+        DZ1 = diff(loss(Y), z)
+
+        self.assertTrue(equal_matrices(DZ, DZ1))
 
 
 class TestBatchNormalizationLayers(TestCase):
-    def test_batchnorm_layer_colwise(self):
-        D = 1
+    def test_simple_batch_normalization_layer_colwise(self):
+        D = 3
         N = 2
+        K = D  # K and D are always equal in batch normalization
         loss = sum_elements
 
-        x = Matrix(sp.symarray('x', (D, N), real=True))
-        y = Matrix(sp.symarray('y', (D, N), real=True))
+        # variables
+        x = matrix('x', D, N)
+        y = matrix('y', K, N)
 
+        # feedforward
         X = x
         R = X - repeat_column(rowwise_mean(X), N)
         Sigma = diag(R * R.T) / N
         Sigma_power_minus_half = Sigma.applyfunc(lambda t: 1 / sp.sqrt(t))
         Y = hadamard(repeat_column(Sigma_power_minus_half, N), R)
 
+        # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DX1 = hadamard(repeat_column(Sigma_power_minus_half / N, N), hadamard(Y, repeat_column(-diag(DY * Y.T), N)) + DY * (N * identity(N) - ones(N, N)))
-        DX2 = diff(loss(Y), x)
+        DX = hadamard(repeat_column(Sigma_power_minus_half / N, N), hadamard(Y, repeat_column(-diag(DY * Y.T), N)) + DY * (N * identity(N) - ones(N, N)))
 
-        self.assertEqual(sp.simplify(DX1 - DX2), sp.zeros(D, N))
+        # symbolic computations
+        DX1 = diff(loss(Y), x)
+        self.assertTrue(equal_matrices(DX, DX1))
 
 
 class TestLemmas(TestCase):
