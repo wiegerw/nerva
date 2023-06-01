@@ -723,9 +723,9 @@ class TestBatchNormalizationLayers(TestCase):
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
+        DZ = hadamard(repeat_column(gamma, N), DY)
         Dbeta = sum_rows(DY)
         Dgamma = sum_rows(hadamard(DY, Z))
-        DZ = hadamard(repeat_column(gamma, N), DY)
         DX = hadamard(repeat_column(Sigma_power_minus_half / N, N), hadamard(Z, repeat_column(-diag(DZ * Z.T), N)) + DZ * (N * identity(N) - ones(N, N)))
 
         # symbolic differentiation
@@ -733,6 +733,103 @@ class TestBatchNormalizationLayers(TestCase):
         Dbeta1 = diff(loss(Y), beta)
         Dgamma1 = diff(loss(Y), gamma)
         Y_z = hadamard(repeat_column(gamma, N), z) + repeat_column(beta, N)
+        DZ1 = substitute(diff(loss(Y_z), z), z, Z)
+
+        self.assertTrue(equal_matrices(DX, DX1))
+        self.assertTrue(equal_matrices(Dbeta, Dbeta1))
+        self.assertTrue(equal_matrices(Dgamma, Dgamma1))
+        self.assertTrue(equal_matrices(DZ, DZ1))
+
+    def test_simple_batch_normalization_layer_rowwise(self):
+        D = 3
+        N = 2
+        K = D                # K and D are always equal in batch normalization
+        loss = sum_elements  # squared_error seems too complicated
+
+        # variables
+        x = matrix('x', N, D)
+        y = matrix('y', N, K)
+
+        # feedforward
+        X = x
+        R = (identity(N) - ones(N, N) / N) * X
+        Sigma = diag(R.T * R).T / N
+        Sigma_power_minus_half = Sigma.applyfunc(lambda t: 1 / sp.sqrt(t))
+        Y = hadamard(repeat_row(Sigma_power_minus_half, N), R)
+
+        # backpropagation
+        DY = substitute(diff(loss(y), y), y, Y)
+        DX = hadamard(repeat_row(Sigma_power_minus_half / N, N), (N * identity(N) - ones(N, N)) * DY - hadamard(Y, repeat_row(diag(Y.T * DY).T, N)))
+
+        # symbolic differentiation
+        DX1 = diff(loss(Y), x)
+
+        self.assertTrue(equal_matrices(DX, DX1))
+
+    def test_affine_layer_rowwise(self):
+        D = 3
+        N = 2
+        K = D
+        loss = squared_error
+
+        # variables
+        x = matrix('x', N, D)
+        y = matrix('y', N, K)
+        beta = matrix('beta', 1, K)
+        gamma = matrix('gamma', 1, K)
+
+        # feedforward
+        X = x
+        Y = hadamard(repeat_row(gamma, N), X) + repeat_row(beta, N)
+
+        # backpropagation
+        DY = substitute(diff(loss(y), y), y, Y)
+        DX = hadamard(repeat_row(gamma, N), DY)
+        Dbeta = sum_columns(DY)
+        Dgamma = sum_columns(hadamard(X, DY))
+
+        # symbolic differentiation
+        DX1 = diff(loss(Y), x)
+        Dbeta1 = diff(loss(Y), beta)
+        Dgamma1 = diff(loss(Y), gamma)
+
+        self.assertTrue(equal_matrices(DX, DX1))
+        self.assertTrue(equal_matrices(Dbeta, Dbeta1))
+        self.assertTrue(equal_matrices(Dgamma, Dgamma1))
+
+    def test_batch_normalization_layer_rowwise(self):
+        D = 3
+        N = 2
+        K = D                # K and D are always equal in batch normalization
+        loss = sum_elements  # squared_error seems too complicated
+
+        # variables
+        x = matrix('x', N, D)
+        y = matrix('y', N, K)
+        z = matrix('z', N, K)
+        beta = matrix('beta', 1, K)
+        gamma = matrix('gamma', 1, K)
+
+        # feedforward
+        X = x
+        R = (identity(N) - ones(N, N) / N) * X
+        Sigma = diag(R.T * R).T / N
+        Sigma_power_minus_half = Sigma.applyfunc(lambda t: 1 / sp.sqrt(t))
+        Z = hadamard(repeat_row(Sigma_power_minus_half, N), R)
+        Y = hadamard(repeat_row(gamma, N), Z) + repeat_row(beta, N)
+
+        # backpropagation
+        DY = substitute(diff(loss(y), y), y, Y)
+        DZ = hadamard(repeat_row(gamma, N), DY)
+        Dbeta = sum_columns(DY)
+        Dgamma = sum_columns(hadamard(Z, DY))
+        DX = hadamard(repeat_row(Sigma_power_minus_half / N, N), (N * identity(N) - ones(N, N)) * DZ - hadamard(Z, repeat_row(diag(Z.T * DZ).T, N)))
+
+        # symbolic differentiation
+        DX1 = diff(loss(Y), x)
+        Dbeta1 = diff(loss(Y), beta)
+        Dgamma1 = diff(loss(Y), gamma)
+        Y_z = hadamard(repeat_row(gamma, N), z) + repeat_row(beta, N)
         DZ1 = substitute(diff(loss(Y_z), z), z, Z)
 
         self.assertTrue(equal_matrices(DX, DX1))
