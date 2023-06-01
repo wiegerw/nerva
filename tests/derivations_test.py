@@ -141,8 +141,41 @@ def ones(m: int, n: int) -> Matrix:
     return sp.ones(m, n)
 
 
+def matrix(name: str, rows: int, columns: int) -> Matrix:
+    return Matrix(sp.symarray(name, (rows, columns), real=True))
+
+
+def equal_matrices(A: Matrix, B: Matrix) -> bool:
+    m, n = A.shape
+    return A.shape == B.shape and sp.simplify(A - B) == sp.zeros(m, n)
+
+
 #-------------------------------------#
-#           loss(z) functions
+#           activation functions
+#-------------------------------------#
+
+def compute_derivative(f):
+    x = sp.Symbol('x')
+    f_prime = sp.diff(f(x), x)
+    f1 = sp.lambdify(x, f_prime)
+    return f1
+
+
+def relu(x):
+    return max(0, x)
+
+
+def hyperbolic_tangent(x):
+    return sp.tanh(x)
+
+
+def hyperbolic_tangent_prime(x):
+    y = hyperbolic_tangent(x)
+    return 1 - y * y
+
+
+#-------------------------------------#
+#           loss functions
 #-------------------------------------#
 
 def squared_error(X: Matrix):
@@ -399,6 +432,79 @@ class TestMatrixOperations(TestCase):
         self.assertEqual(B, C)
 
 
+class TestLinearLayers(TestCase):
+    def test_linear_layer_colwise(self):
+        D = 3
+        N = 2
+        K = 2
+        loss = squared_error
+
+        # variables
+        x = matrix('x', D, N)
+        y = matrix('y', K, N)
+        w = matrix('w', K, D)
+        b = matrix('b', K, 1)
+
+        # feedforward
+        X = x
+        W = w
+        Y = W * X + repeat_column(b, N)
+
+        # backpropagation
+        DY = substitute(diff(loss(y), y), y, Y)
+        DW = DY * X.T
+        Db = sum_rows(DY)
+        DX = W.T * DY
+
+        # symbolic computations
+        DW1 = diff(loss(Y), w)
+        Db1 = diff(loss(Y), b)
+        DX1 = diff(loss(Y), x)
+
+        self.assertTrue(equal_matrices(DW, DW1))
+        self.assertTrue(equal_matrices(Db, Db1))
+        self.assertTrue(equal_matrices(DX, DX1))
+
+    def test_activation_layer_colwise(self):
+        D = 3
+        N = 2
+        K = 2
+        loss = squared_error
+        act = hyperbolic_tangent
+        act_prime = hyperbolic_tangent_prime
+
+        # variables
+        x = matrix('x', D, N)
+        y = matrix('y', K, N)
+        z = matrix('z', K, N)
+        w = matrix('w', K, D)
+        b = matrix('b', K, 1)
+
+        # feedforward
+        X = x
+        W = w
+        Z = W * X + repeat_column(b, N)
+        Y = Z.applyfunc(act)
+
+        # backpropagation
+        DY = substitute(diff(loss(y), y), y, Y)
+        DZ = hadamard(DY, Z.applyfunc(act_prime))
+        DW = DZ * X.T
+        Db = sum_rows(DZ)
+        DX = W.T * DZ
+
+        # symbolic computations
+        DZ1 = substitute(diff(loss(z.applyfunc(act)), z), z, Z)
+        DW1 = diff(loss(Y), w)
+        Db1 = diff(loss(Y), b)
+        DX1 = diff(loss(Y), x)
+
+        self.assertTrue(equal_matrices(DZ, DZ1))
+        self.assertTrue(equal_matrices(DW, DW1))
+        self.assertTrue(equal_matrices(Db, Db1))
+        self.assertTrue(equal_matrices(DX, DX1))
+
+
 class TestSoftmaxLayers(TestCase):
     def test_softmax_layer_colwise(self):
         m = 3
@@ -461,7 +567,7 @@ class TestSoftmaxLayers(TestCase):
         self.assertEqual(sp.simplify(DZ1 - DZ2), sp.zeros(m, n))
 
 
-class TestBatchNormalization(TestCase):
+class TestBatchNormalizationLayers(TestCase):
     def test_batchnorm_layer_colwise(self):
         D = 1
         N = 2
