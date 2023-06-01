@@ -301,7 +301,7 @@ TEST_CASE("test_batch_normalization_layer1")
   logistic_cross_entropy_loss loss3;
   softmax_cross_entropy_loss loss4;
 
-  batch_normalization_layer<eigen::matrix> layer1(D, N);
+  batch_normalization_layer layer1(D, N);
   test_affine_layer(layer1, X, T, loss1);
   // test_affine_layer(layer1, X, T, loss2); // TODO: this fails with NaN
   test_affine_layer(layer1, X, T, loss3);
@@ -338,7 +338,7 @@ TEST_CASE("test_affine_layer1")
   logistic_cross_entropy_loss loss3;
   softmax_cross_entropy_loss loss4;
 
-  affine_layer<eigen::matrix> layer1(D, N);
+  affine_layer layer1(D, N);
   layer1.beta = beta;
   layer1.gamma = gamma;
 
@@ -664,7 +664,7 @@ TEST_CASE("test_batch_normalization1")
   long N = X.cols();
   multilayer_perceptron M;
 
-  M.layers.push_back(std::make_shared<batch_normalization_layer<eigen::matrix>>(2, N));
+  M.layers.push_back(std::make_shared<batch_normalization_layer>(2, N));
 
   auto layer1 = std::make_shared<relu_layer<eigen::matrix>>(2, 2, N);
   M.layers.push_back(layer1);
@@ -734,7 +734,7 @@ TEST_CASE("test_batch_normalization2")
   layer1->W = W1;
   layer1->b = b1;
 
-  M.layers.push_back(std::make_shared<batch_normalization_layer<eigen::matrix>>(2, N));
+  M.layers.push_back(std::make_shared<batch_normalization_layer>(2, N));
 
   squared_error_loss loss1;
   cross_entropy_loss loss2;
@@ -774,7 +774,7 @@ TEST_CASE("test_simple_batch_normalization1")
   layer1->W = W1;
   layer1->b = b1;
 
-  M.layers.push_back(std::make_shared<simple_batch_normalization_layer<eigen::matrix>>(2, N));
+  M.layers.push_back(std::make_shared<simple_batch_normalization_layer>(2, N));
 
   squared_error_loss loss1;
   cross_entropy_loss loss2;
@@ -808,7 +808,7 @@ TEST_CASE("test_simple_batch_normalization2")
   long N = X.cols();
   multilayer_perceptron M;
 
-  M.layers.push_back(std::make_shared<simple_batch_normalization_layer<eigen::matrix>>(2, N));
+  M.layers.push_back(std::make_shared<simple_batch_normalization_layer>(2, N));
 
   auto layer1 = std::make_shared<linear_layer<eigen::matrix>>(2, 2, N);
   M.layers.push_back(layer1);

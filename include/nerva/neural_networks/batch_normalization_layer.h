@@ -30,7 +30,6 @@ struct batch_normalization_layer: public neural_network_layer
   eigen::vector Sigma;
   eigen::matrix R;
   eigen::vector Sigma_power_minus_half;
-  eigen::vector diag_DZ_Zt;
 
   explicit batch_normalization_layer(std::size_t D, std::size_t N = 1)
    : super(D, N), Z(D, N), DZ(D, N), gamma(D, 1), Dgamma(D, 1), beta(D, 1), Dbeta(D, 1), Sigma(D, 1), R(D, N)
@@ -53,13 +52,15 @@ struct batch_normalization_layer: public neural_network_layer
 
   void feedforward(eigen::matrix& result) override
   {
-    using eigen::repeat_column;
+    using eigen::diag;
     using eigen::hadamard;
+    using eigen::repeat_column;
+    using eigen::rowwise_mean;
 
     auto N = X.cols();
     scalar epsilon = 1e-20;
-    R = X.colwise() - X.rowwise().mean();
-    Sigma = R.array().square().rowwise().sum() / N;
+    R = X - repeat_column(rowwise_mean(X), N);
+    Sigma = diag(R * R.transpose()) / N;
     Z = hadamard(repeat_column(eigen::power_minus_half(Sigma, epsilon), N), R);
     result = hadamard(repeat_column(gamma, N), Z) + repeat_column(beta, N);
   }
@@ -70,6 +71,8 @@ struct batch_normalization_layer: public neural_network_layer
     using eigen::hadamard;
     using eigen::repeat_column;
     using eigen::sum_rows;
+    using eigen::identity;
+    using eigen::ones;
 
     auto N = X.cols();
     scalar epsilon = 1e-20;
@@ -78,9 +81,8 @@ struct batch_normalization_layer: public neural_network_layer
     DZ = hadamard(repeat_column(gamma, N), DY);
 
     // TODO: attempts to reuse the computation power_minus_half(Sigma, epsilon) make the code run slower with g++-12. Why?
-    Sigma_power_minus_half = eigen::power_minus_half(Sigma, epsilon);
-    diag_DZ_Zt = diag(DZ * Z.transpose()) / N;
-    DX = hadamard(repeat_column(Sigma_power_minus_half, N), (hadamard(repeat_column(-diag_DZ_Zt, N), Z) + DZ * (eigen::matrix::Identity(N, N) - eigen::matrix::Constant(N, N, scalar(1) / N))));
+    Sigma_power_minus_half = eigen::power_minus_half(Sigma, epsilon) / N;
+    DX = hadamard(repeat_column(Sigma_power_minus_half, N), hadamard(Z, repeat_column(-diag(DZ * Z.transpose()), N)) + DZ * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
   }
 };
 
@@ -96,7 +98,6 @@ struct simple_batch_normalization_layer: public neural_network_layer
   eigen::matrix R;
   eigen::vector Sigma;
   eigen::vector Sigma_power_minus_half;
-  eigen::vector diag_DY_Yt;
 
   explicit simple_batch_normalization_layer(std::size_t D, std::size_t N = 1)
     : super(D, N), R(D, N), Sigma(D, 1)
@@ -112,13 +113,17 @@ struct simple_batch_normalization_layer: public neural_network_layer
 
   void feedforward(eigen::matrix& result) override
   {
+    using eigen::diag;
     using eigen::hadamard;
     using eigen::repeat_column;
+    using eigen::rowwise_mean;
 
     auto N = X.cols();
     scalar epsilon = 1e-20;
-    R = X.colwise() - X.rowwise().mean();
-    Sigma = R.array().square().rowwise().sum() / N;
+    // R = X - repeat_column(rowwise_mean(X), N);
+    // Sigma = R.array().square().rowwise().sum() / N;
+    R = X - repeat_column(rowwise_mean(X), N);
+    Sigma = diag(R * R.transpose()) / N;
     result = hadamard(repeat_column(eigen::power_minus_half(Sigma, epsilon), N), R);
   }
 
@@ -128,12 +133,13 @@ struct simple_batch_normalization_layer: public neural_network_layer
     using eigen::Diag;
     using eigen::hadamard;
     using eigen::repeat_column;
+    using eigen::identity;
+    using eigen::ones;
 
     auto N = X.cols();
     scalar epsilon = 1e-20;
-    Sigma_power_minus_half = eigen::power_minus_half(Sigma, epsilon) / N;  // N.B. Also divide by N for efficiency reasons
-    diag_DY_Yt = diag(DY * Y.transpose());
-    DX = hadamard(repeat_column(Sigma_power_minus_half, N), (Diag(-diag_DY_Yt) * Y + DY * (N * eigen::matrix::Identity(N, N) - eigen::matrix::Constant(N, N, scalar(1)))));
+    Sigma_power_minus_half = eigen::power_minus_half(Sigma, epsilon) / N;
+    DX = hadamard(repeat_column(Sigma_power_minus_half, N), hadamard(Y, repeat_column(-diag(DY * Y.transpose()), N)) + DY * (N * identity<eigen::matrix>(N) - eigen::ones<eigen::matrix>(N, N)));
   }
 };
 
@@ -187,7 +193,7 @@ struct affine_layer: public neural_network_layer
     auto N = X.cols();
     DX = hadamard(repeat_column(gamma, N), DY);
     Dbeta = sum_rows(DY);
-    Dgamma = hadamard(DY, X).rowwise().sum();
+    Dgamma = sum_rows(hadamard(X, DY));
   }
 };
 

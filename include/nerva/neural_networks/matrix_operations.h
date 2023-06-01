@@ -95,6 +95,18 @@ auto repeat_column(const Matrix& x, long n)
 }
 
 template <typename Matrix>
+auto rowwise_mean(const Matrix& x)
+{
+  return x.rowwise().mean();
+}
+
+template <typename Matrix>
+auto colwise_mean(const Matrix& x)
+{
+  return x.colwise().mean();
+}
+
+template <typename Matrix>
 auto identity(long n)
 {
   return Matrix::Identity(n, n);
