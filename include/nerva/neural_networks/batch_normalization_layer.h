@@ -27,11 +27,10 @@ struct batch_normalization_layer: public neural_network_layer
   eigen::vector Dgamma;
   eigen::vector beta;
   eigen::vector Dbeta;
-  eigen::vector Sigma;
-  eigen::matrix R;
+  eigen::vector power_minus_half_Sigma;
 
   explicit batch_normalization_layer(std::size_t D, std::size_t N = 1)
-   : super(D, N), Z(D, N), DZ(D, N), gamma(D, 1), Dgamma(D, 1), beta(D, 1), Dbeta(D, 1), Sigma(D, 1), R(D, N)
+   : super(D, N), Z(D, N), DZ(D, N), gamma(D, 1), Dgamma(D, 1), beta(D, 1), Dbeta(D, 1), power_minus_half_Sigma(D, 1)
   {
     beta.array() = 0;
     gamma.array() = 1;
@@ -58,9 +57,10 @@ struct batch_normalization_layer: public neural_network_layer
     using eigen::rowwise_mean;
 
     auto N = X.cols();
-    R = X - repeat_column(rowwise_mean(X), N);
-    Sigma = diag(R * R.transpose()) / N;
-    Z = hadamard(repeat_column(power_minus_half(Sigma), N), R);
+    auto R = (X - repeat_column(rowwise_mean(X), N)).eval();
+    auto Sigma = diag(R * R.transpose()) / N;
+    power_minus_half_Sigma = power_minus_half(Sigma);
+    Z = hadamard(repeat_column(power_minus_half_Sigma, N), R);
     result = hadamard(repeat_column(gamma, N), Z) + repeat_column(beta, N);
   }
 
@@ -78,10 +78,7 @@ struct batch_normalization_layer: public neural_network_layer
     Dbeta = sum_rows(DY);
     Dgamma = hadamard(DY, Z).rowwise().sum();
     DZ = hadamard(repeat_column(gamma, N), DY);
-
-    // TODO: attempts to reuse the computation power_minus_half(Sigma) make the code run slower with g++-12. Why?
-    auto Sigma_power_minus_half = power_minus_half(Sigma);
-    DX = hadamard(repeat_column(Sigma_power_minus_half / N, N), hadamard(Z, repeat_column(-diag(DZ * Z.transpose()), N)) + DZ * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
+    DX = hadamard(repeat_column(power_minus_half_Sigma / N, N), hadamard(Z, repeat_column(-diag(DZ * Z.transpose()), N)) + DZ * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
   }
 };
 
@@ -94,11 +91,10 @@ struct simple_batch_normalization_layer: public neural_network_layer
   using super::X;
   using super::DX;
 
-  eigen::matrix R;
-  eigen::vector Sigma;
+  eigen::vector power_minus_half_Sigma;
 
   explicit simple_batch_normalization_layer(std::size_t D, std::size_t N = 1)
-    : super(D, N), R(D, N), Sigma(D, 1)
+    : super(D, N), power_minus_half_Sigma(D, 1)
   {}
 
   [[nodiscard]] std::string to_string() const override
@@ -118,9 +114,10 @@ struct simple_batch_normalization_layer: public neural_network_layer
     using eigen::rowwise_mean;
 
     auto N = X.cols();
-    R = X - repeat_column(rowwise_mean(X), N);
-    Sigma = diag(R * R.transpose()) / N;
-    result = hadamard(repeat_column(power_minus_half(Sigma), N), R);
+    auto R = (X - repeat_column(rowwise_mean(X), N)).eval();
+    auto Sigma = diag(R * R.transpose()) / N;
+    power_minus_half_Sigma = power_minus_half(Sigma);
+    result = hadamard(repeat_column(power_minus_half_Sigma, N), R);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
@@ -133,8 +130,7 @@ struct simple_batch_normalization_layer: public neural_network_layer
     using eigen::repeat_column;
 
     auto N = X.cols();
-    auto Sigma_power_minus_half = power_minus_half(Sigma);
-    DX = hadamard(repeat_column(Sigma_power_minus_half / N, N), hadamard(Y, repeat_column(-diag(DY * Y.transpose()), N)) + DY * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
+    DX = hadamard(repeat_column(power_minus_half_Sigma / N, N), hadamard(Y, repeat_column(-diag(DY * Y.transpose()), N)) + DY * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
   }
 };
 

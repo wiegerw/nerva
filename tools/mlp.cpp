@@ -151,7 +151,7 @@ class sgd_algorithm: public stochastic_gradient_descent_algorithm<datasets::data
 
     void on_end_epoch(unsigned int epoch) override
     {
-      print_srelu_layers(M);
+      // print_srelu_layers(M);
     }
 };
 

@@ -80,6 +80,10 @@ def inverse(x: Matrix) -> Matrix:
     return x.applyfunc(lambda x: 1 / x)
 
 
+def power_minus_half(x: Matrix) -> Matrix:
+    return inverse(sqrt(x))
+
+
 def diag(X: Matrix) -> Matrix:
     assert is_square(X)
     m, n = X.shape
@@ -661,12 +665,12 @@ class TestBatchNormalizationLayers(TestCase):
         X = x
         R = X - repeat_column(rowwise_mean(X), N)
         Sigma = diag(R * R.T) / N
-        Sigma_power_minus_half = inverse(sqrt(Sigma))
-        Y = hadamard(repeat_column(Sigma_power_minus_half, N), R)
+        power_minus_half_Sigma = power_minus_half(Sigma)
+        Y = hadamard(repeat_column(power_minus_half_Sigma, N), R)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DX = hadamard(repeat_column(Sigma_power_minus_half / N, N), hadamard(Y, repeat_column(-diag(DY * Y.T), N)) + DY * (N * identity(N) - ones(N, N)))
+        DX = hadamard(repeat_column(power_minus_half_Sigma / N, N), hadamard(Y, repeat_column(-diag(DY * Y.T), N)) + DY * (N * identity(N) - ones(N, N)))
 
         # symbolic differentiation
         DX1 = diff(loss(Y), x)
@@ -721,8 +725,8 @@ class TestBatchNormalizationLayers(TestCase):
         X = x
         R = X - repeat_column(rowwise_mean(X), N)
         Sigma = diag(R * R.T) / N
-        Sigma_power_minus_half = inverse(sqrt(Sigma))
-        Z = hadamard(repeat_column(Sigma_power_minus_half, N), R)
+        power_minus_half_Sigma = power_minus_half(Sigma)
+        Z = hadamard(repeat_column(power_minus_half_Sigma, N), R)
         Y = hadamard(repeat_column(gamma, N), Z) + repeat_column(beta, N)
 
         # backpropagation
@@ -730,7 +734,7 @@ class TestBatchNormalizationLayers(TestCase):
         DZ = hadamard(repeat_column(gamma, N), DY)
         Dbeta = sum_rows(DY)
         Dgamma = sum_rows(hadamard(DY, Z))
-        DX = hadamard(repeat_column(Sigma_power_minus_half / N, N), hadamard(Z, repeat_column(-diag(DZ * Z.T), N)) + DZ * (N * identity(N) - ones(N, N)))
+        DX = hadamard(repeat_column(power_minus_half_Sigma / N, N), hadamard(Z, repeat_column(-diag(DZ * Z.T), N)) + DZ * (N * identity(N) - ones(N, N)))
 
         # symbolic differentiation
         DX1 = diff(loss(Y), x)
@@ -758,12 +762,12 @@ class TestBatchNormalizationLayers(TestCase):
         X = x
         R = (identity(N) - ones(N, N) / N) * X
         Sigma = diag(R.T * R).T / N
-        Sigma_power_minus_half = inverse(sqrt(Sigma))
-        Y = hadamard(repeat_row(Sigma_power_minus_half, N), R)
+        power_minus_half_Sigma = power_minus_half(Sigma)
+        Y = hadamard(repeat_row(power_minus_half_Sigma, N), R)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DX = hadamard(repeat_row(Sigma_power_minus_half / N, N), (N * identity(N) - ones(N, N)) * DY - hadamard(Y, repeat_row(diag(Y.T * DY).T, N)))
+        DX = hadamard(repeat_row(power_minus_half_Sigma / N, N), (N * identity(N) - ones(N, N)) * DY - hadamard(Y, repeat_row(diag(Y.T * DY).T, N)))
 
         # symbolic differentiation
         DX1 = diff(loss(Y), x)
@@ -818,8 +822,8 @@ class TestBatchNormalizationLayers(TestCase):
         X = x
         R = (identity(N) - ones(N, N) / N) * X
         Sigma = diag(R.T * R).T / N
-        Sigma_power_minus_half = inverse(sqrt(Sigma))
-        Z = hadamard(repeat_row(Sigma_power_minus_half, N), R)
+        power_minus_half_Sigma = power_minus_half(Sigma)
+        Z = hadamard(repeat_row(power_minus_half_Sigma, N), R)
         Y = hadamard(repeat_row(gamma, N), Z) + repeat_row(beta, N)
 
         # backpropagation
@@ -827,7 +831,7 @@ class TestBatchNormalizationLayers(TestCase):
         DZ = hadamard(repeat_row(gamma, N), DY)
         Dbeta = sum_columns(DY)
         Dgamma = sum_columns(hadamard(Z, DY))
-        DX = hadamard(repeat_row(Sigma_power_minus_half / N, N), (N * identity(N) - ones(N, N)) * DZ - hadamard(Z, repeat_row(diag(Z.T * DZ).T, N)))
+        DX = hadamard(repeat_row(power_minus_half_Sigma / N, N), (N * identity(N) - ones(N, N)) * DZ - hadamard(Z, repeat_row(diag(Z.T * DZ).T, N)))
 
         # symbolic differentiation
         DX1 = diff(loss(Y), x)
