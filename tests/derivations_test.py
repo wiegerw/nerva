@@ -64,6 +64,10 @@ def jacobian(x: Matrix, y) -> Matrix:
     return x.jacobian(y)
 
 
+def apply(f, x: Matrix) -> Matrix:
+    return x.applyfunc(f)
+
+
 def exp(x: Matrix) -> Matrix:
     return x.applyfunc(lambda x: sp.exp(x))
 
@@ -450,6 +454,7 @@ class TestMatrixOperations(TestCase):
 
 
 class TestLinearLayers(TestCase):
+
     def test_linear_layer_colwise(self):
         D = 3
         N = 2
@@ -501,17 +506,17 @@ class TestLinearLayers(TestCase):
         X = x
         W = w
         Z = W * X + repeat_column(b, N)
-        Y = Z.applyfunc(act)
+        Y = apply(act, Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DZ = hadamard(DY, Z.applyfunc(act_prime))
+        DZ = hadamard(DY, apply(act_prime, Z))
         DW = DZ * X.T
         Db = sum_rows(DZ)
         DX = W.T * DZ
 
         # symbolic differentiation
-        DZ1 = substitute(diff(loss(z.applyfunc(act)), z), z, Z)
+        DZ1 = substitute(diff(loss(apply(act, z)), z), z, Z)
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -526,7 +531,7 @@ class TestLinearLayers(TestCase):
         N = 2
         K = 2
         loss = squared_error
-        act = sigmoid
+        sigma = sigmoid
 
         # variables
         x = matrix('x', D, N)
@@ -539,7 +544,7 @@ class TestLinearLayers(TestCase):
         X = x
         W = w
         Z = W * X + repeat_column(b, N)
-        Y = Z.applyfunc(act)
+        Y = apply(sigma, Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
@@ -549,7 +554,8 @@ class TestLinearLayers(TestCase):
         DX = W.T * DZ
 
         # symbolic differentiation
-        DZ1 = substitute(diff(loss(z.applyfunc(act)), z), z, Z)
+        Y_z = apply(sigma, z)
+        DZ1 = substitute(diff(loss(Y_z), z), z, Z)
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -561,6 +567,7 @@ class TestLinearLayers(TestCase):
 
 
 class TestSoftmaxLayers(TestCase):
+
     def test_softmax_layer_colwise(self):
         K = 3
         N = 2
@@ -598,7 +605,7 @@ class TestSoftmaxLayers(TestCase):
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DZ = DY - hadamard(softmax_colwise(z), repeat_row(sum_columns(DY), K))
+        DZ = DY - hadamard(softmax_colwise(Z), repeat_row(sum_columns(DY), K))
 
         # symbolic differentiation
         DZ1 = diff(loss(Y), z)
@@ -642,7 +649,7 @@ class TestSoftmaxLayers(TestCase):
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DZ = DY - hadamard(softmax_rowwise(z), repeat_column(sum_rows(DY), N))
+        DZ = DY - hadamard(softmax_rowwise(Z), repeat_column(sum_rows(DY), N))
 
         # symbolic differentiation
         DZ1 = diff(loss(Y), z)
@@ -651,6 +658,7 @@ class TestSoftmaxLayers(TestCase):
 
 
 class TestBatchNormalizationLayers(TestCase):
+
     def test_simple_batch_normalization_layer_colwise(self):
         D = 3
         N = 2
@@ -670,7 +678,8 @@ class TestBatchNormalizationLayers(TestCase):
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DX = hadamard(repeat_column(power_minus_half_Sigma / N, N), hadamard(Y, repeat_column(-diag(DY * Y.T), N)) + DY * (N * identity(N) - ones(N, N)))
+        DX = hadamard(repeat_column(power_minus_half_Sigma / N, N),
+                      hadamard(Y, repeat_column(-diag(DY * Y.T), N)) + DY * (N * identity(N) - ones(N, N)))
 
         # symbolic differentiation
         DX1 = diff(loss(Y), x)
@@ -734,7 +743,8 @@ class TestBatchNormalizationLayers(TestCase):
         DZ = hadamard(repeat_column(gamma, N), DY)
         Dbeta = sum_rows(DY)
         Dgamma = sum_rows(hadamard(DY, Z))
-        DX = hadamard(repeat_column(power_minus_half_Sigma / N, N), hadamard(Z, repeat_column(-diag(DZ * Z.T), N)) + DZ * (N * identity(N) - ones(N, N)))
+        DX = hadamard(repeat_column(power_minus_half_Sigma / N, N),
+                      hadamard(Z, repeat_column(-diag(DZ * Z.T), N)) + DZ * (N * identity(N) - ones(N, N)))
 
         # symbolic differentiation
         DX1 = diff(loss(Y), x)
@@ -767,7 +777,8 @@ class TestBatchNormalizationLayers(TestCase):
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DX = hadamard(repeat_row(power_minus_half_Sigma / N, N), (N * identity(N) - ones(N, N)) * DY - hadamard(Y, repeat_row(diag(Y.T * DY).T, N)))
+        DX = hadamard(repeat_row(power_minus_half_Sigma / N, N),
+                      (N * identity(N) - ones(N, N)) * DY - hadamard(Y, repeat_row(diag(Y.T * DY).T, N)))
 
         # symbolic differentiation
         DX1 = diff(loss(Y), x)
@@ -831,7 +842,8 @@ class TestBatchNormalizationLayers(TestCase):
         DZ = hadamard(repeat_row(gamma, N), DY)
         Dbeta = sum_columns(DY)
         Dgamma = sum_columns(hadamard(Z, DY))
-        DX = hadamard(repeat_row(power_minus_half_Sigma / N, N), (N * identity(N) - ones(N, N)) * DZ - hadamard(Z, repeat_row(diag(Z.T * DZ).T, N)))
+        DX = hadamard(repeat_row(power_minus_half_Sigma / N, N),
+                      (N * identity(N) - ones(N, N)) * DZ - hadamard(Z, repeat_row(diag(Z.T * DZ).T, N)))
 
         # symbolic differentiation
         DX1 = diff(loss(Y), x)
