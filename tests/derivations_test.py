@@ -565,6 +565,116 @@ class TestLinearLayers(TestCase):
         self.assertTrue(equal_matrices(Db, Db1))
         self.assertTrue(equal_matrices(DX, DX1))
 
+    def test_linear_layer_rowwise(self):
+        D = 3
+        N = 2
+        K = 2
+        loss = squared_error
+
+        # variables
+        x = matrix('x', N, D)
+        y = matrix('y', N, K)
+        w = matrix('w', K, D)
+        b = matrix('b', 1, K)
+
+        # feedforward
+        X = x
+        W = w
+        Y = X * W.T + repeat_row(b, N)
+
+        # backpropagation
+        DY = substitute(diff(loss(y), y), y, Y)
+        DW = DY.T * X
+        Db = sum_columns(DY)
+        DX = DY * W
+
+        # symbolic differentiation
+        DW1 = diff(loss(Y), w)
+        Db1 = diff(loss(Y), b)
+        DX1 = diff(loss(Y), x)
+
+        self.assertTrue(equal_matrices(DW, DW1))
+        self.assertTrue(equal_matrices(Db, Db1))
+        self.assertTrue(equal_matrices(DX, DX1))
+
+    def test_activation_layer_rowwise(self):
+        D = 3
+        N = 2
+        K = 2
+        loss = squared_error
+        act = hyperbolic_tangent
+        act_prime = hyperbolic_tangent_prime
+
+        # variables
+        x = matrix('x', N, D)
+        y = matrix('y', N, K)
+        z = matrix('z', N, K)
+        w = matrix('w', K, D)
+        b = matrix('b', 1, K)
+
+        # feedforward
+        X = x
+        W = w
+        Z = X * W.T + repeat_row(b, N)
+        Y = apply(act, Z)
+
+        # backpropagation
+        DY = substitute(diff(loss(y), y), y, Y)
+        DZ = hadamard(DY, apply(act_prime, Z))
+        DW = DZ.T * X
+        Db = sum_columns(DZ)
+        DX = DZ * W
+
+        # symbolic differentiation
+        DZ1 = substitute(diff(loss(apply(act, z)), z), z, Z)
+        DW1 = diff(loss(Y), w)
+        Db1 = diff(loss(Y), b)
+        DX1 = diff(loss(Y), x)
+
+        self.assertTrue(equal_matrices(DZ, DZ1))
+        self.assertTrue(equal_matrices(DW, DW1))
+        self.assertTrue(equal_matrices(Db, Db1))
+        self.assertTrue(equal_matrices(DX, DX1))
+
+    def test_sigmoid_layer_rowwise(self):
+        D = 3
+        N = 2
+        K = 2
+        loss = squared_error
+        sigma = sigmoid
+
+        # variables
+        x = matrix('x', N, D)
+        y = matrix('y', N, K)
+        z = matrix('z', N, K)
+        w = matrix('w', K, D)
+        b = matrix('b', 1, K)
+
+        # feedforward
+        X = x
+        W = w
+        Z = X * W.T + repeat_row(b, N)
+        Y = apply(sigma, Z)
+
+        # backpropagation
+        DY = substitute(diff(loss(y), y), y, Y)
+        DZ = hadamard(DY, hadamard(Y, ones(N, K) - Y))
+        DW = DZ.T * X
+        Db = sum_columns(DZ)
+        DX = DZ * W
+
+        # symbolic differentiation
+        Y_z = apply(sigma, z)
+        DZ1 = substitute(diff(loss(Y_z), z), z, Z)
+        DW1 = diff(loss(Y), w)
+        Db1 = diff(loss(Y), b)
+        DX1 = diff(loss(Y), x)
+
+        self.assertTrue(equal_matrices(DZ, DZ1))
+        self.assertTrue(equal_matrices(DW, DW1))
+        self.assertTrue(equal_matrices(Db, Db1))
+        self.assertTrue(equal_matrices(DX, DX1))
+
 
 class TestSoftmaxLayers(TestCase):
 
