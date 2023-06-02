@@ -125,6 +125,8 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
     using eigen::hadamard;
+    using eigen::sum_rows;
+
     DZ = hadamard(DY, eigen::x_times_one_minus_x(Y));
     if constexpr (std::is_same<Matrix, eigen::matrix>::value)
     {
@@ -134,7 +136,7 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
     {
       // TODO
     }
-    Db = DZ.rowwise().sum();
+    Db = sum_rows(DZ);
     DX = hadamard(W, R).transpose() * DZ;
   }
 };
@@ -180,6 +182,8 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
     using eigen::hadamard;
+    using eigen::sum_rows;
+
     DZ = hadamard(DY, act.prime(Z));
     if constexpr (std::is_same<Matrix, eigen::matrix>::value)
     {
@@ -189,7 +193,7 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
     {
       // TODO
     }
-    Db = DZ.rowwise().sum();
+    Db = sum_rows(DZ);
     DX = hadamard(W, R).transpose() * DZ;
   }
 };

@@ -43,6 +43,12 @@ auto log(const Matrix& X)
 }
 
 template <class Matrix>
+auto sqrt(const Matrix& X)
+{
+  return X.array().sqrt();
+}
+
+template <class Matrix>
 auto inverse(const Matrix& X)
 {
   return X.array().inverse();
@@ -116,6 +122,20 @@ template <typename Matrix>
 auto ones(long m, long n)
 {
   return Matrix::Constant(m, n, 1);
+}
+
+template <typename Matrix>
+auto power_minus_half(const Matrix& X)
+{
+  using Scalar = typename Matrix::Scalar;
+  if constexpr (std::is_same<Scalar, float>::value)
+  {
+    return X.unaryExpr([](Scalar t) { return Scalar(1) / std::sqrt(t + Scalar(1e-15)); });
+  }
+  else
+  {
+    return X.unaryExpr([](Scalar t) { return Scalar(1) / std::sqrt(t + Scalar(1e-30)); });
+  }
 }
 
 } // namespace nerva::eigen

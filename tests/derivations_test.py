@@ -72,6 +72,10 @@ def log(x: Matrix) -> Matrix:
     return x.applyfunc(lambda x: sp.log(x))
 
 
+def sqrt(x: Matrix) -> Matrix:
+    return x.applyfunc(lambda x: sp.sqrt(x))
+
+
 def inverse(x: Matrix) -> Matrix:
     return x.applyfunc(lambda x: 1 / x)
 
@@ -657,7 +661,7 @@ class TestBatchNormalizationLayers(TestCase):
         X = x
         R = X - repeat_column(rowwise_mean(X), N)
         Sigma = diag(R * R.T) / N
-        Sigma_power_minus_half = Sigma.applyfunc(lambda t: 1 / sp.sqrt(t))
+        Sigma_power_minus_half = inverse(sqrt(Sigma))
         Y = hadamard(repeat_column(Sigma_power_minus_half, N), R)
 
         # backpropagation
@@ -717,7 +721,7 @@ class TestBatchNormalizationLayers(TestCase):
         X = x
         R = X - repeat_column(rowwise_mean(X), N)
         Sigma = diag(R * R.T) / N
-        Sigma_power_minus_half = Sigma.applyfunc(lambda t: 1 / sp.sqrt(t))
+        Sigma_power_minus_half = inverse(sqrt(Sigma))
         Z = hadamard(repeat_column(Sigma_power_minus_half, N), R)
         Y = hadamard(repeat_column(gamma, N), Z) + repeat_column(beta, N)
 
@@ -754,7 +758,7 @@ class TestBatchNormalizationLayers(TestCase):
         X = x
         R = (identity(N) - ones(N, N) / N) * X
         Sigma = diag(R.T * R).T / N
-        Sigma_power_minus_half = Sigma.applyfunc(lambda t: 1 / sp.sqrt(t))
+        Sigma_power_minus_half = inverse(sqrt(Sigma))
         Y = hadamard(repeat_row(Sigma_power_minus_half, N), R)
 
         # backpropagation
@@ -814,7 +818,7 @@ class TestBatchNormalizationLayers(TestCase):
         X = x
         R = (identity(N) - ones(N, N) / N) * X
         Sigma = diag(R.T * R).T / N
-        Sigma_power_minus_half = Sigma.applyfunc(lambda t: 1 / sp.sqrt(t))
+        Sigma_power_minus_half = inverse(sqrt(Sigma))
         Z = hadamard(repeat_row(Sigma_power_minus_half, N), R)
         Y = hadamard(repeat_row(gamma, N), Z) + repeat_row(beta, N)
 

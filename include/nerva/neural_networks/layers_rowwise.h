@@ -238,18 +238,20 @@ struct sigmoid_layer : public linear_layer<Matrix>
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
     using eigen::hadamard;
+    using eigen::sum_rows;
+
     if constexpr (IsSparse)
     {
       DZ = hadamard(DY, eigen::x_times_one_minus_x(Y));
       mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
-      Db = DZ.rowwise().sum();
+      Db = sum_rows(DZ);
       mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
     else
     {
       DZ = hadamard(DY, eigen::x_times_one_minus_x(Y));
       DW = DZ * X.transpose();
-      Db = DZ.rowwise().sum();
+      Db = sum_rows(DZ);
       DX = W.transpose() * DZ;
     }
   }
@@ -312,19 +314,21 @@ struct activation_layer : public linear_layer<Matrix>
   void backpropagate(const eigen::matrix& /* Y */, const eigen::matrix& DY) override
   {
     using eigen::hadamard;
+    using eigen::sum_rows;
+
     if constexpr (IsSparse)
     {
       DZ = hadamard(DY, act.prime(Z));
       mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
       // mkl::sdd_product(DW, DZ, X.transpose());
-      Db = DZ.rowwise().sum();
+      Db = sum_rows(DZ);
       mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
     else
     {
       DZ = hadamard(DY, act.prime(Z));
       DW = DZ * X.transpose();
-      Db = DZ.rowwise().sum();
+      Db = sum_rows(DZ);
       DX = W.transpose() * DZ;
     }
   }
@@ -482,16 +486,17 @@ struct softmax_layer : public linear_layer<Matrix>
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
-    using eigen::repeat_row;
     using eigen::diag;
     using eigen::hadamard;
+    using eigen::repeat_row;
+    using eigen::sum_rows;
 
     if constexpr (IsSparse)
     {
       auto K = Y.rows();
       DZ = hadamard(Y, DY - repeat_row(diag(Y.transpose() * DY).transpose(), K));
       mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
-      Db = DZ.rowwise().sum();
+      Db = sum_rows(DZ);
       mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
     else
@@ -499,7 +504,7 @@ struct softmax_layer : public linear_layer<Matrix>
       auto K = Y.rows();
       DZ = hadamard(Y, DY - repeat_row(diag(Y.transpose() * DY).transpose(), K));
       DW = DZ * X.transpose();
-      Db = DZ.rowwise().sum();
+      Db = sum_rows(DZ);
       DX = W.transpose() * DZ;
     }
   }
@@ -546,15 +551,16 @@ struct log_softmax_layer : public linear_layer<Matrix>
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
-    using eigen::repeat_row;
     using eigen::diag;
+    using eigen::repeat_row;
+    using eigen::sum_rows;
 
     if constexpr (IsSparse)
     {
       auto K = Y.rows();
       DZ = DY - repeat_row(diag(Y.transpose() * DY).transpose(), K);
       mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
-      Db = DZ.rowwise().sum();
+      Db = sum_rows(DZ);
       mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
     else
@@ -562,7 +568,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
       auto K = Y.rows();
       DZ = DY - repeat_row(diag(Y.transpose() * DY), K);
       DW = DZ * X.transpose();
-      Db = DZ.rowwise().sum();
+      Db = sum_rows(DZ);
       DX = W.transpose() * DZ;
     }
   }

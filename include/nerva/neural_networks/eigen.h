@@ -449,12 +449,6 @@ Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> sample_covar
   return (x_minus_mean.adjoint() * x_minus_mean) / double(x.rows() - 1);
 }
 
-template <typename Scalar = scalar>
-auto power_minus_half(const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& Sigma, scalar epsilon = 0)
-{
-  return Sigma.unaryExpr([epsilon](scalar t) { return scalar(1) / std::sqrt(t + epsilon); });
-}
-
 // Performs the assignment A = B * C.
 template <typename Matrix1, typename Matrix2, typename Scalar = scalar, int MatrixLayout = default_matrix_layout>
 inline

@@ -53,14 +53,14 @@ struct batch_normalization_layer: public neural_network_layer
   {
     using eigen::diag;
     using eigen::hadamard;
+    using eigen::power_minus_half;
     using eigen::repeat_column;
     using eigen::rowwise_mean;
 
     auto N = X.cols();
-    scalar epsilon = 1e-20;
     R = X - repeat_column(rowwise_mean(X), N);
     Sigma = diag(R * R.transpose()) / N;
-    Z = hadamard(repeat_column(eigen::power_minus_half(Sigma, epsilon), N), R);
+    Z = hadamard(repeat_column(power_minus_half(Sigma), N), R);
     result = hadamard(repeat_column(gamma, N), Z) + repeat_column(beta, N);
   }
 
@@ -72,15 +72,15 @@ struct batch_normalization_layer: public neural_network_layer
     using eigen::sum_rows;
     using eigen::identity;
     using eigen::ones;
+    using eigen::power_minus_half;
 
     auto N = X.cols();
-    scalar epsilon = 1e-20;
     Dbeta = sum_rows(DY);
     Dgamma = hadamard(DY, Z).rowwise().sum();
     DZ = hadamard(repeat_column(gamma, N), DY);
 
-    // TODO: attempts to reuse the computation power_minus_half(Sigma, epsilon) make the code run slower with g++-12. Why?
-    auto Sigma_power_minus_half = eigen::power_minus_half(Sigma, epsilon);
+    // TODO: attempts to reuse the computation power_minus_half(Sigma) make the code run slower with g++-12. Why?
+    auto Sigma_power_minus_half = power_minus_half(Sigma);
     DX = hadamard(repeat_column(Sigma_power_minus_half / N, N), hadamard(Z, repeat_column(-diag(DZ * Z.transpose()), N)) + DZ * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
   }
 };
@@ -113,30 +113,27 @@ struct simple_batch_normalization_layer: public neural_network_layer
   {
     using eigen::diag;
     using eigen::hadamard;
+    using eigen::power_minus_half;
     using eigen::repeat_column;
     using eigen::rowwise_mean;
 
     auto N = X.cols();
-    scalar epsilon = 1e-20;
-    // R = X - repeat_column(rowwise_mean(X), N);
-    // Sigma = R.array().square().rowwise().sum() / N;
     R = X - repeat_column(rowwise_mean(X), N);
     Sigma = diag(R * R.transpose()) / N;
-    result = hadamard(repeat_column(eigen::power_minus_half(Sigma, epsilon), N), R);
+    result = hadamard(repeat_column(power_minus_half(Sigma), N), R);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
     using eigen::diag;
-    using eigen::Diag;
     using eigen::hadamard;
-    using eigen::repeat_column;
     using eigen::identity;
     using eigen::ones;
+    using eigen::power_minus_half;
+    using eigen::repeat_column;
 
     auto N = X.cols();
-    scalar epsilon = 1e-20;
-    auto Sigma_power_minus_half = eigen::power_minus_half(Sigma, epsilon);
+    auto Sigma_power_minus_half = power_minus_half(Sigma);
     DX = hadamard(repeat_column(Sigma_power_minus_half / N, N), hadamard(Y, repeat_column(-diag(DY * Y.transpose()), N)) + DY * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
   }
 };
