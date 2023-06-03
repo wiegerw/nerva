@@ -10,7 +10,7 @@ from typing import List
 from unittest import TestCase
 
 import sympy as sp
-from sympy import Matrix
+from sympy import Lambda, Matrix, Piecewise
 
 #-------------------------------------#
 #           matrix operations
@@ -153,12 +153,21 @@ def ones(m: int, n: int) -> Matrix:
     return sp.ones(m, n)
 
 
+def sum_elements(X: Matrix):
+    m, n = X.shape
+
+    return sum(X[i, j] for i in range(m) for j in range(n))
+
+
 def matrix(name: str, rows: int, columns: int) -> Matrix:
     return Matrix(sp.symarray(name, (rows, columns), real=True))
 
 
-def equal_matrices(A: Matrix, B: Matrix) -> bool:
+def equal_matrices(A: Matrix, B: Matrix, simplify_arguments=False) -> bool:
     m, n = A.shape
+    if simplify_arguments:
+        A = sp.simplify(A)
+        B = sp.simplify(B)
     return A.shape == B.shape and sp.simplify(A - B) == sp.zeros(m, n)
 
 
@@ -176,6 +185,25 @@ def compute_derivative(f):
 def relu(x):
     return max(0, x)
 
+
+def relu_prime(x):
+    return 0 if x < 0 else 1
+
+
+def leaky_relu(x, alpha):
+    return max(alpha * x, x)
+
+
+def leaky_relu_prime(x, alpha):
+    return alpha if x < 0 else 1
+
+
+def all_relu(x, alpha):
+    return alpha * x if x < 0 else x
+
+
+def all_relu_prime(x, alpha):
+    return alpha if x < 0 else 1
 
 def hyperbolic_tangent(x):
     return sp.tanh(x)
@@ -195,6 +223,16 @@ def sigmoid_prime(x):
     return y * (1 - y)
 
 
+def srelu(al, tl, ar, tr):
+    x = sp.symbols('x')
+    return Lambda(x, Piecewise((tl + al * (x - tl), x <= tl), (x, x < tr), (tr + ar * (x - tr), True)))
+
+
+def srelu_prime(al, tl, ar, tr):
+    x = sp.symbols('x')
+    return Lambda(x, Piecewise((al, x <= tl), (1, x < tr), (ar, True)))
+
+
 #-------------------------------------#
 #           loss functions
 #-------------------------------------#
@@ -206,12 +244,6 @@ def squared_error(X: Matrix):
         return sp.sqrt(sum(xi * xi for xi in x))
 
     return sum(f(X.col(j)) for j in range(n))
-
-
-def sum_elements(X: Matrix):
-    m, n = X.shape
-
-    return sum(X[i, j] for i in range(m) for j in range(n))
 
 
 #-------------------------------------#
@@ -564,6 +596,69 @@ class TestLinearLayers(TestCase):
         self.assertTrue(equal_matrices(DW, DW1))
         self.assertTrue(equal_matrices(Db, Db1))
         self.assertTrue(equal_matrices(DX, DX1))
+
+    def test_srelu_layer_colwise(self):
+        D = 3
+        N = 2
+        K = 2
+        loss = sum_elements
+
+        # variables
+        x = matrix('x', D, N)
+        y = matrix('y', K, N)
+        z = matrix('z', K, N)
+        w = matrix('w', K, D)
+        b = matrix('b', K, 1)
+        al = sp.symbols('al', real=True)
+        tl = sp.symbols('tl', real=True)
+        ar = sp.symbols('ar', real=True)
+        tr = sp.symbols('tr', real=True)
+
+        act = srelu(al, tl, ar, tr)
+        act_prime = srelu_prime(al, tl, ar, tr)
+
+        # feedforward
+        X = x
+        W = w
+        Z = W * X + repeat_column(b, N)
+        Y = apply(act, Z)
+
+        # backpropagation
+        DY = substitute(diff(loss(y), y), y, Y)
+        DZ = hadamard(DY, apply(act_prime, Z))
+        DW = DZ * X.T
+        Db = sum_rows(DZ)
+        DX = W.T * DZ
+
+        Zij = sp.symbols('Zij')
+        Al = apply(Lambda(Zij, Piecewise((Zij - tl, Zij <= tl), (0, True))), Z)
+        Ar = apply(Lambda(Zij, Piecewise((Zij - tr, Zij < tr), (0, True))), Z)
+        Tl = apply(Lambda(Zij, Piecewise((1 - al, Zij <= tl), (0, True))), Z)
+        Tr = apply(Lambda(Zij, Piecewise((1 - ar, Zij >= tr), (0, True))), Z)
+
+        Dal = Matrix([[sum_elements(hadamard(DY, Al))]])
+        Dar = Matrix([[sum_elements(hadamard(DY, Ar))]])
+        Dtl = Matrix([[sum_elements(hadamard(DY, Tl))]])
+        Dtr = Matrix([[sum_elements(hadamard(DY, Tr))]])
+
+        # symbolic differentiation
+        DZ1 = substitute(diff(loss(apply(act, z)), z), z, Z)
+        DW1 = diff(loss(Y), w)
+        Db1 = diff(loss(Y), b)
+        DX1 = diff(loss(Y), x)
+        Dal1 = diff(loss(Y), Matrix([[al]]))
+        Dtl1 = diff(loss(Y), Matrix([[tl]]))
+        Dar1 = diff(loss(Y), Matrix([[ar]]))
+        Dtr1 = diff(loss(Y), Matrix([[tr]]))
+
+        self.assertTrue(equal_matrices(DZ, DZ1, simplify_arguments=True))
+        self.assertTrue(equal_matrices(DW, DW1, simplify_arguments=True))
+        self.assertTrue(equal_matrices(Db, Db1, simplify_arguments=True))
+        self.assertTrue(equal_matrices(DX, DX1, simplify_arguments=True))
+        self.assertTrue(equal_matrices(Dal, Dal1, simplify_arguments=True))
+        self.assertTrue(equal_matrices(Dtl, Dtl1, simplify_arguments=True))
+        # self.assertTrue(equal_matrices(Dar, Dar1, simplify_arguments=True))
+        # self.assertTrue(equal_matrices(Dtr, Dtr1, simplify_arguments=True))
 
     def test_linear_layer_rowwise(self):
         D = 3
