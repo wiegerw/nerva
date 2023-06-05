@@ -15,8 +15,8 @@ class TestLinearLayers(TestCase):
 
     def test_linear_layer_colwise(self):
         D = 3
-        N = 2
         K = 2
+        N = 2
         loss = squared_error
 
         # variables
@@ -36,7 +36,7 @@ class TestLinearLayers(TestCase):
         Db = sum_rows(DY)
         DX = W.T * DY
 
-        # symbolic differentiation
+        # test gradients
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -47,8 +47,8 @@ class TestLinearLayers(TestCase):
 
     def test_activation_layer_colwise(self):
         D = 3
-        N = 2
         K = 2
+        N = 2
         loss = squared_error
         act = hyperbolic_tangent
         act_prime = hyperbolic_tangent_prime
@@ -73,7 +73,7 @@ class TestLinearLayers(TestCase):
         Db = sum_rows(DZ)
         DX = W.T * DZ
 
-        # symbolic differentiation
+        # test gradients
         DZ1 = substitute(diff(loss(apply(act, z)), z), z, Z)
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
@@ -86,8 +86,8 @@ class TestLinearLayers(TestCase):
 
     def test_sigmoid_layer_colwise(self):
         D = 3
-        N = 2
         K = 2
+        N = 2
         loss = squared_error
         sigma = sigmoid
 
@@ -111,7 +111,7 @@ class TestLinearLayers(TestCase):
         Db = sum_rows(DZ)
         DX = W.T * DZ
 
-        # symbolic differentiation
+        # test gradients
         Y_z = apply(sigma, z)
         DZ1 = substitute(diff(loss(Y_z), z), z, Z)
         DW1 = diff(loss(Y), w)
@@ -125,8 +125,8 @@ class TestLinearLayers(TestCase):
 
     def test_linear_layer_rowwise(self):
         D = 3
-        N = 2
         K = 2
+        N = 2
         loss = squared_error
 
         # variables
@@ -146,7 +146,7 @@ class TestLinearLayers(TestCase):
         Db = sum_columns(DY)
         DX = DY * W
 
-        # symbolic differentiation
+        # test gradients
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -157,8 +157,8 @@ class TestLinearLayers(TestCase):
 
     def test_activation_layer_rowwise(self):
         D = 3
-        N = 2
         K = 2
+        N = 2
         loss = squared_error
         act = hyperbolic_tangent
         act_prime = hyperbolic_tangent_prime
@@ -183,7 +183,7 @@ class TestLinearLayers(TestCase):
         Db = sum_columns(DZ)
         DX = DZ * W
 
-        # symbolic differentiation
+        # test gradients
         DZ1 = substitute(diff(loss(apply(act, z)), z), z, Z)
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
@@ -196,8 +196,8 @@ class TestLinearLayers(TestCase):
 
     def test_sigmoid_layer_rowwise(self):
         D = 3
-        N = 2
         K = 2
+        N = 2
         loss = squared_error
         sigma = sigmoid
 
@@ -221,7 +221,7 @@ class TestLinearLayers(TestCase):
         Db = sum_columns(DZ)
         DX = DZ * W
 
-        # symbolic differentiation
+        # test gradients
         Y_z = apply(sigma, z)
         DZ1 = substitute(diff(loss(Y_z), z), z, Z)
         DW1 = diff(loss(Y), w)

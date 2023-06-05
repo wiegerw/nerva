@@ -36,7 +36,7 @@ class TestBatchNormalizationLayers(TestCase):
         DX = hadamard(repeat_column(power_minus_half_Sigma / N, N),
                       hadamard(Y, repeat_column(-diag(DY * Y.T), N)) + DY * (N * identity(N) - ones(N, N)))
 
-        # symbolic differentiation
+        # test gradients
         DX1 = diff(loss(Y), x)
 
         self.assertTrue(equal_matrices(DX, DX1))
@@ -63,7 +63,7 @@ class TestBatchNormalizationLayers(TestCase):
         Dbeta = sum_rows(DY)
         Dgamma = sum_rows(hadamard(X, DY))
 
-        # symbolic differentiation
+        # test gradients
         DX1 = diff(loss(Y), x)
         Dbeta1 = diff(loss(Y), beta)
         Dgamma1 = diff(loss(Y), gamma)
@@ -101,7 +101,7 @@ class TestBatchNormalizationLayers(TestCase):
         DX = hadamard(repeat_column(power_minus_half_Sigma / N, N),
                       hadamard(Z, repeat_column(-diag(DZ * Z.T), N)) + DZ * (N * identity(N) - ones(N, N)))
 
-        # symbolic differentiation
+        # test gradients
         DX1 = diff(loss(Y), x)
         Dbeta1 = diff(loss(Y), beta)
         Dgamma1 = diff(loss(Y), gamma)
@@ -135,7 +135,7 @@ class TestBatchNormalizationLayers(TestCase):
         DX = hadamard(repeat_row(power_minus_half_Sigma / N, N),
                       (N * identity(N) - ones(N, N)) * DY - hadamard(Y, repeat_row(diag(Y.T * DY).T, N)))
 
-        # symbolic differentiation
+        # test gradients
         DX1 = diff(loss(Y), x)
 
         self.assertTrue(equal_matrices(DX, DX1))
@@ -162,7 +162,7 @@ class TestBatchNormalizationLayers(TestCase):
         Dbeta = sum_columns(DY)
         Dgamma = sum_columns(hadamard(X, DY))
 
-        # symbolic differentiation
+        # test gradients
         DX1 = diff(loss(Y), x)
         Dbeta1 = diff(loss(Y), beta)
         Dgamma1 = diff(loss(Y), gamma)
@@ -200,7 +200,7 @@ class TestBatchNormalizationLayers(TestCase):
         DX = hadamard(repeat_row(power_minus_half_Sigma / N, N),
                       (N * identity(N) - ones(N, N)) * DZ - hadamard(Z, repeat_row(diag(Z.T * DZ).T, N)))
 
-        # symbolic differentiation
+        # test gradients
         DX1 = diff(loss(Y), x)
         Dbeta1 = diff(loss(Y), beta)
         Dgamma1 = diff(loss(Y), gamma)

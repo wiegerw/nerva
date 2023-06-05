@@ -12,7 +12,6 @@ from symbolic.utilities import *
 
 class TestSReLULayers(TestCase):
 
-    # test for both colwise and rowwise
     def test_srelu_layer(self):
         N = 2
         K = 2
@@ -36,24 +35,28 @@ class TestSReLULayers(TestCase):
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
         DZ = hadamard(DY, apply(act_prime, Z))
-
         Zij = sp.symbols('Zij')
         Al = apply(Lambda(Zij, Piecewise((Zij - tl, Zij <= tl), (0, True))), Z)
         Ar = apply(Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (Zij - tr, True))), Z)
         Tl = apply(Lambda(Zij, Piecewise((1 - al, Zij <= tl), (0, True))), Z)
         Tr = apply(Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (1 - ar, True))), Z)
+        Dal = sum_elements(hadamard(DY, Al))
+        Dar = sum_elements(hadamard(DY, Ar))
+        Dtl = sum_elements(hadamard(DY, Tl))
+        Dtr = sum_elements(hadamard(DY, Tr))
 
-        Dal = Matrix([[sum_elements(hadamard(DY, Al))]])
-        Dar = Matrix([[sum_elements(hadamard(DY, Ar))]])
-        Dtl = Matrix([[sum_elements(hadamard(DY, Tl))]])
-        Dtr = Matrix([[sum_elements(hadamard(DY, Tr))]])
-
-        # symbolic differentiation
+        # test gradients
         DZ1 = diff(loss(Y), z)
         Dal1 = diff(loss(Y), Matrix([[al]]))
         Dtl1 = diff(loss(Y), Matrix([[tl]]))
         Dar1 = diff(loss(Y), Matrix([[ar]]))
         Dtr1 = diff(loss(Y), Matrix([[tr]]))
+
+        # wrap values in a matrix to make them usable for the equal_matrices functoin
+        Dal = Matrix([[Dal]])
+        Dar = Matrix([[Dar]])
+        Dtl = Matrix([[Dtl]])
+        Dtr = Matrix([[Dtr]])
 
         self.assertTrue(equal_matrices(DZ, DZ1, simplify_arguments=True))
         self.assertTrue(equal_matrices(Dal, Dal1, simplify_arguments=True))

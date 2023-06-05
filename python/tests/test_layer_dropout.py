@@ -38,7 +38,7 @@ class TestDropoutLayers(TestCase):
         Db = sum_rows(DY)
         DX = hadamard(W, R).T * DY
 
-        # symbolic differentiation
+        # test gradients
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -77,7 +77,7 @@ class TestDropoutLayers(TestCase):
         Db = sum_rows(DZ)
         DX = hadamard(W, R).T * DZ
 
-        # symbolic differentiation
+        # test gradients
         DZ1 = substitute(diff(loss(apply(act, z)), z), z, Z)
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
@@ -117,7 +117,7 @@ class TestDropoutLayers(TestCase):
         Db = sum_rows(DZ)
         DX = hadamard(W, R).T * DZ
 
-        # symbolic differentiation
+        # test gradients
         Y_z = apply(sigma, z)
         DZ1 = substitute(diff(loss(Y_z), z), z, Z)
         DW1 = diff(loss(Y), w)
@@ -154,7 +154,7 @@ class TestDropoutLayers(TestCase):
         Db = sum_columns(DY)
         DX = DY * hadamard(W, R.T)
 
-        # symbolic differentiation
+        # test gradients
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -193,7 +193,7 @@ class TestDropoutLayers(TestCase):
         Db = sum_columns(DZ)
         DX = DZ * hadamard(W, R.T)
 
-        # symbolic differentiation
+        # test gradients
         DZ1 = substitute(diff(loss(apply(act, z)), z), z, Z)
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
@@ -233,7 +233,7 @@ class TestDropoutLayers(TestCase):
         Db = sum_columns(DZ)
         DX = DZ * hadamard(W, R.T)
 
-        # symbolic differentiation
+        # test gradients
         Y_z = apply(sigma, z)
         DZ1 = substitute(diff(loss(Y_z), z), z, Z)
         DW1 = diff(loss(Y), w)
