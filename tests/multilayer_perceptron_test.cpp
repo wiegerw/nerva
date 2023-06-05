@@ -11,7 +11,7 @@
 
 #include "doctest/doctest.h"
 #include "nerva/neural_networks/multilayer_perceptron.h"
-#include "nerva/neural_networks/loss_functions.h"
+#include "nerva/neural_networks/loss_functions_colwise.h"
 #include "nerva/utilities/stopwatch.h"
 #include "nerva/utilities/string_utility.h"
 #include <iostream>

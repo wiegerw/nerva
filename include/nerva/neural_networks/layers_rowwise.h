@@ -15,6 +15,7 @@
 #include "nerva/neural_networks/mkl_eigen.h"
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/neural_networks/optimizers.h"
+#include "nerva/neural_networks/softmax_rowwise.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
 #include "nerva/utilities/string_utility.h"

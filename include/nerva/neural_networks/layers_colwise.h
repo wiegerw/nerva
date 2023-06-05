@@ -15,6 +15,7 @@
 #include "nerva/neural_networks/mkl_eigen.h"
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/neural_networks/optimizers.h"
+#include "nerva/neural_networks/softmax_colwise.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
 #include "nerva/utilities/string_utility.h"
@@ -477,13 +478,13 @@ struct softmax_layer : public linear_layer<Matrix>
       auto N = X.cols();
       mkl::dsd_product(Z, W, X);
       Z += repeat_column(b, N);
-      result = stable_softmax_colwise()(Z);
+      result = stable_softmax()(Z);
     }
     else
     {
       auto N = X.cols();
       Z = W * X + repeat_column(b, N);
-      result = stable_softmax_colwise()(Z);
+      result = stable_softmax()(Z);
     }
   }
 
@@ -544,13 +545,13 @@ struct log_softmax_layer : public linear_layer<Matrix>
       auto N = X.cols();
       mkl::dsd_product(Z, W, X);
       Z += repeat_column(b, N);
-      result = stable_log_softmax_colwise()(Z);
+      result = stable_log_softmax()(Z);
     }
     else
     {
       auto N = X.cols();
       Z = W * X + repeat_column(b, N);
-      result = stable_log_softmax_colwise()(Z);
+      result = stable_log_softmax()(Z);
     }
   }
 
@@ -564,7 +565,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
     if constexpr (IsSparse)
     {
       auto K = Y.rows();
-      DZ = DY - eigen::hadamard(stable_softmax_colwise()(Z), repeat_row(sum_columns(DY), K));
+      DZ = DY - eigen::hadamard(stable_softmax()(Z), repeat_row(sum_columns(DY), K));
       mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
       Db = sum_rows(DZ);
       mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
@@ -572,7 +573,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
     else
     {
       auto K = Y.rows();
-      DZ = DY - eigen::hadamard(stable_softmax_colwise()(Z), repeat_row(sum_columns(DY), K));
+      DZ = DY - eigen::hadamard(stable_softmax()(Z), repeat_row(sum_columns(DY), K));
       DW = DZ * X.transpose();
       Db = sum_rows(DZ);
       DX = W.transpose() * DZ;

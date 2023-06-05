@@ -11,7 +11,7 @@
 
 #include "doctest/doctest.h"
 #include "nerva/neural_networks/check_gradients.h"
-#include "nerva/neural_networks/loss_functions.h"
+#include "nerva/neural_networks/loss_functions_colwise.h"
 #include <iostream>
 #include <type_traits>
 
@@ -161,15 +161,15 @@ TEST_CASE("test_softmax")
     {3.0, 4.0, 9.0}
   };
 
-  eigen::matrix Y = stable_softmax_colwise()(X);
+  eigen::matrix Y = stable_softmax()(X);
 
   eigen::matrix x1 = X.col(0);
   eigen::matrix x2 = X.col(1);
   eigen::matrix x3 = X.col(2);
 
-  eigen::matrix y1 = stable_softmax_colwise()(x1);
-  eigen::matrix y2 = stable_softmax_colwise()(x2);
-  eigen::matrix y3 = stable_softmax_colwise()(x3);
+  eigen::matrix y1 = stable_softmax()(x1);
+  eigen::matrix y2 = stable_softmax()(x2);
+  eigen::matrix y3 = stable_softmax()(x3);
 
   eigen::print_numpy_matrix("Y", Y);
   eigen::print_numpy_matrix("y1", y1);

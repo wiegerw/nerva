@@ -11,7 +11,7 @@
 
 #include "doctest/doctest.h"
 #include "nerva/neural_networks/layers.h"
-#include "nerva/neural_networks/loss_functions.h"
+#include "nerva/neural_networks/loss_functions_colwise.h"
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/neural_networks/multilayer_perceptron.h"
 #include "nerva/neural_networks/weights.h"

@@ -16,7 +16,7 @@
 #include "nerva/neural_networks/mkl_eigen.h"
 #include "nerva/neural_networks/numpy_eigen.h"
 #include "nerva/neural_networks/layers.h"
-#include "nerva/neural_networks/loss_functions.h"
+#include "nerva/neural_networks/loss_functions_colwise.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
 #include "nerva/neural_networks/global_timer.h"

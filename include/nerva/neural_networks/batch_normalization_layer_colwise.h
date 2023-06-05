@@ -4,13 +4,13 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-/// \file nerva/neural_networks/batch_normalization_layer.h
+/// \file nerva/neural_networks/batch_normalization_layer_colwise.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_BATCH_NORMALIZATION_LAYER_H
-#define NERVA_NEURAL_NETWORKS_BATCH_NORMALIZATION_LAYER_H
+#ifndef NERVA_NEURAL_NETWORKS_BATCH_NORMALIZATION_LAYER_COLWISE_H
+#define NERVA_NEURAL_NETWORKS_BATCH_NORMALIZATION_LAYER_COLWISE_H
 
-#include "nerva/neural_networks/layers.h"
+#include "nerva/neural_networks/layers_colwise.h"
 #include <random>
 
 namespace nerva {
@@ -192,4 +192,4 @@ using dense_affine_layer = affine_layer;
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_BATCH_NORMALIZATION_LAYER_H
+#endif // NERVA_NEURAL_NETWORKS_BATCH_NORMALIZATION_LAYER_COLWISE_H

@@ -4,14 +4,15 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-/// \file nerva/neural_networks/loss_functions.h
+/// \file nerva/neural_networks/loss_functions_colwise.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_LOSS_FUNCTIONS_H
-#define NERVA_NEURAL_NETWORKS_LOSS_FUNCTIONS_H
+#ifndef NERVA_NEURAL_NETWORKS_LOSS_FUNCTIONS_COLWISE_H
+#define NERVA_NEURAL_NETWORKS_LOSS_FUNCTIONS_COLWISE_H
 
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/neural_networks/activation_functions.h"
+#include "nerva/neural_networks/softmax_colwise.h"
 #include "nerva/utilities/logger.h"
 #include <cmath>
 #include <memory>
@@ -129,7 +130,7 @@ struct softmax_cross_entropy_loss: public loss_function
   template <typename Target>
   scalar operator()(const eigen::vector& y, const Target& t) const
   {
-    eigen::vector softmax_y = stable_softmax_colwise()(y);
+    eigen::vector softmax_y = stable_softmax()(y);
     auto log_softmax_y = softmax_y.unaryExpr([](scalar x) { return std::log(x); });
     return -t.transpose() * log_softmax_y;
   }
@@ -138,32 +139,32 @@ struct softmax_cross_entropy_loss: public loss_function
   scalar operator()(const eigen::matrix& Y, const Target& T) const  // TODO: can the return type become auto?
   {
     using eigen::hadamard;
-    eigen::matrix log_softmax_Y = stable_log_softmax_colwise()(Y);
+    eigen::matrix log_softmax_Y = stable_log_softmax()(Y);
     return (hadamard(-T, log_softmax_Y).colwise().sum()).sum();
   }
 
   template <typename Target>
   eigen::vector gradient_vector(const eigen::vector& y, const Target& t) const
   {
-    return stable_softmax_colwise()(y) - t;
+    return stable_softmax()(y) - t;
   }
 
   template <typename Target>
   eigen::matrix gradient_matrix(const eigen::matrix& Y, const Target& T) const  // TODO: can the return type become auto?
   {
-    return stable_softmax_colwise()(Y) - T;
+    return stable_softmax()(Y) - T;
   }
 
   [[nodiscard]] scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
     using eigen::hadamard;
-    eigen::matrix log_softmax_Y = stable_log_softmax_colwise()(Y);
+    eigen::matrix log_softmax_Y = stable_log_softmax()(Y);
     return (hadamard(-T, log_softmax_Y).colwise().sum()).sum();
   }
 
   [[nodiscard]] eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
-    return stable_softmax_colwise()(Y) - T;
+    return stable_softmax()(Y) - T;
   }
 
   [[nodiscard]] std::string to_string() const override
@@ -252,4 +253,4 @@ std::shared_ptr<loss_function> parse_loss_function(const std::string& text)
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_LOSS_FUNCTIONS_H
+#endif // NERVA_NEURAL_NETWORKS_LOSS_FUNCTIONS_COLWISE_H

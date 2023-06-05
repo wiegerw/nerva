@@ -7,7 +7,7 @@
 /// \file src/python-bindings.cpp
 /// \brief add your file description here.
 
-#include "nerva/neural_networks/batch_normalization_layer.h"
+#include "nerva/neural_networks/batch_normalization_layer_colwise.h"
 #include "nerva/datasets/dataset.h"
 #include "nerva/neural_networks/dropout_layers.h"
 #include "nerva/neural_networks/global_timer.h"

@@ -14,7 +14,7 @@
 #include <iomanip>
 #include "nerva/neural_networks/check_gradients.h"
 #include "nerva/neural_networks/mkl_eigen.h"
-#include "nerva/neural_networks/loss_functions.h"
+#include "nerva/neural_networks/loss_functions_colwise.h"
 
 namespace nerva {
 
