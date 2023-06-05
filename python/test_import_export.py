@@ -4,7 +4,7 @@ from unittest import TestCase
 
 import numpy as np
 import nervalib
-from testing.numpy_utils import load_eigen_array, save_eigen_array, pp
+from snn import load_eigen_array, save_eigen_array, pp
 
 
 def to_eigen(x: np.ndarray) -> np.ndarray:

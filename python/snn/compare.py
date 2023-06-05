@@ -3,9 +3,9 @@ import sys
 import tempfile
 
 from nerva.utilities import StopWatch
-from testing.models import MLPPyTorch, MLPNerva
-from testing.numpy_utils import pp, to_numpy, to_one_hot_numpy
-from testing.training import compute_weight_difference, compute_matrix_difference, print_epoch, compute_loss_torch, \
+from snn.models import MLPPyTorch, MLPNerva
+from snn.numpy_utils import pp, to_numpy, to_one_hot_numpy
+from snn.training import compute_weight_difference, print_epoch, compute_loss_torch, \
     compute_accuracy_torch, compute_loss_nerva, compute_accuracy_nerva
 
 

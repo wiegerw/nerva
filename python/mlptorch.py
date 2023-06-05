@@ -12,10 +12,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from nerva.training import compute_sparse_layer_densities
-from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
-from testing.torch_models import make_torch_scheduler
-from testing.models import MLPPyTorch, MLPPyTorchTRelu
-from testing.training import train_torch, train_torch_preprocessed
+from snn.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
+from snn.torch_models import make_torch_scheduler
+from snn.models import MLPPyTorch, MLPPyTorchTRelu
+from snn.training import train_torch, train_torch_preprocessed
 
 
 def make_torch_model(args, linear_layer_sizes, densities):

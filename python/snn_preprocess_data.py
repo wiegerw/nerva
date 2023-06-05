@@ -10,9 +10,9 @@ import sys
 
 import numpy as np
 import torch
-from testing.datasets import create_cifar10_augmented_datasets, create_dataloaders, custom_load_cifar10_data, \
+from snn.datasets import create_cifar10_augmented_datasets, create_dataloaders, custom_load_cifar10_data, \
     create_cifar10_augmented_dataloaders, extract_tensors_from_dataloader, save_train_test_data_to_npz
-from testing.numpy_utils import pp
+from snn import pp
 
 
 def load_models(model: str, datadir: str):

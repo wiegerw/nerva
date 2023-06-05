@@ -17,7 +17,7 @@ do
         for density in 1.0 0.5 0.2 0.1 0.05 0.01 0.005 0.001
         do
             logfilename="$dirname/inference-batch-size-$batch_size-density-$density-seed-$seed.log"
-            python3 -u snn.py \
+            python3 -u snn_training.py \
                --inference \
                --custom-masking \
                --batch-size=$batch_size \

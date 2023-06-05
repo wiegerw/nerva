@@ -4,7 +4,7 @@ from unittest import TestCase
 
 import torch
 
-from testing.masking import create_mask
+from snn import create_mask
 
 
 class TestMasking(TestCase):

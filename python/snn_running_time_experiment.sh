@@ -23,7 +23,7 @@ function run
   logfile="snn/running-time/torch-density-$density-sizes-$sizes-seed-$seed.log"
 
   echo "Creating $logfile"
-  python3 snn.py --torch \
+  python3 snn_training.py --torch \
                  --seed=$seed \
                  --overall-density=$density \
                  --lr=$lr \

@@ -9,10 +9,10 @@ from typing import List, Optional
 import numpy as np
 
 from nerva.utilities import StopWatch, global_timer_suspend, global_timer_resume
-from testing.datasets import create_npz_dataloaders
-from testing.numpy_utils import to_numpy, to_one_hot_numpy, l1_norm
-from testing.models import MLPPyTorch, MLPNerva
-from testing.prune_grow import RegrowFunction
+from snn.datasets import create_npz_dataloaders
+from snn.numpy_utils import to_numpy, to_one_hot_numpy, l1_norm
+from snn.models import MLPPyTorch, MLPNerva
+from snn.prune_grow import RegrowFunction
 
 
 def compute_accuracy_torch(M: MLPPyTorch, data_loader):

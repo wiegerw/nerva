@@ -4,9 +4,9 @@ from unittest import TestCase
 
 import torch
 
-from testing.datasets import create_cifar10_dataloaders, extract_tensors_from_dataloader, save_train_test_data_to_npz, \
+from snn.datasets import create_cifar10_dataloaders, extract_tensors_from_dataloader, save_train_test_data_to_npz, \
     load_train_test_data_from_npz
-from testing.numpy_utils import pp
+from snn import pp
 
 
 class TestNPZ(TestCase):

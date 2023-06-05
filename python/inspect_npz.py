@@ -6,8 +6,8 @@
 
 import argparse
 import torch
-from testing.datasets import load_dict_from_npz
-from testing.numpy_utils import pp
+from snn.datasets import load_dict_from_npz
+from snn import pp
 
 
 def inspect_npz_file(filename: str):

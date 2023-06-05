@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import nerva.activation
-import nerva.dataset
+import nerva.datasets
 import nerva.layers
 import nerva.learning_rate
 import nerva.loss
@@ -21,13 +21,11 @@ import nerva.random
 import nerva.utilities
 import nerva.weights
 import nervalib
-from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
-from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
-from testing.torch_models import make_torch_scheduler
-from testing.models import MLPPyTorch, MLPNerva, MLPPyTorchTRelu
-from testing.training import train_nerva, train_torch, compute_accuracy_torch, compute_accuracy_nerva, \
-    compute_densities, train_torch_preprocessed, train_nerva_preprocessed, measure_inference_time_torch, \
-    measure_inference_time_nerva
+from snn.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
+from snn.torch_models import make_torch_scheduler
+from snn.models import MLPPyTorch, MLPNerva, MLPPyTorchTRelu
+from snn.train import compute_densities, train_torch_preprocessed, train_torch, train_nerva_preprocessed, \
+    train_nerva, measure_inference_time_torch, measure_inference_time_nerva
 
 
 def make_torch_model(args, layer_sizes, densities):
@@ -53,6 +51,25 @@ def make_nerva_model(args, layer_sizes, layer_densities):
     optimizers = [optimizer] * n_layers
     weight_initializers = [nerva.weights.XavierNormalized()] * n_layers
     return MLPNerva(layer_sizes, layer_densities, optimizers, weight_initializers, activations, loss, learning_rate, args.batch_size)
+
+
+def make_nerva_optimizer(momentum=0.0, nesterov=False) -> nerva.optimizers.Optimizer:
+    if nesterov:
+        return nerva.optimizers.Nesterov(momentum)
+    elif momentum > 0.0:
+        return nerva.optimizers.Momentum(momentum)
+    else:
+        return nerva.optimizers.GradientDescent()
+
+
+def make_nerva_scheduler(args):
+    if args.scheduler == 'constant':
+        return nerva.learning_rate.ConstantScheduler(args.lr)
+    elif args.scheduler == 'multistep':
+        milestones = [int(args.epochs / 2), int(args.epochs * 3 / 4)]
+        return nerva.learning_rate.MultiStepLRScheduler(args.lr, milestones, args.gamma)
+    else:
+        raise RuntimeError(f'Unknown scheduler {args.scheduler}')
 
 
 def make_argument_parser():

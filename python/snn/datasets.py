@@ -14,7 +14,7 @@ import torchvision
 from torch.nn import functional as F
 from torchvision import transforms, datasets
 
-from testing.numpy_utils import flatten_numpy, normalize_image_data, pp
+from snn.numpy_utils import flatten_numpy, normalize_image_data
 
 
 def create_cifar10_augmented_datasets(datadir='./data'):

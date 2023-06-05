@@ -42,7 +42,7 @@ function train_sparse()
   print_header "Creating $logfile"
 
   if [ $framework == 'torch' ]; then
-      python3 -u snn.py --torch \
+      python3 -u snn_training.py --torch \
                         --seed=$seed \
                         --overall-density=$density \
                         --lr=$lr --sizes="$sizes" \
@@ -56,7 +56,7 @@ function train_sparse()
                         --trim-relu=$trim_relu \
                         2>&1 | tee $logfile
   elif [ $framework == 'nerva' ]; then
-      python3 -u snn.py --nerva \
+      python3 -u snn_training.py --nerva \
                         --seed=$seed \
                         --overall-density=$density \
                         --lr=$lr --sizes="$sizes" \
@@ -110,7 +110,7 @@ function train_dense()
   print_header "Creating $logfile"
 
   if [ $framework == 'torch' ]; then
-      python3 -u snn.py --torch \
+      python3 -u snn_training.py --torch \
                         --seed=$seed \
                         --lr=$lr --sizes="$sizes" \
                         --batch-size=$batchsize \
@@ -123,7 +123,7 @@ function train_dense()
                         --trim-relu=$trim_relu \
                         2>&1 | tee $logfile
   elif [ $framework == 'nerva' ]; then
-      python3 -u snn.py --nerva \
+      python3 -u snn_training.py --nerva \
                         --seed=$seed \
                         --lr=$lr --sizes="$sizes" \
                         --batch-size=$batchsize \

@@ -17,12 +17,12 @@ import nerva.learning_rate
 import nerva.loss
 import nerva.optimizers
 import nerva.random
-from testing.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
-from testing.nerva_models import make_nerva_optimizer, make_nerva_scheduler
-from testing.torch_models import make_torch_scheduler
-from testing.models import MLPPyTorch, MLPNerva
-from testing.training import compute_densities
-from testing.compare import compare_pytorch_nerva, CompareOptions, copy_weights_and_bias
+from snn.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
+from snn import make_nerva_optimizer, make_nerva_scheduler
+from snn.torch_models import make_torch_scheduler
+from snn.models import MLPPyTorch, MLPNerva
+from snn.training import compute_densities
+from snn.compare import compare_pytorch_nerva, CompareOptions, copy_weights_and_bias
 
 
 def make_torch_model(args, sizes, densities):

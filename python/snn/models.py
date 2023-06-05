@@ -11,8 +11,8 @@ from torch.nn import functional as F
 import nerva.layers
 import nerva.optimizers
 import nerva.weights
-from testing.datasets import save_dict_to_npz, load_dict_from_npz
-from testing.masking import create_mask
+from snn.datasets import save_dict_to_npz, load_dict_from_npz
+from snn.masking import create_mask
 
 
 class MLPPyTorch(nn.Module):
