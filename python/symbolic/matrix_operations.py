@@ -127,35 +127,55 @@ def repeat_row(x: Matrix, n: int) -> Matrix:
     return Matrix(columns).T
 
 
-def max_column_values(x: Matrix) -> Matrix:
+def row_max_values(X: Matrix) -> Matrix:
+    """
+    Returns a row vector with the maximum values of each column in X.
+    """
+    m, n = X.shape
+    return Matrix([[sp.Max(*X.row(i)) for i in range(m)]]).T
+
+
+def column_max_values(x: Matrix) -> Matrix:
+    """
+    Returns a column vector with the maximum values of each row in X.
+    """
     m, n = x.shape
     return Matrix([[sp.Max(*x.col(j)) for j in range(n)]])
 
 
-def max_row_values(x: Matrix) -> Matrix:
-    m, n = x.shape
-    return Matrix([[sp.Max(*x.row(i)) for i in range(m)]]).T
-
-
-def rowwise_mean(X: Matrix) -> Matrix:
+def row_mean_values(X: Matrix) -> Matrix:
+    """
+    Returns a row vector with the mean values of each column in X.
+    """
     m, n = X.shape
     return sum_rows(X) / n
 
 
-def colwise_mean(X: Matrix) -> Matrix:
+def column_mean_values(X: Matrix) -> Matrix:
+    """
+    Returns a column vector with the mean values of each row in X.
+    """
     m, n = X.shape
     return sum_columns(X) / m
 
 
 def identity(n: int) -> Matrix:
+    """
+    Returns the nxn identity matrix.
+    """
     return sp.eye(n)
 
 
 def ones(m: int, n: int) -> Matrix:
+    """
+    Returns an mxn matrix with all elements equal to 1.
+    """
     return sp.ones(m, n)
 
 
 def sum_elements(X: Matrix):
+    """
+    Returns the sum of the elements of X.
+    """
     m, n = X.shape
-
     return sum(X[i, j] for i in range(m) for j in range(n))

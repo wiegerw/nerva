@@ -16,7 +16,7 @@ def softmax_colwise(X: Matrix) -> Matrix:
 
 def stable_softmax_colwise(X: Matrix) -> Matrix:
     D, N = X.shape
-    Y = X - repeat_row(max_column_values(X), D)
+    Y = X - repeat_row(column_max_values(X), D)
     E = exp(Y)
     return hadamard(E, repeat_row(inverse(sum_columns(E)), D))
 
@@ -38,7 +38,7 @@ def log_softmax_colwise(X: Matrix) -> Matrix:
 
 def stable_log_softmax_colwise(X: Matrix) -> Matrix:
     D, N = X.shape
-    Y = X - repeat_row(max_column_values(X), D)
+    Y = X - repeat_row(column_max_values(X), D)
     return Y - repeat_row(log(sum_columns(exp(Y))), D)
 
 
@@ -60,7 +60,7 @@ def softmax_rowwise(X: Matrix) -> Matrix:
 
 def stable_softmax_rowwise(X: Matrix) -> Matrix:
     N, D = X.shape
-    Y = X - repeat_column(max_row_values(X), D)
+    Y = X - repeat_column(row_max_values(X), D)
     E = exp(Y)
     return hadamard(E, repeat_column(inverse(sum_rows(E)), D))
 
@@ -82,7 +82,7 @@ def log_softmax_rowwise(X: Matrix) -> Matrix:
 
 def stable_log_softmax_rowwise(X: Matrix) -> Matrix:
     N, D = X.shape
-    Y = X - repeat_column(max_row_values(X), D)
+    Y = X - repeat_column(row_max_values(X), D)
     return Y - repeat_column(log(sum_rows(exp(Y))), D)
 
 

@@ -32,14 +32,20 @@ class TestSReLULayers(TestCase):
         Z = z
         Y = apply(act, Z)
 
+        # helper functions
+        Zij = sp.symbols('Zij')
+        f_Al = Lambda(Zij, Piecewise((Zij - tl, Zij <= tl), (0, True)))
+        f_Ar = Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (Zij - tr, True)))
+        f_Tl = Lambda(Zij, Piecewise((1 - al, Zij <= tl), (0, True)))
+        f_Tr = Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (1 - ar, True)))
+
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
         DZ = hadamard(DY, apply(act_prime, Z))
-        Zij = sp.symbols('Zij')
-        Al = apply(Lambda(Zij, Piecewise((Zij - tl, Zij <= tl), (0, True))), Z)
-        Ar = apply(Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (Zij - tr, True))), Z)
-        Tl = apply(Lambda(Zij, Piecewise((1 - al, Zij <= tl), (0, True))), Z)
-        Tr = apply(Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (1 - ar, True))), Z)
+        Al = apply(f_Al, Z)
+        Ar = apply(f_Ar, Z)
+        Tl = apply(f_Tl, Z)
+        Tr = apply(f_Tr, Z)
         Dal = sum_elements(hadamard(DY, Al))
         Dar = sum_elements(hadamard(DY, Ar))
         Dtl = sum_elements(hadamard(DY, Tl))

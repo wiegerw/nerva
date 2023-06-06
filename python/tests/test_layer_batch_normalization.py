@@ -26,15 +26,14 @@ class TestBatchNormalizationLayers(TestCase):
 
         # feedforward
         X = x
-        R = X - repeat_column(rowwise_mean(X), N)
+        R = X * (identity(N) - ones(N, N) / N)
         Sigma = diag(R * R.T) / N
         power_minus_half_Sigma = power_minus_half(Sigma)
         Y = hadamard(repeat_column(power_minus_half_Sigma, N), R)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DX = hadamard(repeat_column(power_minus_half_Sigma / N, N),
-                      hadamard(Y, repeat_column(-diag(DY * Y.T), N)) + DY * (N * identity(N) - ones(N, N)))
+        DX = hadamard(repeat_column(power_minus_half_Sigma / N, N), hadamard(Y, repeat_column(-diag(DY * Y.T), N)) + DY * (N * identity(N) - ones(N, N)))
 
         # test gradients
         DX1 = diff(loss(Y), x)
@@ -87,7 +86,7 @@ class TestBatchNormalizationLayers(TestCase):
 
         # feedforward
         X = x
-        R = X - repeat_column(rowwise_mean(X), N)
+        R = X * (identity(N) - ones(N, N) / N)
         Sigma = diag(R * R.T) / N
         power_minus_half_Sigma = power_minus_half(Sigma)
         Z = hadamard(repeat_column(power_minus_half_Sigma, N), R)
@@ -98,8 +97,7 @@ class TestBatchNormalizationLayers(TestCase):
         DZ = hadamard(repeat_column(gamma, N), DY)
         Dbeta = sum_rows(DY)
         Dgamma = sum_rows(hadamard(DY, Z))
-        DX = hadamard(repeat_column(power_minus_half_Sigma / N, N),
-                      hadamard(Z, repeat_column(-diag(DZ * Z.T), N)) + DZ * (N * identity(N) - ones(N, N)))
+        DX = hadamard(repeat_column(power_minus_half_Sigma / N, N), hadamard(Z, repeat_column(-diag(DZ * Z.T), N)) + DZ * (N * identity(N) - ones(N, N)))
 
         # test gradients
         DX1 = diff(loss(Y), x)
