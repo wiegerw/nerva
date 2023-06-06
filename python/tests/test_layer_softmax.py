@@ -94,7 +94,6 @@ class TestSoftmaxLayers(TestCase):
         DY = substitute(diff(loss(y), y), y, Y)
         DZ = DY - hadamard(softmax_colwise(Z), repeat_row(sum_columns(DY), K))
         DZ1 = diff(loss(Y), z)
-
         self.assertTrue(equal_matrices(DZ, DZ1))
 
     def test_softmax_layer_rowwise(self):
