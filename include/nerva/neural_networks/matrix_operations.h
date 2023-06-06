@@ -125,6 +125,18 @@ auto ones(long m, long n)
 }
 
 template <typename Matrix>
+auto sum_elements(const Matrix& X)
+{
+  return X.sum();
+}
+
+template <typename Matrix, typename Function>
+auto apply(Function f, const Matrix& X)
+{
+  return X.unaryExpr(f);
+}
+
+template <typename Matrix>
 auto power_minus_half(const Matrix& X)
 {
   using Scalar = typename Matrix::Scalar;

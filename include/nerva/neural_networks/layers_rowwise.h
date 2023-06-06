@@ -424,16 +424,16 @@ struct srelu_layer : public activation_layer<Matrix, srelu_activation>
     super::backpropagate(Y, DY);
 
     auto A_l = Z.unaryExpr([this](scalar x) { return std::min(x - act.tl, scalar(0)); });
-    Dal = hadamard(DY, A_l).sum();
+    Dal = sum_elements(hadamard(DY, A_l));
 
     auto A_r = Z.unaryExpr([this](scalar x) { return std::max(x - act.tr, scalar(0)); });
-    Dar = hadamard(DY, A_r).sum();
+    Dar = sum_elements(hadamard(DY, A_r));
 
     auto T_l = Z.unaryExpr([this](scalar x) { return x <= act.tl ? scalar(1) - act.al : scalar(0); });
-    Dtl = hadamard(DY, T_l).sum();
+    Dtl = sum_elements(hadamard(DY, T_l));
 
     auto T_r = Z.unaryExpr([this](scalar x) { return x >= act.tr ? scalar(1) - act.ar : scalar(0); });
-    Dtr = hadamard(DY, T_r).sum();
+    Dtr = sum_elements(hadamard(DY, T_r));
   }
 
   void optimize(scalar eta) override

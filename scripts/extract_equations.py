@@ -69,6 +69,10 @@ def to_cpp(header, feedforward, backpropagation) -> str:
         line = line.replace('.T', '.transpose()')
         line = line.replace('ones', 'ones<eigen::matrix>')
         line = line.replace('identity', 'identity<eigen::matrix>')
+        line = re.sub(r'\bsoftmax_colwise\(', 'stable_softmax_colwise()(', line)
+        line = re.sub(r'\blog_softmax_colwise\(', 'stable_log_softmax_colwise()(', line)
+        line = re.sub(r'\bsoftmax_rowwise\(', 'stable_softmax_rowwise()(', line)
+        line = re.sub(r'\blog_softmax_rowwise\(', 'stable_log_softmax_rowwise()(', line)
         m = re.match(r'R = (.*)$', line)
         if m:
             line = f'R = ({m.group(1)}).eval()'

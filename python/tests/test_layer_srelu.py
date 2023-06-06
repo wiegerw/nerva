@@ -114,10 +114,10 @@ class TestSReLULayers(TestCase):
 
         # helper functions
         Zij = sp.symbols('Zij')
-        f_Al = Lambda(Zij, Piecewise((Zij - tl, Zij <= tl), (0, True)))
-        f_Ar = Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (Zij - tr, True)))
-        f_Tl = Lambda(Zij, Piecewise((1 - al, Zij <= tl), (0, True)))
-        f_Tr = Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (1 - ar, True)))
+        Al = Lambda(Zij, Piecewise((Zij - tl, Zij <= tl), (0, True)))
+        Ar = Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (Zij - tr, True)))
+        Tl = Lambda(Zij, Piecewise((1 - al, Zij <= tl), (0, True)))
+        Tr = Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (1 - ar, True)))
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
@@ -125,14 +125,14 @@ class TestSReLULayers(TestCase):
         DW = DZ.T * X
         Db = sum_columns(DZ)
         DX = DZ * W
-        Al = apply(f_Al, Z)
-        Ar = apply(f_Ar, Z)
-        Tl = apply(f_Tl, Z)
-        Tr = apply(f_Tr, Z)
         Dal = sum_elements(hadamard(DY, Al))
         Dar = sum_elements(hadamard(DY, Ar))
         Dtl = sum_elements(hadamard(DY, Tl))
         Dtr = sum_elements(hadamard(DY, Tr))
+        Dal = sum_elements(apply(hadamard(DY, Al)))
+        Dar = sum_elements(apply(hadamard(DY, Ar)))
+        Dtl = sum_elements(apply(hadamard(DY, Tl)))
+        Dtr = sum_elements(apply(hadamard(DY, Tr)))
 
         # test gradients
         DZ1 = substitute(diff(loss(apply(act, z)), z), z, Z)

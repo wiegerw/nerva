@@ -76,7 +76,7 @@ struct batch_normalization_layer: public neural_network_layer
 
     auto N = X.cols();
     Dbeta = sum_rows(DY);
-    Dgamma = hadamard(DY, Z).rowwise().sum();
+    Dgamma = sum_rows(hadamard(DY, Z));
     DZ = hadamard(repeat_column(gamma, N), DY);
     DX = hadamard(repeat_column(power_minus_half_Sigma / N, N), hadamard(Z, repeat_column(-diag(DZ * Z.transpose()), N)) + DZ * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
   }

@@ -421,20 +421,21 @@ struct srelu_layer : public activation_layer<Matrix, srelu_activation>
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
+    using eigen::apply;
     using eigen::hadamard;
+    using eigen::sum_elements;
+
     super::backpropagate(Y, DY);
 
-    auto A_l = Z.unaryExpr([this](scalar x) { return std::min(x - act.tl, scalar(0)); });
-    Dal = hadamard(DY, A_l).sum();
+    auto Al = [this](scalar x) { return x <= act.tl ? x - act.tl : scalar(0); };
+    auto Ar = [this](scalar x) { return x <= act.tl || x < act.tr ? scalar(0) : x - act.tr; };
+    auto Tl = [this](scalar x) { return x <= act.tl ? scalar(1) - act.al : scalar(0); };
+    auto Tr = [this](scalar x) { return x >= act.tr ? scalar(1) - act.ar : scalar(0); };
 
-    auto A_r = Z.unaryExpr([this](scalar x) { return std::max(x - act.tr, scalar(0)); });
-    Dar = hadamard(DY, A_r).sum();
-
-    auto T_l = Z.unaryExpr([this](scalar x) { return x <= act.tl ? scalar(1) - act.al : scalar(0); });
-    Dtl = hadamard(DY, T_l).sum();
-
-    auto T_r = Z.unaryExpr([this](scalar x) { return x >= act.tr ? scalar(1) - act.ar : scalar(0); });
-    Dtr = hadamard(DY, T_r).sum();
+    Dal = sum_elements(hadamard(DY, apply(Al, Z)));
+    Dar = sum_elements(hadamard(DY, apply(Ar, Z)));
+    Dtl = sum_elements(hadamard(DY, apply(Tl, Z)));
+    Dtr = sum_elements(hadamard(DY, apply(Tr, Z)));
   }
 
   void optimize(scalar eta) override
