@@ -7,6 +7,73 @@
 from unittest import TestCase
 from symbolic.softmax import *
 
+#-------------------------------------#
+# alternative implementations of softmax functions
+#-------------------------------------#
+
+def softmax_colwise1(X: Matrix) -> Matrix:
+    D, N = X.shape
+
+    def softmax(x):
+        e = exp(x)
+        return e / sum(e)
+
+    return Matrix([softmax(X.col(j)).T for j in range(N)]).T
+
+
+def softmax_colwise_derivative1(x: Matrix) -> Matrix:
+    return jacobian(softmax_colwise1(x), x)
+
+
+def log_softmax_colwise1(X: Matrix) -> Matrix:
+    return log(softmax_colwise(X))
+
+
+def log_softmax_colwise_derivative1(x: Matrix) -> Matrix:
+    return jacobian(log_softmax_colwise(x), x)
+
+
+def softmax_rowwise1(X: Matrix) -> Matrix:
+    N, D = X.shape
+
+    def softmax(x):
+        e = exp(x)
+        return e / sum(e)
+
+    return join_rows([softmax(X.row(i)) for i in range(N)])
+
+
+def softmax_rowwise2(X: Matrix) -> Matrix:
+    return softmax_colwise(X.T).T
+
+
+def softmax_rowwise_derivative1(x: Matrix) -> Matrix:
+    assert is_row_vector(x)
+    return jacobian(softmax_rowwise(x), x)
+
+
+def softmax_rowwise_derivative2(x: Matrix) -> Matrix:
+    assert is_row_vector(x)
+    return softmax_colwise_derivative(x.T).T
+
+
+def log_softmax_rowwise1(X: Matrix) -> Matrix:
+    return log(softmax_rowwise(X))
+
+
+def log_softmax_rowwise2(X: Matrix) -> Matrix:
+    return log_softmax_colwise(X.T).T
+
+
+def log_softmax_rowwise_derivative1(x: Matrix) -> Matrix:
+    assert is_row_vector(x)
+    return jacobian(log_softmax_rowwise(x), x)
+
+
+def log_softmax_rowwise_derivative2(x: Matrix) -> Matrix:
+    assert is_row_vector(x)
+    return log_softmax_colwise_derivative(x.T)
+
 
 class TestSoftmax(TestCase):
     def test_softmax_colwise(self):

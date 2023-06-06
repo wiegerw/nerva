@@ -127,6 +127,16 @@ def repeat_row(x: Matrix, n: int) -> Matrix:
     return Matrix(columns).T
 
 
+def max_column_values(x: Matrix) -> Matrix:
+    m, n = x.shape
+    return Matrix([[sp.Max(*x.col(j)) for j in range(n)]])
+
+
+def max_row_values(x: Matrix) -> Matrix:
+    m, n = x.shape
+    return Matrix([[sp.Max(*x.row(i)) for i in range(m)]]).T
+
+
 def rowwise_mean(X: Matrix) -> Matrix:
     m, n = X.shape
     return sum_rows(X) / n
