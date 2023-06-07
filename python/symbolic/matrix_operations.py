@@ -2,7 +2,7 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from typing import List, Optional
+from typing import List
 
 import sympy as sp
 from sympy import Matrix
@@ -28,15 +28,15 @@ def identity(n: int) -> Matrix:
     return sp.eye(n)
 
 
-def product(x: Matrix, y: Matrix) -> Matrix:
-    return x * y
+def product(X: Matrix, Y: Matrix) -> Matrix:
+    return X * Y
 
 
-def hadamard(x: Matrix, y: Matrix) -> Matrix:
-    assert x.shape == y.shape
-    m, n = x.shape
-    return Matrix([[x[i, j] * y[i, j] for j in range(n)] for i in range(m)])
-    # return matrix_multiply_elementwise(x, y)  ==> this may cause errors:
+def hadamard(X: Matrix, Y: Matrix) -> Matrix:
+    assert X.shape == Y.shape
+    m, n = X.shape
+    return Matrix([[X[i, j] * Y[i, j] for j in range(n)] for i in range(m)])
+    # return matrix_multiply_elementwise(X, Y)  ==> this may cause errors:
     #     def mul_elementwise(A, B):
     # >       assert A.domain == B.domain
     # E       AssertionError
@@ -87,12 +87,12 @@ def rows_sum(X: Matrix) -> Matrix:
     return Matrix(rows)
 
 
-def columns_max(x: Matrix) -> Matrix:
+def columns_max(X: Matrix) -> Matrix:
     """
     Returns a column vector with the maximum values of each row in X.
     """
-    m, n = x.shape
-    return Matrix([[sp.Max(*x.col(j)) for j in range(n)]])
+    m, n = X.shape
+    return Matrix([[sp.Max(*X.col(j)) for j in range(n)]])
 
 
 def rows_max(X: Matrix) -> Matrix:
@@ -119,28 +119,32 @@ def rows_mean(X: Matrix) -> Matrix:
     return rows_sum(X) / n
 
 
-def apply(f, x: Matrix) -> Matrix:
-    return x.applyfunc(f)
+def apply(f, X: Matrix) -> Matrix:
+    return X.applyfunc(f)
 
 
-def exp(x: Matrix) -> Matrix:
-    return x.applyfunc(lambda x: sp.exp(x))
+def exp(X: Matrix) -> Matrix:
+    return X.applyfunc(sp.exp)
 
 
-def log(x: Matrix) -> Matrix:
-    return x.applyfunc(lambda x: sp.log(x))
+def log(X: Matrix) -> Matrix:
+    return X.applyfunc(sp.log)
 
 
-def inverse(x: Matrix) -> Matrix:
-    return x.applyfunc(lambda x: 1 / x)
+def inverse(X: Matrix) -> Matrix:
+    return X.applyfunc(lambda x: 1 / x)
 
 
-def sqrt(x: Matrix) -> Matrix:
-    return x.applyfunc(lambda x: sp.sqrt(x))
+def square(X: Matrix) -> Matrix:
+    return X.applyfunc(lambda x: x * x)
 
 
-def power_minus_half(x: Matrix) -> Matrix:
-    return inverse(sqrt(x))
+def sqrt(X: Matrix) -> Matrix:
+    return X.applyfunc(sp.sqrt)
+
+
+def power_minus_half(X: Matrix) -> Matrix:
+    return inverse(sqrt(X))
 
 
 ###########################################################################################
