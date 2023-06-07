@@ -34,7 +34,7 @@ def hadamard(X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
 
 
 def diag(X: tf.Tensor) -> tf.Tensor:
-    return tf.linalg.diag_part(X)
+    return tf.expand_dims(tf.linalg.diag_part(X), axis=1)
 
 
 def Diag(x: tf.Tensor) -> tf.Tensor:

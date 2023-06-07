@@ -34,7 +34,7 @@ def hadamard(X: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
 
 
 def diag(X: torch.Tensor) -> torch.Tensor:
-    return torch.diag(X)
+    return torch.unsqueeze(torch.diag(X), dim=1)
 
 
 def Diag(x: torch.Tensor) -> torch.Tensor:

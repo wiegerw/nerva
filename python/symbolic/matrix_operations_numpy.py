@@ -8,14 +8,14 @@ def zeros(m: int, n: int = 1) -> np.ndarray:
     """
     Returns an mxn matrix with all elements equal to 0.
     """
-    return np.zeros(m, n)
+    return np.zeros((m, n))
 
 
 def ones(m: int, n: int = 1) -> np.ndarray:
     """
     Returns an mxn matrix with all elements equal to 1.
     """
-    return np.ones(m, n)
+    return np.ones((m, n))
 
 
 def identity(n: int) -> np.ndarray:
@@ -34,7 +34,7 @@ def hadamard(X: np.ndarray, Y: np.ndarray) -> np.ndarray:
 
 
 def diag(X: np.ndarray) -> np.ndarray:
-    return np.diag(X)
+    return np.expand_dims(np.diag(X), axis=1)
 
 
 def Diag(x: np.ndarray) -> np.ndarray:
