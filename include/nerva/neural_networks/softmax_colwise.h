@@ -30,15 +30,15 @@ struct softmax
 
   eigen::matrix operator()(const eigen::matrix& X) const
   {
-    using eigen::repeat_row;
-    using eigen::sum_columns;
+    using eigen::row_repeat;
+    using eigen::columns_sum;
     using eigen::exp;
     using eigen::hadamard;
     using eigen::inverse;
 
     auto m = X.rows();
     auto E = exp(X);
-    return hadamard(E, repeat_row(inverse(sum_columns(E)), m));
+    return hadamard(E, row_repeat(inverse(columns_sum(E)), m));
   }
 };
 
@@ -56,8 +56,8 @@ struct stable_softmax
 
   eigen::matrix operator()(const eigen::matrix& X) const
   {
-    using eigen::sum_columns;
-    using eigen::repeat_row;
+    using eigen::columns_sum;
+    using eigen::row_repeat;
     using eigen::exp;
     using eigen::hadamard;
 
@@ -65,7 +65,7 @@ struct stable_softmax
     auto x_minus_c = X.rowwise() - c;
     auto E = exp(x_minus_c.array());
     auto m = X.rows();
-    return hadamard(E, repeat_row(inverse(sum_columns(E)), m));
+    return hadamard(E, row_repeat(inverse(columns_sum(E)), m));
   }
 };
 
@@ -74,26 +74,26 @@ struct log_softmax
 {
   [[nodiscard]] eigen::vector value(const eigen::vector& x) const
   {
-    using eigen::repeat_row;
-    using eigen::sum_columns;
+    using eigen::row_repeat;
+    using eigen::columns_sum;
     using eigen::exp;
     using eigen::log;
 
     auto N = x.size();
-    auto e = log(sum_columns(exp(x)));
-    return x.array() - repeat_row(e, N);
+    auto e = log(columns_sum(exp(x)));
+    return x.array() - row_repeat(e, N);
   }
 
   eigen::matrix operator()(const eigen::matrix& X) const
   {
-    using eigen::repeat_row;
-    using eigen::sum_columns;
+    using eigen::row_repeat;
+    using eigen::columns_sum;
     using eigen::exp;
     using eigen::log;
 
     auto N = X.cols();
-    auto E = sum_columns(log(exp(X)));
-    return X.array() - repeat_row(E, N);
+    auto E = columns_sum(log(exp(X)));
+    return X.array() - row_repeat(E, N);
   }
 };
 
@@ -110,14 +110,14 @@ struct stable_log_softmax
 
   eigen::matrix operator()(const eigen::matrix& X) const
   {
-    using eigen::sum_columns;
+    using eigen::columns_sum;
     using eigen::exp;
     using eigen::log;
 
     auto c = X.colwise().maxCoeff().eval();
     auto x_minus_c = X.rowwise() - c;
     auto E = exp(x_minus_c);
-    return x_minus_c.array().rowwise() - log(sum_columns(E));
+    return x_minus_c.array().rowwise() - log(columns_sum(E));
   }
 };
 

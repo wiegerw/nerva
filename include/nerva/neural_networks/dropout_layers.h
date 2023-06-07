@@ -60,17 +60,17 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
 
   void feedforward(eigen::matrix& result) override
   {
-    using eigen::repeat_column;
+    using eigen::column_repeat;
     using eigen::hadamard;
 
     auto N = X.cols();
-    result = hadamard(W, R) * X + repeat_column(b, N);
+    result = hadamard(W, R) * X + column_repeat(b, N);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
     using eigen::hadamard;
-    using eigen::sum_rows;
+    using eigen::rows_sum;
 
     if constexpr (std::is_same<Matrix, eigen::matrix>::value)
     {
@@ -80,7 +80,7 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
     {
       // TODO
     }
-    Db = sum_rows(DY);
+    Db = rows_sum(DY);
     DX = hadamard(W, R).transpose() * DY;
   }
 };
@@ -114,18 +114,18 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
 
   void feedforward(eigen::matrix& result) override
   {
-    using eigen::repeat_column;
+    using eigen::column_repeat;
     using eigen::hadamard;
 
     auto N = X.cols();
-    Z = hadamard(W, R) * X + repeat_column(b, N);
+    Z = hadamard(W, R) * X + column_repeat(b, N);
     result = sigmoid()(Z);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
     using eigen::hadamard;
-    using eigen::sum_rows;
+    using eigen::rows_sum;
 
     DZ = hadamard(DY, eigen::x_times_one_minus_x(Y));
     if constexpr (std::is_same<Matrix, eigen::matrix>::value)
@@ -136,7 +136,7 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
     {
       // TODO
     }
-    Db = sum_rows(DZ);
+    Db = rows_sum(DZ);
     DX = hadamard(W, R).transpose() * DZ;
   }
 };
@@ -171,18 +171,18 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
 
   void feedforward(eigen::matrix& result) override
   {
-    using eigen::repeat_column;
+    using eigen::column_repeat;
     using eigen::hadamard;
 
     auto N = X.cols();
-    Z = hadamard(W, R) * X + repeat_column(b, N);
+    Z = hadamard(W, R) * X + column_repeat(b, N);
     result = act(Z);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
     using eigen::hadamard;
-    using eigen::sum_rows;
+    using eigen::rows_sum;
 
     DZ = hadamard(DY, act.prime(Z));
     if constexpr (std::is_same<Matrix, eigen::matrix>::value)
@@ -193,7 +193,7 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
     {
       // TODO
     }
-    Db = sum_rows(DZ);
+    Db = rows_sum(DZ);
     DX = hadamard(W, R).transpose() * DZ;
   }
 };

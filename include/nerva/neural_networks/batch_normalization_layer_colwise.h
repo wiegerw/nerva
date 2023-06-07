@@ -53,32 +53,32 @@ struct batch_normalization_layer: public neural_network_layer
     using eigen::diag;
     using eigen::hadamard;
     using eigen::power_minus_half;
-    using eigen::repeat_column;
-    using eigen::rowwise_mean;
+    using eigen::column_repeat;
+    using eigen::rows_mean;
 
     auto N = X.cols();
-    auto R = (X - repeat_column(rowwise_mean(X), N)).eval();
+    auto R = (X - column_repeat(rows_mean(X), N)).eval();
     auto Sigma = diag(R * R.transpose()) / N;
     power_minus_half_Sigma = power_minus_half(Sigma);
-    Z = hadamard(repeat_column(power_minus_half_Sigma, N), R);
-    result = hadamard(repeat_column(gamma, N), Z) + repeat_column(beta, N);
+    Z = hadamard(column_repeat(power_minus_half_Sigma, N), R);
+    result = hadamard(column_repeat(gamma, N), Z) + column_repeat(beta, N);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
     using eigen::diag;
     using eigen::hadamard;
-    using eigen::repeat_column;
-    using eigen::sum_rows;
+    using eigen::column_repeat;
+    using eigen::rows_sum;
     using eigen::identity;
     using eigen::ones;
     using eigen::power_minus_half;
 
     auto N = X.cols();
-    Dbeta = sum_rows(DY);
-    Dgamma = sum_rows(hadamard(DY, Z));
-    DZ = hadamard(repeat_column(gamma, N), DY);
-    DX = hadamard(repeat_column(power_minus_half_Sigma / N, N), hadamard(Z, repeat_column(-diag(DZ * Z.transpose()), N)) + DZ * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
+    Dbeta = rows_sum(DY);
+    Dgamma = rows_sum(hadamard(DY, Z));
+    DZ = hadamard(column_repeat(gamma, N), DY);
+    DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Z, column_repeat(-diag(DZ * Z.transpose()), N)) + DZ * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
   }
 };
 
@@ -110,14 +110,14 @@ struct simple_batch_normalization_layer: public neural_network_layer
     using eigen::diag;
     using eigen::hadamard;
     using eigen::power_minus_half;
-    using eigen::repeat_column;
-    using eigen::rowwise_mean;
+    using eigen::column_repeat;
+    using eigen::rows_mean;
 
     auto N = X.cols();
-    auto R = (X - repeat_column(rowwise_mean(X), N)).eval();
+    auto R = (X - column_repeat(rows_mean(X), N)).eval();
     auto Sigma = diag(R * R.transpose()) / N;
     power_minus_half_Sigma = power_minus_half(Sigma);
-    result = hadamard(repeat_column(power_minus_half_Sigma, N), R);
+    result = hadamard(column_repeat(power_minus_half_Sigma, N), R);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
@@ -127,10 +127,10 @@ struct simple_batch_normalization_layer: public neural_network_layer
     using eigen::identity;
     using eigen::ones;
     using eigen::power_minus_half;
-    using eigen::repeat_column;
+    using eigen::column_repeat;
 
     auto N = X.cols();
-    DX = hadamard(repeat_column(power_minus_half_Sigma / N, N), hadamard(Y, repeat_column(-diag(DY * Y.transpose()), N)) + DY * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
+    DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Y, column_repeat(-diag(DY * Y.transpose()), N)) + DY * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
   }
 };
 
@@ -169,22 +169,22 @@ struct affine_layer: public neural_network_layer
   void feedforward(eigen::matrix& result) override
   {
     using eigen::hadamard;
-    using eigen::repeat_column;
+    using eigen::column_repeat;
 
     auto N = X.cols();
-    result = hadamard(repeat_column(gamma, N), X) + repeat_column(beta, N);
+    result = hadamard(column_repeat(gamma, N), X) + column_repeat(beta, N);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
     using eigen::hadamard;
-    using eigen::repeat_column;
-    using eigen::sum_rows;
+    using eigen::column_repeat;
+    using eigen::rows_sum;
 
     auto N = X.cols();
-    DX = hadamard(repeat_column(gamma, N), DY);
-    Dbeta = sum_rows(DY);
-    Dgamma = sum_rows(hadamard(X, DY));
+    DX = hadamard(column_repeat(gamma, N), DY);
+    Dbeta = rows_sum(DY);
+    Dgamma = rows_sum(hadamard(X, DY));
   }
 };
 

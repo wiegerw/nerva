@@ -20,7 +20,7 @@ TEST_CASE("test_repeat_row")
     {1, 2, 3}
   };
 
-  eigen::matrix B = eigen::repeat_row(A, 2);
+  eigen::matrix B = eigen::row_repeat(A, 2);
 
   eigen::matrix C {
     {1, 2, 3},

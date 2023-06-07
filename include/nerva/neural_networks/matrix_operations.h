@@ -30,28 +30,36 @@ bool is_square(const Matrix& X)
   return X.rows() == X.cols();
 }
 
-template <class Matrix>
-auto exp(const Matrix& X)
+//////////////////////////////////////////////////////////////////////////////
+
+template <typename Matrix>
+auto zeros(long m, long n = 1)
 {
-  return X.array().exp();
+  return Matrix::Zeros(m, n);
 }
 
-template <class Matrix>
-auto log(const Matrix& X)
+template <typename Matrix>
+auto ones(long m, long n = 1)
 {
-  return X.array().log();
+  return Matrix::Ones(m, n);
 }
 
-template <class Matrix>
-auto sqrt(const Matrix& X)
+template <typename Matrix>
+auto identity(long n)
 {
-  return X.array().sqrt();
+  return Matrix::Identity(n, n);
 }
 
-template <class Matrix>
-auto inverse(const Matrix& X)
+template <class Matrix1, class Matrix2>
+auto product(const Matrix1& X, const Matrix2& Y)
 {
-  return X.array().inverse();
+  return X * Y;
+}
+
+template <class Matrix1, class Matrix2>
+auto hadamard(const Matrix1& X, const Matrix2& Y)
+{
+  return X.cwiseProduct(Y);
 }
 
 template <class Matrix>
@@ -68,72 +76,100 @@ auto Diag(const Matrix& x)
   return x.asDiagonal();
 }
 
-template <class Matrix1, class Matrix2>
-auto hadamard(const Matrix1& X, const Matrix2& Y)
+template <typename Matrix>
+auto elements_sum(const Matrix& X)
 {
-  return X.cwiseProduct(Y);
+  return X.sum();
 }
 
 template <typename Matrix>
-auto sum_columns(const Matrix& X)
-{
-  return X.colwise().sum();
-}
-
-template <typename Matrix>
-auto sum_rows(const Matrix& X)
-{
-  return X.rowwise().sum();
-}
-
-template <typename Matrix>
-auto repeat_row(const Matrix& x, long m)
-{
-  assert(is_row_vector(x));
-  return x.colwise().replicate(m);
-}
-
-template <typename Matrix>
-auto repeat_column(const Matrix& x, long n)
+auto column_repeat(const Matrix& x, long n)
 {
   assert(is_column_vector(x));
   return x.rowwise().replicate(n);
 }
 
 template <typename Matrix>
-auto rowwise_mean(const Matrix& x)
+auto row_repeat(const Matrix& x, long m)
 {
-  return x.rowwise().mean();
+  assert(is_row_vector(x));
+  return x.colwise().replicate(m);
 }
 
 template <typename Matrix>
-auto colwise_mean(const Matrix& x)
+auto columns_sum(const Matrix& X)
+{
+  return X.colwise().sum();
+}
+
+template <typename Matrix>
+auto rows_sum(const Matrix& X)
+{
+  return X.rowwise().sum();
+}
+
+// Returns a column vector with the maximum values of each row in X.
+template <typename Matrix>
+auto columns_max(const Matrix& x)
+{
+  return x.colwise().max();
+}
+
+// Returns a row vector with the maximum values of each column in X.
+template <typename Matrix>
+auto rows_max(const Matrix& x)
+{
+  return x.rowwise().max();
+}
+
+// Returns a row vector with the mean values of each column in X.
+template <typename Matrix>
+auto columns_mean(const Matrix& x)
 {
   return x.colwise().mean();
 }
 
+// Returns a column vector with the mean values of each row in X.
 template <typename Matrix>
-auto identity(long n)
+auto rows_mean(const Matrix& x)
 {
-  return Matrix::Identity(n, n);
-}
-
-template <typename Matrix>
-auto ones(long m, long n)
-{
-  return Matrix::Constant(m, n, 1);
-}
-
-template <typename Matrix>
-auto sum_elements(const Matrix& X)
-{
-  return X.sum();
+  return x.rowwise().mean();
 }
 
 template <typename Matrix, typename Function>
 auto apply(Function f, const Matrix& X)
 {
   return X.unaryExpr(f);
+}
+
+template <class Matrix>
+auto exp(const Matrix& X)
+{
+  return X.array().exp();
+}
+
+template <class Matrix>
+auto log(const Matrix& X)
+{
+  return X.array().log();
+}
+
+template <class Matrix>
+auto inverse(const Matrix& X)
+{
+  return X.array().inverse();
+}
+
+template <class Matrix>
+auto square(const Matrix& X)
+{
+  return X.array().square();
+}
+
+template <class Matrix>
+auto sqrt(const Matrix& X)
+{
+  return X.array().sqrt();
 }
 
 template <typename Matrix>

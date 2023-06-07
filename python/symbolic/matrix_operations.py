@@ -21,6 +21,13 @@ def ones(m: int, n: int = 1) -> Matrix:
     return sp.ones(m, n)
 
 
+def identity(n: int) -> Matrix:
+    """
+    Returns the nxn identity matrix.
+    """
+    return sp.eye(n)
+
+
 def product(x: Matrix, y: Matrix) -> Matrix:
     return x * y
 
@@ -33,13 +40,6 @@ def hadamard(x: Matrix, y: Matrix) -> Matrix:
     #     def mul_elementwise(A, B):
     # >       assert A.domain == B.domain
     # E       AssertionError
-
-
-def identity(n: int) -> Matrix:
-    """
-    Returns the nxn identity matrix.
-    """
-    return sp.eye(n)
 
 
 def diag(X: Matrix) -> Matrix:
