@@ -28,12 +28,12 @@ class TestLinearLayers(TestCase):
         # feedforward
         X = x
         W = w
-        Y = W * X + repeat_column(b, N)
+        Y = W * X + column_repeat(b, N)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
         DW = DY * X.T
-        Db = sum_rows(DY)
+        Db = rows_sum(DY)
         DX = W.T * DY
 
         # test gradients
@@ -63,14 +63,14 @@ class TestLinearLayers(TestCase):
         # feedforward
         X = x
         W = w
-        Z = W * X + repeat_column(b, N)
+        Z = W * X + column_repeat(b, N)
         Y = apply(act, Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
         DZ = hadamard(DY, apply(act_prime, Z))
         DW = DZ * X.T
-        Db = sum_rows(DZ)
+        Db = rows_sum(DZ)
         DX = W.T * DZ
 
         # test gradients
@@ -101,14 +101,14 @@ class TestLinearLayers(TestCase):
         # feedforward
         X = x
         W = w
-        Z = W * X + repeat_column(b, N)
+        Z = W * X + column_repeat(b, N)
         Y = apply(sigma, Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
         DZ = hadamard(DY, hadamard(Y, ones(K, N) - Y))
         DW = DZ * X.T
-        Db = sum_rows(DZ)
+        Db = rows_sum(DZ)
         DX = W.T * DZ
 
         # test gradients
@@ -138,12 +138,12 @@ class TestLinearLayers(TestCase):
         # feedforward
         X = x
         W = w
-        Y = X * W.T + repeat_row(b, N)
+        Y = X * W.T + row_repeat(b, N)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
         DW = DY.T * X
-        Db = sum_columns(DY)
+        Db = columns_sum(DY)
         DX = DY * W
 
         # test gradients
@@ -173,14 +173,14 @@ class TestLinearLayers(TestCase):
         # feedforward
         X = x
         W = w
-        Z = X * W.T + repeat_row(b, N)
+        Z = X * W.T + row_repeat(b, N)
         Y = apply(act, Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
         DZ = hadamard(DY, apply(act_prime, Z))
         DW = DZ.T * X
-        Db = sum_columns(DZ)
+        Db = columns_sum(DZ)
         DX = DZ * W
 
         # test gradients
@@ -211,14 +211,14 @@ class TestLinearLayers(TestCase):
         # feedforward
         X = x
         W = w
-        Z = X * W.T + repeat_row(b, N)
+        Z = X * W.T + row_repeat(b, N)
         Y = apply(sigma, Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
         DZ = hadamard(DY, hadamard(Y, ones(N, K) - Y))
         DW = DZ.T * X
-        Db = sum_columns(DZ)
+        Db = columns_sum(DZ)
         DX = DZ * W
 
         # test gradients

@@ -16,7 +16,7 @@ class TestLemmas(TestCase):
         X = Matrix(sp.symarray('x', (m, n), real=True))
         Y = Matrix(sp.symarray('y', (m, n), real=True))
         Z1 = join_columns([X.col(j) * X.col(j).T * Y.col(j) for j in range(n)])
-        Z2 = hadamard(X, repeat_row(diag(X.T * Y).T, m))
+        Z2 = hadamard(X, row_repeat(diag(X.T * Y).T, m))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
     def test_lemma_colwise2(self):
@@ -25,8 +25,8 @@ class TestLemmas(TestCase):
 
         X = Matrix(sp.symarray('x', (m, n), real=True))
         Y = Matrix(sp.symarray('y', (m, n), real=True))
-        Z1 = join_columns([repeat_row(X.col(j).T, m) * Y.col(j) for j in range(n)])
-        Z2 = repeat_row(diag(X.T * Y).T, m)
+        Z1 = join_columns([row_repeat(X.col(j).T, m) * Y.col(j) for j in range(n)])
+        Z2 = row_repeat(diag(X.T * Y).T, m)
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
     def test_lemma_colwise3(self):
@@ -35,8 +35,8 @@ class TestLemmas(TestCase):
 
         X = Matrix(sp.symarray('x', (m, n), real=True))
         Y = Matrix(sp.symarray('y', (m, n), real=True))
-        Z1 = join_columns([repeat_column(X.col(j), m) * Y.col(j) for j in range(n)])
-        Z2 = hadamard(X, repeat_row(sum_columns(Y), m))
+        Z1 = join_columns([column_repeat(X.col(j), m) * Y.col(j) for j in range(n)])
+        Z2 = hadamard(X, row_repeat(columns_sum(Y), m))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
     def test_lemma_rowwise1(self):
@@ -46,7 +46,7 @@ class TestLemmas(TestCase):
         X = Matrix(sp.symarray('x', (m, n), real=True))
         Y = Matrix(sp.symarray('y', (m, n), real=True))
         Z1 = join_rows([X.row(i) * Y.row(i).T * Y.row(i) for i in range(m)])
-        Z2 = hadamard(Y, repeat_column(diag(X * Y.T), n))
+        Z2 = hadamard(Y, column_repeat(diag(X * Y.T), n))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
     def test_lemma_rowwise2(self):
@@ -55,8 +55,8 @@ class TestLemmas(TestCase):
 
         X = Matrix(sp.symarray('x', (m, n), real=True))
         Y = Matrix(sp.symarray('y', (m, n), real=True))
-        Z1 = join_rows([X.row(i) * repeat_column(Y.row(i).T, n) for i in range(m)])
-        Z2 = repeat_column(diag(X * Y.T), n)
+        Z1 = join_rows([X.row(i) * column_repeat(Y.row(i).T, n) for i in range(m)])
+        Z2 = column_repeat(diag(X * Y.T), n)
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
     def test_lemma_rowwise3(self):
@@ -65,8 +65,8 @@ class TestLemmas(TestCase):
 
         X = Matrix(sp.symarray('x', (m, n), real=True))
         Y = Matrix(sp.symarray('y', (m, n), real=True))
-        Z1 = join_rows([X.row(i) * repeat_row(Y.row(i), n) for i in range(m)])
-        Z2 = hadamard(Y, repeat_column(sum_rows(X), n))
+        Z1 = join_rows([X.row(i) * row_repeat(Y.row(i), n) for i in range(m)])
+        Z2 = hadamard(Y, column_repeat(rows_sum(X), n))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
 

@@ -18,7 +18,7 @@ class TestBatchNormalizationLayers(TestCase):
         D = 3
         N = 2
         K = D                # K and D are always equal in batch normalization
-        loss = sum_elements  # squared_error seems too complicated
+        loss = elements_sum  # squared_error seems too complicated
 
         # variables
         x = matrix('x', D, N)
@@ -26,14 +26,14 @@ class TestBatchNormalizationLayers(TestCase):
 
         # feedforward
         X = x
-        R = X * (identity(N) - ones(N, N) / N)
+        R = X - column_repeat(rows_mean(X), N)
         Sigma = diag(R * R.T) / N
         power_minus_half_Sigma = power_minus_half(Sigma)
-        Y = hadamard(repeat_column(power_minus_half_Sigma, N), R)
+        Y = hadamard(column_repeat(power_minus_half_Sigma, N), R)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DX = hadamard(repeat_column(power_minus_half_Sigma / N, N), hadamard(Y, repeat_column(-diag(DY * Y.T), N)) + DY * (N * identity(N) - ones(N, N)))
+        DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Y, column_repeat(-diag(DY * Y.T), N)) + DY * (N * identity(N) - ones(N, N)))
 
         # test gradients
         DX1 = diff(loss(Y), x)
@@ -54,13 +54,13 @@ class TestBatchNormalizationLayers(TestCase):
 
         # feedforward
         X = x
-        Y = hadamard(repeat_column(gamma, N), X) + repeat_column(beta, N)
+        Y = hadamard(column_repeat(gamma, N), X) + column_repeat(beta, N)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DX = hadamard(repeat_column(gamma, N), DY)
-        Dbeta = sum_rows(DY)
-        Dgamma = sum_rows(hadamard(X, DY))
+        DX = hadamard(column_repeat(gamma, N), DY)
+        Dbeta = rows_sum(DY)
+        Dgamma = rows_sum(hadamard(X, DY))
 
         # test gradients
         DX1 = diff(loss(Y), x)
@@ -75,7 +75,7 @@ class TestBatchNormalizationLayers(TestCase):
         D = 3
         N = 2
         K = D                # K and D are always equal in batch normalization
-        loss = sum_elements  # squared_error seems too complicated
+        loss = elements_sum  # squared_error seems too complicated
 
         # variables
         x = matrix('x', D, N)
@@ -86,24 +86,24 @@ class TestBatchNormalizationLayers(TestCase):
 
         # feedforward
         X = x
-        R = X * (identity(N) - ones(N, N) / N)
+        R = X - column_repeat(rows_mean(X), N)
         Sigma = diag(R * R.T) / N
         power_minus_half_Sigma = power_minus_half(Sigma)
-        Z = hadamard(repeat_column(power_minus_half_Sigma, N), R)
-        Y = hadamard(repeat_column(gamma, N), Z) + repeat_column(beta, N)
+        Z = hadamard(column_repeat(power_minus_half_Sigma, N), R)
+        Y = hadamard(column_repeat(gamma, N), Z) + column_repeat(beta, N)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DZ = hadamard(repeat_column(gamma, N), DY)
-        Dbeta = sum_rows(DY)
-        Dgamma = sum_rows(hadamard(DY, Z))
-        DX = hadamard(repeat_column(power_minus_half_Sigma / N, N), hadamard(Z, repeat_column(-diag(DZ * Z.T), N)) + DZ * (N * identity(N) - ones(N, N)))
+        DZ = hadamard(column_repeat(gamma, N), DY)
+        Dbeta = rows_sum(DY)
+        Dgamma = rows_sum(hadamard(DY, Z))
+        DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Z, column_repeat(-diag(DZ * Z.T), N)) + DZ * (N * identity(N) - ones(N, N)))
 
         # test gradients
         DX1 = diff(loss(Y), x)
         Dbeta1 = diff(loss(Y), beta)
         Dgamma1 = diff(loss(Y), gamma)
-        Y_z = hadamard(repeat_column(gamma, N), z) + repeat_column(beta, N)
+        Y_z = hadamard(column_repeat(gamma, N), z) + column_repeat(beta, N)
         DZ1 = substitute(diff(loss(Y_z), z), z, Z)
 
         self.assertTrue(equal_matrices(DX, DX1))
@@ -115,7 +115,7 @@ class TestBatchNormalizationLayers(TestCase):
         D = 3
         N = 2
         K = D                # K and D are always equal in batch normalization
-        loss = sum_elements  # squared_error seems too complicated
+        loss = elements_sum  # squared_error seems too complicated
 
         # variables
         x = matrix('x', N, D)
@@ -123,15 +123,14 @@ class TestBatchNormalizationLayers(TestCase):
 
         # feedforward
         X = x
-        R = (identity(N) - ones(N, N) / N) * X
+        R = X - row_repeat(columns_mean(X), N)
         Sigma = diag(R.T * R).T / N
         power_minus_half_Sigma = power_minus_half(Sigma)
-        Y = hadamard(repeat_row(power_minus_half_Sigma, N), R)
+        Y = hadamard(row_repeat(power_minus_half_Sigma, N), R)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DX = hadamard(repeat_row(power_minus_half_Sigma / N, N),
-                      (N * identity(N) - ones(N, N)) * DY - hadamard(Y, repeat_row(diag(Y.T * DY).T, N)))
+        DX = hadamard(row_repeat(power_minus_half_Sigma / N, N), (N * identity(N) - ones(N, N)) * DY - hadamard(Y, row_repeat(diag(Y.T * DY).T, N)))
 
         # test gradients
         DX1 = diff(loss(Y), x)
@@ -152,13 +151,13 @@ class TestBatchNormalizationLayers(TestCase):
 
         # feedforward
         X = x
-        Y = hadamard(repeat_row(gamma, N), X) + repeat_row(beta, N)
+        Y = hadamard(row_repeat(gamma, N), X) + row_repeat(beta, N)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DX = hadamard(repeat_row(gamma, N), DY)
-        Dbeta = sum_columns(DY)
-        Dgamma = sum_columns(hadamard(X, DY))
+        DX = hadamard(row_repeat(gamma, N), DY)
+        Dbeta = columns_sum(DY)
+        Dgamma = columns_sum(hadamard(X, DY))
 
         # test gradients
         DX1 = diff(loss(Y), x)
@@ -173,7 +172,7 @@ class TestBatchNormalizationLayers(TestCase):
         D = 3
         N = 2
         K = D                # K and D are always equal in batch normalization
-        loss = sum_elements  # squared_error seems too complicated
+        loss = elements_sum  # squared_error seems too complicated
 
         # variables
         x = matrix('x', N, D)
@@ -184,25 +183,24 @@ class TestBatchNormalizationLayers(TestCase):
 
         # feedforward
         X = x
-        R = (identity(N) - ones(N, N) / N) * X
+        R = X - row_repeat(columns_mean(X), N)
         Sigma = diag(R.T * R).T / N
         power_minus_half_Sigma = power_minus_half(Sigma)
-        Z = hadamard(repeat_row(power_minus_half_Sigma, N), R)
-        Y = hadamard(repeat_row(gamma, N), Z) + repeat_row(beta, N)
+        Z = hadamard(row_repeat(power_minus_half_Sigma, N), R)
+        Y = hadamard(row_repeat(gamma, N), Z) + row_repeat(beta, N)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DZ = hadamard(repeat_row(gamma, N), DY)
-        Dbeta = sum_columns(DY)
-        Dgamma = sum_columns(hadamard(Z, DY))
-        DX = hadamard(repeat_row(power_minus_half_Sigma / N, N),
-                      (N * identity(N) - ones(N, N)) * DZ - hadamard(Z, repeat_row(diag(Z.T * DZ).T, N)))
+        DZ = hadamard(row_repeat(gamma, N), DY)
+        Dbeta = columns_sum(DY)
+        Dgamma = columns_sum(hadamard(Z, DY))
+        DX = hadamard(row_repeat(power_minus_half_Sigma / N, N), (N * identity(N) - ones(N, N)) * DZ - hadamard(Z, row_repeat(diag(Z.T * DZ).T, N)))
 
         # test gradients
         DX1 = diff(loss(Y), x)
         Dbeta1 = diff(loss(Y), beta)
         Dgamma1 = diff(loss(Y), gamma)
-        Y_z = hadamard(repeat_row(gamma, N), z) + repeat_row(beta, N)
+        Y_z = hadamard(row_repeat(gamma, N), z) + row_repeat(beta, N)
         DZ1 = substitute(diff(loss(Y_z), z), z, Z)
 
         self.assertTrue(equal_matrices(DX, DX1))

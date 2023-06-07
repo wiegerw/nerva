@@ -16,7 +16,7 @@ class TestSReLULayers(TestCase):
         D = 2
         K = 2
         N = 2
-        loss = sum_elements
+        loss = elements_sum
 
         # variables
         x = matrix('x', D, N)
@@ -32,33 +32,29 @@ class TestSReLULayers(TestCase):
         act = srelu(al, tl, ar, tr)
         act_prime = srelu_prime(al, tl, ar, tr)
 
+        # helper functions
+        Zij = sp.symbols('Zij')
+        Al = Lambda(Zij, Piecewise((Zij - tl, Zij <= tl), (0, True)))
+        Ar = Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (Zij - tr, True)))
+        Tl = Lambda(Zij, Piecewise((1 - al, Zij <= tl), (0, True)))
+        Tr = Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (1 - ar, True)))
+
         # feedforward
         X = x
         W = w
-        Z = W * X + repeat_column(b, N)
+        Z = W * X + column_repeat(b, N)
         Y = apply(act, Z)
-
-        # helper functions
-        Zij = sp.symbols('Zij')
-        f_Al = Lambda(Zij, Piecewise((Zij - tl, Zij <= tl), (0, True)))
-        f_Ar = Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (Zij - tr, True)))
-        f_Tl = Lambda(Zij, Piecewise((1 - al, Zij <= tl), (0, True)))
-        f_Tr = Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (1 - ar, True)))
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
         DZ = hadamard(DY, apply(act_prime, Z))
         DW = DZ * X.T
-        Db = sum_rows(DZ)
+        Db = rows_sum(DZ)
         DX = W.T * DZ
-        Al = apply(f_Al, Z)
-        Ar = apply(f_Ar, Z)
-        Tl = apply(f_Tl, Z)
-        Tr = apply(f_Tr, Z)
-        Dal = sum_elements(hadamard(DY, Al))
-        Dar = sum_elements(hadamard(DY, Ar))
-        Dtl = sum_elements(hadamard(DY, Tl))
-        Dtr = sum_elements(hadamard(DY, Tr))
+        Dal = elements_sum(hadamard(DY, apply(Al, Z)))
+        Dar = elements_sum(hadamard(DY, apply(Ar, Z)))
+        Dtl = elements_sum(hadamard(DY, apply(Tl, Z)))
+        Dtr = elements_sum(hadamard(DY, apply(Tr, Z)))
 
         # test gradients
         DZ1 = substitute(diff(loss(apply(act, z)), z), z, Z)
@@ -90,7 +86,7 @@ class TestSReLULayers(TestCase):
         D = 2
         K = 2
         N = 2
-        loss = sum_elements
+        loss = elements_sum
 
         # variables
         x = matrix('x', N, D)
@@ -106,12 +102,6 @@ class TestSReLULayers(TestCase):
         act = srelu(al, tl, ar, tr)
         act_prime = srelu_prime(al, tl, ar, tr)
 
-        # feedforward
-        X = x
-        W = w
-        Z = X * W.T + repeat_row(b, N)
-        Y = apply(act, Z)
-
         # helper functions
         Zij = sp.symbols('Zij')
         Al = Lambda(Zij, Piecewise((Zij - tl, Zij <= tl), (0, True)))
@@ -119,20 +109,22 @@ class TestSReLULayers(TestCase):
         Tl = Lambda(Zij, Piecewise((1 - al, Zij <= tl), (0, True)))
         Tr = Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (1 - ar, True)))
 
+        # feedforward
+        X = x
+        W = w
+        Z = X * W.T + row_repeat(b, N)
+        Y = apply(act, Z)
+
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
         DZ = hadamard(DY, apply(act_prime, Z))
         DW = DZ.T * X
-        Db = sum_columns(DZ)
+        Db = columns_sum(DZ)
         DX = DZ * W
-        Dal = sum_elements(hadamard(DY, Al))
-        Dar = sum_elements(hadamard(DY, Ar))
-        Dtl = sum_elements(hadamard(DY, Tl))
-        Dtr = sum_elements(hadamard(DY, Tr))
-        Dal = sum_elements(apply(hadamard(DY, Al)))
-        Dar = sum_elements(apply(hadamard(DY, Ar)))
-        Dtl = sum_elements(apply(hadamard(DY, Tl)))
-        Dtr = sum_elements(apply(hadamard(DY, Tr)))
+        Dal = elements_sum(hadamard(DY, apply(Al, Z)))
+        Dar = elements_sum(hadamard(DY, apply(Ar, Z)))
+        Dtl = elements_sum(hadamard(DY, apply(Tl, Z)))
+        Dtr = elements_sum(hadamard(DY, apply(Tr, Z)))
 
         # test gradients
         DZ1 = substitute(diff(loss(apply(act, z)), z), z, Z)
@@ -148,7 +140,6 @@ class TestSReLULayers(TestCase):
         Dtl1 = diff(loss(Y), Matrix([[tl]]))
         Dar1 = diff(loss(Y), Matrix([[ar]]))
         Dtr1 = diff(loss(Y), Matrix([[tr]]))
-
         # wrap values in a matrix to make them usable for the equal_matrices function
         Dal = Matrix([[Dal]])
         Dar = Matrix([[Dar]])

@@ -30,12 +30,12 @@ class TestDropoutLayers(TestCase):
         X = x
         W = w
         R = r
-        Y = hadamard(W, R) * X + repeat_column(b, N)
+        Y = hadamard(W, R) * X + column_repeat(b, N)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
         DW = hadamard(DY * X.T, R)
-        Db = sum_rows(DY)
+        Db = rows_sum(DY)
         DX = hadamard(W, R).T * DY
 
         # test gradients
@@ -67,14 +67,14 @@ class TestDropoutLayers(TestCase):
         X = x
         W = w
         R = r
-        Z = hadamard(W, R) * X + repeat_column(b, N)
+        Z = hadamard(W, R) * X + column_repeat(b, N)
         Y = apply(act, Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
         DZ = hadamard(DY, apply(act_prime, Z))
         DW = hadamard(DZ * X.T, R)
-        Db = sum_rows(DZ)
+        Db = rows_sum(DZ)
         DX = hadamard(W, R).T * DZ
 
         # test gradients
@@ -107,14 +107,14 @@ class TestDropoutLayers(TestCase):
         X = x
         W = w
         R = r
-        Z = hadamard(W, R) * X + repeat_column(b, N)
+        Z = hadamard(W, R) * X + column_repeat(b, N)
         Y = apply(sigma, Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
         DZ = hadamard(DY, hadamard(Y, ones(K, N) - Y))
         DW = hadamard(DZ * X.T, R)
-        Db = sum_rows(DZ)
+        Db = rows_sum(DZ)
         DX = hadamard(W, R).T * DZ
 
         # test gradients
@@ -146,12 +146,12 @@ class TestDropoutLayers(TestCase):
         X = x
         W = w
         R = r
-        Y = X * hadamard(W.T, R) + repeat_row(b, N)
+        Y = X * hadamard(W.T, R) + row_repeat(b, N)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
         DW = hadamard(DY.T * X, R.T)
-        Db = sum_columns(DY)
+        Db = columns_sum(DY)
         DX = DY * hadamard(W, R.T)
 
         # test gradients
@@ -183,14 +183,14 @@ class TestDropoutLayers(TestCase):
         X = x
         W = w
         R = r
-        Z = X * hadamard(W.T, R) + repeat_row(b, N)
+        Z = X * hadamard(W.T, R) + row_repeat(b, N)
         Y = apply(act, Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
         DZ = hadamard(DY, apply(act_prime, Z))
         DW = hadamard(DZ.T * X, R.T)
-        Db = sum_columns(DZ)
+        Db = columns_sum(DZ)
         DX = DZ * hadamard(W, R.T)
 
         # test gradients
@@ -223,14 +223,14 @@ class TestDropoutLayers(TestCase):
         X = x
         W = w
         R = r
-        Z = X * hadamard(W.T, R) + repeat_row(b, N)
+        Z = X * hadamard(W.T, R) + row_repeat(b, N)
         Y = apply(sigma, Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
         DZ = hadamard(DY, hadamard(Y, ones(N, K) - Y))
         DW = hadamard(DZ.T * X, R.T)
-        Db = sum_columns(DZ)
+        Db = columns_sum(DZ)
         DX = DZ * hadamard(W, R.T)
 
         # test gradients
