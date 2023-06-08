@@ -6,7 +6,7 @@ import torch
 
 
 def relu(x):
-    return torch.relu(x)
+    return torch.max(torch.zeros_like(x), x)
 
 
 def relu_prime(x):
@@ -14,7 +14,7 @@ def relu_prime(x):
 
 
 def leaky_relu(alpha):
-    return lambda x: torch.nn.functional.leaky_relu(x, alpha)
+    return lambda x: torch.max(x, alpha * x)
 
 
 def leaky_relu_prime(alpha):

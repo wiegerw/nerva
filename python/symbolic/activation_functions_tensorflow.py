@@ -6,7 +6,7 @@ import tensorflow as tf
 
 
 def relu(x):
-    return tf.nn.relu(x)
+    return tf.maximum(0.0, x)
 
 
 def relu_prime(x):
@@ -14,7 +14,7 @@ def relu_prime(x):
 
 
 def leaky_relu(alpha):
-    return lambda x: tf.nn.leaky_relu(x, alpha)
+    return lambda x: tf.maximum(alpha * x, x)
 
 
 def leaky_relu_prime(alpha):
