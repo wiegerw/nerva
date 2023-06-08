@@ -5,9 +5,9 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-from symbolic.activation_functions import *
+from symbolic.activation_functions_sympy_1d import *
 from symbolic.loss_functions import *
-from symbolic.matrix_operations import *
+from symbolic.matrix_operations_sympy import *
 from symbolic.utilities import *
 
 

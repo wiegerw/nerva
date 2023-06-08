@@ -4,65 +4,32 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from typing import Union
 from unittest import TestCase
 
 import numpy as np
-import sympy as sp
-import torch
-import tensorflow as tf
-
-# Set the environment variable to use CPU only
-tf.config.set_visible_devices([], 'GPU')
-
 
 import symbolic.matrix_operations_numpy as np_
 import symbolic.matrix_operations_tensorflow as tf_
 import symbolic.matrix_operations_torch as torch_
-import symbolic.matrix_operations as sympy_
+import symbolic.matrix_operations_sympy as sympy_
+from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow
 
 
-def to_numpy(x: Union[sp.Matrix, np.ndarray, torch.Tensor, tf.Tensor]) -> np.ndarray:
-    if isinstance(x, sp.Matrix):
-        return np.array(x.tolist(), dtype=np.float64)
-    elif isinstance(x, np.ndarray):
-        return x
-    elif isinstance(x, torch.Tensor):
-        return x.detach().cpu().numpy()
-    elif isinstance(x, tf.Tensor):
-        return x.numpy()
-    else:
-        raise ValueError("Unsupported input type. Input must be one of sp.Matrix, np.ndarray, torch.Tensor, or tf.Tensor.")
-
-
-def to_sympy(X: np.ndarray) -> sp.Matrix:
-    return sp.Matrix(X)
-
-
-def to_torch(X: np.ndarray) -> torch.Tensor:
-    return torch.Tensor(X)
-
-
-def to_tensorflow(X: np.ndarray) -> tf.Tensor:
-    return tf.convert_to_tensor(X)
-
-
-class TestMatrixOperationsNumPy(TestCase):
+class TestMatrixOperations(TestCase):
 
     def check_arrays_equal(self, operation, x1, x2, x3, x4):
         print(f'--- {operation} ---')
-        print(x1, x1.__class__)
-        print(x2, x2.__class__)
-        print(x3, x3.__class__)
-        print(x4, x4.__class__)
         x1 = to_numpy(x1)
         x2 = to_numpy(x2)
         x3 = to_numpy(x3)
         x4 = to_numpy(x4)
+        print(x1)
+        print(x2)
+        print(x3)
+        print(x4)
         self.assertTrue(np.allclose(x1, x2))
         self.assertTrue(np.allclose(x1, x3))
         self.assertTrue(np.allclose(x1, x4))
-        # self.assertTrue(np.allclose(x1, x4, atol=1e-2))
 
     def check_numbers_equal(self, operation, x1, x2, x3, x4):
         print(f'--- {operation} ---')

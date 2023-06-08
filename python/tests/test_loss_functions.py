@@ -6,7 +6,7 @@
 
 from unittest import TestCase
 
-from symbolic.matrix_operations import *
+from symbolic.matrix_operations_sympy import *
 
 
 if __name__ == '__main__':

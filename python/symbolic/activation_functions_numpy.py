@@ -9,7 +9,7 @@ def relu(x):
     return np.maximum(0, x)
 
 
-def relu_derivative(x):
+def relu_prime(x):
     return np.where(x > 0, 1, 0)
 
 
@@ -17,7 +17,7 @@ def leaky_relu(alpha):
     return lambda x: np.maximum(alpha * x, x)
 
 
-def leaky_relu_derivative(alpha):
+def leaky_relu_prime(alpha):
     return lambda x: np.where(x > 0, 1, alpha)
 
 
@@ -25,7 +25,7 @@ def all_relu(alpha):
     return lambda x: np.where(x < 0, alpha * x, x)
 
 
-def all_relu_derivative(alpha):
+def all_relu_prime(alpha):
     return lambda x: np.where(x < 0, alpha, 1)
 
 
@@ -33,7 +33,7 @@ def hyperbolic_tangent(x):
     return np.tanh(x)
 
 
-def hyperbolic_tangent_derivative(x):
+def hyperbolic_tangent_prime(x):
     return 1 - np.tanh(x) ** 2
 
 
@@ -41,15 +41,15 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
-def sigmoid_derivative(x):
+def sigmoid_prime(x):
     return sigmoid(x) * (1 - sigmoid(x))
 
 
 def srelu(al, tl, ar, tr):
     return lambda x: np.where(x <= tl, tl + al * (x - tl),
-                     np.where(x >= tr, tr + ar * (x - tr), x))
+                     np.where(x < tr, x, tr + ar * (x - tr)))
 
 
-def srelu_derivative(al, tl, ar, tr):
-    return lambda x: np.where((x <= tl) | (x >= tr), 0,
-                     np.where((tl < x) & (x < tr), 1, al if x < tl else ar))
+def srelu_prime(al, tl, ar, tr):
+    return lambda x: np.where(x <= tl, al,
+                     np.where(x < tr, 1, ar))

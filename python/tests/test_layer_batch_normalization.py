@@ -8,7 +8,7 @@
 
 from unittest import TestCase
 from symbolic.loss_functions import *
-from symbolic.matrix_operations import *
+from symbolic.matrix_operations_sympy import *
 from symbolic.utilities import *
 
 
