@@ -38,7 +38,7 @@ def diag(X: np.ndarray) -> np.ndarray:
 
 
 def Diag(x: np.ndarray) -> np.ndarray:
-    return np.diag(*x)
+    return np.diagflat(x)
 
 
 def elements_sum(X: np.ndarray):
@@ -63,7 +63,7 @@ def columns_sum(X: np.ndarray) -> np.ndarray:
 
 
 def rows_sum(X: np.ndarray) -> np.ndarray:
-    return np.sum(X, axis=1)
+    return np.expand_dims(np.sum(X, axis=1), axis=1)
 
 
 def columns_max(X: np.ndarray) -> np.ndarray:
@@ -77,7 +77,7 @@ def rows_max(X: np.ndarray) -> np.ndarray:
     """
     Returns a row vector with the maximum values of each column in X.
     """
-    return np.max(X, axis=1)
+    return np.expand_dims(np.max(X, axis=1), axis=1)
 
 
 def columns_mean(X: np.ndarray) -> np.ndarray:
@@ -91,7 +91,7 @@ def rows_mean(X: np.ndarray) -> np.ndarray:
     """
     Returns a row vector with the mean values of each column in X.
     """
-    return np.mean(X, axis=1)
+    return np.expand_dims(np.mean(X, axis=1), axis=1)
 
 
 def apply(f, X: np.ndarray) -> np.ndarray:

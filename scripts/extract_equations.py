@@ -48,21 +48,6 @@ def print_header(header):
     return f'#------------------------------------------#\n#{indent}{header}\n#------------------------------------------#\n'
 
 
-def to_text(header, feedforward, backpropagation) -> str:
-    return print_header(header) + '\n' + feedforward + '\n\n' + backpropagation
-
-
-def to_latex(header, feedforward, backpropagation) -> str:
-    start = r'''\textsc{implementation} \vspace{-0.1cm}
-\begin{footnotesize}
-\begin{verbatim}
-'''
-
-    end = r'''\end{verbatim}
-\end{footnotesize}
-'''
-    return print_header(header) + '\n' + start + feedforward + '\n\n' + backpropagation + '\n' + end
-
 # N.B. this transformation is not very robust
 def to_cpp(header, feedforward, backpropagation) -> str:
     def f(line: str) -> str:
@@ -83,10 +68,32 @@ def to_cpp(header, feedforward, backpropagation) -> str:
     return print_header(header) + '\n' + feedforward + '\n\n' + backpropagation + '\n'
 
 
+def to_latex(header, feedforward, backpropagation) -> str:
+    start = r'''\textsc{implementation} \vspace{-0.1cm}
+\begin{footnotesize}
+\begin{verbatim}
+'''
+
+    end = r'''\end{verbatim}
+\end{footnotesize}
+'''
+    return print_header(header) + '\n' + start + feedforward + '\n\n' + backpropagation + '\n' + end
+
+
+def to_text(header, feedforward, backpropagation) -> str:
+    return print_header(header) + '\n' + feedforward + '\n\n' + backpropagation
+
+
+def to_torch(header, feedforward, backpropagation) -> str:
+    text = print_header(header) + '\n' + feedforward + '\n\n' + backpropagation
+    return re.sub(r'(?<!N) \* ', ' @ ', text)
+
+
 def main():
     cmdline_parser = argparse.ArgumentParser()
-    cmdline_parser.add_argument('--latex', help='generate LaTeX output', action='store_true')
     cmdline_parser.add_argument('--cpp', help='generate C++ output', action='store_true')
+    cmdline_parser.add_argument('--latex', help='generate LaTeX output', action='store_true')
+    cmdline_parser.add_argument('--torch', help='generate PyTorch output', action='store_true')
     args = cmdline_parser.parse_args()
 
     processor = Processor()
@@ -96,10 +103,13 @@ def main():
         for paragraph in paragraphs:
             processor.process_paragraph(paragraph)
 
-    if args.latex:
-        paragraphs = [to_latex(header, feedforward, backpropagation) for (header, feedforward, backpropagation) in processor.result]
-    elif args.cpp:
+    if args.cpp:
         paragraphs = [to_cpp(header, feedforward, backpropagation) for (header, feedforward, backpropagation) in processor.result]
+    elif args.latex:
+        paragraphs = [to_latex(header, feedforward, backpropagation) for (header, feedforward, backpropagation) in processor.result]
+    elif args.torch:
+        paragraphs = [to_torch(header, feedforward, backpropagation) for (header, feedforward, backpropagation) in
+                      processor.result]
     else:
         paragraphs = [to_text(header, feedforward, backpropagation) for (header, feedforward, backpropagation) in processor.result]
 

@@ -63,21 +63,21 @@ def columns_sum(X: torch.Tensor) -> torch.Tensor:
 
 
 def rows_sum(X: torch.Tensor) -> torch.Tensor:
-    return torch.sum(X, dim=1)
+    return torch.sum(X, dim=1).unsqueeze(dim=1)
 
 
 def columns_max(X: torch.Tensor) -> torch.Tensor:
     """
     Returns a column vector with the maximum values of each row in X.
     """
-    return torch.max(X, dim=0)
+    return torch.max(X, dim=0)[0].unsqueeze(dim=0)
 
 
 def rows_max(X: torch.Tensor) -> torch.Tensor:
     """
     Returns a row vector with the maximum values of each column in X.
     """
-    return torch.max(X, dim=1)
+    return torch.max(X, dim=1)[0].unsqueeze(dim=1)
 
 
 def columns_mean(X: torch.Tensor) -> torch.Tensor:
@@ -91,7 +91,7 @@ def rows_mean(X: torch.Tensor) -> torch.Tensor:
     """
     Returns a row vector with the mean values of each column in X.
     """
-    return torch.mean(X, dim=1)
+    return torch.mean(X, dim=1).unsqueeze(dim=1)
 
 
 def apply(f, X: torch.Tensor) -> torch.Tensor:

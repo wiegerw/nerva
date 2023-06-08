@@ -4,6 +4,7 @@
 
 import tensorflow as tf
 
+
 def zeros(m: int, n: int = 1) -> tf.Tensor:
     """
     Returns an mxn matrix with all elements equal to 0.
@@ -63,7 +64,7 @@ def columns_sum(X: tf.Tensor) -> tf.Tensor:
 
 
 def rows_sum(X: tf.Tensor) -> tf.Tensor:
-    return tf.reduce_sum(X, axis=1)
+    return tf.expand_dims(tf.reduce_sum(X, axis=1), axis=1)
 
 
 def columns_max(X: tf.Tensor) -> tf.Tensor:
@@ -77,7 +78,7 @@ def rows_max(X: tf.Tensor) -> tf.Tensor:
     """
     Returns a row vector with the maximum values of each column in X.
     """
-    return tf.reduce_max(X, axis=1)
+    return tf.expand_dims(tf.reduce_max(X, axis=1), axis=1)
 
 
 def columns_mean(X: tf.Tensor) -> tf.Tensor:
@@ -91,7 +92,7 @@ def rows_mean(X: tf.Tensor) -> tf.Tensor:
     """
     Returns a row vector with the mean values of each column in X.
     """
-    return tf.reduce_mean(X, axis=1)
+    return tf.expand_dims(tf.reduce_mean(X, axis=1), axis=1)
 
 
 def apply(f, X: tf.Tensor) -> tf.Tensor:
