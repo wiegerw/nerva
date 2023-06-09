@@ -2,10 +2,8 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-import sympy as sp
+from sympy import Matrix
 from symbolic import activation_functions_sympy_1d
-from sympy import Lambda, Matrix
-
 
 def relu(X: Matrix) -> Matrix:
     return X.applyfunc(activation_functions_sympy_1d.relu)

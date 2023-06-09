@@ -7,9 +7,6 @@
 from unittest import TestCase
 
 import numpy as np
-import sympy as sp
-import torch
-import tensorflow as tf
 
 from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow
 import symbolic.activation_functions_numpy as np_
