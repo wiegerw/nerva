@@ -112,14 +112,14 @@ auto rows_sum(const Matrix& X)
 template <typename Matrix>
 auto columns_max(const Matrix& x)
 {
-  return x.colwise().max();
+  return x.colwise().maxCoeff();
 }
 
 // Returns a row vector with the maximum values of each column in X.
 template <typename Matrix>
 auto rows_max(const Matrix& x)
 {
-  return x.rowwise().max();
+  return x.rowwise().maxCoeff();
 }
 
 // Returns a row vector with the mean values of each column in X.
