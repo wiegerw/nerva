@@ -31,7 +31,7 @@ class TestLinearLayers(TestCase):
         Y = W * X + column_repeat(b, N)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DW = DY * X.T
         Db = rows_sum(DY)
         DX = W.T * DY
@@ -67,14 +67,14 @@ class TestLinearLayers(TestCase):
         Y = apply(act, Z)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DZ = hadamard(DY, apply(act_prime, Z))
         DW = DZ * X.T
         Db = rows_sum(DZ)
         DX = W.T * DZ
 
         # test gradients
-        DZ1 = substitute(diff(loss(apply(act, z)), z), z, Z)
+        DZ1 = substitute(diff(loss(apply(act, z)), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -105,7 +105,7 @@ class TestLinearLayers(TestCase):
         Y = apply(sigma, Z)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DZ = hadamard(DY, hadamard(Y, ones(K, N) - Y))
         DW = DZ * X.T
         Db = rows_sum(DZ)
@@ -113,7 +113,7 @@ class TestLinearLayers(TestCase):
 
         # test gradients
         Y_z = apply(sigma, z)
-        DZ1 = substitute(diff(loss(Y_z), z), z, Z)
+        DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -141,7 +141,7 @@ class TestLinearLayers(TestCase):
         Y = X * W.T + row_repeat(b, N)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DW = DY.T * X
         Db = columns_sum(DY)
         DX = DY * W
@@ -177,14 +177,14 @@ class TestLinearLayers(TestCase):
         Y = apply(act, Z)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DZ = hadamard(DY, apply(act_prime, Z))
         DW = DZ.T * X
         Db = columns_sum(DZ)
         DX = DZ * W
 
         # test gradients
-        DZ1 = substitute(diff(loss(apply(act, z)), z), z, Z)
+        DZ1 = substitute(diff(loss(apply(act, z)), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -215,7 +215,7 @@ class TestLinearLayers(TestCase):
         Y = apply(sigma, Z)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DZ = hadamard(DY, hadamard(Y, ones(N, K) - Y))
         DW = DZ.T * X
         Db = columns_sum(DZ)
@@ -223,7 +223,7 @@ class TestLinearLayers(TestCase):
 
         # test gradients
         Y_z = apply(sigma, z)
-        DZ1 = substitute(diff(loss(Y_z), z), z, Z)
+        DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)

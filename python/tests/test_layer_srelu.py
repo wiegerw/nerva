@@ -46,7 +46,7 @@ class TestSReLULayers(TestCase):
         Y = apply(act, Z)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DZ = hadamard(DY, apply(act_prime, Z))
         DW = DZ * X.T
         Db = rows_sum(DZ)
@@ -57,7 +57,7 @@ class TestSReLULayers(TestCase):
         Dtr = elements_sum(hadamard(DY, apply(Tr, Z)))
 
         # test gradients
-        DZ1 = substitute(diff(loss(apply(act, z)), z), z, Z)
+        DZ1 = substitute(diff(loss(apply(act, z)), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -116,7 +116,7 @@ class TestSReLULayers(TestCase):
         Y = apply(act, Z)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DZ = hadamard(DY, apply(act_prime, Z))
         DW = DZ.T * X
         Db = columns_sum(DZ)
@@ -127,7 +127,7 @@ class TestSReLULayers(TestCase):
         Dtr = elements_sum(hadamard(DY, apply(Tr, Z)))
 
         # test gradients
-        DZ1 = substitute(diff(loss(apply(act, z)), z), z, Z)
+        DZ1 = substitute(diff(loss(apply(act, z)), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)

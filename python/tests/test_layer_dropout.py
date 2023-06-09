@@ -33,7 +33,7 @@ class TestDropoutLayers(TestCase):
         Y = hadamard(W, R) * X + column_repeat(b, N)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DW = hadamard(DY * X.T, R)
         Db = rows_sum(DY)
         DX = hadamard(W, R).T * DY
@@ -71,14 +71,14 @@ class TestDropoutLayers(TestCase):
         Y = apply(act, Z)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DZ = hadamard(DY, apply(act_prime, Z))
         DW = hadamard(DZ * X.T, R)
         Db = rows_sum(DZ)
         DX = hadamard(W, R).T * DZ
 
         # test gradients
-        DZ1 = substitute(diff(loss(apply(act, z)), z), z, Z)
+        DZ1 = substitute(diff(loss(apply(act, z)), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -111,7 +111,7 @@ class TestDropoutLayers(TestCase):
         Y = apply(sigma, Z)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DZ = hadamard(DY, hadamard(Y, ones(K, N) - Y))
         DW = hadamard(DZ * X.T, R)
         Db = rows_sum(DZ)
@@ -119,7 +119,7 @@ class TestDropoutLayers(TestCase):
 
         # test gradients
         Y_z = apply(sigma, z)
-        DZ1 = substitute(diff(loss(Y_z), z), z, Z)
+        DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -149,7 +149,7 @@ class TestDropoutLayers(TestCase):
         Y = X * hadamard(W.T, R) + row_repeat(b, N)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DW = hadamard(DY.T * X, R.T)
         Db = columns_sum(DY)
         DX = DY * hadamard(W, R.T)
@@ -187,14 +187,14 @@ class TestDropoutLayers(TestCase):
         Y = apply(act, Z)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DZ = hadamard(DY, apply(act_prime, Z))
         DW = hadamard(DZ.T * X, R.T)
         Db = columns_sum(DZ)
         DX = DZ * hadamard(W, R.T)
 
         # test gradients
-        DZ1 = substitute(diff(loss(apply(act, z)), z), z, Z)
+        DZ1 = substitute(diff(loss(apply(act, z)), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -227,7 +227,7 @@ class TestDropoutLayers(TestCase):
         Y = apply(sigma, Z)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DZ = hadamard(DY, hadamard(Y, ones(N, K) - Y))
         DW = hadamard(DZ.T * X, R.T)
         Db = columns_sum(DZ)
@@ -235,7 +235,7 @@ class TestDropoutLayers(TestCase):
 
         # test gradients
         Y_z = apply(sigma, z)
-        DZ1 = substitute(diff(loss(Y_z), z), z, Z)
+        DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)

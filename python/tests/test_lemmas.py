@@ -69,6 +69,16 @@ class TestLemmas(TestCase):
         Z2 = hadamard(Y, column_repeat(rows_sum(X), n))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
+    def test_lemma1(self):
+        m = 2
+        n = 3
+
+        X = Matrix(sp.symarray('x', (m, n), real=True))
+        Y = Matrix(sp.symarray('y', (m, n), real=True))
+        Z1 = sum((X.row(i) * Y.row(i).T)[0,0] for i in range(m))
+        Z2 = elements_sum(hadamard(X, Y))
+        self.assertEqual(Z1, Z2)
+
 
 class TestDerivatives(TestCase):
     def test_derivative_gx_x_colwise(self):

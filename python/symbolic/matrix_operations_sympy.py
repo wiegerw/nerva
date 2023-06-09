@@ -2,7 +2,7 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from typing import List
+from typing import List, Iterable, Tuple, Union
 
 import sympy as sp
 from sympy import Matrix
@@ -185,11 +185,14 @@ def diff(f, X: Matrix) -> Matrix:
     return Matrix([[sp.diff(f, X[i, j]) for j in range(n)] for i in range(m)])
 
 
-def substitute(expr, X: Matrix, Y: Matrix):
-    assert X.shape == Y.shape
-    m, n = X.shape
-    substitutions = ((X[i, j], Y[i, j]) for i in range(m) for j in range(n))
-    return expr.subs(substitutions)
+def substitute(expr, substitutions: Union[Tuple[Matrix, Matrix], List[Tuple[Matrix, Matrix]]]):
+    if isinstance(substitutions, tuple):
+        substitutions = [substitutions]
+    for (X, Y) in substitutions:
+        assert X.shape == Y.shape
+        m, n = X.shape
+        sigma = ((X[i, j], Y[i, j]) for i in range(m) for j in range(n))
+        return expr.subs(sigma)
 
 
 def jacobian(x: Matrix, y) -> Matrix:

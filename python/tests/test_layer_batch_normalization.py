@@ -32,7 +32,7 @@ class TestBatchNormalizationLayers(TestCase):
         Y = hadamard(column_repeat(power_minus_half_Sigma, N), R)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Y, column_repeat(-diag(DY * Y.T), N)) + DY * (N * identity(N) - ones(N, N)))
 
         # test gradients
@@ -57,7 +57,7 @@ class TestBatchNormalizationLayers(TestCase):
         Y = hadamard(column_repeat(gamma, N), X) + column_repeat(beta, N)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DX = hadamard(column_repeat(gamma, N), DY)
         Dbeta = rows_sum(DY)
         Dgamma = rows_sum(hadamard(X, DY))
@@ -93,7 +93,7 @@ class TestBatchNormalizationLayers(TestCase):
         Y = hadamard(column_repeat(gamma, N), Z) + column_repeat(beta, N)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DZ = hadamard(column_repeat(gamma, N), DY)
         Dbeta = rows_sum(DY)
         Dgamma = rows_sum(hadamard(DY, Z))
@@ -104,7 +104,7 @@ class TestBatchNormalizationLayers(TestCase):
         Dbeta1 = diff(loss(Y), beta)
         Dgamma1 = diff(loss(Y), gamma)
         Y_z = hadamard(column_repeat(gamma, N), z) + column_repeat(beta, N)
-        DZ1 = substitute(diff(loss(Y_z), z), z, Z)
+        DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
 
         self.assertTrue(equal_matrices(DX, DX1))
         self.assertTrue(equal_matrices(Dbeta, Dbeta1))
@@ -129,7 +129,7 @@ class TestBatchNormalizationLayers(TestCase):
         Y = hadamard(row_repeat(power_minus_half_Sigma, N), R)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DX = hadamard(row_repeat(power_minus_half_Sigma / N, N), (N * identity(N) - ones(N, N)) * DY - hadamard(Y, row_repeat(diag(Y.T * DY).T, N)))
 
         # test gradients
@@ -154,7 +154,7 @@ class TestBatchNormalizationLayers(TestCase):
         Y = hadamard(row_repeat(gamma, N), X) + row_repeat(beta, N)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DX = hadamard(row_repeat(gamma, N), DY)
         Dbeta = columns_sum(DY)
         Dgamma = columns_sum(hadamard(X, DY))
@@ -190,7 +190,7 @@ class TestBatchNormalizationLayers(TestCase):
         Y = hadamard(row_repeat(gamma, N), Z) + row_repeat(beta, N)
 
         # backpropagation
-        DY = substitute(diff(loss(y), y), y, Y)
+        DY = substitute(diff(loss(y), y), (y, Y))
         DZ = hadamard(row_repeat(gamma, N), DY)
         Dbeta = columns_sum(DY)
         Dgamma = columns_sum(hadamard(Z, DY))
@@ -201,7 +201,7 @@ class TestBatchNormalizationLayers(TestCase):
         Dbeta1 = diff(loss(Y), beta)
         Dgamma1 = diff(loss(Y), gamma)
         Y_z = hadamard(row_repeat(gamma, N), z) + row_repeat(beta, N)
-        DZ1 = substitute(diff(loss(Y_z), z), z, Z)
+        DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
 
         self.assertTrue(equal_matrices(DX, DX1))
         self.assertTrue(equal_matrices(Dbeta, Dbeta1))
