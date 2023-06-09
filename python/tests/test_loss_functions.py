@@ -35,9 +35,9 @@ class TestLossFunctions(TestCase):
         print(x2, x2.__class__)
         print(x3, x3.__class__)
         print(x4, x4.__class__)
-        self.assertTrue(x1 == x2)
-        self.assertTrue(x1 == x3)
-        self.assertTrue(x1 == x4)
+        self.assertAlmostEqual(x1, x2, delta=1e-5)
+        self.assertAlmostEqual(x1, x3, delta=1e-5)
+        self.assertAlmostEqual(x1, x4, delta=1e-5)
 
     def make_variables(self):
         Y = np.array([
@@ -66,6 +66,21 @@ class TestLossFunctions(TestCase):
         x3 = tf_.squared_error_loss_gradient(to_tensorflow(Y), to_tensorflow(T))
         x4 = torch_.squared_error_loss_gradient(to_torch(Y), to_torch(T))
         self.check_arrays_equal('squared_error_loss_gradient', x1, x2, x3, x4)
+
+    def test_mean_squared_error_loss(self):
+        Y, T = self.make_variables()
+
+        x1 = sympy_.mean_squared_error_loss(to_sympy(Y), to_sympy(T))
+        x2 = np_.mean_squared_error_loss(to_numpy(Y), to_numpy(T))
+        x3 = tf_.mean_squared_error_loss(to_tensorflow(Y), to_tensorflow(T))
+        x4 = torch_.mean_squared_error_loss(to_torch(Y), to_torch(T))
+        self.check_numbers_equal('mean_squared_error_loss', x1, x2, x3, x4)
+
+        x1 = sympy_.mean_squared_error_loss_gradient(to_sympy(Y), to_sympy(T))
+        x2 = np_.mean_squared_error_loss_gradient(to_numpy(Y), to_numpy(T))
+        x3 = tf_.mean_squared_error_loss_gradient(to_tensorflow(Y), to_tensorflow(T))
+        x4 = torch_.mean_squared_error_loss_gradient(to_torch(Y), to_torch(T))
+        self.check_arrays_equal('mean_squared_error_loss_gradient', x1, x2, x3, x4)
 
 
 if __name__ == '__main__':

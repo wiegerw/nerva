@@ -18,4 +18,4 @@ def mean_squared_error_loss(Y, T):
 
 
 def mean_squared_error_loss_gradient(Y, T):
-    return 2 * (Y - T) / tf.size(Y)
+    return 2 * (Y - T) / tf.cast(tf.size(Y), Y.dtype)

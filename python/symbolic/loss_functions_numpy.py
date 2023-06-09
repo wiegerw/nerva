@@ -14,7 +14,7 @@ def squared_error_loss_gradient(Y, T):
     return 2 * (Y - T)
 
 
-def mean_squared_error_loss_numpy(Y, T):
+def mean_squared_error_loss(Y, T):
     return np.mean(np.square(Y - T))
 
 
