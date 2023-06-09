@@ -44,18 +44,6 @@ struct squared_error_loss: public loss_function
     return ((Y - T).colwise().squaredNorm() / scalar(2)).sum();
   }
 
-  template <typename Target>
-  eigen::vector gradient_vector(const eigen::vector& y, const Target& t) const
-  {
-    return y - t;
-  }
-
-  template <typename Target>
-  auto gradient_matrix(const eigen::matrix& Y, const Target& T) const
-  {
-    return Y - T;
-  }
-
   [[nodiscard]] scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
     return ((Y - T).colwise().squaredNorm() / scalar(2)).sum();
@@ -89,34 +77,21 @@ struct cross_entropy_loss: public loss_function
     return (hadamard(-T, log_Y).colwise().sum()).sum();
   }
 
-  template <typename Target>
-  eigen::vector gradient_vector(const eigen::vector& y, const Target& t) const
-  {
-    using eigen::hadamard;
-    auto one_div_y = y.unaryExpr([](scalar x) { return scalar(1.0) / x; });
-    return hadamard(-t, one_div_y);
-  }
-
-  template <typename Target>
-  auto gradient_matrix(const eigen::matrix& Y, const Target& T) const
-  {
-    using eigen::hadamard;
-    auto one_div_Y = Y.unaryExpr([](scalar x) { return scalar(1.0) / x; });
-    return hadamard(-T, one_div_Y);
-  }
-
   [[nodiscard]] scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
+    using eigen::elements_sum;
     using eigen::hadamard;
-    auto log_Y = Y.unaryExpr([](scalar x) { return std::log(x); });
-    return (hadamard(-T, log_Y).colwise().sum()).sum();
+    using eigen::log;
+
+    return elements_sum(hadamard(-T, log(Y)));
   }
 
   [[nodiscard]] eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
     using eigen::hadamard;
-    auto one_div_Y = Y.unaryExpr([](scalar x) { return scalar(1.0) / x; });
-    return hadamard(-T, one_div_Y);
+    using eigen::inverse;
+
+    return hadamard(-T, inverse(Y));
   }
 
   [[nodiscard]] std::string to_string() const override
@@ -138,28 +113,18 @@ struct softmax_cross_entropy_loss: public loss_function
   template <typename Target>
   scalar operator()(const eigen::matrix& Y, const Target& T) const  // TODO: can the return type become auto?
   {
+    using eigen::elements_sum;
     using eigen::hadamard;
-    eigen::matrix log_softmax_Y = stable_log_softmax()(Y);
-    return (hadamard(-T, log_softmax_Y).colwise().sum()).sum();
-  }
 
-  template <typename Target>
-  eigen::vector gradient_vector(const eigen::vector& y, const Target& t) const
-  {
-    return stable_softmax()(y) - t;
-  }
-
-  template <typename Target>
-  eigen::matrix gradient_matrix(const eigen::matrix& Y, const Target& T) const  // TODO: can the return type become auto?
-  {
-    return stable_softmax()(Y) - T;
+    return elements_sum(hadamard(-T, stable_log_softmax()(Y)));
   }
 
   [[nodiscard]] scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
+    using eigen::elements_sum;
     using eigen::hadamard;
-    eigen::matrix log_softmax_Y = stable_log_softmax()(Y);
-    return (hadamard(-T, log_softmax_Y).colwise().sum()).sum();
+
+    return elements_sum(hadamard(-T, stable_log_softmax()(Y)));
   }
 
   [[nodiscard]] eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
@@ -190,32 +155,19 @@ struct logistic_cross_entropy_loss: public loss_function
     return (hadamard(-T, log_sigmoid_Y).colwise().sum()).sum();
   }
 
-  template <typename Target>
-  eigen::vector gradient_vector(const eigen::vector& y, const Target& t) const
-  {
-    using eigen::hadamard;
-    auto one_minus_sigmoid_y = y.unaryExpr([](scalar x) { return scalar(1.0) - sigmoid()(x); });
-    return hadamard(-t, one_minus_sigmoid_y);
-  }
-
-  template <typename Target>
-  auto gradient_matrix(const eigen::matrix& Y, const Target& T) const
-  {
-    using eigen::hadamard;
-    auto one_minus_sigmoid_Y = Y.unaryExpr([](scalar x) { return scalar(1.0) - sigmoid()(x); });
-    return hadamard(-T, one_minus_sigmoid_Y);
-  }
-
   [[nodiscard]] scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
+    using eigen::elements_sum;
     using eigen::hadamard;
+
     auto log_sigmoid_Y = Y.unaryExpr([](scalar x) { return std::log(sigmoid()(x)); });
-    return (hadamard(-T, log_sigmoid_Y).colwise().sum()).sum();
+    return elements_sum(hadamard(-T, log_sigmoid_Y));
   }
 
   [[nodiscard]] eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
     using eigen::hadamard;
+
     auto one_minus_sigmoid_Y = Y.unaryExpr([](scalar x) { return scalar(1.0) - sigmoid()(x); });
     return hadamard(-T, one_minus_sigmoid_Y);
   }
