@@ -57,8 +57,9 @@ struct stable_softmax
   eigen::matrix operator()(const eigen::matrix& X) const
   {
     using eigen::columns_sum;
-    using eigen::row_repeat;
     using eigen::exp;
+    using eigen::inverse;
+    using eigen::row_repeat;
     using eigen::hadamard;
 
     auto c = X.colwise().maxCoeff().eval();
@@ -81,7 +82,7 @@ struct log_softmax
 
     auto N = x.size();
     auto e = log(columns_sum(exp(x)));
-    return x.array() - row_repeat(e, N);
+    return x - row_repeat(e, N);
   }
 
   eigen::matrix operator()(const eigen::matrix& X) const
@@ -93,7 +94,7 @@ struct log_softmax
 
     auto N = X.cols();
     auto E = columns_sum(log(exp(X)));
-    return X.array() - row_repeat(E, N);
+    return X - row_repeat(E, N);
   }
 };
 
@@ -117,7 +118,7 @@ struct stable_log_softmax
     auto c = X.colwise().maxCoeff().eval();
     auto x_minus_c = X.rowwise() - c;
     auto E = exp(x_minus_c);
-    return x_minus_c.array().rowwise() - log(columns_sum(E));
+    return x_minus_c.array().rowwise() - log(columns_sum(E)).array();
   }
 };
 

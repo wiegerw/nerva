@@ -145,31 +145,31 @@ auto apply(Function f, const Matrix& X)
 template <class Matrix>
 auto exp(const Matrix& X)
 {
-  return X.array().exp();
+  return X.array().exp().matrix();
 }
 
 template <class Matrix>
 auto log(const Matrix& X)
 {
-  return X.array().log();
+  return X.array().log().matrix();
 }
 
 template <class Matrix>
 auto inverse(const Matrix& X)
 {
-  return X.array().inverse();
+  return X.array().inverse().matrix();
 }
 
 template <class Matrix>
 auto square(const Matrix& X)
 {
-  return X.array().square();
+  return X.array().square().matrix();
 }
 
 template <class Matrix>
 auto sqrt(const Matrix& X)
 {
-  return X.array().sqrt();
+  return X.array().sqrt().matrix();
 }
 
 template <typename Matrix>
