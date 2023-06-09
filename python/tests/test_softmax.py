@@ -5,8 +5,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-from symbolic.matrix_operations_sympy import *
-from symbolic.softmax import *
+from symbolic.softmax_sympy import *
 
 #-------------------------------------#
 # alternative implementations of softmax functions
