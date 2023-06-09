@@ -8,11 +8,34 @@ from unittest import TestCase
 
 import numpy as np
 
-from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow
+from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, matrix, equal_matrices
 import symbolic.loss_functions_numpy as np_
 import symbolic.loss_functions_tensorflow as tf_
 import symbolic.loss_functions_torch as torch_
 import symbolic.loss_functions_sympy as sympy_
+
+class TestLossFunctionGradients(TestCase):
+    def make_variables(self):
+        K = 3
+        N = 2
+        Y = matrix('Y', K, N)
+        T = matrix('T', K, N)
+        return K, N, Y, T
+
+    def test_squared_error_loss(self):
+        K, N, Y, T = self.make_variables()
+        loss = sympy_.squared_error_loss(Y, T)
+        DY1 = sympy_.squared_error_loss_gradient(Y, T)
+        DY2 = sympy_.diff(loss, Y)
+        self.assertTrue(equal_matrices(DY1, DY2))
+
+    def test_mean_squared_error_loss(self):
+        K, N, Y, T = self.make_variables()
+        loss = sympy_.mean_squared_error_loss(Y, T)
+        DY1 = sympy_.mean_squared_error_loss_gradient(Y, T)
+        DY2 = sympy_.diff(loss, Y)
+        self.assertTrue(equal_matrices(DY1, DY2))
+
 
 class TestLossFunctions(TestCase):
     def check_arrays_equal(self, operation, x1, x2, x3, x4):

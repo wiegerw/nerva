@@ -14,7 +14,7 @@ def squared_error_loss_gradient(Y: tf.Tensor, T: tf.Tensor):
 
 
 def mean_squared_error_loss(Y, T):
-    return tf.reduce_mean(tf.square(Y - T))
+    return tf.reduce_sum(tf.square(Y - T)) / tf.cast(tf.size(Y), Y.dtype)
 
 
 def mean_squared_error_loss_gradient(Y, T):
