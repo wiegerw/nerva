@@ -1,6 +1,7 @@
 # Copyright 2023 Wieger Wesselink.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
+
 from typing import Union
 
 import numpy as np
@@ -20,6 +21,11 @@ def equal_matrices(A: Matrix, B: Matrix, simplify_arguments=False) -> bool:
         A = sp.simplify(A)
         B = sp.simplify(B)
     return A.shape == B.shape and sp.simplify(A - B) == sp.zeros(m, n)
+
+
+def instantiate(X: sp.Matrix, low=0, high=10) -> sp.Matrix:
+    X0 = sp.Matrix(np.random.randint(low, high, X.shape))
+    return X0
 
 
 def to_numpy(x: Union[sp.Matrix, np.ndarray, torch.Tensor, tf.Tensor]) -> np.ndarray:

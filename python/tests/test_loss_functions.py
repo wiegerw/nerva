@@ -8,18 +8,63 @@ from unittest import TestCase
 
 import numpy as np
 import sympy as sp
+import tensorflow as tf
 
 from symbolic.matrix_operations_sympy import substitute
-from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, matrix, equal_matrices
+from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, matrix, equal_matrices, instantiate
 import symbolic.loss_functions_numpy as np_
 import symbolic.loss_functions_tensorflow as tf_
 import symbolic.loss_functions_torch as torch_
 import symbolic.loss_functions_sympy as sympy_
 
-def instantiate(X: sp.Matrix, low=0, high=10) -> sp.Matrix:
-    m, n = X.shape
-    X0 = sp.Matrix(np.random.randint(low, high, X.shape))
-    return X0
+class TestLossFunctionVectorGradients(TestCase):
+    def make_variables(self):
+        K = 2
+        y = matrix('y', K, 1)
+        t = matrix('t', K, 1)
+        return K, y, t
+
+    def test_squared_error_loss(self):
+        K, y, t = self.make_variables()
+        loss = sympy_.squared_error_loss_vector(y, t)
+        Dy1 = sympy_.squared_error_loss_gradient_vector(y, t)
+        Dy2 = sympy_.diff(loss, y)
+        self.assertTrue(equal_matrices(Dy1, Dy2))
+
+    def test_mean_squared_error_loss(self):
+        K, y, t = self.make_variables()
+        loss = sympy_.mean_squared_error_loss_vector(y, t)
+        Dy1 = sympy_.mean_squared_error_loss_gradient_vector(y, t)
+        Dy2 = sympy_.diff(loss, y)
+        self.assertTrue(equal_matrices(Dy1, Dy2))
+
+    def test_cross_entropy_loss_loss(self):
+        K, y, t = self.make_variables()
+        loss = sympy_.cross_entropy_loss_vector(y, t)
+        Dy1 = sympy_.cross_entropy_loss_gradient_vector(y, t)
+        Dy2 = sympy_.diff(loss, y)
+        self.assertTrue(equal_matrices(Dy1, Dy2))
+
+    def test_softmax_cross_entropy_loss(self):
+        K, y, t = self.make_variables()
+        loss = sympy_.softmax_cross_entropy_loss_vector(y, t)
+        Dy1 = sympy_.softmax_cross_entropy_loss_gradient_vector(y, t)
+        Dy2 = sympy_.diff(loss, y)
+        self.assertTrue(equal_matrices(Dy1, Dy2))
+
+    # def test_stable_softmax_cross_entropy_loss(self):
+    #     K, y, t = self.make_variables()
+    #     loss = sympy_.stable_softmax_cross_entropy_loss_vector(y, t)
+    #     Dy1 = sympy_.stable_softmax_cross_entropy_loss_gradient_vector(y, t)
+    #     Dy2 = sympy_.diff(loss, y)
+    #     self.assertTrue(equal_matrices(Dy1, Dy2))
+    #
+    # def test_logistic_cross_entropy_loss(self):
+    #     K, y, t = self.make_variables()
+    #     loss = sympy_.logistic_cross_entropy_loss_vector(y, t)
+    #     Dy1 = sympy_.logistic_cross_entropy_loss_gradient_vector(y, t)
+    #     Dy2 = sympy_.diff(loss, y)
+    #     self.assertTrue(equal_matrices(Dy1, Dy2))
 
 
 class TestLossFunctionGradients(TestCase):
@@ -56,13 +101,14 @@ class TestLossFunctionGradients(TestCase):
         loss = sympy_.softmax_cross_entropy_loss(Y, T)
         DY1 = sympy_.softmax_cross_entropy_loss_gradient(Y, T)
         DY2 = sympy_.diff(loss, Y)
-        print(DY1)
-        print(DY2)
-        Y0 = instantiate(Y)
-        T0 = instantiate(T)
-        d1 = substitute(DY1, [(T, T0), (Y, Y0)])
-        d2 = substitute(DY2, [(T, T0), (Y, Y0)])
-        print(d1, d2)
+        # Y0 = instantiate(Y)
+        # T0 = instantiate(T)
+        # print(Y)
+        # print(Y0)
+        # d1 = substitute(DY1, [(T, T0), (Y, Y0)])
+        # d2 = substitute(DY2, [(T, T0), (Y, Y0)])
+        # print(d1.evalf())
+        # print(d2.evalf())
         # self.assertTrue(equal_matrices(DY1, DY2))
 
     def test_stable_softmax_cross_entropy_loss(self):

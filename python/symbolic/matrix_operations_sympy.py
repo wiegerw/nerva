@@ -192,8 +192,8 @@ def substitute(expr, substitutions: Union[Tuple[Matrix, Matrix], List[Tuple[Matr
         assert X.shape == Y.shape
         m, n = X.shape
         sigma = ((X[i, j], Y[i, j]) for i in range(m) for j in range(n))
-        return expr.subs(sigma)
-
+        expr = expr.subs(sigma)
+    return expr
 
 def jacobian(x: Matrix, y) -> Matrix:
     assert is_column_vector(x) or is_row_vector(x)
