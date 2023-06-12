@@ -5,7 +5,7 @@
 import torch
 
 
-def squared_error_loss(Y: torch.Tensor, T: torch.Tensor):
+def squared_error_loss_colwise(Y: torch.Tensor, T: torch.Tensor):
     return torch.sum(torch.pow(Y - T, 2))
 
 
@@ -13,7 +13,7 @@ def squared_error_loss_colwise_gradient(Y: torch.Tensor, T: torch.Tensor):
     return 2 * (Y - T)
 
 
-def mean_squared_error_loss(Y, T):
+def mean_squared_error_loss_colwise(Y, T):
     return torch.sum(torch.pow(Y - T, 2)) / Y.numel()
 
 
