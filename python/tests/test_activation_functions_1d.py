@@ -54,6 +54,15 @@ class TestActivationFunctions1D(TestCase):
         self.assertEqual(f1(x), f(x).diff(x))
 
 
+class TestLogSigmoid(TestCase):
+
+    def test_log_sigmoid(self):
+        f = lambda x: sp.log(sigmoid(x))
+        f1 = lambda x: 1 - sigmoid(x)
+        x = sp.symbols('x', real=True)
+        self.assertEqual(sp.simplify(f1(x)), sp.simplify(f(x).diff(x)))
+
+
 if __name__ == '__main__':
     import unittest
     unittest.main()
