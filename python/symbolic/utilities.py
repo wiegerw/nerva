@@ -1,7 +1,7 @@
 # Copyright 2023 Wieger Wesselink.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
-
+import random
 from typing import Union
 
 import numpy as np
@@ -25,6 +25,26 @@ def equal_matrices(A: Matrix, B: Matrix, simplify_arguments=False) -> bool:
 
 def instantiate(X: sp.Matrix, low=0, high=10) -> sp.Matrix:
     X0 = sp.Matrix(np.random.randint(low, high, X.shape))
+    return X0
+
+
+def instantiate_one_hot_colwise(X: sp.Matrix) -> sp.Matrix:
+    m, n = X.shape
+    X0 = sp.zeros(m, n)
+    for j in range(n):
+        i = random.randrange(0, m)
+        X0[i, j] = 1
+
+    return X0
+
+
+def instantiate_one_hot_rowwise(X: sp.Matrix) -> sp.Matrix:
+    m, n = X.shape
+    X0 = sp.zeros(m, n)
+    for i in range(m):
+        j = random.randrange(0, n)
+        X0[i, j] = 1
+
     return X0
 
 

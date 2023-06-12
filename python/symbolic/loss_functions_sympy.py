@@ -64,15 +64,30 @@ def softmax_cross_entropy_loss_vector(y: Matrix, t: Matrix):
 
 
 def softmax_cross_entropy_loss_gradient_vector(y: Matrix, t: Matrix):
-    return -log_softmax_colwise_derivative(y).T * t
+    return elements_sum(t) * softmax_colwise(y) - t
+    # K, N = y.shape
+    # return column_repeat(softmax_colwise(y), K) * t - t
+    # return -log_softmax_colwise_derivative(y).T * t
+
+
+def softmax_cross_entropy_one_hot_loss_gradient_vector(y: Matrix, t: Matrix):
+    """
+    This is a simplified version of softmax_cross_entropy loss that requires t is a one-hot vector.
+    """
+    return softmax_colwise(y) - t
 
 
 def softmax_cross_entropy_loss(Y, T):
-    return -elements_sum(hadamard(T, log_softmax_rowwise(Y)))
+    return -elements_sum(hadamard(T, log_softmax_colwise(Y)))
 
 
 def softmax_cross_entropy_loss_gradient(Y, T):
-    return softmax_rowwise(Y) - T
+    K, N = Y.shape
+    return hadamard(softmax_colwise(Y), row_repeat(columns_sum(T), K)) - T
+
+
+def softmax_cross_entropy_one_hot_loss_gradient(Y, T):
+    return softmax_colwise(Y) - T
 
 
 def stable_softmax_cross_entropy_loss(Y, T):

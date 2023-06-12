@@ -10,8 +10,9 @@ import numpy as np
 import sympy as sp
 import tensorflow as tf
 
-from symbolic.matrix_operations_sympy import substitute
-from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, matrix, equal_matrices, instantiate
+from symbolic.matrix_operations_sympy import substitute, elements_sum
+from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, matrix, equal_matrices, instantiate, \
+    instantiate_one_hot_colwise
 import symbolic.loss_functions_numpy as np_
 import symbolic.loss_functions_tensorflow as tf_
 import symbolic.loss_functions_torch as torch_
@@ -52,13 +53,20 @@ class TestLossFunctionVectorGradients(TestCase):
         Dy2 = sympy_.diff(loss, y)
         self.assertTrue(equal_matrices(Dy1, Dy2))
 
+        # test with a one-hot encoded vector t0
+        t0 = instantiate_one_hot_colwise(t)
+        assert elements_sum(t0) == 1
+        Dy1_a = substitute(sympy_.softmax_cross_entropy_one_hot_loss_gradient_vector(y, t), (t, t0))
+        Dy2_a = substitute(Dy2, (t, t0))
+        self.assertTrue(equal_matrices(Dy1_a, Dy2_a))
+
     # def test_stable_softmax_cross_entropy_loss(self):
     #     K, y, t = self.make_variables()
     #     loss = sympy_.stable_softmax_cross_entropy_loss_vector(y, t)
     #     Dy1 = sympy_.stable_softmax_cross_entropy_loss_gradient_vector(y, t)
     #     Dy2 = sympy_.diff(loss, y)
     #     self.assertTrue(equal_matrices(Dy1, Dy2))
-    #
+
     # def test_logistic_cross_entropy_loss(self):
     #     K, y, t = self.make_variables()
     #     loss = sympy_.logistic_cross_entropy_loss_vector(y, t)
@@ -101,22 +109,20 @@ class TestLossFunctionGradients(TestCase):
         loss = sympy_.softmax_cross_entropy_loss(Y, T)
         DY1 = sympy_.softmax_cross_entropy_loss_gradient(Y, T)
         DY2 = sympy_.diff(loss, Y)
-        # Y0 = instantiate(Y)
-        # T0 = instantiate(T)
-        # print(Y)
-        # print(Y0)
-        # d1 = substitute(DY1, [(T, T0), (Y, Y0)])
-        # d2 = substitute(DY2, [(T, T0), (Y, Y0)])
-        # print(d1.evalf())
-        # print(d2.evalf())
-        # self.assertTrue(equal_matrices(DY1, DY2))
+        self.assertTrue(equal_matrices(DY1, DY2))
 
-    def test_stable_softmax_cross_entropy_loss(self):
-        K, N, Y, T = self.make_variables()
-        loss = sympy_.stable_softmax_cross_entropy_loss(Y, T)
-        DY1 = sympy_.stable_softmax_cross_entropy_loss_gradient(Y, T)
-        DY2 = sympy_.diff(loss, Y)
-        # self.assertTrue(equal_matrices(DY1, DY2))
+        # test with a one-hot encoded matrix T0
+        T0 = instantiate_one_hot_colwise(T)
+        DY1_a = substitute(sympy_.softmax_cross_entropy_one_hot_loss_gradient_vector(Y, T), (T, T0))
+        DY2_a = substitute(DY2, (T, T0))
+        self.assertTrue(equal_matrices(DY1_a, DY2_a))
+
+    # def test_stable_softmax_cross_entropy_loss(self):
+    #     K, N, Y, T = self.make_variables()
+    #     loss = sympy_.stable_softmax_cross_entropy_loss(Y, T)
+    #     DY1 = sympy_.stable_softmax_cross_entropy_loss_gradient(Y, T)
+    #     DY2 = sympy_.diff(loss, Y)
+    #     # self.assertTrue(equal_matrices(DY1, DY2))
 
     def test_logistic_cross_entropy_loss(self):
         K, N, Y, T = self.make_variables()

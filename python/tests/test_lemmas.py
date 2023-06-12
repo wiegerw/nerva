@@ -5,6 +5,8 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
+
+from symbolic.loss_functions_sympy import dot
 from symbolic.matrix_operations_sympy import *
 
 
@@ -39,6 +41,16 @@ class TestLemmas(TestCase):
         Z2 = hadamard(X, row_repeat(columns_sum(Y), m))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
+    def test_lemma_colwise4(self):
+        m = 2
+        n = 3
+
+        X = Matrix(sp.symarray('x', (m, n), real=True))
+        Y = Matrix(sp.symarray('y', (m, n), real=True))
+        Z1 = sum(dot(X.col(j), Y.col(j)) for j in range(n))
+        Z2 = elements_sum(hadamard(X, Y))
+        self.assertEqual(Z1, Z2)
+
     def test_lemma_rowwise1(self):
         m = 2
         n = 3
@@ -69,13 +81,13 @@ class TestLemmas(TestCase):
         Z2 = hadamard(Y, column_repeat(rows_sum(X), n))
         self.assertEqual(sp.simplify(Z1 - Z2), sp.zeros(m, n))
 
-    def test_lemma1(self):
+    def test_lemma_rowwise4(self):
         m = 2
         n = 3
 
         X = Matrix(sp.symarray('x', (m, n), real=True))
         Y = Matrix(sp.symarray('y', (m, n), real=True))
-        Z1 = sum((X.row(i) * Y.row(i).T)[0,0] for i in range(m))
+        Z1 = sum(dot(X.row(i).T, Y.row(i).T) for i in range(m))
         Z2 = elements_sum(hadamard(X, Y))
         self.assertEqual(Z1, Z2)
 
