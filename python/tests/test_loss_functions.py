@@ -25,57 +25,64 @@ class TestLossFunctionVectorGradients(TestCase):
 
     def test_squared_error_loss(self):
         K, y, t = self.make_variables()
-        loss = sympy_.squared_error_loss_vector(y, t)
-        Dy1 = sympy_.squared_error_loss_gradient_vector(y, t)
+        loss = sympy_.squared_error_loss_colwise_vector(y, t)
+        Dy1 = sympy_.squared_error_loss_colwise_gradient_vector(y, t)
         Dy2 = sympy_.diff(loss, y)
         self.assertTrue(equal_matrices(Dy1, Dy2))
 
     def test_mean_squared_error_loss(self):
         K, y, t = self.make_variables()
-        loss = sympy_.mean_squared_error_loss_vector(y, t)
-        Dy1 = sympy_.mean_squared_error_loss_gradient_vector(y, t)
+        loss = sympy_.mean_squared_error_loss_colwise_vector(y, t)
+        Dy1 = sympy_.mean_squared_error_loss_colwise_gradient_vector(y, t)
         Dy2 = sympy_.diff(loss, y)
         self.assertTrue(equal_matrices(Dy1, Dy2))
 
     def test_cross_entropy_loss_loss(self):
         K, y, t = self.make_variables()
-        loss = sympy_.cross_entropy_loss_vector(y, t)
-        Dy1 = sympy_.cross_entropy_loss_gradient_vector(y, t)
+        loss = sympy_.cross_entropy_loss_colwise_vector(y, t)
+        Dy1 = sympy_.cross_entropy_loss_colwise_gradient_vector(y, t)
         Dy2 = sympy_.diff(loss, y)
         self.assertTrue(equal_matrices(Dy1, Dy2))
 
     def test_softmax_cross_entropy_loss(self):
         K, y, t = self.make_variables()
-        loss = sympy_.softmax_cross_entropy_loss_vector(y, t)
-        Dy1 = sympy_.softmax_cross_entropy_loss_gradient_vector(y, t)
+        loss = sympy_.softmax_cross_entropy_loss_colwise_vector(y, t)
+        Dy1 = sympy_.softmax_cross_entropy_loss_colwise_gradient_vector(y, t)
         Dy2 = sympy_.diff(loss, y)
         self.assertTrue(equal_matrices(Dy1, Dy2))
 
         # test with a one-hot encoded vector t0
         t0 = instantiate_one_hot_colwise(t)
         assert elements_sum(t0) == 1
-        Dy1_a = substitute(sympy_.softmax_cross_entropy_one_hot_loss_gradient_vector(y, t), (t, t0))
+        Dy1_a = substitute(sympy_.softmax_cross_entropy_one_hot_loss_colwise_gradient_vector(y, t), (t, t0))
         Dy2_a = substitute(Dy2, (t, t0))
         self.assertTrue(equal_matrices(Dy1_a, Dy2_a))
 
     def test_stable_softmax_cross_entropy_loss(self):
         K, y, t = self.make_variables()
-        loss = sympy_.stable_softmax_cross_entropy_loss_vector(y, t)
-        Dy1 = sympy_.stable_softmax_cross_entropy_loss_gradient_vector(y, t)
+        loss = sympy_.stable_softmax_cross_entropy_loss_colwise_vector(y, t)
+        Dy1 = sympy_.stable_softmax_cross_entropy_loss_colwise_gradient_vector(y, t)
         Dy2 = sympy_.diff(loss, y)
         self.assertTrue(equal_matrices(Dy1, Dy2))
 
         # test with a one-hot encoded vector t0
         t0 = instantiate_one_hot_colwise(t)
         assert elements_sum(t0) == 1
-        Dy1_a = substitute(sympy_.stable_softmax_cross_entropy_one_hot_loss_gradient_vector(y, t), (t, t0))
+        Dy1_a = substitute(sympy_.stable_softmax_cross_entropy_one_hot_loss_colwise_gradient_vector(y, t), (t, t0))
         Dy2_a = substitute(Dy2, (t, t0))
         self.assertTrue(equal_matrices(Dy1_a, Dy2_a))
 
     def test_logistic_cross_entropy_loss(self):
         K, y, t = self.make_variables()
-        loss = sympy_.logistic_cross_entropy_loss_vector(y, t)
-        Dy1 = sympy_.logistic_cross_entropy_loss_gradient_vector(y, t)
+        loss = sympy_.logistic_cross_entropy_loss_colwise_vector(y, t)
+        Dy1 = sympy_.logistic_cross_entropy_loss_colwise_gradient_vector(y, t)
+        Dy2 = sympy_.diff(loss, y)
+        self.assertTrue(equal_matrices(Dy1, Dy2))
+
+    def test_negative_log_likelihood_loss(self):
+        K, y, t = self.make_variables()
+        loss = sympy_.negative_log_likelihood_loss_colwise_vector(y, t)
+        Dy1 = sympy_.negative_log_likelihood_loss_colwise_gradient_vector(y, t)
         Dy2 = sympy_.diff(loss, y)
         self.assertTrue(equal_matrices(Dy1, Dy2))
 
@@ -91,54 +98,61 @@ class TestLossFunctionGradients(TestCase):
     def test_squared_error_loss(self):
         K, N, Y, T = self.make_variables()
         loss = sympy_.squared_error_loss(Y, T)
-        DY1 = sympy_.squared_error_loss_gradient(Y, T)
+        DY1 = sympy_.squared_error_loss_colwise_gradient(Y, T)
         DY2 = sympy_.diff(loss, Y)
         self.assertTrue(equal_matrices(DY1, DY2))
 
     def test_mean_squared_error_loss(self):
         K, N, Y, T = self.make_variables()
         loss = sympy_.mean_squared_error_loss(Y, T)
-        DY1 = sympy_.mean_squared_error_loss_gradient(Y, T)
+        DY1 = sympy_.mean_squared_error_loss_colwise_gradient(Y, T)
         DY2 = sympy_.diff(loss, Y)
         self.assertTrue(equal_matrices(DY1, DY2))
 
     def test_cross_entropy_loss_loss(self):
         K, N, Y, T = self.make_variables()
         loss = sympy_.cross_entropy_loss(Y, T)
-        DY1 = sympy_.cross_entropy_loss_gradient(Y, T)
+        DY1 = sympy_.cross_entropy_loss_colwise_gradient(Y, T)
         DY2 = sympy_.diff(loss, Y)
         self.assertTrue(equal_matrices(DY1, DY2))
 
     def test_softmax_cross_entropy_loss(self):
         K, N, Y, T = self.make_variables()
         loss = sympy_.softmax_cross_entropy_loss(Y, T)
-        DY1 = sympy_.softmax_cross_entropy_loss_gradient(Y, T)
+        DY1 = sympy_.softmax_cross_entropy_loss_colwise_gradient(Y, T)
         DY2 = sympy_.diff(loss, Y)
         self.assertTrue(equal_matrices(DY1, DY2))
 
         # test with a one-hot encoded matrix T0
         T0 = instantiate_one_hot_colwise(T)
-        DY1_a = substitute(sympy_.softmax_cross_entropy_one_hot_loss_gradient_vector(Y, T), (T, T0))
+        DY1_a = substitute(sympy_.softmax_cross_entropy_one_hot_loss_colwise_gradient_vector(Y, T), (T, T0))
         DY2_a = substitute(DY2, (T, T0))
         self.assertTrue(equal_matrices(DY1_a, DY2_a))
 
     def test_stable_softmax_cross_entropy_loss(self):
         K, N, Y, T = self.make_variables()
         loss = sympy_.stable_softmax_cross_entropy_loss(Y, T)
-        DY1 = sympy_.stable_softmax_cross_entropy_loss_gradient(Y, T)
+        DY1 = sympy_.stable_softmax_cross_entropy_loss_colwise_gradient(Y, T)
         DY2 = sympy_.diff(loss, Y)
         self.assertTrue(equal_matrices(DY1, DY2))
 
         # test with a one-hot encoded matrix T0
         T0 = instantiate_one_hot_colwise(T)
-        DY1_a = substitute(sympy_.stable_softmax_cross_entropy_one_hot_loss_gradient_vector(Y, T), (T, T0))
+        DY1_a = substitute(sympy_.stable_softmax_cross_entropy_one_hot_loss_colwise_gradient_vector(Y, T), (T, T0))
         DY2_a = substitute(DY2, (T, T0))
         self.assertTrue(equal_matrices(DY1_a, DY2_a))
 
     def test_logistic_cross_entropy_loss(self):
         K, N, Y, T = self.make_variables()
         loss = sympy_.logistic_cross_entropy_loss(Y, T)
-        DY1 = sympy_.logistic_cross_entropy_loss_gradient(Y, T)
+        DY1 = sympy_.logistic_cross_entropy_loss_colwise_gradient(Y, T)
+        DY2 = sympy_.diff(loss, Y)
+        self.assertTrue(equal_matrices(DY1, DY2))
+
+    def test_negative_log_likelihood_loss(self):
+        K, N, Y, T = self.make_variables()
+        loss = sympy_.negative_log_likelihood_loss(Y, T)
+        DY1 = sympy_.negative_log_likelihood_loss_colwise_gradient(Y, T)
         DY2 = sympy_.diff(loss, Y)
         self.assertTrue(equal_matrices(DY1, DY2))
 
@@ -190,11 +204,11 @@ class TestLossFunctions(TestCase):
         x4 = torch_.squared_error_loss(to_torch(Y), to_torch(T))
         self.check_numbers_equal('squared_error_loss', x1, x2, x3, x4)
 
-        x1 = sympy_.squared_error_loss_gradient(to_sympy(Y), to_sympy(T))
-        x2 = np_.squared_error_loss_gradient(to_numpy(Y), to_numpy(T))
-        x3 = tf_.squared_error_loss_gradient(to_tensorflow(Y), to_tensorflow(T))
-        x4 = torch_.squared_error_loss_gradient(to_torch(Y), to_torch(T))
-        self.check_arrays_equal('squared_error_loss_gradient', x1, x2, x3, x4)
+        x1 = sympy_.squared_error_loss_colwise_gradient(to_sympy(Y), to_sympy(T))
+        x2 = np_.squared_error_loss_colwise_gradient(to_numpy(Y), to_numpy(T))
+        x3 = tf_.squared_error_loss_colwise_gradient(to_tensorflow(Y), to_tensorflow(T))
+        x4 = torch_.squared_error_loss_colwise_gradient(to_torch(Y), to_torch(T))
+        self.check_arrays_equal('squared_error_loss_colwise_gradient', x1, x2, x3, x4)
 
     def test_mean_squared_error_loss(self):
         Y, T = self.make_variables()
@@ -205,11 +219,11 @@ class TestLossFunctions(TestCase):
         x4 = torch_.mean_squared_error_loss(to_torch(Y), to_torch(T))
         self.check_numbers_equal('mean_squared_error_loss', x1, x2, x3, x4)
 
-        x1 = sympy_.mean_squared_error_loss_gradient(to_sympy(Y), to_sympy(T))
-        x2 = np_.mean_squared_error_loss_gradient(to_numpy(Y), to_numpy(T))
-        x3 = tf_.mean_squared_error_loss_gradient(to_tensorflow(Y), to_tensorflow(T))
-        x4 = torch_.mean_squared_error_loss_gradient(to_torch(Y), to_torch(T))
-        self.check_arrays_equal('mean_squared_error_loss_gradient', x1, x2, x3, x4)
+        x1 = sympy_.mean_squared_error_loss_colwise_gradient(to_sympy(Y), to_sympy(T))
+        x2 = np_.mean_squared_error_loss_colwise_gradient(to_numpy(Y), to_numpy(T))
+        x3 = tf_.mean_squared_error_loss_colwise_gradient(to_tensorflow(Y), to_tensorflow(T))
+        x4 = torch_.mean_squared_error_loss_colwise_gradient(to_torch(Y), to_torch(T))
+        self.check_arrays_equal('mean_squared_error_loss_colwise_gradient', x1, x2, x3, x4)
 
 
 if __name__ == '__main__':

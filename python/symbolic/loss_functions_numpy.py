@@ -10,7 +10,7 @@ def squared_error_loss(Y, T):
     return np.sum(np.square(Y - T))
 
 
-def squared_error_loss_gradient(Y, T):
+def squared_error_loss_colwise_gradient(Y, T):
     return 2 * (Y - T)
 
 
@@ -18,7 +18,7 @@ def mean_squared_error_loss(Y, T):
     return np.sum(np.square(Y - T)) / Y.size
 
 
-def mean_squared_error_loss_gradient(Y, T):
+def mean_squared_error_loss_colwise_gradient(Y, T):
     return 2 * (Y - T) / Y.size
 
 

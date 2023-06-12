@@ -9,7 +9,7 @@ def squared_error_loss(Y: tf.Tensor, T: tf.Tensor):
     return tf.reduce_sum(tf.pow(Y - T, 2))
 
 
-def squared_error_loss_gradient(Y: tf.Tensor, T: tf.Tensor):
+def squared_error_loss_colwise_gradient(Y: tf.Tensor, T: tf.Tensor):
     return 2 * (Y - T)
 
 
@@ -17,5 +17,5 @@ def mean_squared_error_loss(Y, T):
     return tf.reduce_sum(tf.square(Y - T)) / tf.cast(tf.size(Y), Y.dtype)
 
 
-def mean_squared_error_loss_gradient(Y, T):
+def mean_squared_error_loss_colwise_gradient(Y, T):
     return 2 * (Y - T) / tf.cast(tf.size(Y), Y.dtype)
