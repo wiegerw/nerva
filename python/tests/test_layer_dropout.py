@@ -5,7 +5,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-from symbolic.activation_functions_sympy_1d import *
+from symbolic.activation_functions_sympy import *
 from symbolic.loss_functions import *
 from symbolic.matrix_operations_sympy import *
 from symbolic.utilities import *
@@ -53,7 +53,7 @@ class TestDropoutLayers(TestCase):
         K = 2
         loss = squared_error
         act = hyperbolic_tangent
-        act_prime = hyperbolic_tangent_prime
+        act_gradient = hyperbolic_tangent_gradient
 
         # variables
         x = matrix('x', D, N)
@@ -68,17 +68,17 @@ class TestDropoutLayers(TestCase):
         W = w
         R = r
         Z = hadamard(W, R) * X + column_repeat(b, N)
-        Y = apply(act, Z)
+        Y = act(Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), (y, Y))
-        DZ = hadamard(DY, apply(act_prime, Z))
+        DZ = hadamard(DY, act_gradient(Z))
         DW = hadamard(DZ * X.T, R)
         Db = rows_sum(DZ)
         DX = hadamard(W, R).T * DZ
 
         # test gradients
-        DZ1 = substitute(diff(loss(apply(act, z)), z), (z, Z))
+        DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -93,7 +93,6 @@ class TestDropoutLayers(TestCase):
         N = 2
         K = 2
         loss = squared_error
-        sigma = sigmoid
 
         # variables
         x = matrix('x', D, N)
@@ -108,7 +107,7 @@ class TestDropoutLayers(TestCase):
         W = w
         R = r
         Z = hadamard(W, R) * X + column_repeat(b, N)
-        Y = apply(sigma, Z)
+        Y = sigmoid(Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), (y, Y))
@@ -118,7 +117,7 @@ class TestDropoutLayers(TestCase):
         DX = hadamard(W, R).T * DZ
 
         # test gradients
-        Y_z = apply(sigma, z)
+        Y_z = sigmoid(z)
         DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
@@ -169,7 +168,7 @@ class TestDropoutLayers(TestCase):
         K = 2
         loss = squared_error
         act = hyperbolic_tangent
-        act_prime = hyperbolic_tangent_prime
+        act_gradient = hyperbolic_tangent_gradient
 
         # variables
         x = matrix('x', N, D)
@@ -184,17 +183,17 @@ class TestDropoutLayers(TestCase):
         W = w
         R = r
         Z = X * hadamard(W.T, R) + row_repeat(b, N)
-        Y = apply(act, Z)
+        Y = act(Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), (y, Y))
-        DZ = hadamard(DY, apply(act_prime, Z))
+        DZ = hadamard(DY, act_gradient(Z))
         DW = hadamard(DZ.T * X, R.T)
         Db = columns_sum(DZ)
         DX = DZ * hadamard(W, R.T)
 
         # test gradients
-        DZ1 = substitute(diff(loss(apply(act, z)), z), (z, Z))
+        DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -224,7 +223,7 @@ class TestDropoutLayers(TestCase):
         W = w
         R = r
         Z = X * hadamard(W.T, R) + row_repeat(b, N)
-        Y = apply(sigma, Z)
+        Y = sigmoid(Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), (y, Y))
@@ -234,7 +233,7 @@ class TestDropoutLayers(TestCase):
         DX = DZ * hadamard(W, R.T)
 
         # test gradients
-        Y_z = apply(sigma, z)
+        Y_z = sigmoid(z)
         DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)

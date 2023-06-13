@@ -5,7 +5,8 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-from symbolic.activation_functions_sympy_1d import *
+from sympy import Lambda, Piecewise
+from symbolic.activation_functions_sympy import *
 from symbolic.matrix_operations_sympy import *
 from symbolic.utilities import *
 
@@ -30,7 +31,7 @@ class TestSReLULayers(TestCase):
         tr = sp.symbols('tr', real=True)
 
         act = srelu(al, tl, ar, tr)
-        act_prime = srelu_prime(al, tl, ar, tr)
+        act_gradient = srelu_gradient(al, tl, ar, tr)
 
         # helper functions
         Zij = sp.symbols('Zij')
@@ -43,11 +44,11 @@ class TestSReLULayers(TestCase):
         X = x
         W = w
         Z = W * X + column_repeat(b, N)
-        Y = apply(act, Z)
+        Y = act(Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), (y, Y))
-        DZ = hadamard(DY, apply(act_prime, Z))
+        DZ = hadamard(DY, act_gradient(Z))
         DW = DZ * X.T
         Db = rows_sum(DZ)
         DX = W.T * DZ
@@ -57,7 +58,7 @@ class TestSReLULayers(TestCase):
         Dtr = elements_sum(hadamard(DY, apply(Tr, Z)))
 
         # test gradients
-        DZ1 = substitute(diff(loss(apply(act, z)), z), (z, Z))
+        DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -100,7 +101,7 @@ class TestSReLULayers(TestCase):
         tr = sp.symbols('tr', real=True)
 
         act = srelu(al, tl, ar, tr)
-        act_prime = srelu_prime(al, tl, ar, tr)
+        act_gradient = srelu_gradient(al, tl, ar, tr)
 
         # helper functions
         Zij = sp.symbols('Zij')
@@ -113,11 +114,11 @@ class TestSReLULayers(TestCase):
         X = x
         W = w
         Z = X * W.T + row_repeat(b, N)
-        Y = apply(act, Z)
+        Y = act(Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), (y, Y))
-        DZ = hadamard(DY, apply(act_prime, Z))
+        DZ = hadamard(DY, act_gradient(Z))
         DW = DZ.T * X
         Db = columns_sum(DZ)
         DX = DZ * W
@@ -127,7 +128,7 @@ class TestSReLULayers(TestCase):
         Dtr = elements_sum(hadamard(DY, apply(Tr, Z)))
 
         # test gradients
-        DZ1 = substitute(diff(loss(apply(act, z)), z), (z, Z))
+        DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)

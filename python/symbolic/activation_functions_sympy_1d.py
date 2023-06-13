@@ -11,7 +11,7 @@ def relu(x):
     return Piecewise((0, x < 0), (x, True))
 
 
-def relu_prime(x):
+def relu_derivative(x):
     # return 0 if x < 0 else 1
     return Piecewise((0, x < 0), (1, True))
 
@@ -23,7 +23,7 @@ def leaky_relu(alpha):
     return Lambda(x, fx)
 
 
-def leaky_relu_prime(alpha):
+def leaky_relu_derivative(alpha):
     x = sp.symbols('x')
     # fx = alpha if x < alpha * x else 1
     fx = Piecewise((alpha, x < alpha * x), (1, True))
@@ -37,7 +37,7 @@ def all_relu(alpha):
     return Lambda(x, fx)
 
 
-def all_relu_prime(alpha):
+def all_relu_derivative(alpha):
     x = sp.symbols('x')
     # fx = alpha if x < 0 else 1
     fx = Piecewise((alpha, x < 0), (1, True))
@@ -48,7 +48,7 @@ def hyperbolic_tangent(x):
     return sp.tanh(x)
 
 
-def hyperbolic_tangent_prime(x):
+def hyperbolic_tangent_derivative(x):
     y = hyperbolic_tangent(x)
     return 1 - y * y
 
@@ -57,7 +57,7 @@ def sigmoid(x):
     return 1 / (1 + sp.exp(-x))
 
 
-def sigmoid_prime(x):
+def sigmoid_derivative(x):
     y = sigmoid(x)
     return y * (1 - y)
 
@@ -67,6 +67,6 @@ def srelu(al, tl, ar, tr):
     return Lambda(x, Piecewise((tl + al * (x - tl), x <= tl), (x, x < tr), (tr + ar * (x - tr), True)))
 
 
-def srelu_prime(al, tl, ar, tr):
+def srelu_derivative(al, tl, ar, tr):
     x = sp.symbols('x')
     return Lambda(x, Piecewise((al, x <= tl), (1, x < tr), (ar, True)))

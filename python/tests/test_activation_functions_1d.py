@@ -12,33 +12,33 @@ class TestActivationFunctions1D(TestCase):
 
     def test_relu(self):
         f = relu
-        f1 = relu_prime
+        f1 = relu_derivative
         x = sp.symbols('x', real=True)
         self.assertEqual(sp.simplify(f1(x)), sp.simplify(f(x).diff(x)))
 
     def test_leaky_relu(self):
         alpha = sp.symbols('alpha', real=True)
         f = leaky_relu(alpha)
-        f1 = leaky_relu_prime(alpha)
+        f1 = leaky_relu_derivative(alpha)
         x = sp.symbols('x', real=True)
         self.assertEqual(sp.simplify(f1(x)), sp.simplify(f(x).diff(x)))
 
     def test_all_relu(self):
         alpha = sp.symbols('alpha', real=True)
         f = all_relu(alpha)
-        f1 = all_relu_prime(alpha)
+        f1 = all_relu_derivative(alpha)
         x = sp.symbols('x', real=True)
         self.assertEqual(sp.simplify(f1(x)), sp.simplify(f(x).diff(x)))
 
     def test_hyperbolic_tangent(self):
         f = hyperbolic_tangent
-        f1 = hyperbolic_tangent_prime
+        f1 = hyperbolic_tangent_derivative
         x = sp.symbols('x', real=True)
         self.assertEqual(sp.simplify(f1(x)), sp.simplify(f(x).diff(x)))
 
     def test_sigmoid(self):
         f = sigmoid
-        f1 = sigmoid_prime
+        f1 = sigmoid_derivative
         x = sp.symbols('x', real=True)
         self.assertEqual(sp.simplify(f1(x)), sp.simplify(f(x).diff(x)))
 
@@ -49,7 +49,7 @@ class TestActivationFunctions1D(TestCase):
         tr = sp.symbols('tr', real=True)
 
         f = srelu(al, tl, ar, tr)
-        f1 = srelu_prime(al, tl, ar, tr)
+        f1 = srelu_derivative(al, tl, ar, tr)
         x = sp.symbols('x', real=True)
         self.assertEqual(f1(x), f(x).diff(x))
 

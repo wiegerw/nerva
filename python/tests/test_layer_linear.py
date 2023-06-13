@@ -5,7 +5,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-from symbolic.activation_functions_sympy_1d import *
+from symbolic.activation_functions_sympy import *
 from symbolic.loss_functions import *
 from symbolic.matrix_operations_sympy import *
 from symbolic.utilities import *
@@ -51,7 +51,7 @@ class TestLinearLayers(TestCase):
         N = 2
         loss = squared_error
         act = hyperbolic_tangent
-        act_prime = hyperbolic_tangent_prime
+        act_gradient = hyperbolic_tangent_gradient
 
         # variables
         x = matrix('x', D, N)
@@ -64,17 +64,17 @@ class TestLinearLayers(TestCase):
         X = x
         W = w
         Z = W * X + column_repeat(b, N)
-        Y = apply(act, Z)
+        Y = act(Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), (y, Y))
-        DZ = hadamard(DY, apply(act_prime, Z))
+        DZ = hadamard(DY, act_gradient(Z))
         DW = DZ * X.T
         Db = rows_sum(DZ)
         DX = W.T * DZ
 
         # test gradients
-        DZ1 = substitute(diff(loss(apply(act, z)), z), (z, Z))
+        DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -102,7 +102,7 @@ class TestLinearLayers(TestCase):
         X = x
         W = w
         Z = W * X + column_repeat(b, N)
-        Y = apply(sigma, Z)
+        Y = sigmoid(Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), (y, Y))
@@ -112,7 +112,7 @@ class TestLinearLayers(TestCase):
         DX = W.T * DZ
 
         # test gradients
-        Y_z = apply(sigma, z)
+        Y_z = sigmoid(z)
         DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
@@ -161,7 +161,7 @@ class TestLinearLayers(TestCase):
         N = 2
         loss = squared_error
         act = hyperbolic_tangent
-        act_prime = hyperbolic_tangent_prime
+        act_gradient = hyperbolic_tangent_gradient
 
         # variables
         x = matrix('x', N, D)
@@ -174,17 +174,17 @@ class TestLinearLayers(TestCase):
         X = x
         W = w
         Z = X * W.T + row_repeat(b, N)
-        Y = apply(act, Z)
+        Y = act(Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), (y, Y))
-        DZ = hadamard(DY, apply(act_prime, Z))
+        DZ = hadamard(DY, act_gradient(Z))
         DW = DZ.T * X
         Db = columns_sum(DZ)
         DX = DZ * W
 
         # test gradients
-        DZ1 = substitute(diff(loss(apply(act, z)), z), (z, Z))
+        DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
@@ -212,7 +212,7 @@ class TestLinearLayers(TestCase):
         X = x
         W = w
         Z = X * W.T + row_repeat(b, N)
-        Y = apply(sigma, Z)
+        Y = sigmoid(Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), (y, Y))
@@ -222,7 +222,7 @@ class TestLinearLayers(TestCase):
         DX = DZ * W
 
         # test gradients
-        Y_z = apply(sigma, z)
+        Y_z = sigmoid(z)
         DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
