@@ -55,38 +55,38 @@ def squared_error_loss_rowwise_gradient(Y: Matrix, T: Matrix):
 #----------------------------------------------#
 
 def mean_squared_error_loss_colwise_vector(y: Matrix, t: Matrix):
-    return dot(y - t, y - t) / len(y)
+    return squared_error_loss_colwise_vector(y, t) / len(y)
 
 
 def mean_squared_error_loss_colwise_gradient_vector(y: Matrix, t: Matrix):
-    return 2 * (y - t) / len(y)
+    return squared_error_loss_colwise_gradient_vector(y, t) / len(y)
 
 
 def mean_squared_error_loss_colwise(Y: Matrix, T: Matrix):
-    return elements_sum(hadamard(Y - T, Y - T)) / len(Y)
+    return squared_error_loss_colwise(Y, T) / len(Y)
 
 
 def mean_squared_error_loss_colwise_gradient(Y: Matrix, T: Matrix):
-    return 2 * (Y - T) / len(Y)
+    return squared_error_loss_colwise_gradient(Y, T) / len(Y)
 
 #----------------------------------------------#
 #         mean_squared_error_loss_rowwise
 #----------------------------------------------#
 
 def mean_squared_error_loss_rowwise_vector(y: Matrix, t: Matrix):
-    return dot(y - t, y - t) / len(y)
+    return squared_error_loss_rowwise_vector(y, t) / len(y)
 
 
 def mean_squared_error_loss_rowwise_gradient_vector(y: Matrix, t: Matrix):
-    return 2 * (y - t) / len(y)
+    return squared_error_loss_rowwise_gradient_vector(y, t) / len(y)
 
 
 def mean_squared_error_loss_rowwise(Y: Matrix, T: Matrix):
-    return elements_sum(hadamard(Y - T, Y - T)) / len(Y)
+    return squared_error_loss_rowwise(Y, T) / len(Y)
 
 
 def mean_squared_error_loss_rowwise_gradient(Y: Matrix, T: Matrix):
-    return 2 * (Y - T) / len(Y)
+    return squared_error_loss_rowwise_gradient(Y, T) / len(Y)
 
 #----------------------------------------------#
 #         cross_entropy_loss_colwise
