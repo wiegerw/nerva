@@ -28,67 +28,26 @@ class SquaredErrorLossColwise(object):
         return 2 * (Y - T)
 
 
-class SquaredErrorLossRowwise(object):
-
-    def vector_value(self, y, t):
-        return dot(y - t, y - t)
-
-    def vector_gradient(self, y, t):
-        return 2 * (y - t)
-
-    def value(self, Y, T):
-        return elements_sum(hadamard(Y - T, Y - T))
-
-    def gradient(self, Y, T):
-        return 2 * (Y - T)
-
-
 class MeanSquaredErrorLossColwise(object):
 
     def vector_value(self, y, t):
-        return SquaredErrorLossColwise().vector_value(y, t) / len(y)
+        K, N = y.shape
+        return SquaredErrorLossColwise().vector_value(y, t) / K
 
     def vector_gradient(self, y, t):
-        return SquaredErrorLossColwise().vector_gradient(y, t) / len(y)
+        K, N = y.shape
+        return SquaredErrorLossColwise().vector_gradient(y, t) / K
 
     def value(self, Y, T):
-        return SquaredErrorLossColwise().value(Y, T) / len(Y)
+        K, N = Y.shape
+        return SquaredErrorLossColwise().value(Y, T) / (K * N)
 
     def gradient(self, Y, T):
-        return SquaredErrorLossColwise().gradient(Y, T) / len(Y)
-
-
-class MeanSquaredErrorLossRowwise(object):
-
-    def vector_value(self, y, t):
-        return SquaredErrorLossRowwise().vector_value(y, t) / len(y)
-
-    def vector_gradient(self, y, t):
-        return SquaredErrorLossRowwise().vector_gradient(y, t) / len(y)
-
-    def value(self, Y, T):
-        return SquaredErrorLossRowwise().value(Y, T) / len(Y)
-
-    def gradient(self, Y, T):
-        return SquaredErrorLossRowwise().gradient(Y, T) / len(Y)
+        K, N = Y.shape
+        return SquaredErrorLossColwise().gradient(Y, T) / (K * N)
 
 
 class CrossEntropyLossColwise(object):
-
-    def vector_value(self, y, t):
-        return -dot(t, log(y))
-
-    def vector_gradient(self, y, t):
-        return -hadamard(t, inverse(y))
-
-    def value(self, Y, T):
-        return -elements_sum(hadamard(T, log(Y)))
-
-    def gradient(self, Y, T):
-        return -hadamard(T, inverse(Y))
-
-
-class CrossEntropyLossRowwise(object):
 
     def vector_value(self, y, t):
         return -dot(t, log(y))
@@ -125,28 +84,6 @@ class SoftmaxCrossEntropyLossColwise(object):
         return softmax_colwise(Y) - T
 
 
-class SoftmaxCrossEntropyLossRowwise(object):
-
-    def vector_value(self, y, t):
-        return -dot(t, log_softmax_rowwise(y))
-
-    def vector_gradient(self, y, t):
-        return softmax_rowwise(y) * elements_sum(t) - t
-
-    def vector_gradient_one_hot(self, y, t):
-        return softmax_rowwise(y) - t
-
-    def value(self, Y, T):
-        return -elements_sum(hadamard(T, log_softmax_rowwise(Y)))
-
-    def gradient(self, Y, T):
-        N, K = Y.shape
-        return hadamard(softmax_rowwise(Y), column_repeat(rows_sum(T), K)) - T
-
-    def gradient_one_hot(self, Y, T):
-        return softmax_rowwise(Y) - T
-
-
 class StableSoftmaxCrossEntropyLossColwise(object):
 
     def vector_value(self, y, t):
@@ -169,44 +106,7 @@ class StableSoftmaxCrossEntropyLossColwise(object):
         return stable_softmax_colwise(Y) - T
 
 
-class StableSoftmaxCrossEntropyLossRowwise(object):
-
-    def vector_value(self, y, t):
-        return -dot(t, stable_log_softmax_rowwise(y))
-
-    def vector_gradient(self, y, t):
-        return stable_softmax_rowwise(y) * elements_sum(t) - t
-
-    def vector_gradient_one_hot(self, y, t):
-        return stable_softmax_rowwise(y) - t
-
-    def value(self, Y, T):
-        return -elements_sum(hadamard(T, stable_log_softmax_rowwise(Y)))
-
-    def gradient(self, Y, T):
-        N, K = Y.shape
-        return hadamard(stable_softmax_rowwise(Y), column_repeat(rows_sum(T), K)) - T
-
-    def gradient_one_hot(self, Y, T):
-        return stable_softmax_rowwise(Y) - T
-
-
 class LogisticCrossEntropyLossColwise(object):
-
-    def vector_value(self, y, t):
-        return -dot(t, log(sigmoid(y)))
-
-    def vector_gradient(self, y, t):
-        return hadamard(t, sigmoid(y)) - t
-
-    def value(self, Y, T):
-        return -elements_sum(hadamard(T, log(sigmoid(Y))))
-
-    def gradient(self, Y, T):
-        return hadamard(T, sigmoid(Y)) - T
-
-
-class LogisticCrossEntropyLossRowwise(object):
 
     def vector_value(self, y, t):
         return -dot(t, log(sigmoid(y)))
@@ -235,6 +135,116 @@ class NegativeLogLikelihoodLossColwise(object):
     def gradient(self, Y, T):
         K, N = Y.shape
         return -hadamard(row_repeat(inverse(columns_sum(hadamard(Y, T))), K), T)
+
+#####################################################################################
+
+
+class SquaredErrorLossRowwise(object):
+
+    def vector_value(self, y, t):
+        return dot(y - t, y - t)
+
+    def vector_gradient(self, y, t):
+        return 2 * (y - t)
+
+    def value(self, Y, T):
+        return elements_sum(hadamard(Y - T, Y - T))
+
+    def gradient(self, Y, T):
+        return 2 * (Y - T)
+
+
+class MeanSquaredErrorLossRowwise(object):
+
+    def vector_value(self, y, t):
+        N, K = y.shape
+        return SquaredErrorLossRowwise().vector_value(y, t) / K
+
+    def vector_gradient(self, y, t):
+        N, K = y.shape
+        return SquaredErrorLossRowwise().vector_gradient(y, t) / K
+
+    def value(self, Y, T):
+        N, K = Y.shape
+        return SquaredErrorLossRowwise().value(Y, T) / (K * N)
+
+    def gradient(self, Y, T):
+        N, K = Y.shape
+        return SquaredErrorLossRowwise().gradient(Y, T) / (K * N)
+
+
+class CrossEntropyLossRowwise(object):
+
+    def vector_value(self, y, t):
+        return -dot(t, log(y))
+
+    def vector_gradient(self, y, t):
+        return -hadamard(t, inverse(y))
+
+    def value(self, Y, T):
+        return -elements_sum(hadamard(T, log(Y)))
+
+    def gradient(self, Y, T):
+        return -hadamard(T, inverse(Y))
+
+
+class SoftmaxCrossEntropyLossRowwise(object):
+
+    def vector_value(self, y, t):
+        return -dot(t, log_softmax_rowwise(y))
+
+    def vector_gradient(self, y, t):
+        return softmax_rowwise(y) * elements_sum(t) - t
+
+    def vector_gradient_one_hot(self, y, t):
+        return softmax_rowwise(y) - t
+
+    def value(self, Y, T):
+        return -elements_sum(hadamard(T, log_softmax_rowwise(Y)))
+
+    def gradient(self, Y, T):
+        N, K = Y.shape
+        return hadamard(softmax_rowwise(Y), column_repeat(rows_sum(T), K)) - T
+
+    def gradient_one_hot(self, Y, T):
+        return softmax_rowwise(Y) - T
+
+
+class StableSoftmaxCrossEntropyLossRowwise(object):
+
+    def vector_value(self, y, t):
+        return -dot(t, stable_log_softmax_rowwise(y))
+
+    def vector_gradient(self, y, t):
+        return stable_softmax_rowwise(y) * elements_sum(t) - t
+
+    def vector_gradient_one_hot(self, y, t):
+        return stable_softmax_rowwise(y) - t
+
+    def value(self, Y, T):
+        return -elements_sum(hadamard(T, stable_log_softmax_rowwise(Y)))
+
+    def gradient(self, Y, T):
+        N, K = Y.shape
+        return hadamard(stable_softmax_rowwise(Y), column_repeat(rows_sum(T), K)) - T
+
+    def gradient_one_hot(self, Y, T):
+        return stable_softmax_rowwise(Y) - T
+
+
+class LogisticCrossEntropyLossRowwise(object):
+
+    def vector_value(self, y, t):
+        return -dot(t, log(sigmoid(y)))
+
+    def vector_gradient(self, y, t):
+        return hadamard(t, sigmoid(y)) - t
+
+    def value(self, Y, T):
+        return -elements_sum(hadamard(T, log(sigmoid(Y))))
+
+    def gradient(self, Y, T):
+        return hadamard(T, sigmoid(Y)) - T
 
 
 class NegativeLogLikelihoodLossRowwise(object):
