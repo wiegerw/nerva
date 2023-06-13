@@ -4,6 +4,18 @@
 
 import numpy as np
 
+def to_row(x: np.ndarray) -> np.ndarray:
+    if len(x.shape) == 1:
+        return np.expand_dims(x, axis=0)
+    return x
+
+
+def to_col(x: np.ndarray) -> np.ndarray:
+    if len(x.shape) == 1:
+        return np.expand_dims(x, axis=1)
+    return x
+
+
 def zeros(m: int, n: int = 1) -> np.ndarray:
     """
     Returns an mxn matrix with all elements equal to 0.
@@ -34,7 +46,7 @@ def hadamard(X: np.ndarray, Y: np.ndarray) -> np.ndarray:
 
 
 def diag(X: np.ndarray) -> np.ndarray:
-    return np.expand_dims(np.diag(X), axis=1)
+    return to_col(np.diag(X))
 
 
 def Diag(x: np.ndarray) -> np.ndarray:
@@ -59,39 +71,39 @@ def row_repeat(x: np.ndarray, m: int) -> np.ndarray:
 
 
 def columns_sum(X: np.ndarray) -> np.ndarray:
-    return np.sum(X, axis=0)
+    return to_row(np.sum(X, axis=0))
 
 
 def rows_sum(X: np.ndarray) -> np.ndarray:
-    return np.expand_dims(np.sum(X, axis=1), axis=1)
+    return to_col(np.sum(X, axis=1))
 
 
 def columns_max(X: np.ndarray) -> np.ndarray:
     """
     Returns a column vector with the maximum values of each row in X.
     """
-    return np.max(X, axis=0)
+    return to_row(np.max(X, axis=0))
 
 
 def rows_max(X: np.ndarray) -> np.ndarray:
     """
     Returns a row vector with the maximum values of each column in X.
     """
-    return np.expand_dims(np.max(X, axis=1), axis=1)
+    return to_col(np.max(X, axis=1))
 
 
 def columns_mean(X: np.ndarray) -> np.ndarray:
     """
     Returns a column vector with the mean values of each row in X.
     """
-    return np.mean(X, axis=0)
+    return to_row(np.mean(X, axis=0))
 
 
 def rows_mean(X: np.ndarray) -> np.ndarray:
     """
     Returns a row vector with the mean values of each column in X.
     """
-    return np.expand_dims(np.mean(X, axis=1), axis=1)
+    return to_col(np.mean(X, axis=1))
 
 
 def apply(f, X: np.ndarray) -> np.ndarray:

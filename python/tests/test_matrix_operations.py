@@ -327,6 +327,28 @@ class TestMatrixOperations(TestCase):
         self.check_arrays_equal('power_minus_half', x1, x2, x3, x4)
 
 
+class TestConversions(TestCase):
+
+    def test_to_row_col(self):
+        xr = np.array([
+            [9],
+            [3],
+            [12],
+        ], dtype=float)
+
+        xc = np.array([
+            [11, 2, 3]
+        ], dtype=float)
+
+        x = np.array([11, 2, 3], dtype=float)
+
+        self.assertEqual(np_.to_row(x).shape, (3, 1))
+        self.assertEqual(np_.to_row(xr).shape, (3, 1))
+
+        self.assertEqual(np_.to_col(x).shape, (1, 3))
+        self.assertEqual(np_.to_col(xc).shape, (1, 3))
+
+
 if __name__ == '__main__':
     import unittest
     unittest.main()

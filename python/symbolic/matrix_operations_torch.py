@@ -4,6 +4,18 @@
 
 import torch
 
+def to_row(x: torch.Tensor) -> torch.Tensor:
+    if len(x.shape) == 1:
+        return x.unsqueeze(dim=0)
+    return x
+
+
+def to_col(x: torch.Tensor) -> torch.Tensor:
+    if len(x.shape) == 1:
+        return x.unsqueeze(dim=1)
+    return x
+
+
 def zeros(m: int, n: int = 1) -> torch.Tensor:
     """
     Returns an mxn matrix with all elements equal to 0.
@@ -59,39 +71,39 @@ def row_repeat(x: torch.Tensor, m: int) -> torch.Tensor:
 
 
 def columns_sum(X: torch.Tensor) -> torch.Tensor:
-    return torch.sum(X, dim=0)
+    return to_row(torch.sum(X, dim=0))
 
 
 def rows_sum(X: torch.Tensor) -> torch.Tensor:
-    return torch.sum(X, dim=1).unsqueeze(dim=1)
+    return to_col(torch.sum(X, dim=1))
 
 
 def columns_max(X: torch.Tensor) -> torch.Tensor:
     """
     Returns a column vector with the maximum values of each row in X.
     """
-    return torch.max(X, dim=0)[0].unsqueeze(dim=0)
+    return to_row(torch.max(X, dim=0)[0])
 
 
 def rows_max(X: torch.Tensor) -> torch.Tensor:
     """
     Returns a row vector with the maximum values of each column in X.
     """
-    return torch.max(X, dim=1)[0].unsqueeze(dim=1)
+    return to_col(torch.max(X, dim=1)[0])
 
 
 def columns_mean(X: torch.Tensor) -> torch.Tensor:
     """
     Returns a column vector with the mean values of each row in X.
     """
-    return torch.mean(X, dim=0)
+    return to_row(torch.mean(X, dim=0))
 
 
 def rows_mean(X: torch.Tensor) -> torch.Tensor:
     """
     Returns a row vector with the mean values of each column in X.
     """
-    return torch.mean(X, dim=1).unsqueeze(dim=1)
+    return to_col(torch.mean(X, dim=1))
 
 
 def apply(f, X: torch.Tensor) -> torch.Tensor:

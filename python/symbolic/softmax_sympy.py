@@ -4,14 +4,16 @@
 
 from symbolic.matrix_operations_sympy import *
 
-#-------------------------------------#
-#           softmax colwise
-#-------------------------------------#
-
 def softmax_colwise(X: Matrix) -> Matrix:
     D, N = X.shape
     E = exp(X)
     return hadamard(E, row_repeat(inverse(columns_sum(E)), D))
+
+
+def softmax_colwise_jacobian(x: Matrix) -> Matrix:
+    assert is_column_vector(x)
+    y = softmax_colwise(x)
+    return Diag(y) - y * y.T
 
 
 def stable_softmax_colwise(X: Matrix) -> Matrix:
@@ -20,16 +22,6 @@ def stable_softmax_colwise(X: Matrix) -> Matrix:
     E = exp(Y)
     return hadamard(E, row_repeat(inverse(columns_sum(E)), D))
 
-
-def softmax_colwise_derivative(x: Matrix) -> Matrix:
-    assert is_column_vector(x)
-    y = softmax_colwise(x)
-    return Diag(y) - y * y.T
-
-
-#-------------------------------------#
-#           log_softmax colwise
-#-------------------------------------#
 
 def log_softmax_colwise(X: Matrix) -> Matrix:
     D, N = X.shape
@@ -42,20 +34,22 @@ def stable_log_softmax_colwise(X: Matrix) -> Matrix:
     return Y - row_repeat(log(columns_sum(exp(Y))), D)
 
 
-def log_softmax_colwise_derivative(x: Matrix) -> Matrix:
+def log_softmax_colwise_jacobian(x: Matrix) -> Matrix:
     assert is_column_vector(x)
     D, N = x.shape
     return identity(D) - row_repeat(softmax_colwise(x).T, D)
 
 
-#-------------------------------------#
-#           softmax rowwise
-#-------------------------------------#
-
 def softmax_rowwise(X: Matrix) -> Matrix:
     N, D = X.shape
     E = exp(X)
     return hadamard(E, column_repeat(inverse(rows_sum(E)), D))
+
+
+def softmax_rowwise_jacobian(x: Matrix) -> Matrix:
+    assert is_row_vector(x)
+    y = softmax_rowwise(x)
+    return Diag(y) - y.T * y
 
 
 def stable_softmax_rowwise(X: Matrix) -> Matrix:
@@ -65,19 +59,15 @@ def stable_softmax_rowwise(X: Matrix) -> Matrix:
     return hadamard(E, column_repeat(inverse(rows_sum(E)), D))
 
 
-def softmax_rowwise_derivative(x: Matrix) -> Matrix:
-    assert is_row_vector(x)
-    y = softmax_rowwise(x)
-    return Diag(y) - y.T * y
-
-
-#-------------------------------------#
-#           log_softmax rowwise
-#-------------------------------------#
-
 def log_softmax_rowwise(X: Matrix) -> Matrix:
     N, D = X.shape
     return X - column_repeat(log(rows_sum(exp(X))), D)
+
+
+def log_softmax_rowwise_jacobian(x: Matrix) -> Matrix:
+    assert is_row_vector(x)
+    N, D = x.shape
+    return identity(D) - row_repeat(softmax_rowwise(x), D)
 
 
 def stable_log_softmax_rowwise(X: Matrix) -> Matrix:
@@ -85,8 +75,3 @@ def stable_log_softmax_rowwise(X: Matrix) -> Matrix:
     Y = X - column_repeat(rows_max(X), D)
     return Y - column_repeat(log(rows_sum(exp(Y))), D)
 
-
-def log_softmax_rowwise_derivative(x: Matrix) -> Matrix:
-    assert is_row_vector(x)
-    N, D = x.shape
-    return identity(D) - row_repeat(softmax_rowwise(x), D)
