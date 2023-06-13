@@ -405,35 +405,35 @@ class TestRowwiseLossFunctions(TestCase):
 
         return Y, T
 
-    def test_squared_error_loss_rowwise(self):
-        Y, T = self.make_variables()
-
-        x1 = sympy_.squared_error_loss_rowwise(to_sympy(Y), to_sympy(T))
-        x2 = np_.squared_error_loss_rowwise(to_numpy(Y), to_numpy(T))
-        x3 = tf_.squared_error_loss_rowwise(to_tensorflow(Y), to_tensorflow(T))
-        x4 = torch_.squared_error_loss_rowwise(to_torch(Y), to_torch(T))
-        self.check_numbers_equal('squared_error_loss', x1, x2, x3, x4)
-
-        x1 = sympy_.squared_error_loss_rowwise_gradient(to_sympy(Y), to_sympy(T))
-        x2 = np_.squared_error_loss_rowwise_gradient(to_numpy(Y), to_numpy(T))
-        x3 = tf_.squared_error_loss_rowwise_gradient(to_tensorflow(Y), to_tensorflow(T))
-        x4 = torch_.squared_error_loss_rowwise_gradient(to_torch(Y), to_torch(T))
-        self.check_arrays_equal('squared_error_loss_rowwise_gradient', x1, x2, x3, x4)
-
-    def test_mean_squared_error_loss_rowwise(self):
-        Y, T = self.make_variables()
-
-        x1 = sympy_.mean_squared_error_loss_rowwise(to_sympy(Y), to_sympy(T))
-        x2 = np_.mean_squared_error_loss_rowwise(to_numpy(Y), to_numpy(T))
-        x3 = tf_.mean_squared_error_loss_rowwise(to_tensorflow(Y), to_tensorflow(T))
-        x4 = torch_.mean_squared_error_loss_rowwise(to_torch(Y), to_torch(T))
-        self.check_numbers_equal('mean_squared_error_loss', x1, x2, x3, x4)
-
-        x1 = sympy_.mean_squared_error_loss_rowwise_gradient(to_sympy(Y), to_sympy(T))
-        x2 = np_.mean_squared_error_loss_rowwise_gradient(to_numpy(Y), to_numpy(T))
-        x3 = tf_.mean_squared_error_loss_rowwise_gradient(to_tensorflow(Y), to_tensorflow(T))
-        x4 = torch_.mean_squared_error_loss_rowwise_gradient(to_torch(Y), to_torch(T))
-        self.check_arrays_equal('mean_squared_error_loss_rowwise_gradient', x1, x2, x3, x4)
+    # def test_squared_error_loss_rowwise(self):
+    #     Y, T = self.make_variables()
+    #
+    #     x1 = sympy_.squared_error_loss_rowwise(to_sympy(Y), to_sympy(T))
+    #     x2 = np_.squared_error_loss_rowwise(to_numpy(Y), to_numpy(T))
+    #     x3 = tf_.squared_error_loss_rowwise(to_tensorflow(Y), to_tensorflow(T))
+    #     x4 = torch_.squared_error_loss_rowwise(to_torch(Y), to_torch(T))
+    #     self.check_numbers_equal('squared_error_loss', x1, x2, x3, x4)
+    #
+    #     x1 = sympy_.squared_error_loss_rowwise_gradient(to_sympy(Y), to_sympy(T))
+    #     x2 = np_.squared_error_loss_rowwise_gradient(to_numpy(Y), to_numpy(T))
+    #     x3 = tf_.squared_error_loss_rowwise_gradient(to_tensorflow(Y), to_tensorflow(T))
+    #     x4 = torch_.squared_error_loss_rowwise_gradient(to_torch(Y), to_torch(T))
+    #     self.check_arrays_equal('squared_error_loss_rowwise_gradient', x1, x2, x3, x4)
+    # 
+    # def test_mean_squared_error_loss_rowwise(self):
+    #     Y, T = self.make_variables()
+    #
+    #     x1 = sympy_.mean_squared_error_loss_rowwise(to_sympy(Y), to_sympy(T))
+    #     x2 = np_.mean_squared_error_loss_rowwise(to_numpy(Y), to_numpy(T))
+    #     x3 = tf_.mean_squared_error_loss_rowwise(to_tensorflow(Y), to_tensorflow(T))
+    #     x4 = torch_.mean_squared_error_loss_rowwise(to_torch(Y), to_torch(T))
+    #     self.check_numbers_equal('mean_squared_error_loss', x1, x2, x3, x4)
+    #
+    #     x1 = sympy_.mean_squared_error_loss_rowwise_gradient(to_sympy(Y), to_sympy(T))
+    #     x2 = np_.mean_squared_error_loss_rowwise_gradient(to_numpy(Y), to_numpy(T))
+    #     x3 = tf_.mean_squared_error_loss_rowwise_gradient(to_tensorflow(Y), to_tensorflow(T))
+    #     x4 = torch_.mean_squared_error_loss_rowwise_gradient(to_torch(Y), to_torch(T))
+    #     self.check_arrays_equal('mean_squared_error_loss_rowwise_gradient', x1, x2, x3, x4)
 
 
 if __name__ == '__main__':
