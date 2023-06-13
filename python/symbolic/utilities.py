@@ -71,3 +71,12 @@ def to_torch(X: np.ndarray) -> torch.Tensor:
 
 def to_tensorflow(X: np.ndarray) -> tf.Tensor:
     return tf.convert_to_tensor(X)
+
+
+def squared_error(X: Matrix):
+    m, n = X.shape
+
+    def f(x: Matrix) -> float:
+        return sp.sqrt(sum(xi * xi for xi in x))
+
+    return sum(f(X.col(j)) for j in range(n))
