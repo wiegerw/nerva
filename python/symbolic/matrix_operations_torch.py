@@ -4,6 +4,29 @@
 
 import torch
 
+def is_column_vector(x: torch.Tensor) -> bool:
+    m, n = x.shape
+    return n == 1
+
+
+def is_row_vector(x: torch.Tensor) -> bool:
+    m, n = x.shape
+    return m == 1
+
+
+def is_square(X: torch.Tensor) -> bool:
+    m, n = X.shape
+    return m == n
+
+
+def dot(x, y):
+    if is_column_vector(x) and is_column_vector(y):
+        return x.T @ y
+    elif is_row_vector(x) and is_row_vector(y):
+        return x @ y.T
+    raise RuntimeError('dot: received illegal input')
+
+
 def to_row(x: torch.Tensor) -> torch.Tensor:
     if len(x.shape) == 1:
         return x.unsqueeze(dim=0)
@@ -132,20 +155,3 @@ def sqrt(X: torch.Tensor) -> torch.Tensor:
 
 def power_minus_half(X: torch.Tensor) -> torch.Tensor:
     return inverse(sqrt(X))
-
-
-###########################################################################################
-
-def is_column_vector(x: torch.Tensor) -> bool:
-    m, n = x.shape
-    return n == 1
-
-
-def is_row_vector(x: torch.Tensor) -> bool:
-    m, n = x.shape
-    return m == 1
-
-
-def is_square(X: torch.Tensor) -> bool:
-    m, n = X.shape
-    return m == n

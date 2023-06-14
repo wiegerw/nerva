@@ -4,6 +4,29 @@
 
 import tensorflow as tf
 
+def is_column_vector(x: tf.Tensor) -> bool:
+    m, n = x.shape
+    return n == 1
+
+
+def is_row_vector(x: tf.Tensor) -> bool:
+    m, n = x.shape
+    return m == 1
+
+
+def is_square(X: tf.Tensor) -> bool:
+    m, n = X.shape
+    return m == n
+
+
+def dot(x, y):
+    if is_column_vector(x) and is_column_vector(y):
+        return tf.transpose(x) @ y
+    elif is_row_vector(x) and is_row_vector(y):
+        return x @ tf.transpose(y)
+    raise RuntimeError('dot: received illegal input')
+
+
 def to_row(x: tf.Tensor) -> tf.Tensor:
     if len(x.shape) == 1:
         return tf.expand_dims(x, axis=0)
@@ -132,20 +155,3 @@ def sqrt(X: tf.Tensor) -> tf.Tensor:
 
 def power_minus_half(X: tf.Tensor) -> tf.Tensor:
     return inverse(sqrt(X))
-
-
-###########################################################################################
-
-def is_column_vector(x: tf.Tensor) -> bool:
-    m, n = x.shape
-    return n == 1
-
-
-def is_row_vector(x: tf.Tensor) -> bool:
-    m, n = x.shape
-    return m == 1
-
-
-def is_square(X: tf.Tensor) -> bool:
-    m, n = X.shape
-    return m == n

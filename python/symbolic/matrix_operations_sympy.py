@@ -7,6 +7,21 @@ from typing import List, Iterable, Tuple, Union
 import sympy as sp
 from sympy import Matrix
 
+def is_column_vector(x: Matrix) -> bool:
+    m, n = x.shape
+    return n == 1
+
+
+def is_row_vector(x: Matrix) -> bool:
+    m, n = x.shape
+    return m == 1
+
+
+def is_square(X: Matrix) -> bool:
+    m, n = X.shape
+    return m == n
+
+
 def dot(x: Matrix, y: Matrix):
     if is_column_vector(x) and is_column_vector(y):
         return (x.T * y)[0, 0]
@@ -153,23 +168,6 @@ def sqrt(X: Matrix) -> Matrix:
 
 def power_minus_half(X: Matrix) -> Matrix:
     return inverse(sqrt(X))
-
-
-###########################################################################################
-
-def is_column_vector(x: Matrix) -> bool:
-    m, n = x.shape
-    return n == 1
-
-
-def is_row_vector(x: Matrix) -> bool:
-    m, n = x.shape
-    return m == 1
-
-
-def is_square(X: Matrix) -> bool:
-    m, n = X.shape
-    return m == n
 
 
 def join_columns(columns: List[Matrix]) -> Matrix:

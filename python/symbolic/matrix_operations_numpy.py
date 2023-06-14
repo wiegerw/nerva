@@ -4,8 +4,27 @@
 
 import numpy as np
 
+def is_column_vector(x: np.ndarray) -> bool:
+    m, n = x.shape
+    return n == 1
+
+
+def is_row_vector(x: np.ndarray) -> bool:
+    m, n = x.shape
+    return m == 1
+
+
+def is_square(X: np.ndarray) -> bool:
+    m, n = X.shape
+    return m == n
+
+
 def dot(x, y):
-    return np.dot(x, y)
+    if is_column_vector(x) and is_column_vector(y):
+        return x.T @ y
+    elif is_row_vector(x) and is_row_vector(y):
+        return x @ y.T
+    raise RuntimeError('dot: received illegal input')
 
 
 def to_row(x: np.ndarray) -> np.ndarray:
@@ -136,20 +155,3 @@ def sqrt(X: np.ndarray) -> np.ndarray:
 
 def power_minus_half(X: np.ndarray) -> np.ndarray:
     return inverse(sqrt(X))
-
-
-###########################################################################################
-
-def is_column_vector(x: np.ndarray) -> bool:
-    m, n = x.shape
-    return n == 1
-
-
-def is_row_vector(x: np.ndarray) -> bool:
-    m, n = x.shape
-    return m == 1
-
-
-def is_square(X: np.ndarray) -> bool:
-    m, n = X.shape
-    return m == n
