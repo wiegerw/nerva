@@ -48,97 +48,97 @@ class TestActivationFunctions(TestCase):
         X, alpha, al, tl, ar, tr = self.make_variables()
 
         x = X
-        x1 = sympy_.relu(to_sympy(x))
-        x2 = np_.relu(to_numpy(x))
-        x3 = tf_.relu(to_tensorflow(x))
-        x4 = torch_.relu(to_torch(x))
-        self.check_arrays_equal('relu', x1, x2, x3, x4)
+        x1 = sympy_.Relu(to_sympy(x))
+        x2 = np_.Relu(to_numpy(x))
+        x3 = tf_.Relu(to_tensorflow(x))
+        x4 = torch_.Relu(to_torch(x))
+        self.check_arrays_equal('Relu', x1, x2, x3, x4)
 
-        x1 = sympy_.relu_gradient(to_sympy(x))
-        x2 = np_.relu_gradient(to_numpy(x))
-        x3 = tf_.relu_gradient(to_tensorflow(x))
-        x4 = torch_.relu_gradient(to_torch(x))
-        self.check_arrays_equal('relu_gradient', x1, x2, x3, x4)
+        x1 = sympy_.Relu_gradient(to_sympy(x))
+        x2 = np_.Relu_gradient(to_numpy(x))
+        x3 = tf_.Relu_gradient(to_tensorflow(x))
+        x4 = torch_.Relu_gradient(to_torch(x))
+        self.check_arrays_equal('Relu_gradient', x1, x2, x3, x4)
 
     def test_leaky_relu(self):
         X, alpha, al, tl, ar, tr = self.make_variables()
 
         x = X
-        x1 = sympy_.leaky_relu(alpha)(to_sympy(x))
-        x2 = np_.leaky_relu(alpha)(to_numpy(x))
-        x3 = tf_.leaky_relu(alpha)(to_tensorflow(x))
-        x4 = torch_.leaky_relu(alpha)(to_torch(x))
-        self.check_arrays_equal('leaky_relu', x1, x2, x3, x4)
+        x1 = sympy_.Leaky_relu(alpha)(to_sympy(x))
+        x2 = np_.Leaky_relu(alpha)(to_numpy(x))
+        x3 = tf_.Leaky_relu(alpha)(to_tensorflow(x))
+        x4 = torch_.Leaky_relu(alpha)(to_torch(x))
+        self.check_arrays_equal('Leaky_relu', x1, x2, x3, x4)
 
-        x1 = sympy_.leaky_relu_gradient(alpha)(to_sympy(x))
-        x2 = np_.leaky_relu_gradient(alpha)(to_numpy(x))
-        x3 = tf_.leaky_relu_gradient(alpha)(to_tensorflow(x))
-        x4 = torch_.leaky_relu_gradient(alpha)(to_torch(x))
-        self.check_arrays_equal('leaky_relu_gradient', x1, x2, x3, x4)
+        x1 = sympy_.Leaky_relu_gradient(alpha)(to_sympy(x))
+        x2 = np_.Leaky_relu_gradient(alpha)(to_numpy(x))
+        x3 = tf_.Leaky_relu_gradient(alpha)(to_tensorflow(x))
+        x4 = torch_.Leaky_relu_gradient(alpha)(to_torch(x))
+        self.check_arrays_equal('Leaky_relu_gradient', x1, x2, x3, x4)
 
-    def test_all_relu(self):
+    def test_All_relu(self):
         X, alpha, al, tl, ar, tr = self.make_variables()
 
         x = X
-        x1 = sympy_.all_relu(alpha)(to_sympy(x))
-        x2 = np_.all_relu(alpha)(to_numpy(x))
-        x3 = tf_.all_relu(alpha)(to_tensorflow(x))
-        x4 = torch_.all_relu(alpha)(to_torch(x))
-        self.check_arrays_equal('all_relu', x1, x2, x3, x4)
+        x1 = sympy_.All_relu(alpha)(to_sympy(x))
+        x2 = np_.All_relu(alpha)(to_numpy(x))
+        x3 = tf_.All_relu(alpha)(to_tensorflow(x))
+        x4 = torch_.All_relu(alpha)(to_torch(x))
+        self.check_arrays_equal('All_relu', x1, x2, x3, x4)
 
-        x1 = sympy_.all_relu_gradient(alpha)(to_sympy(x))
-        x2 = np_.all_relu_gradient(alpha)(to_numpy(x))
-        x3 = tf_.all_relu_gradient(alpha)(to_tensorflow(x))
-        x4 = torch_.all_relu_gradient(alpha)(to_torch(x))
-        self.check_arrays_equal('all_relu_gradient', x1, x2, x3, x4)
+        x1 = sympy_.All_relu_gradient(alpha)(to_sympy(x))
+        x2 = np_.All_relu_gradient(alpha)(to_numpy(x))
+        x3 = tf_.All_relu_gradient(alpha)(to_tensorflow(x))
+        x4 = torch_.All_relu_gradient(alpha)(to_torch(x))
+        self.check_arrays_equal('All_relu_gradient', x1, x2, x3, x4)
 
-    def test_hyperbolic_tangent(self):
+    def test_Hyperbolic_tangent(self):
         X, alpha, al, tl, ar, tr = self.make_variables()
 
         x = X
-        x1 = sympy_.hyperbolic_tangent(to_sympy(x))
-        x2 = np_.hyperbolic_tangent(to_numpy(x))
-        x3 = tf_.hyperbolic_tangent(to_tensorflow(x))
-        x4 = torch_.hyperbolic_tangent(to_torch(x))
-        self.check_arrays_equal('hyperbolic_tangent', x1, x2, x3, x4)
+        x1 = sympy_.Hyperbolic_tangent(to_sympy(x))
+        x2 = np_.Hyperbolic_tangent(to_numpy(x))
+        x3 = tf_.Hyperbolic_tangent(to_tensorflow(x))
+        x4 = torch_.Hyperbolic_tangent(to_torch(x))
+        self.check_arrays_equal('Hyperbolic_tangent', x1, x2, x3, x4)
 
-        x1 = sympy_.hyperbolic_tangent_gradient(to_sympy(x))
-        x2 = np_.hyperbolic_tangent_gradient(to_numpy(x))
-        x3 = tf_.hyperbolic_tangent_gradient(to_tensorflow(x))
-        x4 = torch_.hyperbolic_tangent_gradient(to_torch(x))
-        self.check_arrays_equal('hyperbolic_tangent_gradient', x1, x2, x3, x4)
+        x1 = sympy_.Hyperbolic_tangent_gradient(to_sympy(x))
+        x2 = np_.Hyperbolic_tangent_gradient(to_numpy(x))
+        x3 = tf_.Hyperbolic_tangent_gradient(to_tensorflow(x))
+        x4 = torch_.Hyperbolic_tangent_gradient(to_torch(x))
+        self.check_arrays_equal('Hyperbolic_tangent_gradient', x1, x2, x3, x4)
 
-    def test_sigmoid(self):
+    def test_Sigmoid(self):
         X, alpha, al, tl, ar, tr = self.make_variables()
 
         x = X
-        x1 = sympy_.sigmoid(to_sympy(x))
-        x2 = np_.sigmoid(to_numpy(x))
-        x3 = tf_.sigmoid(to_tensorflow(x))
-        x4 = torch_.sigmoid(to_torch(x))
-        self.check_arrays_equal('sigmoid', x1, x2, x3, x4)
+        x1 = sympy_.Sigmoid(to_sympy(x))
+        x2 = np_.Sigmoid(to_numpy(x))
+        x3 = tf_.Sigmoid(to_tensorflow(x))
+        x4 = torch_.Sigmoid(to_torch(x))
+        self.check_arrays_equal('Sigmoid', x1, x2, x3, x4)
 
-        x1 = sympy_.sigmoid_gradient(to_sympy(x))
-        x2 = np_.sigmoid_gradient(to_numpy(x))
-        x3 = tf_.sigmoid_gradient(to_tensorflow(x))
-        x4 = torch_.sigmoid_gradient(to_torch(x))
-        self.check_arrays_equal('sigmoid_gradient', x1, x2, x3, x4)
+        x1 = sympy_.Sigmoid_gradient(to_sympy(x))
+        x2 = np_.Sigmoid_gradient(to_numpy(x))
+        x3 = tf_.Sigmoid_gradient(to_tensorflow(x))
+        x4 = torch_.Sigmoid_gradient(to_torch(x))
+        self.check_arrays_equal('Sigmoid_gradient', x1, x2, x3, x4)
 
-    def test_srelu(self):
+    def test_Srelu(self):
         X, alpha, al, tl, ar, tr = self.make_variables()
 
         x = X
-        x1 = sympy_.srelu(al, tl, ar, tr)(to_sympy(x))
-        x2 = np_.srelu(al, tl, ar, tr)(to_numpy(x))
-        x3 = tf_.srelu(al, tl, ar, tr)(to_tensorflow(x))
-        x4 = torch_.srelu(al, tl, ar, tr)(to_torch(x))
-        self.check_arrays_equal('srelu', x1, x2, x3, x4)
+        x1 = sympy_.Srelu(al, tl, ar, tr)(to_sympy(x))
+        x2 = np_.Srelu(al, tl, ar, tr)(to_numpy(x))
+        x3 = tf_.Srelu(al, tl, ar, tr)(to_tensorflow(x))
+        x4 = torch_.Srelu(al, tl, ar, tr)(to_torch(x))
+        self.check_arrays_equal('Srelu', x1, x2, x3, x4)
 
-        x1 = sympy_.srelu_gradient(al, tl, ar, tr)(to_sympy(x))
-        x2 = np_.srelu_gradient(al, tl, ar, tr)(to_numpy(x))
-        x3 = tf_.srelu_gradient(al, tl, ar, tr)(to_tensorflow(x))
-        x4 = torch_.srelu_gradient(al, tl, ar, tr)(to_torch(x))
-        self.check_arrays_equal('srelu_gradient', x1, x2, x3, x4)
+        x1 = sympy_.Srelu_gradient(al, tl, ar, tr)(to_sympy(x))
+        x2 = np_.Srelu_gradient(al, tl, ar, tr)(to_numpy(x))
+        x3 = tf_.Srelu_gradient(al, tl, ar, tr)(to_tensorflow(x))
+        x4 = torch_.Srelu_gradient(al, tl, ar, tr)(to_torch(x))
+        self.check_arrays_equal('Srelu_gradient', x1, x2, x3, x4)
 
 
 if __name__ == '__main__':

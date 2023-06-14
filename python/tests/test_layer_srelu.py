@@ -30,8 +30,8 @@ class TestSReLULayers(TestCase):
         ar = sp.symbols('ar', real=True)
         tr = sp.symbols('tr', real=True)
 
-        act = srelu(al, tl, ar, tr)
-        act_gradient = srelu_gradient(al, tl, ar, tr)
+        act = Srelu(al, tl, ar, tr)
+        act_gradient = Srelu_gradient(al, tl, ar, tr)
 
         # helper functions
         Zij = sp.symbols('Zij')
@@ -100,8 +100,8 @@ class TestSReLULayers(TestCase):
         ar = sp.symbols('ar', real=True)
         tr = sp.symbols('tr', real=True)
 
-        act = srelu(al, tl, ar, tr)
-        act_gradient = srelu_gradient(al, tl, ar, tr)
+        act = Srelu(al, tl, ar, tr)
+        act_gradient = Srelu_gradient(al, tl, ar, tr)
 
         # helper functions
         Zij = sp.symbols('Zij')

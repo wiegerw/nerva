@@ -109,16 +109,16 @@ class StableSoftmaxCrossEntropyLossColwise(object):
 class LogisticCrossEntropyLossColwise(object):
 
     def vector_value(self, y, t):
-        return -dot(t, log(sigmoid(y)))
+        return -dot(t, log(Sigmoid(y)))
 
     def vector_gradient(self, y, t):
-        return hadamard(t, sigmoid(y)) - t
+        return hadamard(t, Sigmoid(y)) - t
 
     def value(self, Y, T):
-        return -elements_sum(hadamard(T, log(sigmoid(Y))))
+        return -elements_sum(hadamard(T, log(Sigmoid(Y))))
 
     def gradient(self, Y, T):
-        return hadamard(T, sigmoid(Y)) - T
+        return hadamard(T, Sigmoid(Y)) - T
 
 
 class NegativeLogLikelihoodLossColwise(object):
@@ -235,16 +235,16 @@ class StableSoftmaxCrossEntropyLossRowwise(object):
 class LogisticCrossEntropyLossRowwise(object):
 
     def vector_value(self, y, t):
-        return -dot(t, log(sigmoid(y)))
+        return -dot(t, log(Sigmoid(y)))
 
     def vector_gradient(self, y, t):
-        return hadamard(t, sigmoid(y)) - t
+        return hadamard(t, Sigmoid(y)) - t
 
     def value(self, Y, T):
-        return -elements_sum(hadamard(T, log(sigmoid(Y))))
+        return -elements_sum(hadamard(T, log(Sigmoid(Y))))
 
     def gradient(self, Y, T):
-        return hadamard(T, sigmoid(Y)) - T
+        return hadamard(T, Sigmoid(Y)) - T
 
 
 class NegativeLogLikelihoodLossRowwise(object):

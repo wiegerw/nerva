@@ -5,52 +5,52 @@
 import torch
 
 
-def relu(x):
-    return torch.max(torch.zeros_like(x), x)
+def Relu(X: torch.Tensor):
+    return torch.max(torch.zeros_like(X), X)
 
 
-def relu_gradient(x):
-    return torch.where(x > 0, torch.ones_like(x), torch.zeros_like(x))
+def Relu_gradient(X: torch.Tensor):
+    return torch.where(X > 0, torch.ones_like(X), torch.zeros_like(X))
 
 
-def leaky_relu(alpha):
-    return lambda x: torch.max(x, alpha * x)
+def Leaky_relu(alpha):
+    return lambda X: torch.max(X, alpha * X)
 
 
-def leaky_relu_gradient(alpha):
-    return lambda x: torch.where(x > 0, torch.ones_like(x), torch.full_like(x, alpha))
+def Leaky_relu_gradient(alpha):
+    return lambda X: torch.where(X > 0, torch.ones_like(X), torch.full_like(X, alpha))
 
 
-def all_relu(alpha):
-    return lambda x: torch.where(x < 0, alpha * x, x)
+def All_relu(alpha):
+    return lambda X: torch.where(X < 0, alpha * X, X)
 
 
-def all_relu_gradient(alpha):
-    return lambda x: torch.where(x < 0, alpha, 1)
+def All_relu_gradient(alpha):
+    return lambda X: torch.where(X < 0, alpha, 1)
 
 
-def hyperbolic_tangent(x):
-    return torch.tanh(x)
+def Hyperbolic_tangent(X: torch.Tensor):
+    return torch.tanh(X)
 
 
-def hyperbolic_tangent_gradient(x):
-    return 1 - torch.tanh(x) ** 2
+def Hyperbolic_tangent_gradient(X: torch.Tensor):
+    return 1 - torch.tanh(X) ** 2
 
 
-def sigmoid(x):
-    return torch.sigmoid(x)
+def Sigmoid(X: torch.Tensor):
+    return torch.sigmoid(X)
 
 
-def sigmoid_gradient(x):
-    y = torch.sigmoid(x)
+def Sigmoid_gradient(X: torch.Tensor):
+    y = torch.sigmoid(X)
     return y * (1 - y)
 
 
-def srelu(al, tl, ar, tr):
-    return lambda x: torch.where(x <= tl, tl + al * (x - tl),
-                     torch.where(x < tr, x, tr + ar * (x - tr)))
+def Srelu(al, tl, ar, tr):
+    return lambda X: torch.where(X <= tl, tl + al * (X - tl),
+                     torch.where(X < tr, X, tr + ar * (X - tr)))
 
 
-def srelu_gradient(al, tl, ar, tr):
-    return lambda x: torch.where(x <= tl, al,
-                     torch.where(x < tr, 1, ar))
+def Srelu_gradient(al, tl, ar, tr):
+    return lambda X: torch.where(X <= tl, al,
+                     torch.where(X < tr, 1, ar))

@@ -52,8 +52,8 @@ class TestDropoutLayers(TestCase):
         N = 2
         K = 2
         loss = squared_error
-        act = hyperbolic_tangent
-        act_gradient = hyperbolic_tangent_gradient
+        act = Hyperbolic_tangent
+        act_gradient = Hyperbolic_tangent_gradient
 
         # variables
         x = matrix('x', D, N)
@@ -107,7 +107,7 @@ class TestDropoutLayers(TestCase):
         W = w
         R = r
         Z = hadamard(W, R) * X + column_repeat(b, N)
-        Y = sigmoid(Z)
+        Y = Sigmoid(Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), (y, Y))
@@ -117,7 +117,7 @@ class TestDropoutLayers(TestCase):
         DX = hadamard(W, R).T * DZ
 
         # test gradients
-        Y_z = sigmoid(z)
+        Y_z = Sigmoid(z)
         DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
@@ -167,8 +167,8 @@ class TestDropoutLayers(TestCase):
         N = 2
         K = 2
         loss = squared_error
-        act = hyperbolic_tangent
-        act_gradient = hyperbolic_tangent_gradient
+        act = Hyperbolic_tangent
+        act_gradient = Hyperbolic_tangent_gradient
 
         # variables
         x = matrix('x', N, D)
@@ -208,7 +208,7 @@ class TestDropoutLayers(TestCase):
         N = 2
         K = 2
         loss = squared_error
-        sigma = sigmoid
+        sigma = Sigmoid
 
         # variables
         x = matrix('x', N, D)
@@ -223,7 +223,7 @@ class TestDropoutLayers(TestCase):
         W = w
         R = r
         Z = X * hadamard(W.T, R) + row_repeat(b, N)
-        Y = sigmoid(Z)
+        Y = Sigmoid(Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), (y, Y))
@@ -233,7 +233,7 @@ class TestDropoutLayers(TestCase):
         DX = DZ * hadamard(W, R.T)
 
         # test gradients
-        Y_z = sigmoid(z)
+        Y_z = Sigmoid(z)
         DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)

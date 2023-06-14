@@ -5,52 +5,52 @@
 import tensorflow as tf
 
 
-def relu(x):
-    return tf.maximum(0.0, x)
+def Relu(X: tf.Tensor):
+    return tf.maximum(0.0, X)
 
 
-def relu_gradient(x):
-    return tf.where(x > 0, tf.ones_like(x), tf.zeros_like(x))
+def Relu_gradient(X: tf.Tensor):
+    return tf.where(X > 0, tf.ones_like(X), tf.zeros_like(X))
 
 
-def leaky_relu(alpha):
-    return lambda x: tf.maximum(alpha * x, x)
+def Leaky_relu(alpha):
+    return lambda X: tf.maximum(alpha * X, X)
 
 
-def leaky_relu_gradient(alpha):
-    return lambda x: tf.where(x > 0, tf.ones_like(x), tf.fill(tf.shape(x), tf.cast(alpha, x.dtype)))
+def Leaky_relu_gradient(alpha):
+    return lambda X: tf.where(X > 0, tf.ones_like(X), tf.fill(tf.shape(X), tf.cast(alpha, X.dtype)))
 
 
-def all_relu(alpha):
-    return lambda x: tf.where(x < 0, tf.cast(alpha, x.dtype) * x, x)
+def All_relu(alpha):
+    return lambda X: tf.where(X < 0, tf.cast(alpha, X.dtype) * X, X)
 
 
-def all_relu_gradient(alpha):
-    return lambda x: tf.where(x < 0, tf.fill(tf.shape(x), tf.cast(alpha, x.dtype)), tf.ones_like(x))
+def All_relu_gradient(alpha):
+    return lambda X: tf.where(X < 0, tf.fill(tf.shape(X), tf.cast(alpha, X.dtype)), tf.ones_like(X))
 
 
-def hyperbolic_tangent(x):
-    return tf.math.tanh(x)
+def Hyperbolic_tangent(X: tf.Tensor):
+    return tf.math.tanh(X)
 
 
-def hyperbolic_tangent_gradient(x):
-    return 1 - tf.math.tanh(x) ** 2
+def Hyperbolic_tangent_gradient(X: tf.Tensor):
+    return 1 - tf.math.tanh(X) ** 2
 
 
-def sigmoid(x):
-    return tf.math.sigmoid(x)
+def Sigmoid(X: tf.Tensor):
+    return tf.math.sigmoid(X)
 
 
-def sigmoid_gradient(x):
-    y = tf.math.sigmoid(x)
+def Sigmoid_gradient(X: tf.Tensor):
+    y = tf.math.sigmoid(X)
     return y * (1 - y)
 
 
-def srelu(al, tl, ar, tr):
-    return lambda x: tf.where(x <= tl, tl + al * (x - tl),
-                     tf.where(x < tr, x, tr + ar * (x - tr)))
+def Srelu(al, tl, ar, tr):
+    return lambda X: tf.where(X <= tl, tl + al * (X - tl),
+                     tf.where(X < tr, X, tr + ar * (X - tr)))
 
 
-def srelu_gradient(al, tl, ar, tr):
-    return lambda x: tf.where(x <= tl, al,
-                     tf.where(x < tr, 1., ar))
+def Srelu_gradient(al, tl, ar, tr):
+    return lambda X: tf.where(X <= tl, al,
+                     tf.where(X < tr, 1., ar))

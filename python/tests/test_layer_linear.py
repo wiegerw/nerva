@@ -50,8 +50,8 @@ class TestLinearLayers(TestCase):
         K = 2
         N = 2
         loss = squared_error
-        act = hyperbolic_tangent
-        act_gradient = hyperbolic_tangent_gradient
+        act = Hyperbolic_tangent
+        act_gradient = Hyperbolic_tangent_gradient
 
         # variables
         x = matrix('x', D, N)
@@ -89,7 +89,7 @@ class TestLinearLayers(TestCase):
         K = 2
         N = 2
         loss = squared_error
-        sigma = sigmoid
+        sigma = Sigmoid
 
         # variables
         x = matrix('x', D, N)
@@ -102,7 +102,7 @@ class TestLinearLayers(TestCase):
         X = x
         W = w
         Z = W * X + column_repeat(b, N)
-        Y = sigmoid(Z)
+        Y = Sigmoid(Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), (y, Y))
@@ -112,7 +112,7 @@ class TestLinearLayers(TestCase):
         DX = W.T * DZ
 
         # test gradients
-        Y_z = sigmoid(z)
+        Y_z = Sigmoid(z)
         DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
@@ -160,8 +160,8 @@ class TestLinearLayers(TestCase):
         K = 2
         N = 2
         loss = squared_error
-        act = hyperbolic_tangent
-        act_gradient = hyperbolic_tangent_gradient
+        act = Hyperbolic_tangent
+        act_gradient = Hyperbolic_tangent_gradient
 
         # variables
         x = matrix('x', N, D)
@@ -199,7 +199,7 @@ class TestLinearLayers(TestCase):
         K = 2
         N = 2
         loss = squared_error
-        sigma = sigmoid
+        sigma = Sigmoid
 
         # variables
         x = matrix('x', N, D)
@@ -212,7 +212,7 @@ class TestLinearLayers(TestCase):
         X = x
         W = w
         Z = X * W.T + row_repeat(b, N)
-        Y = sigmoid(Z)
+        Y = Sigmoid(Z)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), (y, Y))
@@ -222,7 +222,7 @@ class TestLinearLayers(TestCase):
         DX = DZ * W
 
         # test gradients
-        Y_z = sigmoid(z)
+        Y_z = Sigmoid(z)
         DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
