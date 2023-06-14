@@ -7,6 +7,14 @@ from typing import List, Iterable, Tuple, Union
 import sympy as sp
 from sympy import Matrix
 
+def dot(x: Matrix, y: Matrix):
+    if is_column_vector(x) and is_column_vector(y):
+        return (x.T * y)[0, 0]
+    elif is_row_vector(x) and is_row_vector(y):
+        return (x * y.T)[0, 0]
+    raise RuntimeError('dot: received illegal input')
+
+
 def zeros(m: int, n: int = 1) -> Matrix:
     """
     Returns an mxn matrix with all elements equal to 0.

@@ -4,6 +4,10 @@
 
 import numpy as np
 
+def dot(x, y):
+    return np.dot(x, y)
+
+
 def to_row(x: np.ndarray) -> np.ndarray:
     if len(x.shape) == 1:
         return np.expand_dims(x, axis=0)

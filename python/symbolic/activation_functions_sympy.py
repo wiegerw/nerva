@@ -5,7 +5,9 @@
 import sympy as sp
 from sympy import Lambda, Matrix, Piecewise
 
-# lowercase functions operate on real numbers, and uppercase functions on matrices
+# Naming conventions:
+# - lowercase functions operate on real numbers
+# - uppercase functions operate on matrices
 
 def relu(x):
     # return max(0, x)
