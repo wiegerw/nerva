@@ -3,7 +3,6 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from symbolic.numpy.activation_functions import *
-from symbolic.numpy.matrix_operations import *
 from symbolic.numpy.softmax import *
 
 # Naming conventions:

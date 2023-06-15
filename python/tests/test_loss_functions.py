@@ -11,7 +11,7 @@ import numpy as np
 from symbolic.sympy.matrix_operations import substitute
 from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, matrix, equal_matrices, \
     instantiate_one_hot_colwise, instantiate_one_hot_rowwise
-import symbolic.numpy.loss_functions_numpy as np_
+import symbolic.numpy.loss_functions as np_
 import symbolic.tensorflow.loss_functions as tf_
 import symbolic.torch.loss_functions as torch_
 import symbolic.sympy.loss_functions as sympy_

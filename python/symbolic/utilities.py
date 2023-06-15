@@ -1,7 +1,9 @@
 # Copyright 2023 Wieger Wesselink.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
+
 import random
+import time
 from typing import Union
 
 import numpy as np
@@ -80,3 +82,15 @@ def squared_error(X: Matrix):
         return sp.sqrt(sum(xi * xi for xi in x))
 
     return sum(f(X.col(j)) for j in range(n))
+
+
+class StopWatch(object):
+    def __init__(self):
+        self.start = time.perf_counter()
+
+    def seconds(self):
+        end = time.perf_counter()
+        return end - self.start
+
+    def reset(self):
+        self.start = time.perf_counter()
