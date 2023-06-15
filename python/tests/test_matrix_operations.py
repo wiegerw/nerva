@@ -8,10 +8,10 @@ from unittest import TestCase
 
 import numpy as np
 
-import symbolic.matrix_operations_numpy as np_
-import symbolic.matrix_operations_tensorflow as tf_
-import symbolic.matrix_operations_torch as torch_
-import symbolic.matrix_operations_sympy as sympy_
+import symbolic.numpy.matrix_operations as np_
+import symbolic.tensorflow.matrix_operations as tf_
+import symbolic.torch.matrix_operations as torch_
+import symbolic.sympy.matrix_operations as sympy_
 from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow
 
 

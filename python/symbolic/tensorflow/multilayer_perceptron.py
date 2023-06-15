@@ -4,11 +4,11 @@
 
 import re
 
-from symbolic.layers_torch import *
-from symbolic.optimizers_torch import *
-from symbolic.weight_initializers_torch import set_weights
+from symbolic.tensorflow.layers import *
+from symbolic.tensorflow.optimizers import *
+from symbolic.tensorflow.weight_initializers import set_weights
 
-Matrix = torch.Tensor
+Matrix = tf.Tensor
 
 
 class MultilayerPerceptron(object):

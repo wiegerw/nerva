@@ -7,9 +7,8 @@
 # see also https://docs.sympy.org/latest/modules/matrices/matrices.html
 
 from unittest import TestCase
-from symbolic.matrix_operations_sympy import *
+from symbolic.sympy.matrix_operations import *
 from symbolic.utilities import *
-from symbolic.utilities import squared_error
 
 
 class TestBatchNormalizationLayers(TestCase):

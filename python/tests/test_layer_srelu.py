@@ -5,9 +5,8 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-from sympy import Lambda, Piecewise
-from symbolic.activation_functions_sympy import *
-from symbolic.matrix_operations_sympy import *
+from symbolic.sympy.activation_functions import *
+from symbolic.sympy.matrix_operations import *
 from symbolic.utilities import *
 
 

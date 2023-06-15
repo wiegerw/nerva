@@ -3,7 +3,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import tensorflow as tf
-from layers_tensorflow import LinearLayerColwise
+from symbolic.tensorflow.layers import LinearLayerColwise
 
 
 def set_weights_xavier(W: tf.Tensor):

@@ -4,9 +4,9 @@
 
 import re
 
-from symbolic.layers_sympy import *
-from symbolic.optimizers_sympy import *
-from symbolic.weight_initializers_sympy import set_weights
+from symbolic.sympy.layers import *
+from symbolic.sympy.optimizers import *
+from symbolic.sympy.weight_initializers import set_weights
 
 Matrix = sp.Matrix
 

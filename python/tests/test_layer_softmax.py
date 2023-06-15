@@ -5,9 +5,8 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-from symbolic.softmax_sympy import *
+from symbolic.sympy.softmax import *
 from symbolic.utilities import *
-from symbolic.utilities import squared_error
 
 
 class TestSoftmaxLayers(TestCase):

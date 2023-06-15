@@ -7,14 +7,17 @@
 from unittest import TestCase
 
 import numpy as np
+import sympy as sp
 
-from symbolic.softmax_sympy import *
-import symbolic.softmax_numpy as np_
-import symbolic.softmax_tensorflow as tf_
-import symbolic.softmax_torch as torch_
-import symbolic.softmax_sympy as sympy_
+from symbolic.sympy.matrix_operations import *
+from symbolic.sympy.softmax import *
+import symbolic.numpy.softmax as np_
+import symbolic.tensorflow.softmax as tf_
+import symbolic.torch.softmax as torch_
+import symbolic.sympy.softmax as sympy_
 from symbolic.utilities import to_numpy, to_sympy, to_tensorflow, to_torch
 
+Matrix = sp.Matrix
 
 #-------------------------------------#
 # alternative implementations of softmax functions

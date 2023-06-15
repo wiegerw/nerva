@@ -2,8 +2,9 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from symbolic.activation_functions_sympy import *
-from symbolic.softmax_sympy import *
+from symbolic.torch.activation_functions import *
+from symbolic.torch.matrix_operations import *
+from symbolic.torch.softmax import *
 
 # Naming conventions:
 # - lowercase functions operate on vectors (y and t)
@@ -129,7 +130,7 @@ def Logistic_cross_entropy_loss_colwise_gradient(Y, T):
 
 
 def negative_log_likelihood_loss_colwise(y, t):
-    return -sp.log(dot(y, t))
+    return -torch.log(dot(y, t))
 
 
 def negative_log_likelihood_loss_colwise_gradient(y, t):
@@ -266,7 +267,7 @@ def Logistic_cross_entropy_loss_rowwise_gradient(Y, T):
 
 
 def negative_log_likelihood_loss_rowwise(y, t):
-    return -sp.log(dot(y, t))
+    return -torch.log(dot(y, t))
 
 
 def negative_log_likelihood_loss_rowwise_gradient(y, t):
@@ -280,3 +281,22 @@ def Negative_log_likelihood_loss_rowwise(Y, T):
 def Negative_log_likelihood_loss_rowwise_gradient(Y, T):
     N, K = Y.shape
     return -hadamard(column_repeat(inverse(rows_sum(hadamard(Y, T))), K), T)
+
+
+#----------------------------------------------#
+#         torch loss functions
+#----------------------------------------------#
+
+def mean_squared_error_loss_torch(Y, T):
+    loss = torch.nn.MSELoss(reduction='sum')
+    return loss(Y, T)
+
+
+def softmax_cross_entropy_loss_torch(Y, T):
+    loss = torch.nn.CrossEntropyLoss(reduction='sum')
+    return loss(Y, T)
+
+
+def negative_log_likelihood_loss_torch(Y, T):
+    loss = torch.nn.NLLLoss(reduction='sum')
+    return loss(Y, T)

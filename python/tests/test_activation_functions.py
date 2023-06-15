@@ -9,10 +9,10 @@ from unittest import TestCase
 import numpy as np
 
 from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow
-import symbolic.activation_functions_numpy as np_
-import symbolic.activation_functions_tensorflow as tf_
-import symbolic.activation_functions_torch as torch_
-import symbolic.activation_functions_sympy as sympy_
+import symbolic.numpy.activation_functions as np_
+import symbolic.tensorflow.activation_functions as tf_
+import symbolic.torch.activation_functions as torch_
+import symbolic.sympy.activation_functions as sympy_
 
 
 class TestActivationFunctions(TestCase):

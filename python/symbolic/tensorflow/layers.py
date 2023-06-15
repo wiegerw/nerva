@@ -4,10 +4,11 @@
 
 from typing import Tuple
 
-from activation_functions_torch import *
-from softmax_torch import *
+from symbolic.tensorflow.activation_functions import *
+from symbolic.tensorflow.matrix_operations import *
+from symbolic.tensorflow.softmax import *
 
-Matrix = torch.Tensor
+Matrix = tf.Tensor
 
 
 class Layer(object):

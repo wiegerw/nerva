@@ -6,8 +6,7 @@
 
 from unittest import TestCase
 
-from symbolic.loss_functions_sympy import dot
-from symbolic.matrix_operations_sympy import *
+from symbolic.sympy.matrix_operations import *
 
 
 class TestLemmas(TestCase):

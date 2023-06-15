@@ -4,8 +4,8 @@
 
 from typing import Tuple
 
-from activation_functions_numpy import *
-from softmax_numpy import *
+from symbolic.numpy.activation_functions import *
+from symbolic.numpy.softmax import *
 
 Matrix = np.ndarray
 
