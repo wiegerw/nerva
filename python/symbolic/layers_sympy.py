@@ -3,17 +3,16 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from activation_functions_sympy import *
-from optimizers_sympy import *
 from softmax_sympy import *
 
 
-class LayerColwise(object):
+class Layer(object):
     """
-    Base class for layers of neural network
+    Base class for layers of a neural network with data in column layout
     """
-    def __init__(self, D: int, N: int):
-        self.X = zeros(D, N)
-        self.DX = zeros(D, N)
+    def __init__(self, m: int, n: int):
+        self.X = zeros(m, n)
+        self.DX = zeros(m, n)
 
     def feedforward(self, X: Matrix) -> Matrix:
         raise NotImplementedError
@@ -25,17 +24,17 @@ class LayerColwise(object):
         raise NotImplementedError
 
 
-class LinearLayerColwise(LayerColwise):
+class LinearLayerColwise(Layer):
     """
     Linear layer of a neural network
     """
-    def __init__(self, D: int, K: int, N: int, optimizer: Optimizer):
+    def __init__(self, D: int, K: int, N: int):
         super().__init__(D, N)
         self.W = zeros(K, D)
         self.DW = zeros(K, D)
         self.b = zeros(K, 1)
         self.Db = zeros(K, 1)
-        self.optimizer = optimizer
+        self.optimizer = None
 
     def feedforward(self, X: Matrix) -> Matrix:
         self.X = X
@@ -62,13 +61,20 @@ class LinearLayerColwise(LayerColwise):
     def optimize(self, eta):
         self.optimizer.update(eta)
 
+    def input_output_sizes(self) -> Tuple[int, int]:
+        """
+        Returns the input and output sizes of the layer
+        """
+        K, D = self.W.shape
+        return D, K
+
 
 class ActivationLayerColwise(LinearLayerColwise):
     """
     Linear layer with an activation function
     """
-    def __init__(self, D: int, K: int, N: int, act: ActivationFunction, optimizer: Optimizer):
-        super().__init__(D, K, N, optimizer)
+    def __init__(self, D: int, K: int, N: int, act: ActivationFunction):
+        super().__init__(D, K, N)
         self.Z = zeros(K, N)
         self.DZ = zeros(K, N)
         self.act = act
@@ -107,8 +113,8 @@ class SigmoidLayerColwise(LinearLayerColwise):
     Linear layer with a sigmoid activation function. This is not strictly needed,
     but it shows that the backpropagation can be calculated in a different way
     """
-    def __init__(self, D: int, K: int, N: int, optimizer: Optimizer):
-        super().__init__(D, K, N, optimizer)
+    def __init__(self, D: int, K: int, N: int):
+        super().__init__(D, K, N)
         self.Z = zeros(K, N)
         self.DZ = zeros(K, N)
 
@@ -144,8 +150,8 @@ class SReLULayerColwise(ActivationLayerColwise):
     Linear layer with an SReLU activation function. It adds learning of the parameters
     al, tl, ar and tr.
     """
-    def __init__(self, D: int, K: int, N: int, act: SReLUActivation, optimizer: Optimizer):
-        super().__init__(D, K, N, act, optimizer)
+    def __init__(self, D: int, K: int, N: int, act: SReLUActivation):
+        super().__init__(D, K, N, act)
         self.Dal = 0
         self.Dtl = 0
         self.Dar = 0
@@ -175,8 +181,8 @@ class SoftmaxLayerColwise(LinearLayerColwise):
     """
     Linear layer with a softmax activation function
     """
-    def __init__(self, D: int, K: int, N: int, optimizer: Optimizer):
-        super().__init__(D, K, N, optimizer)
+    def __init__(self, D: int, K: int, N: int):
+        super().__init__(D, K, N)
         self.Z = zeros(K, N)
         self.DZ = zeros(K, N)
 
@@ -211,8 +217,8 @@ class LogSoftmaxLayerColwise(LinearLayerColwise):
     """
     Linear layer with a log_softmax activation function
     """
-    def __init__(self, D: int, K: int, N: int, optimizer: Optimizer):
-        super().__init__(D, K, N, optimizer)
+    def __init__(self, D: int, K: int, N: int):
+        super().__init__(D, K, N)
         self.Z = zeros(K, N)
         self.DZ = zeros(K, N)
 
@@ -244,7 +250,7 @@ class LogSoftmaxLayerColwise(LinearLayerColwise):
         self.DX = DX
 
 
-class BatchNormalizationLayerColwise(LayerColwise):
+class BatchNormalizationLayerColwise(Layer):
     """
     A batch normalization layer
     """
