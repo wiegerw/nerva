@@ -3,12 +3,14 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from activation_functions_sympy import *
-from matrix_operations_sympy import *
 from optimizers_sympy import *
 from softmax_sympy import *
 
 
 class LayerColwise(object):
+    """
+    Base class for layers of neural network
+    """
     def __init__(self, D: int, N: int):
         self.X = zeros(D, N)
         self.DX = zeros(D, N)
@@ -24,6 +26,9 @@ class LayerColwise(object):
 
 
 class LinearLayerColwise(LayerColwise):
+    """
+    Linear layer of a neural network
+    """
     def __init__(self, D: int, K: int, N: int, optimizer: Optimizer):
         super().__init__(D, N)
         self.W = zeros(K, D)
@@ -33,7 +38,8 @@ class LinearLayerColwise(LayerColwise):
         self.optimizer = optimizer
 
     def feedforward(self, X: Matrix) -> Matrix:
-        D, N = self.X.shape
+        self.X = X
+        D, N = X.shape
         W = self.W
         b = self.b
 
@@ -58,6 +64,9 @@ class LinearLayerColwise(LayerColwise):
 
 
 class ActivationLayerColwise(LinearLayerColwise):
+    """
+    Linear layer with an activation function
+    """
     def __init__(self, D: int, K: int, N: int, act: ActivationFunction, optimizer: Optimizer):
         super().__init__(D, K, N, optimizer)
         self.Z = zeros(K, N)
@@ -65,7 +74,8 @@ class ActivationLayerColwise(LinearLayerColwise):
         self.act = act
 
     def feedforward(self, X: Matrix) -> Matrix:
-        D, N = self.X.shape
+        self.X = X
+        D, N = X.shape
         W = self.W
         b = self.b
         act = self.act
@@ -93,13 +103,18 @@ class ActivationLayerColwise(LinearLayerColwise):
 
 
 class SigmoidLayerColwise(LinearLayerColwise):
+    """
+    Linear layer with a sigmoid activation function. This is not strictly needed,
+    but it shows that the backpropagation can be calculated in a different way
+    """
     def __init__(self, D: int, K: int, N: int, optimizer: Optimizer):
         super().__init__(D, K, N, optimizer)
         self.Z = zeros(K, N)
         self.DZ = zeros(K, N)
 
     def feedforward(self, X: Matrix) -> Matrix:
-        D, N = self.X.shape
+        self.X = X
+        D, N = X.shape
         W = self.W
         b = self.b
 
@@ -125,6 +140,10 @@ class SigmoidLayerColwise(LinearLayerColwise):
 
 
 class SReLULayerColwise(ActivationLayerColwise):
+    """
+    Linear layer with an SReLU activation function. It adds learning of the parameters
+    al, tl, ar and tr.
+    """
     def __init__(self, D: int, K: int, N: int, act: SReLUActivation, optimizer: Optimizer):
         super().__init__(D, K, N, act, optimizer)
         self.Dal = 0
@@ -153,13 +172,17 @@ class SReLULayerColwise(ActivationLayerColwise):
 
 
 class SoftmaxLayerColwise(LinearLayerColwise):
+    """
+    Linear layer with a softmax activation function
+    """
     def __init__(self, D: int, K: int, N: int, optimizer: Optimizer):
         super().__init__(D, K, N, optimizer)
         self.Z = zeros(K, N)
         self.DZ = zeros(K, N)
 
     def feedforward(self, X: Matrix) -> Matrix:
-        D, N = self.X.shape
+        self.X = X
+        D, N = X.shape
         W = self.W
         b = self.b
 
@@ -185,13 +208,17 @@ class SoftmaxLayerColwise(LinearLayerColwise):
 
 
 class LogSoftmaxLayerColwise(LinearLayerColwise):
+    """
+    Linear layer with a log_softmax activation function
+    """
     def __init__(self, D: int, K: int, N: int, optimizer: Optimizer):
         super().__init__(D, K, N, optimizer)
         self.Z = zeros(K, N)
         self.DZ = zeros(K, N)
 
     def feedforward(self, X: Matrix) -> Matrix:
-        D, N = self.X.shape
+        self.X = X
+        D, N = X.shape
         W = self.W
         b = self.b
 
@@ -218,6 +245,9 @@ class LogSoftmaxLayerColwise(LinearLayerColwise):
 
 
 class BatchNormalizationLayerColwise(LayerColwise):
+    """
+    A batch normalization layer
+    """
     def __init__(self, D: int, N: int):
         super().__init__(D, N)
         self.Z = zeros(D, N)
@@ -229,7 +259,8 @@ class BatchNormalizationLayerColwise(LayerColwise):
         self.power_minus_half_Sigma = zeros(D, 1)
 
     def feedforward(self, X: Matrix) -> Matrix:
-        D, N = self.X.shape
+        self.X = X
+        D, N = X.shape
         gamma = self.gamma
         beta = self.beta
 
