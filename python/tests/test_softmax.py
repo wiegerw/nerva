@@ -9,11 +9,10 @@ from unittest import TestCase
 import numpy as np
 import sympy as sp
 
-from symbolic.sympy.matrix_operations import *
 from symbolic.sympy.softmax_functions import *
-import symbolic.numpy.softmax as np_
-import symbolic.tensorflow.softmax as tf_
-import symbolic.torch.softmax as torch_
+import symbolic.numpy.softmax_functions as np_
+import symbolic.tensorflow.softmax_functions as tf_
+import symbolic.torch.softmax_functions as torch_
 import symbolic.sympy.softmax_functions as sympy_
 from symbolic.utilities import to_numpy, to_sympy, to_tensorflow, to_torch
 
