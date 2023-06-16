@@ -3,8 +3,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from symbolic.torch.activation_functions import *
-from symbolic.torch.matrix_operations import *
-from symbolic.torch.softmax import *
+from symbolic.torch.softmax_functions import *
 
 # Naming conventions:
 # - lowercase functions operate on vectors (y and t)

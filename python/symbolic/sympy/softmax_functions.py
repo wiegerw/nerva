@@ -4,6 +4,8 @@
 
 from symbolic.sympy.matrix_operations import *
 
+Matrix = sp.Matrix
+
 def softmax_colwise(X: Matrix) -> Matrix:
     D, N = X.shape
     E = exp(X)

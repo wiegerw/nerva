@@ -5,7 +5,9 @@
 from typing import Tuple
 
 from symbolic.numpy.activation_functions import *
-from symbolic.numpy.softmax import *
+from symbolic.numpy.optimizers import parse_optimizer
+from symbolic.numpy.softmax_functions import *
+from symbolic.numpy.weight_initializers import set_weights
 
 Matrix = np.ndarray
 
@@ -28,7 +30,7 @@ class Layer(object):
         raise NotImplementedError
 
 
-class LinearLayerColwise(Layer):
+class LinearLayer(Layer):
     """
     Linear layer of a neural network
     """
@@ -73,7 +75,7 @@ class LinearLayerColwise(Layer):
         return D, K
 
 
-class ActivationLayerColwise(LinearLayerColwise):
+class ActivationLayer(LinearLayer):
     """
     Linear layer with an activation function
     """
@@ -112,7 +114,7 @@ class ActivationLayerColwise(LinearLayerColwise):
         self.DX = DX
 
 
-class SigmoidLayerColwise(LinearLayerColwise):
+class SigmoidLayer(LinearLayer):
     """
     Linear layer with a sigmoid activation function. This is not strictly needed,
     but it shows that the backpropagation can be calculated in a different way
@@ -149,7 +151,7 @@ class SigmoidLayerColwise(LinearLayerColwise):
         self.DX = DX
 
 
-class SReLULayerColwise(ActivationLayerColwise):
+class SReLULayer(ActivationLayer):
     """
     Linear layer with an SReLU activation function. It adds learning of the parameters
     al, tl, ar and tr.
@@ -180,7 +182,7 @@ class SReLULayerColwise(ActivationLayerColwise):
         self.Dtr = elements_sum(hadamard(DY, Tr(Z)))
 
 
-class SoftmaxLayerColwise(LinearLayerColwise):
+class SoftmaxLayer(LinearLayer):
     """
     Linear layer with a softmax activation function
     """
@@ -216,7 +218,7 @@ class SoftmaxLayerColwise(LinearLayerColwise):
         self.DX = DX
 
 
-class LogSoftmaxLayerColwise(LinearLayerColwise):
+class LogSoftmaxLayer(LinearLayer):
     """
     Linear layer with a log_softmax activation function
     """
@@ -253,7 +255,7 @@ class LogSoftmaxLayerColwise(LinearLayerColwise):
         self.DX = DX
 
 
-class BatchNormalizationLayerColwise(Layer):
+class BatchNormalizationLayer(Layer):
     """
     A batch normalization layer
     """
@@ -303,3 +305,29 @@ class BatchNormalizationLayerColwise(Layer):
         # use gradient descent; TODO: generalize this
         self.beta -= eta * self.Dbeta
         self.gamma -= eta * self.Dgamma
+
+
+def parse_linear_layer(text: str,
+                       D: int,
+                       K: int,
+                       N: int,
+                       optimizer: str,
+                       weight_initializer: str
+                      ) -> Layer:
+    if text == 'Linear':
+        layer = LinearLayer(D, K, N)
+    elif text == 'Sigmoid':
+        layer = SigmoidLayer(D, K, N)
+    elif text == 'Softmax':
+        layer = SoftmaxLayer(D, K, N)
+    elif text == 'LogSoftmax':
+        layer = LogSoftmaxLayer(D, K, N)
+    elif text.startswith('SReLU'):
+        act = parse_srelu_activation(text)
+        layer = SReLULayer(D, K, N, act)
+    else:
+        act = parse_activation(text)
+        layer = ActivationLayer(D, K, N, act)
+    layer.optimizer = parse_optimizer(optimizer, layer)
+    set_weights(layer, weight_initializer)
+    return layer

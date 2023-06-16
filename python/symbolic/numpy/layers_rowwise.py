@@ -4,12 +4,12 @@
 
 from typing import Tuple
 
-from symbolic.sympy.activation_functions import *
-from symbolic.sympy.optimizers import parse_optimizer
-from symbolic.sympy.softmax_functions import *
-from symbolic.sympy.weight_initializers import set_weights
+from symbolic.numpy.activation_functions import *
+from symbolic.numpy.optimizers import parse_optimizer
+from symbolic.numpy.softmax_functions import *
+from symbolic.numpy.weight_initializers import set_weights
 
-Matrix = sp.Matrix
+Matrix = np.ndarray
 
 
 class Layer(object):
@@ -48,7 +48,7 @@ class LinearLayer(Layer):
         W = self.W
         b = self.b
 
-        Y = W * X + column_repeat(b, N)
+        Y = X @ W.T + row_repeat(b, N)
 
         return Y
 
@@ -56,9 +56,9 @@ class LinearLayer(Layer):
         X = self.X
         W = self.W
 
-        DW = DY * X.T
-        Db = rows_sum(DY)
-        DX = W.T * DY
+        DW = DY.T @ X
+        Db = columns_sum(DY)
+        DX = DY @ W
 
         self.DW = DW
         self.Db = Db
@@ -92,7 +92,7 @@ class ActivationLayer(LinearLayer):
         b = self.b
         act = self.act
 
-        Z = W * X + column_repeat(b, N)
+        Z = X @ W.T + row_repeat(b, N)
         Y = act(Z)
 
         return Y
@@ -104,9 +104,9 @@ class ActivationLayer(LinearLayer):
         act = self.act
 
         DZ = hadamard(DY, act.gradient(Z))
-        DW = DZ * X.T
-        Db = rows_sum(DZ)
-        DX = W.T * DZ
+        DW = DZ.T @ X
+        Db = columns_sum(DZ)
+        DX = DZ @ W
 
         self.DZ = DZ
         self.DW = DW
@@ -130,7 +130,7 @@ class SigmoidLayer(LinearLayer):
         W = self.W
         b = self.b
 
-        Z = W * X + column_repeat(b, N)
+        Z = X @ W.T + row_repeat(b, N)
         Y = Sigmoid(Z)
 
         return Y
@@ -140,10 +140,10 @@ class SigmoidLayer(LinearLayer):
         X = self.X
         W = self.W
 
-        DZ = hadamard(DY, hadamard(Y, ones(K, N) - Y))
-        DW = DZ * X.T
-        Db = rows_sum(DZ)
-        DX = W.T * DZ
+        DZ = hadamard(DY, hadamard(Y, ones(N, K) - Y))
+        DW = DZ.T @ X
+        Db = columns_sum(DZ)
+        DX = DZ @ W
 
         self.DZ = DZ
         self.DW = DW
@@ -171,10 +171,10 @@ class SReLULayer(ActivationLayer):
         ar = self.act.ar
         tr = self.act.tr
 
-        Al = lambda Z: Z.applyfunc(lambda Zij: Piecewise((Zij - tl, Zij <= tl), (0, True)))
-        Ar = lambda Z: Z.applyfunc(lambda Zij: Piecewise((0, Zij <= tl), (0, Zij < tr), (Zij - tr, True)))
-        Tl = lambda Z: Z.applyfunc(lambda Zij: Piecewise((1 - al, Zij <= tl), (0, True)))
-        Tr = lambda Z: Z.applyfunc(lambda Zij: Piecewise((0, Zij <= tl), (0, Zij < tr), (1 - ar, True)))
+        Al = lambda Z: np.where(Z <= tl, Z - tl, 0)
+        Ar = lambda Z: np.where((Z <= tl) | (Z < tr), 0, Z - tr)
+        Tl = lambda Z: np.where(Z <= tl, 1 - al, 0)
+        Tr = lambda Z: np.where((Z <= tl) | (Z < tr), 0, 1 - ar)
 
         self.Dal = elements_sum(hadamard(DY, Al(Z)))
         self.Dar = elements_sum(hadamard(DY, Ar(Z)))
@@ -197,8 +197,8 @@ class SoftmaxLayer(LinearLayer):
         W = self.W
         b = self.b
 
-        Z = W * X + column_repeat(b, N)
-        Y = softmax_colwise(Z)
+        Z = X @ W.T + row_repeat(b, N)
+        Y = softmax_rowwise(Z)
 
         return Y
 
@@ -207,10 +207,10 @@ class SoftmaxLayer(LinearLayer):
         X = self.X
         W = self.W
 
-        DZ = hadamard(Y, DY - row_repeat(diag(Y.T * DY).T, K))
-        DW = DZ * X.T
-        Db = rows_sum(DZ)
-        DX = W.T * DZ
+        DZ = hadamard(Y, DY - column_repeat(diag(DY @ Y.T), N))
+        DW = DZ.T @ X
+        Db = columns_sum(DZ)
+        DX = DZ @ W
 
         self.DZ = DZ
         self.DW = DW
@@ -233,8 +233,8 @@ class LogSoftmaxLayer(LinearLayer):
         W = self.W
         b = self.b
 
-        Z = W * X + column_repeat(b, N)
-        Y = log_softmax_colwise(Z)
+        Z = X @ W.T + row_repeat(b, N)
+        Y = log_softmax_rowwise(Z)
 
         return Y
 
@@ -244,10 +244,10 @@ class LogSoftmaxLayer(LinearLayer):
         W = self.W
         Z = self.Z
 
-        DZ = DY - hadamard(softmax_colwise(Z), row_repeat(columns_sum(DY), K))
-        DW = DZ * X.T
-        Db = rows_sum(DZ)
-        DX = W.T * DZ
+        DZ = DY - hadamard(softmax_rowwise(Z), column_repeat(rows_sum(DY), N))
+        DW = DZ.T @ X
+        Db = columns_sum(DZ)
+        DX = DZ @ W
 
         self.DZ = DZ
         self.DW = DW
@@ -275,11 +275,11 @@ class BatchNormalizationLayer(Layer):
         gamma = self.gamma
         beta = self.beta
 
-        R = X - column_repeat(rows_mean(X), N)
-        Sigma = diag(R * R.T) / N
+        R = X - row_repeat(columns_mean(X), N)
+        Sigma = diag(R.T @ R).T / N
         power_minus_half_Sigma = power_minus_half(Sigma)
-        Z = hadamard(column_repeat(power_minus_half_Sigma, N), R)
-        Y = hadamard(column_repeat(gamma, N), Z) + column_repeat(beta, N)
+        Z = hadamard(row_repeat(power_minus_half_Sigma, N), R)
+        Y = hadamard(row_repeat(gamma, N), Z) + row_repeat(beta, N)
 
         self.power_minus_half_Sigma = power_minus_half_Sigma
 
@@ -291,10 +291,10 @@ class BatchNormalizationLayer(Layer):
         gamma = self.gamma
         power_minus_half_Sigma = self.power_minus_half_Sigma
 
-        DZ = hadamard(column_repeat(gamma, N), DY)
-        Dbeta = rows_sum(DY)
-        Dgamma = rows_sum(hadamard(DY, Z))
-        DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Z, column_repeat(-diag(DZ * Z.T), N)) + DZ * (N * identity(N) - ones(N, N)))
+        DZ = hadamard(row_repeat(gamma, N), DY)
+        Dbeta = columns_sum(DY)
+        Dgamma = columns_sum(hadamard(Z, DY))
+        DX = hadamard(row_repeat(power_minus_half_Sigma / N, N), (N * identity(N) - ones(N, N)) @ DZ - hadamard(Z, row_repeat(diag(Z.T @ DZ).T, N)))
 
         self.DZ = DZ
         self.Dbeta = Dbeta

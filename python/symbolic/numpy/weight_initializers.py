@@ -3,35 +3,35 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import numpy as np
-from symbolic.numpy.layers import LinearLayerColwise
 
+Matrix = np.ndarray
 
-def set_weights_xavier(W: np.ndarray):
+def set_weights_xavier(W: Matrix):
     K, D = W.shape
     xavier_stddev = np.sqrt(2 / (K + D))
     W[:] = np.random.randn(K, D) * xavier_stddev
 
 
-def set_weights_xavier_normalized(W: np.ndarray):
+def set_weights_xavier_normalized(W: Matrix):
     K, D = W.shape
     xavier_stddev = np.sqrt(2 / (K + D))
     random_matrix = np.random.randn(K, D)
     W[:] = random_matrix * xavier_stddev
 
 
-def set_weights_he(W: np.ndarray):
+def set_weights_he(W: Matrix):
     K, D = W.shape
     he_stddev = np.sqrt(2 / D)
     random_matrix = np.random.randn(K, D)
     W[:] = random_matrix * he_stddev
 
 
-def set_bias_to_zero(b: np.ndarray):
+def set_bias_to_zero(b: Matrix):
     K, D = b.shape
-    b[:, :] = np.zeros(K, D)
+    b[:] = np.zeros(K, D)
 
 
-def set_weights(layer: LinearLayerColwise, text: str):
+def set_weights(layer, text: str):
     if text == 'Xavier':
         set_weights_xavier(layer.W)
         set_bias_to_zero(layer.b)

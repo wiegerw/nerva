@@ -2,6 +2,7 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
+import re
 from symbolic.torch.matrix_operations import *
 
 class Optimizer(object):
@@ -59,3 +60,22 @@ class NesterovOptimizer(GradientDescentOptimizer):
         self.delta_b_prev = self.delta_b
         self.delta_b = self.mu * self.delta_b - eta * self.b
         self.b += (-self.mu * self.delta_b_prev + (1 + self.mu) * self.delta_b)
+
+
+def parse_optimizer(text: str,
+                    layer
+                   ) -> Optimizer:
+    try:
+        if text == 'GradientDescent':
+            return GradientDescentOptimizer(layer.W, layer.DW, layer.b, layer.Db)
+        elif text.startswith('Momentum'):
+            m = re.match(r'Momentum\((.*)\)$', text)
+            mu = float(m.group(1))
+            return MomentumOptimizer(layer.W, layer.DW, layer.b, layer.Db, mu)
+        elif text.startswith('Nesterov'):
+            m = re.match(r'Nesterov\((.*)\)$', text)
+            mu = float(m.group(1))
+            return NesterovOptimizer(layer.W, layer.DW, layer.b, layer.Db, mu)
+    except:
+        pass
+    raise RuntimeError(f'Could not parse optimizer "{text}"')

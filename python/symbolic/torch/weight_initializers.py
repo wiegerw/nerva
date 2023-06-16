@@ -3,30 +3,30 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import torch
-from layers import LinearLayerColwise
 
+Matrix = torch.Tensor
 
-def set_weights_xavier(W: torch.Tensor):
+def set_weights_xavier(W: Matrix):
     K, D = W.shape
     xavier_stddev = torch.sqrt(torch.tensor(2.0 / (K + D)))
     W.data = torch.randn(K, D) * xavier_stddev
 
 
-def set_weights_xavier_normalized(W: torch.Tensor):
+def set_weights_xavier_normalized(W: Matrix):
     K, D = W.shape
     xavier_stddev = torch.sqrt(torch.tensor(2.0 / (K + D)))
     random_matrix = torch.randn(K, D)
     W.data = random_matrix * xavier_stddev
 
 
-def set_weights_he(W: torch.Tensor):
+def set_weights_he(W: Matrix):
     K, D = W.shape
     he_stddev = torch.sqrt(torch.tensor(2.0 / D))
     random_matrix = torch.randn(K, D)
     W.data = random_matrix * he_stddev
 
 
-def set_bias_to_zero(b: torch.Tensor):
+def set_bias_to_zero(b: Matrix):
     b.data.zero_()
 
 
