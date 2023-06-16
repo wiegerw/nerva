@@ -30,7 +30,7 @@ def set_bias_to_zero(b: Matrix):
     b.data.zero_()
 
 
-def set_weights(layer: LinearLayerColwise, text: str):
+def set_weights(layer, text: str):
     if text == 'Xavier':
         set_weights_xavier(layer.W)
         set_bias_to_zero(layer.b)
@@ -40,4 +40,5 @@ def set_weights(layer: LinearLayerColwise, text: str):
     elif text == 'He':
         set_weights_he(layer.W)
         set_bias_to_zero(layer.b)
-    raise RuntimeError(f'Could not parse weight initializer "{text}"')
+    else:
+        raise RuntimeError(f'Could not parse weight initializer "{text}"')

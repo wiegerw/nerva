@@ -94,3 +94,12 @@ class StopWatch(object):
 
     def reset(self):
         self.start = time.perf_counter()
+
+
+def pp(name: str, x: Union[torch.Tensor, np.ndarray, tf.Tensor]):
+    if isinstance(x, (np.ndarray, tf.Tensor)):
+        x = torch.Tensor(x)
+    if len(x.shape) == 1:
+        print(f'{name} ({x.shape[0]})\n{x.data}')
+    else:
+        print(f'{name} ({x.shape[0]}x{x.shape[1]})\n{x.data}')

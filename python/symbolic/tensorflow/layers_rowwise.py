@@ -35,16 +35,16 @@ class LinearLayer(Layer):
     Linear layer of a neural network
     """
     def __init__(self, D: int, K: int, N: int):
-        super().__init__(D, N)
+        super().__init__(N, D)
         self.W = zeros(K, D)
         self.DW = zeros(K, D)
-        self.b = zeros(K, 1)
-        self.Db = zeros(K, 1)
+        self.b = zeros(1, K)
+        self.Db = zeros(1, K)
         self.optimizer = None
 
     def feedforward(self, X: Matrix) -> Matrix:
         self.X = X
-        D, N = X.shape
+        N, D = X.shape
         W = self.W
         b = self.b
 
@@ -81,13 +81,13 @@ class ActivationLayer(LinearLayer):
     """
     def __init__(self, D: int, K: int, N: int, act: ActivationFunction):
         super().__init__(D, K, N)
-        self.Z = zeros(K, N)
-        self.DZ = zeros(K, N)
+        self.Z = zeros(N, K)
+        self.DZ = zeros(N, K)
         self.act = act
 
     def feedforward(self, X: Matrix) -> Matrix:
         self.X = X
-        D, N = X.shape
+        N, D = X.shape
         W = self.W
         b = self.b
         act = self.act
@@ -121,12 +121,12 @@ class SigmoidLayer(LinearLayer):
     """
     def __init__(self, D: int, K: int, N: int):
         super().__init__(D, K, N)
-        self.Z = zeros(K, N)
-        self.DZ = zeros(K, N)
+        self.Z = zeros(N, K)
+        self.DZ = zeros(N, K)
 
     def feedforward(self, X: Matrix) -> Matrix:
         self.X = X
-        D, N = X.shape
+        N, D = X.shape
         W = self.W
         b = self.b
 
@@ -188,12 +188,12 @@ class SoftmaxLayer(LinearLayer):
     """
     def __init__(self, D: int, K: int, N: int):
         super().__init__(D, K, N)
-        self.Z = zeros(K, N)
-        self.DZ = zeros(K, N)
+        self.Z = zeros(N, K)
+        self.DZ = zeros(N, K)
 
     def feedforward(self, X: Matrix) -> Matrix:
         self.X = X
-        D, N = X.shape
+        N, D = X.shape
         W = self.W
         b = self.b
 
@@ -224,12 +224,12 @@ class LogSoftmaxLayer(LinearLayer):
     """
     def __init__(self, D: int, K: int, N: int):
         super().__init__(D, K, N)
-        self.Z = zeros(K, N)
-        self.DZ = zeros(K, N)
+        self.Z = zeros(N, K)
+        self.DZ = zeros(N, K)
 
     def feedforward(self, X: Matrix) -> Matrix:
         self.X = X
-        D, N = X.shape
+        N, D = X.shape
         W = self.W
         b = self.b
 
@@ -271,7 +271,7 @@ class BatchNormalizationLayer(Layer):
 
     def feedforward(self, X: Matrix) -> Matrix:
         self.X = X
-        D, N = X.shape
+        N, D = X.shape
         gamma = self.gamma
         beta = self.beta
 
@@ -286,7 +286,7 @@ class BatchNormalizationLayer(Layer):
         return Y
 
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
-        D, N = self.X.shape
+        N, D = self.X.shape
         Z = self.Z
         gamma = self.gamma
         power_minus_half_Sigma = self.power_minus_half_Sigma

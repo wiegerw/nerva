@@ -1,6 +1,7 @@
 # Copyright 2023 Wieger Wesselink.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
+from typing import List
 
 from symbolic.torch.layers_rowwise import *
 
@@ -33,13 +34,12 @@ class MultilayerPerceptron(object):
 
 def parse_multilayer_perceptron(layer_specifications: List[str],
                                 linear_layer_sizes: List[int],
-                                linear_layer_activations: List[str],
                                 linear_layer_optimizers: List[str],
                                 linear_layer_weight_initializers: List[str],
                                 batch_size: int
                                ) -> MultilayerPerceptron:
 
-    assert len(linear_layer_activations) == len(linear_layer_optimizers) == len(linear_layer_weight_initializers) == len(linear_layer_sizes) - 1
+    assert len(linear_layer_optimizers) == len(linear_layer_weight_initializers) == len(linear_layer_sizes) - 1
     layers = []
 
     linear_layer_index = 0
