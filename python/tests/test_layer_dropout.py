@@ -24,15 +24,17 @@ class TestDropoutLayers(TestCase):
         w = matrix('w', K, D)
         b = matrix('b', K, 1)
         r = matrix('r', K, D)
-
-        # feedforward
         X = x
         W = w
         R = r
+
+        # feedforward
         Y = hadamard(W, R) * X + column_repeat(b, N)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DW = hadamard(DY * X.T, R)
         Db = rows_sum(DY)
         DX = hadamard(W, R).T * DY
@@ -61,16 +63,18 @@ class TestDropoutLayers(TestCase):
         w = matrix('w', K, D)
         b = matrix('b', K, 1)
         r = matrix('r', K, D)
-
-        # feedforward
         X = x
         W = w
         R = r
+
+        # feedforward
         Z = hadamard(W, R) * X + column_repeat(b, N)
         Y = act(Z)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DZ = hadamard(DY, act_gradient(Z))
         DW = hadamard(DZ * X.T, R)
         Db = rows_sum(DZ)
@@ -100,16 +104,18 @@ class TestDropoutLayers(TestCase):
         w = matrix('w', K, D)
         b = matrix('b', K, 1)
         r = matrix('r', K, D)
-
-        # feedforward
         X = x
         W = w
         R = r
+
+        # feedforward
         Z = hadamard(W, R) * X + column_repeat(b, N)
         Y = Sigmoid(Z)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DZ = hadamard(DY, hadamard(Y, ones(K, N) - Y))
         DW = hadamard(DZ * X.T, R)
         Db = rows_sum(DZ)
@@ -139,15 +145,17 @@ class TestDropoutLayers(TestCase):
         w = matrix('w', K, D)
         b = matrix('b', 1, K)
         r = matrix('r', D, K)
-
-        # feedforward
         X = x
         W = w
         R = r
+
+        # feedforward
         Y = X * hadamard(W.T, R) + row_repeat(b, N)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DW = hadamard(DY.T * X, R.T)
         Db = columns_sum(DY)
         DX = DY * hadamard(W, R.T)
@@ -176,16 +184,18 @@ class TestDropoutLayers(TestCase):
         w = matrix('w', K, D)
         b = matrix('b', 1, K)
         r = matrix('r', D, K)
-
-        # feedforward
         X = x
         W = w
         R = r
+
+        # feedforward
         Z = X * hadamard(W.T, R) + row_repeat(b, N)
         Y = act(Z)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DZ = hadamard(DY, act_gradient(Z))
         DW = hadamard(DZ.T * X, R.T)
         Db = columns_sum(DZ)
@@ -216,16 +226,18 @@ class TestDropoutLayers(TestCase):
         w = matrix('w', K, D)
         b = matrix('b', 1, K)
         r = matrix('r', D, K)
-
-        # feedforward
         X = x
         W = w
         R = r
+
+        # feedforward
         Z = X * hadamard(W.T, R) + row_repeat(b, N)
         Y = Sigmoid(Z)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DZ = hadamard(DY, hadamard(Y, ones(N, K) - Y))
         DW = hadamard(DZ.T * X, R.T)
         Db = columns_sum(DZ)

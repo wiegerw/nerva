@@ -23,14 +23,16 @@ class TestLinearLayers(TestCase):
         y = matrix('y', K, N)
         w = matrix('w', K, D)
         b = matrix('b', K, 1)
-
-        # feedforward
         X = x
         W = w
+
+        # feedforward
         Y = W * X + column_repeat(b, N)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DW = DY * X.T
         Db = rows_sum(DY)
         DX = W.T * DY
@@ -49,8 +51,7 @@ class TestLinearLayers(TestCase):
         K = 2
         N = 2
         loss = squared_error
-        act = Hyperbolic_tangent
-        act_gradient = Hyperbolic_tangent_gradient
+        act = HyperbolicTangentActivation()
 
         # variables
         x = matrix('x', D, N)
@@ -58,16 +59,18 @@ class TestLinearLayers(TestCase):
         z = matrix('z', K, N)
         w = matrix('w', K, D)
         b = matrix('b', K, 1)
-
-        # feedforward
         X = x
         W = w
+
+        # feedforward
         Z = W * X + column_repeat(b, N)
         Y = act(Z)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
-        DZ = hadamard(DY, act_gradient(Z))
+
+        # backpropagation
+        DZ = hadamard(DY, act.gradient(Z))
         DW = DZ * X.T
         Db = rows_sum(DZ)
         DX = W.T * DZ
@@ -88,7 +91,6 @@ class TestLinearLayers(TestCase):
         K = 2
         N = 2
         loss = squared_error
-        sigma = Sigmoid
 
         # variables
         x = matrix('x', D, N)
@@ -96,15 +98,17 @@ class TestLinearLayers(TestCase):
         z = matrix('z', K, N)
         w = matrix('w', K, D)
         b = matrix('b', K, 1)
-
-        # feedforward
         X = x
         W = w
+
+        # feedforward
         Z = W * X + column_repeat(b, N)
         Y = Sigmoid(Z)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DZ = hadamard(DY, hadamard(Y, ones(K, N) - Y))
         DW = DZ * X.T
         Db = rows_sum(DZ)
@@ -133,14 +137,16 @@ class TestLinearLayers(TestCase):
         y = matrix('y', N, K)
         w = matrix('w', K, D)
         b = matrix('b', 1, K)
-
-        # feedforward
         X = x
         W = w
+
+        # feedforward
         Y = X * W.T + row_repeat(b, N)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DW = DY.T * X
         Db = columns_sum(DY)
         DX = DY * W
@@ -159,8 +165,7 @@ class TestLinearLayers(TestCase):
         K = 2
         N = 2
         loss = squared_error
-        act = Hyperbolic_tangent
-        act_gradient = Hyperbolic_tangent_gradient
+        act = HyperbolicTangentActivation()
 
         # variables
         x = matrix('x', N, D)
@@ -168,16 +173,18 @@ class TestLinearLayers(TestCase):
         z = matrix('z', N, K)
         w = matrix('w', K, D)
         b = matrix('b', 1, K)
-
-        # feedforward
         X = x
         W = w
+
+        # feedforward
         Z = X * W.T + row_repeat(b, N)
         Y = act(Z)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
-        DZ = hadamard(DY, act_gradient(Z))
+
+        # backpropagation
+        DZ = hadamard(DY, act.gradient(Z))
         DW = DZ.T * X
         Db = columns_sum(DZ)
         DX = DZ * W
@@ -206,15 +213,17 @@ class TestLinearLayers(TestCase):
         z = matrix('z', N, K)
         w = matrix('w', K, D)
         b = matrix('b', 1, K)
-
-        # feedforward
         X = x
         W = w
+
+        # feedforward
         Z = X * W.T + row_repeat(b, N)
         Y = Sigmoid(Z)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DZ = hadamard(DY, hadamard(Y, ones(N, K) - Y))
         DW = DZ.T * X
         Db = columns_sum(DZ)

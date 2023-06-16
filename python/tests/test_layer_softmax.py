@@ -5,7 +5,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-from symbolic.sympy.softmax import *
+from symbolic.sympy.softmax_functions import *
 from symbolic.utilities import *
 
 
@@ -23,15 +23,17 @@ class TestSoftmaxLayers(TestCase):
         z = matrix('z', K, N)
         w = matrix('w', K, D)
         b = matrix('b', K, 1)
-
-        # feedforward
         X = x
         W = w
+
+        # feedforward
         Z = W * X + column_repeat(b, N)
         Y = softmax_colwise(Z)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DZ = hadamard(Y, DY - row_repeat(diag(Y.T * DY).T, K))
         DW = DZ * X.T
         Db = rows_sum(DZ)
@@ -65,15 +67,17 @@ class TestSoftmaxLayers(TestCase):
         z = matrix('z', K, N)
         w = matrix('w', K, D)
         b = matrix('b', K, 1)
-
-        # # feedforward
         X = x
         W = w
+
+        # feedforward
         Z = W * X + column_repeat(b, N)
         Y = log_softmax_colwise(Z)
 
-        # # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DZ = DY - hadamard(softmax_colwise(Z), row_repeat(columns_sum(DY), K))
         DW = DZ * X.T
         Db = rows_sum(DZ)
@@ -107,15 +111,17 @@ class TestSoftmaxLayers(TestCase):
         z = matrix('z', N, K)
         w = matrix('w', K, D)
         b = matrix('b', 1, K)
-
-        # feedforward
         X = x
         W = w
+
+        # feedforward
         Z = X * W.T + row_repeat(b, N)
         Y = softmax_rowwise(Z)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DZ = hadamard(Y, DY - column_repeat(diag(DY * Y.T), N))
         DW = DZ.T * X
         Db = columns_sum(DZ)
@@ -149,15 +155,17 @@ class TestSoftmaxLayers(TestCase):
         z = matrix('z', N, K)
         w = matrix('w', K, D)
         b = matrix('b', 1, K)
-
-        # feedforward
         X = x
         W = w
+
+        # feedforward
         Z = X * W.T + row_repeat(b, N)
         Y = log_softmax_rowwise(Z)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DZ = DY - hadamard(softmax_rowwise(Z), column_repeat(rows_sum(DY), N))
         DW = DZ.T * X
         Db = columns_sum(DZ)
@@ -167,7 +175,7 @@ class TestSoftmaxLayers(TestCase):
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
-        # N.B. These tests take a long time...
+        # N.B. These tests take a long time, and are duplicates of the ones in test_log_softmax_layer_rowwise
         # self.assertTrue(equal_matrices(DW, DW1))
         # self.assertTrue(equal_matrices(Db, Db1))
         # self.assertTrue(equal_matrices(DX, DX1))

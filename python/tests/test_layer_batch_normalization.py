@@ -22,16 +22,18 @@ class TestBatchNormalizationLayers(TestCase):
         # variables
         x = matrix('x', D, N)
         y = matrix('y', K, N)
+        X = x
 
         # feedforward
-        X = x
         R = X - column_repeat(rows_mean(X), N)
         Sigma = diag(R * R.T) / N
         power_minus_half_Sigma = power_minus_half(Sigma)
         Y = hadamard(column_repeat(power_minus_half_Sigma, N), R)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Y, column_repeat(-diag(DY * Y.T), N)) + DY * (N * identity(N) - ones(N, N)))
 
         # test gradients
@@ -50,13 +52,15 @@ class TestBatchNormalizationLayers(TestCase):
         y = matrix('y', K, N)
         beta = matrix('beta', K, 1)
         gamma = matrix('gamma', K, 1)
+        X = x
 
         # feedforward
-        X = x
         Y = hadamard(column_repeat(gamma, N), X) + column_repeat(beta, N)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DX = hadamard(column_repeat(gamma, N), DY)
         Dbeta = rows_sum(DY)
         Dgamma = rows_sum(hadamard(X, DY))
@@ -82,17 +86,19 @@ class TestBatchNormalizationLayers(TestCase):
         z = matrix('z', K, N)
         beta = matrix('beta', K, 1)
         gamma = matrix('gamma', K, 1)
+        X = x
 
         # feedforward
-        X = x
         R = X - column_repeat(rows_mean(X), N)
         Sigma = diag(R * R.T) / N
         power_minus_half_Sigma = power_minus_half(Sigma)
         Z = hadamard(column_repeat(power_minus_half_Sigma, N), R)
         Y = hadamard(column_repeat(gamma, N), Z) + column_repeat(beta, N)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DZ = hadamard(column_repeat(gamma, N), DY)
         Dbeta = rows_sum(DY)
         Dgamma = rows_sum(hadamard(DY, Z))
@@ -119,16 +125,18 @@ class TestBatchNormalizationLayers(TestCase):
         # variables
         x = matrix('x', N, D)
         y = matrix('y', N, K)
+        X = x
 
         # feedforward
-        X = x
         R = X - row_repeat(columns_mean(X), N)
         Sigma = diag(R.T * R).T / N
         power_minus_half_Sigma = power_minus_half(Sigma)
         Y = hadamard(row_repeat(power_minus_half_Sigma, N), R)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DX = hadamard(row_repeat(power_minus_half_Sigma / N, N), (N * identity(N) - ones(N, N)) * DY - hadamard(Y, row_repeat(diag(Y.T * DY).T, N)))
 
         # test gradients
@@ -147,13 +155,15 @@ class TestBatchNormalizationLayers(TestCase):
         y = matrix('y', N, K)
         beta = matrix('beta', 1, K)
         gamma = matrix('gamma', 1, K)
+        X = x
 
         # feedforward
-        X = x
         Y = hadamard(row_repeat(gamma, N), X) + row_repeat(beta, N)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DX = hadamard(row_repeat(gamma, N), DY)
         Dbeta = columns_sum(DY)
         Dgamma = columns_sum(hadamard(X, DY))
@@ -179,17 +189,19 @@ class TestBatchNormalizationLayers(TestCase):
         z = matrix('z', N, K)
         beta = matrix('beta', 1, K)
         gamma = matrix('gamma', 1, K)
+        X = x
 
         # feedforward
-        X = x
         R = X - row_repeat(columns_mean(X), N)
         Sigma = diag(R.T * R).T / N
         power_minus_half_Sigma = power_minus_half(Sigma)
         Z = hadamard(row_repeat(power_minus_half_Sigma, N), R)
         Y = hadamard(row_repeat(gamma, N), Z) + row_repeat(beta, N)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
         DZ = hadamard(row_repeat(gamma, N), DY)
         Dbeta = columns_sum(DY)
         Dgamma = columns_sum(hadamard(Z, DY))

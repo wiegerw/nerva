@@ -3,7 +3,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from symbolic.sympy.activation_functions import *
-from symbolic.sympy.softmax import *
+from symbolic.sympy.softmax_functions import *
 
 # Naming conventions:
 # - lowercase functions operate on vectors (y and t)

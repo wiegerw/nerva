@@ -2,10 +2,10 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from typing import Tuple
-
 from symbolic.sympy.activation_functions import *
-from symbolic.sympy.softmax import *
+from symbolic.sympy.optimizers import parse_optimizer
+from symbolic.sympy.softmax_functions import *
+from symbolic.sympy.weight_initializers import set_weights
 
 Matrix = sp.Matrix
 
@@ -28,7 +28,7 @@ class Layer(object):
         raise NotImplementedError
 
 
-class LinearLayerColwise(Layer):
+class LinearLayer(Layer):
     """
     Linear layer of a neural network
     """
@@ -46,7 +46,7 @@ class LinearLayerColwise(Layer):
         W = self.W
         b = self.b
 
-        Y = W * X + column_repeat(b, N)
+        Y = X * W.T + row_repeat(b, N)
 
         return Y
 
@@ -54,9 +54,9 @@ class LinearLayerColwise(Layer):
         X = self.X
         W = self.W
 
-        DW = DY * X.T
-        Db = rows_sum(DY)
-        DX = W.T * DY
+        DW = DY.T * X
+        Db = columns_sum(DY)
+        DX = DY * W
 
         self.DW = DW
         self.Db = Db
@@ -73,7 +73,7 @@ class LinearLayerColwise(Layer):
         return D, K
 
 
-class ActivationLayerColwise(LinearLayerColwise):
+class ActivationLayer(LinearLayer):
     """
     Linear layer with an activation function
     """
@@ -90,7 +90,7 @@ class ActivationLayerColwise(LinearLayerColwise):
         b = self.b
         act = self.act
 
-        Z = W * X + column_repeat(b, N)
+        Z = X * W.T + row_repeat(b, N)
         Y = act(Z)
 
         return Y
@@ -102,9 +102,9 @@ class ActivationLayerColwise(LinearLayerColwise):
         act = self.act
 
         DZ = hadamard(DY, act.gradient(Z))
-        DW = DZ * X.T
-        Db = rows_sum(DZ)
-        DX = W.T * DZ
+        DW = DZ.T * X
+        Db = columns_sum(DZ)
+        DX = DZ * W
 
         self.DZ = DZ
         self.DW = DW
@@ -112,7 +112,7 @@ class ActivationLayerColwise(LinearLayerColwise):
         self.DX = DX
 
 
-class SigmoidLayerColwise(LinearLayerColwise):
+class SigmoidLayer(LinearLayer):
     """
     Linear layer with a sigmoid activation function. This is not strictly needed,
     but it shows that the backpropagation can be calculated in a different way
@@ -128,7 +128,7 @@ class SigmoidLayerColwise(LinearLayerColwise):
         W = self.W
         b = self.b
 
-        Z = W * X + column_repeat(b, N)
+        Z = X * W.T + row_repeat(b, N)
         Y = Sigmoid(Z)
 
         return Y
@@ -138,10 +138,10 @@ class SigmoidLayerColwise(LinearLayerColwise):
         X = self.X
         W = self.W
 
-        DZ = hadamard(DY, hadamard(Y, ones(K, N) - Y))
-        DW = DZ * X.T
-        Db = rows_sum(DZ)
-        DX = W.T * DZ
+        DZ = hadamard(DY, hadamard(Y, ones(N, K) - Y))
+        DW = DZ.T * X
+        Db = columns_sum(DZ)
+        DX = DZ * W
 
         self.DZ = DZ
         self.DW = DW
@@ -149,7 +149,7 @@ class SigmoidLayerColwise(LinearLayerColwise):
         self.DX = DX
 
 
-class SReLULayerColwise(ActivationLayerColwise):
+class SReLULayer(ActivationLayer):
     """
     Linear layer with an SReLU activation function. It adds learning of the parameters
     al, tl, ar and tr.
@@ -180,7 +180,7 @@ class SReLULayerColwise(ActivationLayerColwise):
         self.Dtr = elements_sum(hadamard(DY, Tr(Z)))
 
 
-class SoftmaxLayerColwise(LinearLayerColwise):
+class SoftmaxLayer(LinearLayer):
     """
     Linear layer with a softmax activation function
     """
@@ -195,8 +195,8 @@ class SoftmaxLayerColwise(LinearLayerColwise):
         W = self.W
         b = self.b
 
-        Z = W * X + column_repeat(b, N)
-        Y = softmax_colwise(Z)
+        Z = X * W.T + row_repeat(b, N)
+        Y = softmax_rowwise(Z)
 
         return Y
 
@@ -205,10 +205,10 @@ class SoftmaxLayerColwise(LinearLayerColwise):
         X = self.X
         W = self.W
 
-        DZ = hadamard(Y, DY - row_repeat(diag(Y.T * DY).T, K))
-        DW = DZ * X.T
-        Db = rows_sum(DZ)
-        DX = W.T * DZ
+        DZ = hadamard(Y, DY - column_repeat(diag(DY * Y.T), N))
+        DW = DZ.T * X
+        Db = columns_sum(DZ)
+        DX = DZ * W
 
         self.DZ = DZ
         self.DW = DW
@@ -216,7 +216,7 @@ class SoftmaxLayerColwise(LinearLayerColwise):
         self.DX = DX
 
 
-class LogSoftmaxLayerColwise(LinearLayerColwise):
+class LogSoftmaxLayer(LinearLayer):
     """
     Linear layer with a log_softmax activation function
     """
@@ -231,8 +231,8 @@ class LogSoftmaxLayerColwise(LinearLayerColwise):
         W = self.W
         b = self.b
 
-        Z = W * X + column_repeat(b, N)
-        Y = log_softmax_colwise(Z)
+        Z = X * W.T + row_repeat(b, N)
+        Y = log_softmax_rowwise(Z)
 
         return Y
 
@@ -242,10 +242,10 @@ class LogSoftmaxLayerColwise(LinearLayerColwise):
         W = self.W
         Z = self.Z
 
-        DZ = DY - hadamard(softmax_colwise(Z), row_repeat(columns_sum(DY), K))
-        DW = DZ * X.T
-        Db = rows_sum(DZ)
-        DX = W.T * DZ
+        DZ = DY - hadamard(softmax_rowwise(Z), column_repeat(rows_sum(DY), N))
+        DW = DZ.T * X
+        Db = columns_sum(DZ)
+        DX = DZ * W
 
         self.DZ = DZ
         self.DW = DW
@@ -253,7 +253,7 @@ class LogSoftmaxLayerColwise(LinearLayerColwise):
         self.DX = DX
 
 
-class BatchNormalizationLayerColwise(Layer):
+class BatchNormalizationLayer(Layer):
     """
     A batch normalization layer
     """
@@ -273,11 +273,11 @@ class BatchNormalizationLayerColwise(Layer):
         gamma = self.gamma
         beta = self.beta
 
-        R = X - column_repeat(rows_mean(X), N)
-        Sigma = diag(R * R.T) / N
+        R = X - row_repeat(columns_mean(X), N)
+        Sigma = diag(R.T * R).T / N
         power_minus_half_Sigma = power_minus_half(Sigma)
-        Z = hadamard(column_repeat(power_minus_half_Sigma, N), R)
-        Y = hadamard(column_repeat(gamma, N), Z) + column_repeat(beta, N)
+        Z = hadamard(row_repeat(power_minus_half_Sigma, N), R)
+        Y = hadamard(row_repeat(gamma, N), Z) + row_repeat(beta, N)
 
         self.power_minus_half_Sigma = power_minus_half_Sigma
 
@@ -289,10 +289,10 @@ class BatchNormalizationLayerColwise(Layer):
         gamma = self.gamma
         power_minus_half_Sigma = self.power_minus_half_Sigma
 
-        DZ = hadamard(column_repeat(gamma, N), DY)
-        Dbeta = rows_sum(DY)
-        Dgamma = rows_sum(hadamard(DY, Z))
-        DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Z, column_repeat(-diag(DZ * Z.T), N)) + DZ * (N * identity(N) - ones(N, N)))
+        DZ = hadamard(row_repeat(gamma, N), DY)
+        Dbeta = columns_sum(DY)
+        Dgamma = columns_sum(hadamard(Z, DY))
+        DX = hadamard(row_repeat(power_minus_half_Sigma / N, N), (N * identity(N) - ones(N, N)) * DZ - hadamard(Z, row_repeat(diag(Z.T * DZ).T, N)))
 
         self.DZ = DZ
         self.Dbeta = Dbeta
@@ -303,3 +303,29 @@ class BatchNormalizationLayerColwise(Layer):
         # use gradient descent; TODO: generalize this
         self.beta -= eta * self.Dbeta
         self.gamma -= eta * self.Dgamma
+
+
+def parse_linear_layer(text: str,
+                       D: int,
+                       K: int,
+                       N: int,
+                       optimizer: str,
+                       weight_initializer: str
+                      ) -> Layer:
+    if text == 'Linear':
+        layer = LinearLayer(D, K, N)
+    elif text == 'Sigmoid':
+        layer = SigmoidLayer(D, K, N)
+    elif text == 'Softmax':
+        layer = SoftmaxLayer(D, K, N)
+    elif text == 'LogSoftmax':
+        layer = LogSoftmaxLayer(D, K, N)
+    elif text.startswith('SReLU'):
+        act = parse_srelu_activation(text)
+        layer = SReLULayer(D, K, N, act)
+    else:
+        act = parse_activation(text)
+        layer = ActivationLayer(D, K, N, act)
+    layer.optimizer = parse_optimizer(optimizer, layer)
+    set_weights(layer, weight_initializer)
+    return layer

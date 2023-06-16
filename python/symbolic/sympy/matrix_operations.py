@@ -5,7 +5,8 @@
 from typing import List, Tuple, Union
 
 import sympy as sp
-from sympy import Matrix
+
+Matrix = sp.Matrix
 
 def is_column_vector(x: Matrix) -> bool:
     m, n = x.shape

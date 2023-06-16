@@ -28,33 +28,34 @@ class TestSReLULayers(TestCase):
         tl = sp.symbols('tl', real=True)
         ar = sp.symbols('ar', real=True)
         tr = sp.symbols('tr', real=True)
+        X = x
+        W = w
 
-        act = Srelu(al, tl, ar, tr)
-        act_gradient = Srelu_gradient(al, tl, ar, tr)
+        act = SReLUActivation(al, tl, ar, tr)
 
         # helper functions
         Zij = sp.symbols('Zij')
-        Al = Lambda(Zij, Piecewise((Zij - tl, Zij <= tl), (0, True)))
-        Ar = Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (Zij - tr, True)))
-        Tl = Lambda(Zij, Piecewise((1 - al, Zij <= tl), (0, True)))
-        Tr = Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (1 - ar, True)))
+        Al = lambda Z: Z.applyfunc(lambda Zij: Piecewise((Zij - tl, Zij <= tl), (0, True)))
+        Ar = lambda Z: Z.applyfunc(lambda Zij: Piecewise((0, Zij <= tl), (0, Zij < tr), (Zij - tr, True)))
+        Tl = lambda Z: Z.applyfunc(lambda Zij: Piecewise((1 - al, Zij <= tl), (0, True)))
+        Tr = lambda Z: Z.applyfunc(lambda Zij: Piecewise((0, Zij <= tl), (0, Zij < tr), (1 - ar, True)))
 
         # feedforward
-        X = x
-        W = w
         Z = W * X + column_repeat(b, N)
         Y = act(Z)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
-        DZ = hadamard(DY, act_gradient(Z))
+
+        # backpropagation
+        DZ = hadamard(DY, act.gradient(Z))
         DW = DZ * X.T
         Db = rows_sum(DZ)
         DX = W.T * DZ
-        Dal = elements_sum(hadamard(DY, apply(Al, Z)))
-        Dar = elements_sum(hadamard(DY, apply(Ar, Z)))
-        Dtl = elements_sum(hadamard(DY, apply(Tl, Z)))
-        Dtr = elements_sum(hadamard(DY, apply(Tr, Z)))
+        Dal = elements_sum(hadamard(DY, Al(Z)))
+        Dar = elements_sum(hadamard(DY, Ar(Z)))
+        Dtl = elements_sum(hadamard(DY, Tl(Z)))
+        Dtr = elements_sum(hadamard(DY, Tr(Z)))
 
         # test gradients
         DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
@@ -98,33 +99,34 @@ class TestSReLULayers(TestCase):
         tl = sp.symbols('tl', real=True)
         ar = sp.symbols('ar', real=True)
         tr = sp.symbols('tr', real=True)
+        X = x
+        W = w
 
-        act = Srelu(al, tl, ar, tr)
-        act_gradient = Srelu_gradient(al, tl, ar, tr)
+        act = SReLUActivation(al, tl, ar, tr)
 
         # helper functions
         Zij = sp.symbols('Zij')
-        Al = Lambda(Zij, Piecewise((Zij - tl, Zij <= tl), (0, True)))
-        Ar = Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (Zij - tr, True)))
-        Tl = Lambda(Zij, Piecewise((1 - al, Zij <= tl), (0, True)))
-        Tr = Lambda(Zij, Piecewise((0, Zij <= tl), (0, Zij < tr), (1 - ar, True)))
+        Al = lambda Z: Z.applyfunc(lambda Zij: Piecewise((Zij - tl, Zij <= tl), (0, True)))
+        Ar = lambda Z: Z.applyfunc(lambda Zij: Piecewise((0, Zij <= tl), (0, Zij < tr), (Zij - tr, True)))
+        Tl = lambda Z: Z.applyfunc(lambda Zij: Piecewise((1 - al, Zij <= tl), (0, True)))
+        Tr = lambda Z: Z.applyfunc(lambda Zij: Piecewise((0, Zij <= tl), (0, Zij < tr), (1 - ar, True)))
 
         # feedforward
-        X = x
-        W = w
         Z = X * W.T + row_repeat(b, N)
         Y = act(Z)
 
-        # backpropagation
+        # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
-        DZ = hadamard(DY, act_gradient(Z))
+
+        # backpropagation
+        DZ = hadamard(DY, act.gradient(Z))
         DW = DZ.T * X
         Db = columns_sum(DZ)
         DX = DZ * W
-        Dal = elements_sum(hadamard(DY, apply(Al, Z)))
-        Dar = elements_sum(hadamard(DY, apply(Ar, Z)))
-        Dtl = elements_sum(hadamard(DY, apply(Tl, Z)))
-        Dtr = elements_sum(hadamard(DY, apply(Tr, Z)))
+        Dal = elements_sum(hadamard(DY, Al(Z)))
+        Dar = elements_sum(hadamard(DY, Ar(Z)))
+        Dtl = elements_sum(hadamard(DY, Tl(Z)))
+        Dtr = elements_sum(hadamard(DY, Tr(Z)))
 
         # test gradients
         DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
