@@ -3,32 +3,32 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import tensorflow as tf
-from symbolic.tensorflow.layers import LinearLayerColwise
 
+Matrix = tf.Tensor
 
-def set_weights_xavier(W: tf.Tensor):
+def set_weights_xavier(W: Matrix):
     initializer = tf.initializers.GlorotUniform()
     tf_w = tf.Variable(initializer(shape=W.shape))
     W.assign(tf_w)
 
 
-def set_weights_xavier_normalized(W: tf.Tensor):
+def set_weights_xavier_normalized(W: Matrix):
     initializer = tf.initializers.GlorotNormal()
     tf_w = tf.Variable(initializer(shape=W.shape))
     W.assign(tf_w)
 
 
-def set_weights_he(W: tf.Tensor):
+def set_weights_he(W: Matrix):
     initializer = tf.initializers.HeNormal()
     tf_w = tf.Variable(initializer(shape=W.shape))
     W.assign(tf_w)
 
 
-def set_bias_to_zero(b: tf.Tensor):
+def set_bias_to_zero(b: Matrix):
     b.assign(tf.zeros_like(b))
 
 
-def set_weights(layer: LinearLayerColwise, text: str):
+def set_weights(layer, text: str):
     if text == 'Xavier':
         set_weights_xavier(layer.W)
         set_bias_to_zero(layer.b)

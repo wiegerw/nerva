@@ -4,8 +4,7 @@
 
 import math
 from symbolic.tensorflow.activation_functions import *
-from symbolic.tensorflow.matrix_operations import *
-from symbolic.tensorflow.softmax import *
+from symbolic.tensorflow.softmax_functions import *
 
 # Naming conventions:
 # - lowercase functions operate on vectors (y and t)
