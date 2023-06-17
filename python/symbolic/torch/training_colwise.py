@@ -6,15 +6,14 @@
 
 from symbolic.learning_rate import ConstantScheduler
 from symbolic.torch.datasets import DataLoader, create_cifar10_dataloaders
-from symbolic.torch.loss_functions_rowwise import *
+from symbolic.torch.loss_functions_colwise import *
 from symbolic.torch.multilayer_perceptron_rowwise import MultilayerPerceptron, parse_multilayer_perceptron
 from symbolic.utilities import StopWatch, pp
 
 
 def to_one_hot(x: torch.LongTensor, n_classes: int):
-    one_hot = torch.zeros(len(x), n_classes)
+    one_hot = torch.zeros(n_classes, len(x))
     one_hot.scatter_(1, x.unsqueeze(1), 1)
-    pp('one_hot', one_hot)
     return one_hot
 
 
@@ -22,8 +21,8 @@ def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
     N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
     for X, T in data_loader:
-        Y = M.feedforward(X)
-        predicted = Y.argmax(dim=1)  # the predicted classes for the batch
+        Y = M.feedforward(X.T)
+        predicted = Y.argmax(dim=0)  # the predicted classes for the batch
         total_correct += (predicted == T).sum().item()
 
     return total_correct / N
@@ -34,7 +33,10 @@ def compute_loss(M: MultilayerPerceptron, data_loader: DataLoader, loss: LossFun
     total_loss = 0.0
     for X, T in data_loader:
         T = to_one_hot(T, num_classes)
+        pp('T', T)
+        pp('X', X)
         Y = M.feedforward(X)
+        pp('Y', Y)
         total_loss += loss(Y, T)
 
     return total_loss / N
@@ -80,7 +82,7 @@ def sgd(M: MultilayerPerceptron,
 
         for (X, T) in train_loader:
             T = to_one_hot(T, num_classes)
-            Y = M.feedforward(X)
+            Y = M.feedforward(X.T)
             DY = loss.gradient(Y, T) / batch_size
             M.backpropagate(Y, DY)
             M.optimize(lr)
