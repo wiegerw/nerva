@@ -11,10 +11,9 @@ from symbolic.torch.multilayer_perceptron_rowwise import MultilayerPerceptron, p
 from symbolic.utilities import StopWatch, pp
 
 
-def to_one_hot(x: torch.LongTensor, n_classes: int):
-    one_hot = torch.zeros(len(x), n_classes)
+def to_one_hot_torch_rowwise(x: torch.LongTensor, n_classes: int):
+    one_hot = torch.zeros(len(x), n_classes, dtype=torch.float)
     one_hot.scatter_(1, x.unsqueeze(1), 1)
-    pp('one_hot', one_hot)
     return one_hot
 
 
@@ -33,7 +32,7 @@ def compute_loss(M: MultilayerPerceptron, data_loader: DataLoader, loss: LossFun
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
     for X, T in data_loader:
-        T = to_one_hot(T, num_classes)
+        T = to_one_hot_torch_rowwise(T, num_classes)
         Y = M.feedforward(X)
         total_loss += loss(Y, T)
 
@@ -79,7 +78,7 @@ def sgd(M: MultilayerPerceptron,
         lr = learning_rate(epoch)  # update the learning at the start of each epoch
 
         for (X, T) in train_loader:
-            T = to_one_hot(T, num_classes)
+            T = to_one_hot_torch_rowwise(T, num_classes)
             Y = M.feedforward(X)
             DY = loss.gradient(Y, T) / batch_size
             M.backpropagate(Y, DY)

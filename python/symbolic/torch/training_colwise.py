@@ -7,13 +7,13 @@
 from symbolic.learning_rate import ConstantScheduler
 from symbolic.torch.datasets import DataLoader, create_cifar10_dataloaders
 from symbolic.torch.loss_functions_colwise import *
-from symbolic.torch.multilayer_perceptron_rowwise import MultilayerPerceptron, parse_multilayer_perceptron
+from symbolic.torch.multilayer_perceptron_colwise import MultilayerPerceptron, parse_multilayer_perceptron
 from symbolic.utilities import StopWatch, pp
 
 
-def to_one_hot(x: torch.LongTensor, n_classes: int):
-    one_hot = torch.zeros(n_classes, len(x))
-    one_hot.scatter_(1, x.unsqueeze(1), 1)
+def to_one_hot_torch_colwise(x: torch.LongTensor, n_classes: int):
+    one_hot = torch.zeros(n_classes, len(x), dtype=torch.float)
+    one_hot.scatter_(0, x.unsqueeze(0), 1)
     return one_hot
 
 
@@ -32,11 +32,8 @@ def compute_loss(M: MultilayerPerceptron, data_loader: DataLoader, loss: LossFun
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
     for X, T in data_loader:
-        T = to_one_hot(T, num_classes)
-        pp('T', T)
-        pp('X', X)
-        Y = M.feedforward(X)
-        pp('Y', Y)
+        T = to_one_hot_torch_colwise(T, num_classes)
+        Y = M.feedforward(X.T)
         total_loss += loss(Y, T)
 
     return total_loss / N
@@ -81,7 +78,7 @@ def sgd(M: MultilayerPerceptron,
         lr = learning_rate(epoch)  # update the learning at the start of each epoch
 
         for (X, T) in train_loader:
-            T = to_one_hot(T, num_classes)
+            T = to_one_hot_torch_colwise(T, num_classes)
             Y = M.feedforward(X.T)
             DY = loss.gradient(Y, T) / batch_size
             M.backpropagate(Y, DY)
