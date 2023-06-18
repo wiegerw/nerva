@@ -17,6 +17,7 @@
 #include "nerva/neural_networks/parse_layer.h"
 #include "nerva/neural_networks/random.h"
 #include "nerva/neural_networks/regrow.h"
+#include "nerva/neural_networks/softmax_functions.h"
 #include "nerva/neural_networks/training.h"
 #include "nerva/neural_networks/weights.h"
 #include <pybind11/eigen.h>
@@ -485,10 +486,10 @@ PYBIND11_MODULE(nervalib, m)
 
   m.def("relu", [](const eigen::matrix_ref<scalar>& X) { return relu_activation()(X); });
   m.def("sigmoid", [](const eigen::matrix_ref<scalar>& X) { return sigmoid_activation()(X); });
-  m.def("stable_softmax", [](const eigen::matrix_ref<scalar>& X) { return stable_softmax_colwise()(X); });
-  m.def("stable_softmax_rowwise", [](const eigen::matrix_ref<scalar>& X) { return stable_softmax_rowwise()(X); });
-  m.def("stable_log_softmax", [](const eigen::matrix_ref<scalar>& X) { return stable_log_softmax_colwise()(X); });
-  m.def("stable_log_softmax_rowwise", [](const eigen::matrix_ref<scalar>& X) { return stable_log_softmax_rowwise()(X); });
+  m.def("stable_softmax", [](const eigen::matrix_ref<scalar>& X) { return eigen::stable_softmax_colwise(X); });
+  m.def("stable_softmax_rowwise", [](const eigen::matrix_ref<scalar>& X) { return eigen::stable_softmax_rowwise(X); });
+  m.def("stable_log_softmax", [](const eigen::matrix_ref<scalar>& X) { return eigen::stable_log_softmax_colwise(X); });
+  m.def("stable_log_softmax_rowwise", [](const eigen::matrix_ref<scalar>& X) { return eigen::stable_log_softmax_rowwise(X); });
   m.def("hyperbolic_tangent", [](const eigen::matrix_ref<scalar>& X) { return hyperbolic_tangent_activation()(X); });
 
   /////////////////////////////////////////////////////////////////////////
