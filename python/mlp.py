@@ -24,6 +24,7 @@ import nervalib
 from nerva.pruning import PruneFunction, GrowFunction, PruneGrow, parse_prune_function, parse_grow_function
 from nerva.training import StochasticGradientDescentAlgorithm, SGDOptions, compute_sparse_layer_densities
 from nerva.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, create_npz_dataloaders
+from nerva.layers import print_model_info
 
 
 class MLPNerva(nerva.layers.Sequential):
@@ -127,6 +128,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--precision", help="The precision used for printing matrices", type=int, default=8)
     cmdline_parser.add_argument("--edgeitems", help="The edgeitems used for printing matrices", type=int, default=3)
     cmdline_parser.add_argument("--debug", help="print debug information", action="store_true")
+    cmdline_parser.add_argument("--info", help="print information about the MLP", action="store_true")
 
     # pruning + growing (experimental!)
     cmdline_parser.add_argument("--prune", help="The pruning strategy: Magnitude(<rate>), SET(<rate>) or Threshold(<value>)", type=str)
@@ -259,6 +261,9 @@ def main():
 
     if args.save_weights:
         M.save_weights_and_bias(args.save_weights)
+
+    if args.info:
+        print_model_info(M)
 
     if args.epochs > 0:
         print('\n=== Training Nerva model ===')

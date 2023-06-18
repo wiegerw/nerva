@@ -97,15 +97,25 @@ def main():
     linear_layer_optimizers = ['Momentum(0.9)', 'Momentum(0.9)', 'Momentum(0.9)']
     linear_layer_weight_initializers = ['Xavier', 'Xavier', 'Xavier']
     batch_size = 100
-    epochs = 1
+    epochs = 0
     loss = SoftmaxCrossEntropyLossFunction()
     learning_rate = ConstantScheduler(0.1)
     datadir = '../../data'
 
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers, batch_size)
+    M.load_weights_and_bias('../../aaa.npz')
+    M.info()
     train_loader, test_loader = create_cifar10_dataloaders(batch_size, batch_size, datadir)
     sgd(M, epochs, loss, learning_rate, train_loader, test_loader, batch_size)
 
 
+def initialize_frameworks():
+    torch.set_printoptions(precision=5, edgeitems=3, threshold=5, sci_mode=False, linewidth=160)
+
+    # avoid 'Too many open files' error when using data loaders
+    torch.multiprocessing.set_sharing_strategy('file_system')
+
+
 if __name__ == '__main__':
+    initialize_frameworks()
     main()
