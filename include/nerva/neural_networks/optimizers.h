@@ -192,7 +192,7 @@ struct nesterov_optimizer: public gradient_descent_optimizer<Matrix>
     }
 
     delta_b_prev = delta_b;
-    delta_b = mu * delta_b - eta * b;
+    delta_b = mu * delta_b - eta * Db;
     b += (-mu * delta_b_prev + (scalar(1) + mu) * delta_b);
   }
 };
