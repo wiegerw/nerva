@@ -1,6 +1,7 @@
 # Copyright 2022 Wieger Wesselink.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
+
 from typing import Union
 
 import numpy as np
@@ -72,7 +73,7 @@ def torch_inf_norm(x: torch.Tensor) -> float:
 def pp(name: str, x: Union[torch.Tensor, np.ndarray]):
     if isinstance(x, np.ndarray):
         x = torch.Tensor(x)
-    if len(x.shape) == 1:
+    if x.dim() == 1:
         print(f'{name} ({x.shape[0]}) norm = {torch_inf_norm(x):.8f}\n{x.data}')
     else:
         print(f'{name} ({x.shape[0]}x{x.shape[1]}) norm = {torch_inf_norm(x):.8f}\n{x.data}')

@@ -5,17 +5,151 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import argparse
+import random
 import shlex
 import sys
+from typing import List
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
-from nerva.training import compute_sparse_layer_densities
-from snn.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders
-from snn.torch_models import make_torch_scheduler
-from snn.models import MLPPyTorch, MLPPyTorchTRelu
-from snn.training import train_torch, train_torch_preprocessed
+from torch.nn import Linear
+
+from nerva.datasets import create_npz_dataloaders, create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, \
+    save_dict_to_npz, load_dict_from_npz
+from nerva.training import compute_sparse_layer_densities, print_epoch
+from nerva.utilities import StopWatch, pp
+
+
+def reservoir_sample(k: int, n: int) -> List[int]:
+    # Initialize the reservoir with the first k elements
+    reservoir = [i for i in range(k)]
+
+    # Iterate over the remaining elements
+    for i in range(k, n):
+        j = random.randint(0, i)
+        if j < k:
+            reservoir[j] = i
+
+    return reservoir
+
+
+def create_mask(W: torch.Tensor, non_zero_count: int) -> torch.Tensor:
+    """
+    Creates a boolean matrix with the same shape as W, and with exactly non_zero_count positions equal to 1
+    :param W:
+    :param non_zero_count:
+    :return:
+    """
+    mask = torch.zeros_like(W)
+
+    I = reservoir_sample(non_zero_count, W.numel())  # generates non_zero_count random indices in W
+    for i in I:
+        row = i // W.size(1)
+        col = i % W.size(1)
+        mask[row, col] = 1
+
+    return mask
+
+
+class MLPPyTorch(nn.Module):
+    """ PyTorch Multilayer perceptron that supports sparse layers using binary masks.
+    """
+    def __init__(self, layer_sizes, layer_densities):
+        super().__init__()
+        self.layer_sizes = layer_sizes
+        self.optimizer = None
+        self.masks = None
+        n = len(layer_sizes) - 1  # the number of layers
+        self.layers = nn.ModuleList()
+        for i in range(n):
+            self.layers.append(nn.Linear(layer_sizes[i], layer_sizes[i + 1]))
+        self._set_masks(layer_densities)
+
+    def _set_masks(self, layer_densities):
+        self.masks = []
+        for layer, density in zip(self.layers, layer_densities):
+            if density == 1.0:
+                self.masks.append(None)
+            else:
+                self.masks.append(create_mask(layer.weight, round(density * layer.weight.numel())))
+
+    def apply_masks(self):
+        for layer, mask in zip(self.layers, self.masks):
+            if mask is not None:
+                layer.weight.data = layer.weight.data * mask
+
+    def optimize(self):
+        self.apply_masks()  # N.B. This seems to be the correct order
+        self.optimizer.step()
+
+    def forward(self, x):
+        for i in range(len(self.layers) - 1):
+            x = F.relu(self.layers[i](x))
+        x = self.layers[-1](x)  # output layer does not have an activation function
+        return x
+
+    def save_weights_and_bias(self, filename: str):
+        print(f'Saving weights and bias to {filename}')
+        data = {}
+        for i, layer in enumerate(self.layers):
+            data[f'W{i + 1}'] = layer.weight.data
+            data[f'b{i + 1}'] = layer.bias.data
+        save_dict_to_npz(filename, data)
+
+    def load_weights_and_bias(self, filename: str):
+        print(f'Loading weights and bias from {filename}')
+        data = load_dict_from_npz(filename)
+        for i, layer in enumerate(self.layers):
+            layer.weight.data = data[f'W{i + 1}']
+            layer.bias.data = data[f'b{i + 1}']
+
+    def info(self):
+        index = 1
+        for layer in self.layers:
+            if isinstance(layer, Linear):
+                pp(f'W{index}', layer.weight.data)
+                pp(f'b{index}', layer.bias.data)
+                index += 1
+
+    def __str__(self):
+        def density_info(layer, mask: torch.Tensor):
+            if mask is not None:
+                n, N = torch.count_nonzero(mask), mask.numel()
+            else:
+                n, N = layer.weight.numel(), layer.weight.numel()
+            return f'{n}/{N} ({100 * n / N:.8f}%)'
+
+        density_info = [density_info(layer, mask) for layer, mask in zip(self.layers, self.masks)]
+        return f'{super().__str__()}\nscheduler = {self.learning_rate}\nlayer densities: {", ".join(density_info)}\n'
+
+
+class MLPPyTorchTRelu(MLPPyTorch):
+    """ PyTorch Multilayer perceptron that supports sparse layers using binary masks.
+        It uses a trimmed ReLU activation function.
+    """
+    def __init__(self, layer_sizes, layer_densities, epsilon: float):
+        super().__init__(layer_sizes, layer_densities)
+        self.epsilon = epsilon
+        print(f'epsilon = {epsilon}')
+
+    def forward(self, x):
+        for i in range(len(self.layers) - 1):
+            z = self.layers[i](x)
+            x = torch.where(z < self.epsilon, 0, z)  # apply trimmed ReLU to z
+        x = self.layers[-1](x)  # output layer does not have an activation function
+        return x
+
+
+def make_torch_scheduler(args, optimizer):
+    if args.scheduler == 'constant':
+        return torch.optim.lr_scheduler.ConstantLR(optimizer, factor=1.0)
+    elif args.scheduler == 'multistep':
+        milestones = [int(args.epochs / 2), int(args.epochs * 3 / 4)]
+        return torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones, gamma=args.gamma, last_epoch=-1)
+    else:
+        raise RuntimeError(f'Unknown scheduler {args.scheduler}')
 
 
 def make_torch_model(args, linear_layer_sizes, densities):
@@ -27,6 +161,124 @@ def make_torch_model(args, linear_layer_sizes, densities):
         nn.init.xavier_uniform_(layer.weight)
     M.apply_masks()
     return M
+
+
+def compute_accuracy_torch(M: MLPPyTorch, data_loader):
+    N = len(data_loader.dataset)  # N is the number of examples
+    total_correct = 0
+    for X, T in data_loader:
+        Y = M(X)
+        predicted = Y.argmax(axis=1)  # the predicted classes for the batch
+        total_correct += (predicted == T).sum().item()
+    return total_correct / N
+
+
+def compute_loss_torch(M: MLPPyTorch, data_loader):
+    N = len(data_loader.dataset)  # N is the number of examples
+    batch_size = N // len(data_loader)
+    total_loss = 0.0
+    for X, T in data_loader:
+        Y = M(X)
+        total_loss += M.loss(Y, T).sum()
+    return batch_size * total_loss / N
+
+
+def train_torch(M, train_loader, test_loader, epochs, debug=False):
+    M.train()  # Set model in training mode
+    watch = StopWatch()
+
+    print_epoch(epoch=0,
+                lr=M.optimizer.param_groups[0]["lr"],
+                loss=compute_loss_torch(M, train_loader),
+                train_accuracy=compute_accuracy_torch(M, train_loader),
+                test_accuracy=compute_accuracy_torch(M, test_loader),
+                elapsed=0)
+
+    for epoch in range(epochs):
+        elapsed = 0.0
+        for k, (X, T) in enumerate(train_loader):
+            watch.reset()
+            M.optimizer.zero_grad()
+            Y = M(X)
+
+            if debug:
+                Y.requires_grad = True
+                Y.retain_grad()
+
+            loss = M.loss(Y, T)
+            loss.backward()
+
+            if debug:
+                print(f'epoch: {epoch} batch: {k}')
+                M.info()
+                DY = Y.grad.detach()
+                pp("X", X.T)
+                pp("Y", Y.T)
+                pp("DY", DY.T)
+
+            M.optimize()
+            elapsed += watch.seconds()
+
+        print_epoch(epoch=epoch + 1,
+                    lr=M.optimizer.param_groups[0]["lr"],
+                    loss=compute_loss_torch(M, train_loader),
+                    train_accuracy=compute_accuracy_torch(M, train_loader),
+                    test_accuracy=compute_accuracy_torch(M, test_loader),
+                    elapsed=elapsed)
+
+        M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
+
+
+# At every epoch a new dataset in .npz format is read from datadir.
+def train_torch_preprocessed(M, datadir, epochs, batch_size, debug=False):
+    M.train()  # Set model in training mode
+    watch = StopWatch()
+
+    train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch0.npz', batch_size=batch_size)
+
+    print_epoch(epoch=0,
+                lr=M.optimizer.param_groups[0]["lr"],
+                loss=compute_loss_torch(M, train_loader),
+                train_accuracy=compute_accuracy_torch(M, train_loader),
+                test_accuracy=compute_accuracy_torch(M, test_loader),
+                elapsed=0)
+
+    for epoch in range(epochs):
+        if epoch > 0:
+            train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch{epoch}.npz', batch_size)
+
+        elapsed = 0.0
+        for k, (X, T) in enumerate(train_loader):
+            watch.reset()
+            M.optimizer.zero_grad()
+            Y = M(X)
+
+            if debug:
+                Y.requires_grad = True
+                Y.retain_grad()
+
+            loss = M.loss(Y, T)
+            loss.backward()
+
+            if debug:
+                print(f'epoch: {epoch} batch: {k}')
+                M.info()
+                DY = Y.grad.detach()
+                pp("X", X.T)
+                pp("Y", Y.T)
+                pp("DY", DY.T)
+
+            M.optimize()
+            elapsed += watch.seconds()
+
+        print_epoch(epoch=epoch + 1,
+                    lr=M.optimizer.param_groups[0]["lr"],
+                    loss=compute_loss_torch(M, train_loader),
+                    train_accuracy=compute_accuracy_torch(M, train_loader),
+                    test_accuracy=compute_accuracy_torch(M, test_loader),
+                    elapsed=elapsed)
+
+        M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
 
 
 def make_argument_parser():
@@ -68,6 +320,8 @@ def make_argument_parser():
     # print options
     cmdline_parser.add_argument("--precision", help="The precision used for printing matrices", type=int, default=8)
     cmdline_parser.add_argument("--edgeitems", help="The edgeitems used for printing matrices", type=int, default=3)
+    cmdline_parser.add_argument("--debug", help="print debug information", action="store_true")
+    cmdline_parser.add_argument("--info", help="print information about the MLP", action="store_true")
 
     # multi-threading
     cmdline_parser.add_argument("--threads", help="The number of threads being used", type=int)
@@ -144,9 +398,9 @@ def main():
     if args.epochs > 0:
         print('\n=== Training PyTorch model ===')
         if args.preprocessed:
-            train_torch_preprocessed(M, args.preprocessed, args.epochs, args.batch_size)
+            train_torch_preprocessed(M, args.preprocessed, args.epochs, args.batch_size, args.debug)
         else:
-            train_torch(M, train_loader, test_loader, args.epochs)
+            train_torch(M, train_loader, test_loader, args.epochs, args.debug)
 
 
 if __name__ == '__main__':
