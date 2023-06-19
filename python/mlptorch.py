@@ -6,9 +6,10 @@
 
 import argparse
 import random
+import re
 import shlex
 import sys
-from typing import List
+from typing import List, Tuple
 
 import torch
 import torch.nn as nn
@@ -142,21 +143,55 @@ class MLPPyTorchTRelu(MLPPyTorch):
         return x
 
 
-def make_torch_scheduler(args, optimizer):
-    if args.scheduler == 'constant':
-        return torch.optim.lr_scheduler.ConstantLR(optimizer, factor=1.0)
-    elif args.scheduler == 'multistep':
-        milestones = [int(args.epochs / 2), int(args.epochs * 3 / 4)]
-        return torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones, gamma=args.gamma, last_epoch=-1)
+def parse_learning_rate(text: str, optimizer) -> torch.optim.lr_scheduler:
+    try:
+        if text.startswith('Constant'):
+            m = re.match(r'Constant\((.*)\)', text)
+            lr = float(m.group(1))  # N.B. ignored!
+            return torch.optim.lr_scheduler.ConstantLR(optimizer, factor=1.0)
+        elif text.startswith('MultiStepLR'):
+            m = re.match(r'MultiStepLR\((.*);(.*);(.*)\)', text)
+            lr = float(m.group(1))  # N.B. ignored!
+            milestones = [int(x) for x in m.group(2).split(',')]
+            gamma = float(m.group(3))
+            return torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones, gamma=gamma, last_epoch=-1)
+    except:
+        pass
+    raise RuntimeError(f"could not parse learning rate scheduler '{text}'")
+
+
+def parse_loss_function(text: str):
+    if text == "SoftmaxCrossEntropy":
+        return nn.CrossEntropyLoss()
     else:
-        raise RuntimeError(f'Unknown scheduler {args.scheduler}')
+        raise RuntimeError(f"unsupported loss function '{text}'")
+
+
+# N.B. Currently we only support one optimizer for all layers.
+def parse_optimizer(text: str, M: MLPPyTorch, lr: float) -> optim.SGD:
+    try:
+        momentum = 0.0
+        nesterov = False
+        if text == 'GradientDescent':
+            pass
+        elif text.startswith('Momentum'):
+            m = re.match(r'Momentum\((.*)\)', text)
+            momentum = float(m.group(1))
+        elif text.startswith('Nesterov'):
+            m = re.match(r'Nesterov\((.*)\)', text)
+            momentum = float(m.group(1))
+            nesterov = True
+        return optim.SGD(M.parameters(), lr=lr, momentum=momentum, nesterov=nesterov)
+    except:
+        pass
+    raise RuntimeError(f"could not parse optimizer '{text}'")
 
 
 def make_torch_model(args, linear_layer_sizes, densities):
     M = MLPPyTorch(linear_layer_sizes, densities) if args.trim_relu == 0 else MLPPyTorchTRelu(linear_layer_sizes, densities, args.trim_relu)
-    M.optimizer = optim.SGD(M.parameters(), lr=args.lr, momentum=args.momentum, nesterov=args.nesterov)
-    M.loss = nn.CrossEntropyLoss()
-    M.learning_rate = make_torch_scheduler(args, M.optimizer)
+    M.optimizer = parse_optimizer(args.optimizers, M, args.lr)
+    M.loss = parse_loss_function(args.loss)
+    M.learning_rate = parse_learning_rate(args.learning_rate, M.optimizer)
     for layer in M.layers:
         nn.init.xavier_uniform_(layer.weight)
     M.apply_masks()
@@ -249,12 +284,14 @@ def train_torch_preprocessed(M, datadir, epochs, batch_size, debug=False):
 
         elapsed = 0.0
         for k, (X, T) in enumerate(train_loader):
+            if debug:
+                X.requires_grad_(True)
+
             watch.reset()
             M.optimizer.zero_grad()
             Y = M(X)
 
             if debug:
-                Y.requires_grad = True
                 Y.retain_grad()
 
             loss = M.loss(Y, T)
@@ -264,9 +301,9 @@ def train_torch_preprocessed(M, datadir, epochs, batch_size, debug=False):
                 print(f'epoch: {epoch} batch: {k}')
                 M.info()
                 DY = Y.grad.detach()
-                pp("X", X.T)
-                pp("Y", Y.T)
-                pp("DY", DY.T)
+                pp("X", X)
+                pp("Y", Y)
+                pp("DY", DY)
 
             M.optimize()
             elapsed += watch.seconds()
@@ -299,13 +336,20 @@ def make_argument_parser():
     cmdline_parser.add_argument("--nesterov", help="apply nesterov", action="store_true")
 
     # learning rate
+    # N.B. In PyTorch the learning rate is tied to the optimizer instead of to the learning rate scheduler.
+    # Due to this design decision, a separate command line option for the learning rate is necessary.
     cmdline_parser.add_argument("--lr", help="The initial learning rate", type=float, default=0.1)
-    cmdline_parser.add_argument("--scheduler", type=str, help="The learning rate scheduler (constant,multistep)", default="multistep")
-    cmdline_parser.add_argument('--gamma', type=float, default=0.1, help='The learning rate decay (default: 0.1)')
+    cmdline_parser.add_argument("--learning-rate", type=str, help="The learning rate scheduler")
+
+    # loss function
+    cmdline_parser.add_argument('--loss', type=str, help='The loss function')
 
     # training
     cmdline_parser.add_argument("--epochs", help="The number of epochs", type=int, default=100)
     cmdline_parser.add_argument("--batch-size", help="The batch size", type=int, default=1)
+
+    # optimizer
+    cmdline_parser.add_argument("--optimizers", type=str, help="The optimizer (GradientDescent, Momentum(<mu>), Nesterov(<mu>))", default="GradientDescent")
 
     # dataset
     cmdline_parser.add_argument('--datadir', type=str, default='', help='the data directory (default: ./data)')
@@ -313,7 +357,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
 
     # load/save weights
-    cmdline_parser.add_argument('--init-weights', type=str, default='None', help='The weights for initalizing the layers')
+    cmdline_parser.add_argument('--init-weights', type=str, default='None', help='The initial weights for the layers')
     cmdline_parser.add_argument('--save-weights', type=str, help='Save weights and bias to a file in .npz format')
     cmdline_parser.add_argument('--load-weights', type=str, help='Load weights and bias from a file in .npz format')
 
@@ -364,10 +408,6 @@ def main():
     print_command_line_arguments(args)
 
     initialize_frameworks(args)
-
-    if args.scheduler == 'multistep' and args.epochs <= 10:
-        print('Setting gamma to 1.0')
-        args.gamma = 1.0
 
     if args.datadir:
         if args.augmented:

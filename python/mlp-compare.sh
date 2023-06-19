@@ -16,6 +16,23 @@ loss=SoftmaxCrossEntropy
 batch_size=100
 epochs=1
 
+print_header "Train CIFAR10 using mlptorch.py"
+python3 -u mlptorch.py \
+  --seed=$seed \
+  --overall-density=$density \
+  --batch-size=$batch_size \
+  --epochs=$epochs \
+  --sizes=$sizes \
+  --layers=$layers \
+  --optimizers=$optimizers \
+  --load-weights="mlp-compare.npz" \
+  --learning-rate=$learning_rate \
+  --lr=0.1 \
+  --loss=$loss \
+  --preprocessed=cifar$seed \
+  --debug \
+  2>&1 | tee mlp-compare-torch.log
+
 print_header "Train CIFAR10 using mlp.cpp"
 ../tools/dist/mlp \
   --seed=$seed \
@@ -51,4 +68,5 @@ python3 -u mlp.py \
   --debug \
   2>&1 | tee mlp-compare-python.log
 
-meld mlp-compare-cpp.log mlp-compare-python.log
+meld mlp-compare-cpp.log mlp-compare-python.log mlp-compare-torch.log
+
