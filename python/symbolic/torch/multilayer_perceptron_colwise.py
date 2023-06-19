@@ -38,7 +38,7 @@ class MultilayerPerceptron(object):
         for layer in self.layers:
             if isinstance(layer, LinearLayer):
                 pp(f'W{index}', layer.W)
-                pp(f'b{index}', layer.b)
+                pp(f'b{index}', layer.b.T)  # TODO: avoid the transpose
                 index += 1
 
     def load_weights_and_bias(self, filename: str):

@@ -4,10 +4,12 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
+from nerva.datasets import create_npz_dataloaders
 from symbolic.learning_rate import ConstantScheduler
 from symbolic.torch.datasets import DataLoader, create_cifar10_dataloaders
 from symbolic.torch.loss_functions_colwise import *
 from symbolic.torch.multilayer_perceptron_colwise import MultilayerPerceptron, parse_multilayer_perceptron
+from symbolic.training import SGDOptions
 from symbolic.utilities import StopWatch, pp
 
 
@@ -77,10 +79,18 @@ def sgd(M: MultilayerPerceptron,
         timer = StopWatch()
         lr = learning_rate(epoch)  # update the learning at the start of each epoch
 
-        for (X, T) in train_loader:
+        for k, (X, T) in enumerate(train_loader):
             T = to_one_hot_torch_colwise(T, num_classes)
             Y = M.feedforward(X.T)
             DY = loss.gradient(Y, T) / batch_size
+
+            if SGDOptions.debug:
+                print(f'epoch: {epoch} batch: {k}')
+                M.info()
+                pp("X", X)
+                pp("Y", Y.T)     # TODO: avoid the transpose (?)
+                pp("DY", DY.T)   # TODO: avoid the transpose (?)
+
             M.backpropagate(Y, DY)
             M.optimize(lr)
 
@@ -97,20 +107,22 @@ def main():
     linear_layer_optimizers = ['Momentum(0.9)', 'Momentum(0.9)', 'Momentum(0.9)']
     linear_layer_weight_initializers = ['Xavier', 'Xavier', 'Xavier']
     batch_size = 100
-    epochs = 0
+    epochs = 1
     loss = SoftmaxCrossEntropyLossFunction()
     learning_rate = ConstantScheduler(0.1)
     datadir = '../../data'
+    SGDOptions.debug = True
 
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers, batch_size)
-    #M.load_weights_and_bias('../../aaa.npz')
+    M.load_weights_and_bias('../../mlp-compare.npz')
     M.info()
-    train_loader, test_loader = create_cifar10_dataloaders(batch_size, batch_size, datadir)
+    # train_loader, test_loader = create_cifar10_dataloaders(batch_size, batch_size, datadir)
+    train_loader, test_loader = create_npz_dataloaders('../../cifar1/epoch0.npz', batch_size=batch_size)
     sgd(M, epochs, loss, learning_rate, train_loader, test_loader, batch_size)
 
 
 def initialize_frameworks():
-    torch.set_printoptions(precision=5, edgeitems=3, threshold=5, sci_mode=False, linewidth=160)
+    torch.set_printoptions(precision=8, edgeitems=3, threshold=5, sci_mode=False, linewidth=160)
 
     # avoid 'Too many open files' error when using data loaders
     torch.multiprocessing.set_sharing_strategy('file_system')
