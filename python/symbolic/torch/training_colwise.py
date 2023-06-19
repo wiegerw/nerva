@@ -103,7 +103,7 @@ def main():
     datadir = '../../data'
 
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers, batch_size)
-    M.load_weights_and_bias('../../aaa.npz')
+    #M.load_weights_and_bias('../../aaa.npz')
     M.info()
     train_loader, test_loader = create_cifar10_dataloaders(batch_size, batch_size, datadir)
     sgd(M, epochs, loss, learning_rate, train_loader, test_loader, batch_size)
