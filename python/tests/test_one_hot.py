@@ -36,7 +36,7 @@ def to_one_hot_torch_colwise(x: torch.LongTensor, n_classes: int):
 
 
 def to_one_hot_tensorflow_rowwise(x: tf.Tensor, n_classes: int):
-    one_hot = tf.one_hot(x, n_classes, dtype=tf.float64)
+    one_hot = tf.one_hot(x, n_classes, dtype=tf.float64, axis=1)
     return one_hot
 
 

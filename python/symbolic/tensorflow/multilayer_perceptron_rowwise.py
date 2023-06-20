@@ -54,8 +54,8 @@ class MultilayerPerceptron(object):
         index = 1
         for layer in self.layers:
             if isinstance(layer, LinearLayer):
-                layer.W[:] = data[f'W{index}']
-                layer.b[:] = data[f'b{index}']
+                layer.W.assign(data[f'W{index}'])
+                layer.b.assign(to_row(data[f'b{index}']))  # TODO: fix the to_row
                 index += 1
 
 
