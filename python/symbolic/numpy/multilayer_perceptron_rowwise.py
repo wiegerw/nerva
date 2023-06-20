@@ -1,6 +1,7 @@
 # Copyright 2023 Wieger Wesselink.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
+
 from typing import List
 
 from nerva.datasets import load_dict_from_npz
@@ -54,7 +55,7 @@ class MultilayerPerceptron(object):
         for layer in self.layers:
             if isinstance(layer, LinearLayer):
                 layer.W[:] = data[f'W{index}']
-                layer.b[:] = to_col(data[f'b{index}'])
+                layer.b[:] = data[f'b{index}']
                 index += 1
 
 

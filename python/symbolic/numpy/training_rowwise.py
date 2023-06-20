@@ -5,11 +5,17 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from symbolic.learning_rate import ConstantScheduler
-from symbolic.numpy.datasets import DataLoader, create_cifar10_dataloaders
+from symbolic.numpy.datasets import DataLoader, create_npz_dataloaders
 from symbolic.numpy.loss_functions_rowwise import *
 from symbolic.numpy.multilayer_perceptron_rowwise import MultilayerPerceptron, parse_multilayer_perceptron
+from symbolic.training import SGDOptions, print_epoch
 from symbolic.utilities import StopWatch, pp
-from symbolic.utilities_rowwise import create_npz_dataloaders, to_one_hot_numpy
+
+
+def to_one_hot(x: np.ndarray, n_classes: int):
+    one_hot = np.zeros((len(x), n_classes), dtype=np.float)
+    one_hot[np.arange(len(x)), x] = 1
+    return one_hot
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
@@ -17,7 +23,7 @@ def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
     total_correct = 0
     for X, T in data_loader:
         Y = M.feedforward(X)
-        predicted = Y.argmax(dim=1)  # the predicted classes for the batch
+        predicted = Y.argmax(axis=1)  # the predicted classes for the batch
         total_correct += (predicted == T).sum().item()
 
     return total_correct / N
@@ -27,7 +33,7 @@ def compute_loss(M: MultilayerPerceptron, data_loader: DataLoader, loss: LossFun
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
     for X, T in data_loader:
-        T = to_one_hot_torch(T, num_classes)
+        T = to_one_hot(T, num_classes)
         Y = M.feedforward(X)
         total_loss += loss(Y, T)
 
@@ -63,7 +69,7 @@ def sgd(M: MultilayerPerceptron,
         lr = learning_rate(epoch)  # update the learning at the start of each epoch
 
         for k, (X, T) in enumerate(train_loader):
-            T = to_one_hot_numpy(T, num_classes)
+            T = to_one_hot(T, num_classes)
             Y = M.feedforward(X)
             DY = loss.gradient(Y, T) / batch_size
 
@@ -93,17 +99,18 @@ def main():
     epochs = 1
     loss = SoftmaxCrossEntropyLossFunction()
     learning_rate = ConstantScheduler(0.01)
-    datadir = '../../data'
     SGDOptions.debug = True
 
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers, batch_size)
     M.load_weights_and_bias('../../mlp-compare.npz')
-    # train_loader, test_loader = create_cifar10_dataloaders(batch_size, batch_size, datadir)
     train_loader, test_loader = create_npz_dataloaders('../../cifar1/epoch0.npz', batch_size=batch_size)
     sgd(M, epochs, loss, learning_rate, train_loader, test_loader, batch_size)
 
 
+# TODO: replace this by a numpy solution
 def initialize_frameworks():
+    import torch
+
     torch.set_printoptions(precision=8, edgeitems=3, threshold=5, sci_mode=False, linewidth=160)
 
     # avoid 'Too many open files' error when using data loaders

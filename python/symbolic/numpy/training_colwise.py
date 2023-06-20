@@ -5,12 +5,17 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from symbolic.learning_rate import ConstantScheduler
-from symbolic.numpy.datasets import DataLoader
+from symbolic.numpy.datasets import DataLoader, create_npz_dataloaders
 from symbolic.numpy.loss_functions_colwise import *
 from symbolic.numpy.multilayer_perceptron_colwise import MultilayerPerceptron, parse_multilayer_perceptron
 from symbolic.training import SGDOptions, print_epoch
 from symbolic.utilities import StopWatch, pp
-from symbolic.torch.datasets_colwise import create_npz_dataloaders, to_one_hot
+
+
+def to_one_hot(x: np.ndarray, n_classes: int):
+    one_hot = np.zeros((n_classes, len(x)), dtype=float)
+    one_hot[x, np.arange(len(x))] = 1
+    return one_hot
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
@@ -18,7 +23,7 @@ def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
     total_correct = 0
     for X, T in data_loader:
         Y = M.feedforward(X)
-        predicted = Y.argmax(dim=0)  # the predicted classes for the batch
+        predicted = Y.argmax(axis=0)  # the predicted classes for the batch
         total_correct += (predicted == T).sum().item()
 
     return total_correct / N
@@ -94,17 +99,17 @@ def main():
     epochs = 1
     loss = SoftmaxCrossEntropyLossFunction()
     learning_rate = ConstantScheduler(0.01)
-    datadir = '../../data'
     SGDOptions.debug = True
 
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers, batch_size)
     M.load_weights_and_bias('../../mlp-compare.npz')
-    # train_loader, test_loader = create_cifar10_dataloaders(batch_size, batch_size, datadir)
-    train_loader, test_loader = create_npz_dataloaders('../../cifar1/epoch0.npz', batch_size=batch_size)
+    train_loader, test_loader = create_npz_dataloaders('../../cifar1/epoch0.npz', batch_size=batch_size, rowwise=False)
     sgd(M, epochs, loss, learning_rate, train_loader, test_loader, batch_size)
 
 
 def initialize_frameworks():
+    import torch
+
     torch.set_printoptions(precision=8, edgeitems=3, threshold=5, sci_mode=False, linewidth=160)
 
     # avoid 'Too many open files' error when using data loaders

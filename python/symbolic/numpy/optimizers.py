@@ -5,6 +5,7 @@
 import re
 from symbolic.numpy.matrix_operations import *
 
+
 class Optimizer(object):
     def update(self, eta):
         raise NotImplementedError
