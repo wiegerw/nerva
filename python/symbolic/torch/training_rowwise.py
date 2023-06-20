@@ -5,12 +5,11 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from symbolic.learning_rate import ConstantScheduler
-from symbolic.torch.datasets import DataLoader
+from symbolic.torch.datasets_rowwise import DataLoader, create_npz_dataloaders, to_one_hot
 from symbolic.torch.loss_functions_rowwise import *
 from symbolic.torch.multilayer_perceptron_rowwise import MultilayerPerceptron, parse_multilayer_perceptron
 from symbolic.training import SGDOptions, print_epoch
 from symbolic.utilities import StopWatch, pp
-from symbolic.utilities_rowwise import create_npz_dataloaders, to_one_hot_torch
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
@@ -28,7 +27,7 @@ def compute_loss(M: MultilayerPerceptron, data_loader: DataLoader, loss: LossFun
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
     for X, T in data_loader:
-        T = to_one_hot_torch(T, num_classes)
+        T = to_one_hot(T, num_classes)
         Y = M.feedforward(X)
         total_loss += loss(Y, T)
 
@@ -64,7 +63,7 @@ def sgd(M: MultilayerPerceptron,
         lr = learning_rate(epoch)  # update the learning at the start of each epoch
 
         for k, (X, T) in enumerate(train_loader):
-            T = to_one_hot_torch(T, num_classes)
+            T = to_one_hot(T, num_classes)
             Y = M.feedforward(X)
             DY = loss.gradient(Y, T) / batch_size
 
@@ -94,12 +93,10 @@ def main():
     epochs = 1
     loss = SoftmaxCrossEntropyLossFunction()
     learning_rate = ConstantScheduler(0.01)
-    datadir = '../../data'
     SGDOptions.debug = True
 
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers, batch_size)
     M.load_weights_and_bias('../../mlp-compare.npz')
-    # train_loader, test_loader = create_cifar10_dataloaders(batch_size, batch_size, datadir)
     train_loader, test_loader = create_npz_dataloaders('../../cifar1/epoch0.npz', batch_size=batch_size)
     sgd(M, epochs, loss, learning_rate, train_loader, test_loader, batch_size)
 

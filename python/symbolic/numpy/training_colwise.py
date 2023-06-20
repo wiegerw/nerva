@@ -10,7 +10,7 @@ from symbolic.numpy.loss_functions_colwise import *
 from symbolic.numpy.multilayer_perceptron_colwise import MultilayerPerceptron, parse_multilayer_perceptron
 from symbolic.training import SGDOptions, print_epoch
 from symbolic.utilities import StopWatch, pp
-from symbolic.utilities_colwise import create_npz_dataloaders, to_one_hot_torch
+from symbolic.torch.datasets_colwise import create_npz_dataloaders, to_one_hot
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
@@ -28,7 +28,7 @@ def compute_loss(M: MultilayerPerceptron, data_loader: DataLoader, loss: LossFun
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
     for X, T in data_loader:
-        T = to_one_hot_torch(T, num_classes)
+        T = to_one_hot(T, num_classes)
         Y = M.feedforward(X)
         total_loss += loss(Y, T)
 
@@ -64,7 +64,7 @@ def sgd(M: MultilayerPerceptron,
         lr = learning_rate(epoch)  # update the learning at the start of each epoch
 
         for k, (X, T) in enumerate(train_loader):
-            T = to_one_hot_torch(T, num_classes)
+            T = to_one_hot(T, num_classes)
             Y = M.feedforward(X)
             DY = loss.gradient(Y, T) / batch_size
 

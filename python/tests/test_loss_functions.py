@@ -6,16 +6,37 @@
 
 from unittest import TestCase
 
+import random
+
 import numpy as np
+import sympy as sp
 
 from symbolic.sympy.matrix_operations import substitute
 from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, matrix, equal_matrices
-from symbolic.utilities_rowwise import instantiate_one_hot_rowwise
-from symbolic.utilities_colwise import instantiate_one_hot_colwise
 import symbolic.numpy.loss_functions as np_
 import symbolic.tensorflow.loss_functions as tf_
 import symbolic.torch.loss_functions as torch_
 import symbolic.sympy.loss_functions as sympy_
+
+
+def instantiate_one_hot_colwise(X: sp.Matrix) -> sp.Matrix:
+    m, n = X.shape
+    X0 = sp.zeros(m, n)
+    for j in range(n):
+        i = random.randrange(0, m)
+        X0[i, j] = 1
+
+    return X0
+
+
+def instantiate_one_hot_rowwise(X: sp.Matrix) -> sp.Matrix:
+    m, n = X.shape
+    X0 = sp.zeros(m, n)
+    for i in range(m):
+        j = random.randrange(0, n)
+        X0[i, j] = 1
+
+    return X0
 
 
 class TestCaseLossFunction(TestCase):
