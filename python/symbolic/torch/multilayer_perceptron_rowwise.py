@@ -3,7 +3,9 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 from typing import List
 
+from nerva.datasets import load_dict_from_npz
 from symbolic.torch.layers_rowwise import *
+from symbolic.utilities import pp
 
 Matrix = torch.Tensor
 
@@ -30,6 +32,30 @@ class MultilayerPerceptron(object):
     def optimize(self, eta: float):
         for layer in self.layers:
             layer.optimize(eta)
+
+    def info(self):
+        index = 1
+        for layer in self.layers:
+            if isinstance(layer, LinearLayer):
+                pp(f'W{index}', layer.W)
+                pp(f'b{index}', layer.b)
+                index += 1
+
+    def load_weights_and_bias(self, filename: str):
+        """
+        Loads the weights and biases from a file in .npz format
+
+        The weight matrices are stored using the keys W1, W2, ... and the bias vectors using the keys b1, b2, ...
+        :param filename: the name of the file
+        """
+        print(f'Loading weights and bias from {filename}')
+        data = load_dict_from_npz(filename)
+        index = 1
+        for layer in self.layers:
+            if isinstance(layer, LinearLayer):
+                layer.W[:] = data[f'W{index}']
+                layer.b[:] = data[f'b{index}']
+                index += 1
 
 
 def parse_multilayer_perceptron(layer_specifications: List[str],

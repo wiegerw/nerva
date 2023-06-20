@@ -5,12 +5,11 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from symbolic.learning_rate import ConstantScheduler
-from symbolic.torch.datasets import DataLoader
-from symbolic.torch.loss_functions_rowwise import *
-from symbolic.torch.multilayer_perceptron_rowwise import MultilayerPerceptron, parse_multilayer_perceptron
-from symbolic.training import SGDOptions, print_epoch
+from symbolic.numpy.datasets import DataLoader, create_cifar10_dataloaders
+from symbolic.numpy.loss_functions_rowwise import *
+from symbolic.numpy.multilayer_perceptron_rowwise import MultilayerPerceptron, parse_multilayer_perceptron
 from symbolic.utilities import StopWatch, pp
-from symbolic.utilities_rowwise import create_npz_dataloaders, to_one_hot_torch
+from symbolic.utilities_rowwise import create_npz_dataloaders, to_one_hot_numpy
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
@@ -64,7 +63,7 @@ def sgd(M: MultilayerPerceptron,
         lr = learning_rate(epoch)  # update the learning at the start of each epoch
 
         for k, (X, T) in enumerate(train_loader):
-            T = to_one_hot_torch(T, num_classes)
+            T = to_one_hot_numpy(T, num_classes)
             Y = M.feedforward(X)
             DY = loss.gradient(Y, T) / batch_size
 

@@ -5,12 +5,12 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from symbolic.learning_rate import ConstantScheduler
-from symbolic.torch.datasets import DataLoader
-from symbolic.torch.loss_functions_rowwise import *
-from symbolic.torch.multilayer_perceptron_rowwise import MultilayerPerceptron, parse_multilayer_perceptron
+from symbolic.numpy.datasets import DataLoader
+from symbolic.numpy.loss_functions_colwise import *
+from symbolic.numpy.multilayer_perceptron_colwise import MultilayerPerceptron, parse_multilayer_perceptron
 from symbolic.training import SGDOptions, print_epoch
 from symbolic.utilities import StopWatch, pp
-from symbolic.utilities_rowwise import create_npz_dataloaders, to_one_hot_torch
+from symbolic.utilities_colwise import create_npz_dataloaders, to_one_hot_torch
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
@@ -18,7 +18,7 @@ def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
     total_correct = 0
     for X, T in data_loader:
         Y = M.feedforward(X)
-        predicted = Y.argmax(dim=1)  # the predicted classes for the batch
+        predicted = Y.argmax(dim=0)  # the predicted classes for the batch
         total_correct += (predicted == T).sum().item()
 
     return total_correct / N
@@ -71,9 +71,9 @@ def sgd(M: MultilayerPerceptron,
             if SGDOptions.debug:
                 print(f'epoch: {epoch} batch: {k}')
                 M.info()
-                pp("X", X)
-                pp("Y", Y)
-                pp("DY", DY)
+                pp("X", X.T)
+                pp("Y", Y.T)
+                pp("DY", DY.T)
 
             M.backpropagate(Y, DY)
             M.optimize(lr)
