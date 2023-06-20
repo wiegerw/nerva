@@ -9,8 +9,9 @@ from unittest import TestCase
 import numpy as np
 
 from symbolic.sympy.matrix_operations import substitute
-from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, matrix, equal_matrices, \
-    instantiate_one_hot_colwise, instantiate_one_hot_rowwise
+from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, matrix, equal_matrices
+from symbolic.utilities_rowwise import instantiate_one_hot_rowwise
+from symbolic.utilities_colwise import instantiate_one_hot_colwise
 import symbolic.numpy.loss_functions as np_
 import symbolic.tensorflow.loss_functions as tf_
 import symbolic.torch.loss_functions as torch_

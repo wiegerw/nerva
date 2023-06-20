@@ -5,6 +5,7 @@
 import re
 from symbolic.torch.matrix_operations import *
 
+
 class Optimizer(object):
     def update(self, eta):
         raise NotImplementedError
@@ -58,7 +59,7 @@ class NesterovOptimizer(GradientDescentOptimizer):
         self.delta_W = self.mu * self.delta_W - eta * self.DW
         self.W += (-self.mu * self.delta_W_prev + (1 + self.mu) * self.delta_W)
         self.delta_b_prev = self.delta_b
-        self.delta_b = self.mu * self.delta_b - eta * self.b
+        self.delta_b = self.mu * self.delta_b - eta * self.Db
         self.b += (-self.mu * self.delta_b_prev + (1 + self.mu) * self.delta_b)
 
 

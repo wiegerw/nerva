@@ -4,26 +4,20 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from nerva.datasets import create_npz_dataloaders
 from symbolic.learning_rate import ConstantScheduler
-from symbolic.torch.datasets import DataLoader, create_cifar10_dataloaders
+from symbolic.torch.datasets import DataLoader
 from symbolic.torch.loss_functions_colwise import *
 from symbolic.torch.multilayer_perceptron_colwise import MultilayerPerceptron, parse_multilayer_perceptron
-from symbolic.training import SGDOptions
+from symbolic.training import SGDOptions, print_epoch
 from symbolic.utilities import StopWatch, pp
-
-
-def to_one_hot_torch_colwise(x: torch.LongTensor, n_classes: int):
-    one_hot = torch.zeros(n_classes, len(x), dtype=torch.float)
-    one_hot.scatter_(0, x.unsqueeze(0), 1)
-    return one_hot
+from symbolic.utilities_colwise import create_npz_dataloaders, to_one_hot_torch
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
     N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
     for X, T in data_loader:
-        Y = M.feedforward(X.T)
+        Y = M.feedforward(X)
         predicted = Y.argmax(dim=0)  # the predicted classes for the batch
         total_correct += (predicted == T).sum().item()
 
@@ -34,21 +28,11 @@ def compute_loss(M: MultilayerPerceptron, data_loader: DataLoader, loss: LossFun
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
     for X, T in data_loader:
-        T = to_one_hot_torch_colwise(T, num_classes)
-        Y = M.feedforward(X.T)
+        T = to_one_hot_torch(T, num_classes)
+        Y = M.feedforward(X)
         total_loss += loss(Y, T)
 
     return total_loss / N
-
-
-def print_epoch(epoch, lr, loss, train_accuracy, test_accuracy, elapsed):
-    print(f'epoch {epoch:3}  '
-          f'lr: {lr:.8f}  '
-          f'loss: {loss:.8f}  '
-          f'train accuracy: {train_accuracy:.8f}  '
-          f'test accuracy: {test_accuracy:.8f}  '
-          f'time: {elapsed:.8f}s'
-         )
 
 
 def compute_statistics(M, lr, loss, train_loader, test_loader, num_classes, epoch, print_statistics, elapsed_seconds):
@@ -80,16 +64,16 @@ def sgd(M: MultilayerPerceptron,
         lr = learning_rate(epoch)  # update the learning at the start of each epoch
 
         for k, (X, T) in enumerate(train_loader):
-            T = to_one_hot_torch_colwise(T, num_classes)
-            Y = M.feedforward(X.T)
+            T = to_one_hot_torch(T, num_classes)
+            Y = M.feedforward(X)
             DY = loss.gradient(Y, T) / batch_size
 
             if SGDOptions.debug:
                 print(f'epoch: {epoch} batch: {k}')
                 M.info()
-                pp("X", X)
-                pp("Y", Y.T)     # TODO: avoid the transpose (?)
-                pp("DY", DY.T)   # TODO: avoid the transpose (?)
+                pp("X", X.T)
+                pp("Y", Y.T)
+                pp("DY", DY.T)
 
             M.backpropagate(Y, DY)
             M.optimize(lr)
@@ -109,13 +93,12 @@ def main():
     batch_size = 100
     epochs = 1
     loss = SoftmaxCrossEntropyLossFunction()
-    learning_rate = ConstantScheduler(0.1)
+    learning_rate = ConstantScheduler(0.01)
     datadir = '../../data'
     SGDOptions.debug = True
 
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers, batch_size)
     M.load_weights_and_bias('../../mlp-compare.npz')
-    M.info()
     # train_loader, test_loader = create_cifar10_dataloaders(batch_size, batch_size, datadir)
     train_loader, test_loader = create_npz_dataloaders('../../cifar1/epoch0.npz', batch_size=batch_size)
     sgd(M, epochs, loss, learning_rate, train_loader, test_loader, batch_size)
