@@ -5,11 +5,17 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from symbolic.learning_rate import ConstantScheduler
-from symbolic.torch.datasets_rowwise import DataLoader, create_npz_dataloaders, to_one_hot
+from symbolic.torch.datasets import DataLoader, create_npz_dataloaders
 from symbolic.torch.loss_functions_rowwise import *
 from symbolic.torch.multilayer_perceptron_rowwise import MultilayerPerceptron, parse_multilayer_perceptron
 from symbolic.training import SGDOptions, print_epoch
 from symbolic.utilities import StopWatch, pp
+
+
+def to_one_hot(x: torch.LongTensor, n_classes: int):
+    one_hot = torch.zeros(len(x), n_classes, dtype=torch.float)
+    one_hot.scatter_(1, x.unsqueeze(1), 1)
+    return one_hot
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):

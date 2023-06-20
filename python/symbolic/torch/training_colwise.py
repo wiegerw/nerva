@@ -5,11 +5,17 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from symbolic.learning_rate import ConstantScheduler
-from symbolic.torch.datasets_colwise import DataLoader, create_npz_dataloaders, to_one_hot
+from symbolic.torch.datasets import DataLoader, create_npz_dataloaders
 from symbolic.torch.loss_functions_colwise import *
 from symbolic.torch.multilayer_perceptron_colwise import MultilayerPerceptron, parse_multilayer_perceptron
 from symbolic.training import SGDOptions, print_epoch
 from symbolic.utilities import StopWatch, pp
+
+
+def to_one_hot(x: torch.LongTensor, n_classes: int):
+    one_hot = torch.zeros(n_classes, len(x), dtype=torch.float)
+    one_hot.scatter_(0, x.unsqueeze(0), 1)
+    return one_hot
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
@@ -97,7 +103,7 @@ def main():
 
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers, batch_size)
     M.load_weights_and_bias('../../mlp-compare.npz')
-    train_loader, test_loader = create_npz_dataloaders('../../cifar1/epoch0.npz', batch_size=batch_size)
+    train_loader, test_loader = create_npz_dataloaders('../../cifar1/epoch0.npz', batch_size=batch_size, rowwise=False)
     sgd(M, epochs, loss, learning_rate, train_loader, test_loader, batch_size)
 
 
