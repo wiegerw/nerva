@@ -1,0 +1,19 @@
+# Copyright 2023 Wieger Wesselink.
+# Distributed under the Boost Software License, Version 1.0.
+# (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
+
+import tensorflow as tf
+
+
+def set_tensorflow_options():
+    # N.B. Tensorflow doesn't support print options
+    import numpy as np
+    np.set_printoptions(precision=8, edgeitems=3, threshold=5, suppress=False, linewidth=160)
+
+
+def pp(name: str, x: tf.Tensor):
+    shape = tf.shape(x).numpy()
+    if tf.rank(x) == 1:
+        print(f'{name} ({shape[0]})\n{x.numpy()}')
+    else:
+        print(f'{name} ({shape[0]}x{shape[1]})\n{x.numpy()}')

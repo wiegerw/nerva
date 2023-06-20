@@ -5,6 +5,7 @@
 import re
 from symbolic.tensorflow.matrix_operations import *
 
+
 class Optimizer(object):
     def update(self, eta):
         raise NotImplementedError
@@ -35,9 +36,9 @@ class MomentumOptimizer(GradientDescentOptimizer):
 
     def update(self, eta):
         self.delta_W = self.mu * self.delta_W - eta * self.DW
-        self.W += self.delta_W
+        self.W.assign(self.W + self.delta_W)
         self.delta_b = self.mu * self.delta_b - eta * self.Db
-        self.b += self.delta_b
+        self.b.assign(self.b + self.delta_b)
 
 
 class NesterovOptimizer(GradientDescentOptimizer):
@@ -56,10 +57,10 @@ class NesterovOptimizer(GradientDescentOptimizer):
     def update(self, eta):
         self.delta_W_prev = self.delta_W
         self.delta_W = self.mu * self.delta_W - eta * self.DW
-        self.W += (-self.mu * self.delta_W_prev + (1 + self.mu) * self.delta_W)
+        self.W.assign(self.W + (-self.mu * self.delta_W_prev + (1 + self.mu) * self.delta_W))
         self.delta_b_prev = self.delta_b
-        self.delta_b = self.mu * self.delta_b - eta * self.b
-        self.b += (-self.mu * self.delta_b_prev + (1 + self.mu) * self.delta_b)
+        self.delta_b = self.mu * self.delta_b - eta * self.Db
+        self.b.assign(self.b + (-self.mu * self.delta_b_prev + (1 + self.mu) * self.delta_b))
 
 
 def parse_optimizer(text: str,

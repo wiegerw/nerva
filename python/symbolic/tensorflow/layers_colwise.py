@@ -17,8 +17,8 @@ class Layer(object):
     Base class for layers of a neural network with data in column layout
     """
     def __init__(self, m: int, n: int):
-        self.X = zeros(m, n)
-        self.DX = zeros(m, n)
+        self.X = tf.Variable(zeros(m, n))
+        self.DX = tf.Variable(zeros(m, n))
 
     def feedforward(self, X: Matrix) -> Matrix:
         raise NotImplementedError
@@ -36,10 +36,10 @@ class LinearLayer(Layer):
     """
     def __init__(self, D: int, K: int, N: int):
         super().__init__(D, N)
-        self.W = zeros(K, D)
-        self.DW = zeros(K, D)
-        self.b = zeros(K, 1)
-        self.Db = zeros(K, 1)
+        self.W = tf.Variable(zeros(K, D))
+        self.DW = tf.Variable(zeros(K, D))
+        self.b = tf.Variable(zeros(K, 1))
+        self.Db = tf.Variable(zeros(K, 1))
         self.optimizer = None
 
     def feedforward(self, X: Matrix) -> Matrix:
@@ -56,15 +56,17 @@ class LinearLayer(Layer):
         X = self.X
         W = self.W
 
-        DW = DY @ X.T
+        DW = DY @ tf.transpose(X)
         Db = rows_sum(DY)
-        DX = W.T @ DY
+        DX = tf.transpose(W) @ DY
 
-        self.DW = DW
-        self.Db = Db
-        self.DX = DX
+        self.DW.assign(DW)
+        self.Db.assign(Db)
+        self.DX.assign(DX)
 
     def optimize(self, eta):
+        assert id(self.W) == id(self.optimizer.W)
+        assert id(self.b) == id(self.optimizer.b)
         self.optimizer.update(eta)
 
     def input_output_sizes(self) -> Tuple[int, int]:
@@ -81,8 +83,8 @@ class ActivationLayer(LinearLayer):
     """
     def __init__(self, D: int, K: int, N: int, act: ActivationFunction):
         super().__init__(D, K, N)
-        self.Z = zeros(K, N)
-        self.DZ = zeros(K, N)
+        self.Z = tf.Variable(zeros(K, N))
+        self.DZ = tf.Variable(zeros(K, N))
         self.act = act
 
     def feedforward(self, X: Matrix) -> Matrix:
@@ -95,6 +97,7 @@ class ActivationLayer(LinearLayer):
         Z = W @ X + column_repeat(b, N)
         Y = act(Z)
 
+        self.Z.assign(Z)
         return Y
 
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
@@ -104,14 +107,14 @@ class ActivationLayer(LinearLayer):
         act = self.act
 
         DZ = hadamard(DY, act.gradient(Z))
-        DW = DZ @ X.T
+        DW = DZ @ tf.transpose(X)
         Db = rows_sum(DZ)
-        DX = W.T @ DZ
+        DX = tf.transpose(W) @ DZ
 
-        self.DZ = DZ
-        self.DW = DW
-        self.Db = Db
-        self.DX = DX
+        self.DZ.assign(DZ)
+        self.DW.assign(DW)
+        self.Db.assign(Db)
+        self.DX.assign(DX)
 
 
 class SigmoidLayer(LinearLayer):
@@ -121,8 +124,8 @@ class SigmoidLayer(LinearLayer):
     """
     def __init__(self, D: int, K: int, N: int):
         super().__init__(D, K, N)
-        self.Z = zeros(K, N)
-        self.DZ = zeros(K, N)
+        self.Z = tf.Variable(zeros(K, N))
+        self.DZ = tf.Variable(zeros(K, N))
 
     def feedforward(self, X: Matrix) -> Matrix:
         self.X = X
@@ -133,6 +136,7 @@ class SigmoidLayer(LinearLayer):
         Z = W @ X + column_repeat(b, N)
         Y = Sigmoid(Z)
 
+        self.Z.assign(Z)
         return Y
 
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
@@ -141,14 +145,14 @@ class SigmoidLayer(LinearLayer):
         W = self.W
 
         DZ = hadamard(DY, hadamard(Y, ones(K, N) - Y))
-        DW = DZ @ X.T
+        DW = DZ @ tf.transpose(X)
         Db = rows_sum(DZ)
-        DX = W.T @ DZ
+        DX = tf.transpose(W) @ DZ
 
-        self.DZ = DZ
-        self.DW = DW
-        self.Db = Db
-        self.DX = DX
+        self.DZ.assign(DZ)
+        self.DW.assign(DW)
+        self.Db.assign(Db)
+        self.DX.assign(DX)
 
 
 class SReLULayer(ActivationLayer):
@@ -188,8 +192,8 @@ class SoftmaxLayer(LinearLayer):
     """
     def __init__(self, D: int, K: int, N: int):
         super().__init__(D, K, N)
-        self.Z = zeros(K, N)
-        self.DZ = zeros(K, N)
+        self.Z = tf.Variable(zeros(K, N))
+        self.DZ = tf.Variable(zeros(K, N))
 
     def feedforward(self, X: Matrix) -> Matrix:
         self.X = X
@@ -200,6 +204,7 @@ class SoftmaxLayer(LinearLayer):
         Z = W @ X + column_repeat(b, N)
         Y = softmax_colwise(Z)
 
+        self.Z.assign(Z)
         return Y
 
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
@@ -207,15 +212,15 @@ class SoftmaxLayer(LinearLayer):
         X = self.X
         W = self.W
 
-        DZ = hadamard(Y, DY - row_repeat(diag(Y.T @ DY).T, K))
-        DW = DZ @ X.T
+        DZ = hadamard(Y, DY - row_repeat(tf.transpose(diag(tf.transpose(Y) @ DY)), K))
+        DW = DZ @ tf.transpose(X)
         Db = rows_sum(DZ)
-        DX = W.T @ DZ
+        DX = tf.transpose(W) @ DZ
 
-        self.DZ = DZ
-        self.DW = DW
-        self.Db = Db
-        self.DX = DX
+        self.DZ.assign(DZ)
+        self.DW.assign(DW)
+        self.Db.assign(Db)
+        self.DX.assign(DX)
 
 
 class LogSoftmaxLayer(LinearLayer):
@@ -224,8 +229,8 @@ class LogSoftmaxLayer(LinearLayer):
     """
     def __init__(self, D: int, K: int, N: int):
         super().__init__(D, K, N)
-        self.Z = zeros(K, N)
-        self.DZ = zeros(K, N)
+        self.Z = tf.Variable(zeros(K, N))
+        self.DZ = tf.Variable(zeros(K, N))
 
     def feedforward(self, X: Matrix) -> Matrix:
         self.X = X
@@ -236,6 +241,7 @@ class LogSoftmaxLayer(LinearLayer):
         Z = W @ X + column_repeat(b, N)
         Y = log_softmax_colwise(Z)
 
+        self.Z.assign(Z)
         return Y
 
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
@@ -245,14 +251,14 @@ class LogSoftmaxLayer(LinearLayer):
         Z = self.Z
 
         DZ = DY - hadamard(softmax_colwise(Z), row_repeat(columns_sum(DY), K))
-        DW = DZ @ X.T
+        DW = DZ @ tf.transpose(X)
         Db = rows_sum(DZ)
-        DX = W.T @ DZ
+        DX = tf.transpose(W) @ DZ
 
-        self.DZ = DZ
-        self.DW = DW
-        self.Db = Db
-        self.DX = DX
+        self.DZ.assign(DZ)
+        self.DW.assign(DW)
+        self.Db.assign(Db)
+        self.DX.assign(DX)
 
 
 class BatchNormalizationLayer(Layer):
@@ -261,13 +267,13 @@ class BatchNormalizationLayer(Layer):
     """
     def __init__(self, D: int, N: int):
         super().__init__(D, N)
-        self.Z = zeros(D, N)
-        self.DZ = zeros(D, N)
-        self.gamma = ones(D, 1)
-        self.Dgamma = zeros(D, 1)
-        self.beta = zeros(D, 1)
-        self.Dbeta = zeros(D, 1)
-        self.power_minus_half_Sigma = zeros(D, 1)
+        self.Z = tf.Variable(zeros(D, N))
+        self.DZ = tf.Variable(zeros(D, N))
+        self.gamma = tf.Variable(ones(D, 1))
+        self.Dgamma = tf.Variable(zeros(D, 1))
+        self.beta = tf.Variable(zeros(D, 1))
+        self.Dbeta = tf.Variable(zeros(D, 1))
+        self.power_minus_half_Sigma = tf.Variable(zeros(D, 1))
 
     def feedforward(self, X: Matrix) -> Matrix:
         self.X = X
@@ -276,13 +282,13 @@ class BatchNormalizationLayer(Layer):
         beta = self.beta
 
         R = X - column_repeat(rows_mean(X), N)
-        Sigma = diag(R @ R.T) / N
+        Sigma = diag(R @ tf.transpose(R)) / N
         power_minus_half_Sigma = power_minus_half(Sigma)
         Z = hadamard(column_repeat(power_minus_half_Sigma, N), R)
         Y = hadamard(column_repeat(gamma, N), Z) + column_repeat(beta, N)
 
-        self.power_minus_half_Sigma = power_minus_half_Sigma
-
+        self.power_minus_half_Sigma.assign(power_minus_half_Sigma)
+        self.Z.assign(Z)
         return Y
 
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
@@ -294,12 +300,12 @@ class BatchNormalizationLayer(Layer):
         DZ = hadamard(column_repeat(gamma, N), DY)
         Dbeta = rows_sum(DY)
         Dgamma = rows_sum(hadamard(DY, Z))
-        DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Z, column_repeat(-diag(DZ @ Z.T), N)) + DZ @ (N * identity(N) - ones(N, N)))
+        DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Z, column_repeat(-diag(DZ @ tf.transpose(Z)), N)) + DZ @ (N * identity(N) - ones(N, N)))
 
-        self.DZ = DZ
-        self.Dbeta = Dbeta
-        self.Dgamma = Dgamma
-        self.DX = DX
+        self.DZ.assign(DZ)
+        self.Dbeta.assign(Dbeta)
+        self.Dgamma.assign(Dgamma)
+        self.DX.assign(DX)
 
     def optimize(self, eta):
         # use gradient descent; TODO: generalize this

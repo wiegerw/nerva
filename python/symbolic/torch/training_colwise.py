@@ -8,8 +8,9 @@ from symbolic.learning_rate import ConstantScheduler
 from symbolic.torch.datasets import DataLoader, create_npz_dataloaders
 from symbolic.torch.loss_functions_colwise import *
 from symbolic.torch.multilayer_perceptron_colwise import MultilayerPerceptron, parse_multilayer_perceptron
+from symbolic.torch.utilities import set_torch_options, pp
 from symbolic.training import SGDOptions, print_epoch
-from symbolic.utilities import StopWatch, pp
+from symbolic.utilities import StopWatch
 
 
 def to_one_hot(x: torch.LongTensor, n_classes: int):
@@ -107,13 +108,6 @@ def main():
     sgd(M, epochs, loss, learning_rate, train_loader, test_loader, batch_size)
 
 
-def initialize_frameworks():
-    torch.set_printoptions(precision=8, edgeitems=3, threshold=5, sci_mode=False, linewidth=160)
-
-    # avoid 'Too many open files' error when using data loaders
-    torch.multiprocessing.set_sharing_strategy('file_system')
-
-
 if __name__ == '__main__':
-    initialize_frameworks()
+    set_torch_options()
     main()

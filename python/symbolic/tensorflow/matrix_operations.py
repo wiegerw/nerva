@@ -45,21 +45,21 @@ def zeros(m: int, n: int = 1) -> Matrix:
     """
     Returns an mxn matrix with all elements equal to 0.
     """
-    return tf.zeros([m, n], dtype=tf.float64)  # TODO: how to avoid hard coded types?
+    return tf.zeros([m, n], dtype=tf.float32)  # TODO: how to avoid hard coded types?
 
 
 def ones(m: int, n: int = 1) -> Matrix:
     """
     Returns an mxn matrix with all elements equal to 1.
     """
-    return tf.ones([m, n], dtype=tf.float64)  # TODO: how to avoid hard coded types?
+    return tf.ones([m, n], dtype=tf.float32)  # TODO: how to avoid hard coded types?
 
 
 def identity(n: int) -> Matrix:
     """
     Returns the nxn identity matrix.
     """
-    return tf.eye(n, dtype=tf.float64)  # TODO: how to avoid hard coded types?
+    return tf.eye(n, dtype=tf.float32)  # TODO: how to avoid hard coded types?
 
 
 def product(X: Matrix, Y: Matrix) -> Matrix:

@@ -13,8 +13,7 @@ def set_bias_to_zero(b: Matrix):
 def set_weights_xavier(W: Matrix):
     initializer = tf.initializers.GlorotUniform()
     tf_w = tf.Variable(initializer(shape=W.shape))
-    W.assign(tf_w)
-
+    W.assign(tf.cast(tf_w, dtype=W.dtype))
 
 def set_bias_xavier(b: Matrix):
     set_bias_to_zero(b)
@@ -23,7 +22,7 @@ def set_bias_xavier(b: Matrix):
 def set_weights_xavier_normalized(W: Matrix):
     initializer = tf.initializers.GlorotNormal()
     tf_w = tf.Variable(initializer(shape=W.shape))
-    W.assign(tf_w)
+    W.assign(tf.cast(tf_w, dtype=W.dtype))
 
 
 def set_bias_xavier_normalized(b: Matrix):
@@ -33,7 +32,7 @@ def set_bias_xavier_normalized(b: Matrix):
 def set_weights_he(W: Matrix):
     initializer = tf.initializers.HeNormal()
     tf_w = tf.Variable(initializer(shape=W.shape))
-    W.assign(tf_w)
+    W.assign(tf.cast(tf_w, dtype=W.dtype))
 
 
 def set_bias_he(b: Matrix):

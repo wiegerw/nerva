@@ -4,9 +4,11 @@
 
 from typing import List
 
-from symbolic.numpy.layers_rowwise import *
+from nerva.datasets import load_dict_from_npz
+from symbolic.tensorflow.layers_rowwise import *
+from symbolic.tensorflow.utilities import pp
 
-Matrix = np.ndarray
+Matrix = tf.Tensor
 
 
 class MultilayerPerceptron(object):
@@ -32,16 +34,39 @@ class MultilayerPerceptron(object):
         for layer in self.layers:
             layer.optimize(eta)
 
+    def info(self):
+        index = 1
+        for layer in self.layers:
+            if isinstance(layer, LinearLayer):
+                pp(f'W{index}', layer.W)
+                pp(f'b{index}', layer.b)
+                index += 1
+
+    def load_weights_and_bias(self, filename: str):
+        """
+        Loads the weights and biases from a file in .npz format
+
+        The weight matrices are stored using the keys W1, W2, ... and the bias vectors using the keys b1, b2, ...
+        :param filename: the name of the file
+        """
+        print(f'Loading weights and bias from {filename}')
+        data = load_dict_from_npz(filename)
+        index = 1
+        for layer in self.layers:
+            if isinstance(layer, LinearLayer):
+                layer.W[:] = data[f'W{index}']
+                layer.b[:] = data[f'b{index}']
+                index += 1
+
 
 def parse_multilayer_perceptron(layer_specifications: List[str],
                                 linear_layer_sizes: List[int],
-                                linear_layer_activations: List[str],
                                 linear_layer_optimizers: List[str],
                                 linear_layer_weight_initializers: List[str],
                                 batch_size: int
                                ) -> MultilayerPerceptron:
 
-    assert len(linear_layer_activations) == len(linear_layer_optimizers) == len(linear_layer_weight_initializers) == len(linear_layer_sizes) - 1
+    assert len(linear_layer_optimizers) == len(linear_layer_weight_initializers) == len(linear_layer_sizes) - 1
     layers = []
 
     linear_layer_index = 0

@@ -6,7 +6,7 @@ from typing import List
 
 from nerva.datasets import load_dict_from_npz
 from symbolic.numpy.layers_rowwise import *
-from symbolic.utilities import pp
+from symbolic.numpy.utilities import pp
 
 Matrix = np.ndarray
 
