@@ -7,6 +7,8 @@ from typing import Union
 
 import numpy as np
 import sympy as sp
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import torch
 from sympy import Matrix

@@ -60,11 +60,13 @@ class LinearLayer(Layer):
         Db = rows_sum(DY)
         DX = W.T * DY
 
-        self.DW = DW
-        self.Db = Db
-        self.DX = DX
+        self.DW[:] = DW
+        self.Db[:] = Db
+        self.DX[:] = DX
 
     def optimize(self, eta):
+        assert id(self.W) == id(self.optimizer.W)
+        assert id(self.b) == id(self.optimizer.b)
         self.optimizer.update(eta)
 
     def input_output_sizes(self) -> Tuple[int, int]:
@@ -95,6 +97,7 @@ class ActivationLayer(LinearLayer):
         Z = W * X + column_repeat(b, N)
         Y = act(Z)
 
+        self.Z[:] = Z
         return Y
 
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
@@ -108,10 +111,10 @@ class ActivationLayer(LinearLayer):
         Db = rows_sum(DZ)
         DX = W.T * DZ
 
-        self.DZ = DZ
-        self.DW = DW
-        self.Db = Db
-        self.DX = DX
+        self.DZ[:] = DZ
+        self.DW[:] = DW
+        self.Db[:] = Db
+        self.DX[:] = DX
 
 
 class SigmoidLayer(LinearLayer):
@@ -133,6 +136,7 @@ class SigmoidLayer(LinearLayer):
         Z = W * X + column_repeat(b, N)
         Y = Sigmoid(Z)
 
+        self.Z[:] = Z
         return Y
 
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
@@ -145,10 +149,10 @@ class SigmoidLayer(LinearLayer):
         Db = rows_sum(DZ)
         DX = W.T * DZ
 
-        self.DZ = DZ
-        self.DW = DW
-        self.Db = Db
-        self.DX = DX
+        self.DZ[:] = DZ
+        self.DW[:] = DW
+        self.Db[:] = Db
+        self.DX[:] = DX
 
 
 class SReLULayer(ActivationLayer):
@@ -200,6 +204,7 @@ class SoftmaxLayer(LinearLayer):
         Z = W * X + column_repeat(b, N)
         Y = softmax_colwise(Z)
 
+        self.Z[:] = Z
         return Y
 
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
@@ -212,10 +217,10 @@ class SoftmaxLayer(LinearLayer):
         Db = rows_sum(DZ)
         DX = W.T * DZ
 
-        self.DZ = DZ
-        self.DW = DW
-        self.Db = Db
-        self.DX = DX
+        self.DZ[:] = DZ
+        self.DW[:] = DW
+        self.Db[:] = Db
+        self.DX[:] = DX
 
 
 class LogSoftmaxLayer(LinearLayer):
@@ -236,6 +241,7 @@ class LogSoftmaxLayer(LinearLayer):
         Z = W * X + column_repeat(b, N)
         Y = log_softmax_colwise(Z)
 
+        self.Z[:] = Z
         return Y
 
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
@@ -249,10 +255,10 @@ class LogSoftmaxLayer(LinearLayer):
         Db = rows_sum(DZ)
         DX = W.T * DZ
 
-        self.DZ = DZ
-        self.DW = DW
-        self.Db = Db
-        self.DX = DX
+        self.DZ[:] = DZ
+        self.DW[:] = DW
+        self.Db[:] = Db
+        self.DX[:] = DX
 
 
 class BatchNormalizationLayer(Layer):
@@ -281,8 +287,8 @@ class BatchNormalizationLayer(Layer):
         Z = hadamard(column_repeat(power_minus_half_Sigma, N), R)
         Y = hadamard(column_repeat(gamma, N), Z) + column_repeat(beta, N)
 
-        self.power_minus_half_Sigma = power_minus_half_Sigma
-
+        self.power_minus_half_Sigma[:] = power_minus_half_Sigma
+        self.Z[:] = Z
         return Y
 
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
@@ -296,10 +302,10 @@ class BatchNormalizationLayer(Layer):
         Dgamma = rows_sum(hadamard(DY, Z))
         DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Z, column_repeat(-diag(DZ * Z.T), N)) + DZ * (N * identity(N) - ones(N, N)))
 
-        self.DZ = DZ
-        self.Dbeta = Dbeta
-        self.Dgamma = Dgamma
-        self.DX = DX
+        self.DZ[:] = DZ
+        self.Dbeta[:] = Dbeta
+        self.Dgamma[:] = Dgamma
+        self.DX[:] = DX
 
     def optimize(self, eta):
         # use gradient descent; TODO: generalize this
