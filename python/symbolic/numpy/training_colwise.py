@@ -5,7 +5,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from typing import List
-from symbolic.learning_rate import ConstantScheduler, LearningRateScheduler
+from symbolic.learning_rate import ConstantScheduler, LearningRateScheduler, parse_learning_rate
 from symbolic.numpy.datasets import DataLoader, create_npz_dataloaders
 from symbolic.numpy.loss_functions_colwise import *
 from symbolic.numpy.multilayer_perceptron_colwise import MultilayerPerceptron, parse_multilayer_perceptron
@@ -106,6 +106,8 @@ def train(layer_specifications: List[str],
          ):
     SGDOptions.debug = debug
     set_numpy_options()
+    loss = parse_loss_function(loss)
+    learning_rate = parse_learning_rate(learning_rate)
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers, batch_size)
     M.load_weights_and_bias(weights_and_bias_file)
     train_loader, test_loader = create_npz_dataloaders(dataset_file, batch_size=batch_size, rowwise=False)
@@ -119,11 +121,10 @@ if __name__ == '__main__':
     linear_layer_weight_initializers = ['Xavier', 'Xavier', 'Xavier']
     batch_size = 100
     epochs = 1
-    loss = SoftmaxCrossEntropyLossFunction()
-    learning_rate = ConstantScheduler(0.01)
+    loss = 'SoftmaxCrossEntropy'
+    learning_rate = 'Constant(0.01)'
     weights_and_bias_file = '../../mlp-compare.npz'
     dataset_file = '../../cifar1/epoch0.npz'
-    SGDOptions.debug = True
     debug = False
 
     train(layer_specifications,

@@ -9,7 +9,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 
 from typing import List
-from symbolic.learning_rate import ConstantScheduler, LearningRateScheduler
+from symbolic.learning_rate import ConstantScheduler, LearningRateScheduler, parse_learning_rate
 from symbolic.tensorflow.datasets import DataLoader, create_npz_dataloaders
 from symbolic.tensorflow.loss_functions_colwise import *
 from symbolic.tensorflow.multilayer_perceptron_colwise import MultilayerPerceptron, parse_multilayer_perceptron
@@ -100,14 +100,16 @@ def train(layer_specifications: List[str],
           linear_layer_weight_initializers: List[str],
           batch_size: int,
           epochs: int,
-          loss: LossFunction,
-          learning_rate: LearningRateScheduler,
+          loss: str,
+          learning_rate: str,
           weights_and_bias_file: str,
           dataset_file: str,
           debug: bool
          ):
     SGDOptions.debug = debug
     set_tensorflow_options()
+    loss = parse_loss_function(loss)
+    learning_rate = parse_learning_rate(learning_rate)
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers, batch_size)
     M.load_weights_and_bias(weights_and_bias_file)
     train_loader, test_loader = create_npz_dataloaders(dataset_file, batch_size=batch_size, rowwise=False)
@@ -121,11 +123,10 @@ if __name__ == '__main__':
     linear_layer_weight_initializers = ['Xavier', 'Xavier', 'Xavier']
     batch_size = 100
     epochs = 1
-    loss = SoftmaxCrossEntropyLossFunction()
-    learning_rate = ConstantScheduler(0.01)
+    loss = 'SoftmaxCrossEntropy'
+    learning_rate = 'Constant(0.01)'
     weights_and_bias_file = '../../mlp-compare.npz'
     dataset_file = '../../cifar1/epoch0.npz'
-    SGDOptions.debug = True
     debug = False
 
     train(layer_specifications,

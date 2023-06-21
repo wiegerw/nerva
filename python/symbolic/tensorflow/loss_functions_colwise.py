@@ -2,9 +2,9 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from symbolic.numpy.loss_functions import *
+from symbolic.tensorflow.loss_functions import *
 
-Matrix = np.ndarray
+Matrix = tf.Tensor
 
 
 class LossFunction(object):
@@ -69,3 +69,20 @@ class NegativeLogLikelihoodLossFunction(LossFunction):
 
     def gradient(self, Y: Matrix, T: Matrix) -> Matrix:
         return Negative_log_likelihood_loss_colwise_gradient(Y, T)
+
+
+def parse_loss_function(text: str) -> LossFunction:
+    if text == "SquaredError":
+        return SquaredErrorLossFunction()
+    elif text == "MeanSquaredError":
+        return MeanSquaredErrorLossFunction()
+    elif text == "CrossEntropy":
+        return CrossEntropyLossFunction()
+    elif text == "SoftmaxCrossEntropy":
+        return StableSoftmaxCrossEntropyLossFunction()
+    elif text == "LogisticCrossEntropy":
+        return LogisticCrossEntropyLossFunction()
+    elif text == "NegativeLogLikelihood":
+        return NegativeLogLikelihoodLossFunction()
+    else:
+        raise RuntimeError(f"unknown loss function '{text}'")
