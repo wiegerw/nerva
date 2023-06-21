@@ -41,7 +41,7 @@ def set_bias_he(b: Matrix):
     set_bias_to_zero(b)
 
 
-def set_weights(layer, text: str):
+def set_layer_weights(layer, text: str):
     if text == 'Xavier':
         set_weights_xavier(layer.W)
         set_bias_xavier(layer.b)

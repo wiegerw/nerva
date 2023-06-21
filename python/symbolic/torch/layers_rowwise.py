@@ -7,7 +7,7 @@ from typing import Tuple
 from symbolic.torch.activation_functions import *
 from symbolic.torch.optimizers import parse_optimizer
 from symbolic.torch.softmax_functions import *
-from symbolic.torch.weight_initializers import set_weights
+from symbolic.torch.weight_initializers import set_layer_weights
 
 Matrix = torch.Tensor
 
@@ -75,6 +75,9 @@ class LinearLayer(Layer):
         """
         K, D = self.W.shape
         return D, K
+
+    def set_weights(self, weight_initializer):
+        set_layer_weights(self, weight_initializer)
 
 
 class ActivationLayer(LinearLayer):
@@ -335,5 +338,5 @@ def parse_linear_layer(text: str,
         act = parse_activation(text)
         layer = ActivationLayer(D, K, N, act)
     layer.optimizer = parse_optimizer(optimizer, layer)
-    set_weights(layer, weight_initializer)
+    layer.set_weights(weight_initializer)
     return layer

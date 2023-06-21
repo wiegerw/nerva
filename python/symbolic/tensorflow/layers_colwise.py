@@ -7,7 +7,7 @@ from typing import Tuple
 from symbolic.tensorflow.activation_functions import *
 from symbolic.tensorflow.optimizers import parse_optimizer
 from symbolic.tensorflow.softmax_functions import *
-from symbolic.tensorflow.weight_initializers import set_weights
+from symbolic.tensorflow.weight_initializers import set_layer_weights
 
 Matrix = tf.Tensor
 
@@ -75,6 +75,9 @@ class LinearLayer(Layer):
         """
         K, D = self.W.shape
         return D, K
+
+    def set_weights(self, weight_initializer):
+        set_layer_weights(self, weight_initializer)
 
 
 class ActivationLayer(LinearLayer):
@@ -335,5 +338,5 @@ def parse_linear_layer(text: str,
         act = parse_activation(text)
         layer = ActivationLayer(D, K, N, act)
     layer.optimizer = parse_optimizer(optimizer, layer)
-    set_weights(layer, weight_initializer)
+    layer.set_weights(weight_initializer)
     return layer
