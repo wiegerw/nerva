@@ -308,11 +308,6 @@ class BatchNormalizationLayer(Layer):
         self.Dgamma[:] = Dgamma
         self.DX[:] = DX
 
-    def optimize(self, eta):
-        # use gradient descent; TODO: generalize this
-        self.beta -= eta * self.Dbeta
-        self.gamma -= eta * self.Dgamma
-
 
 def parse_linear_layer(text: str,
                        D: int,

@@ -116,17 +116,19 @@ class SigmoidActivation(ActivationFunction):
 
 
 class SReLUActivation(ActivationFunction):
-    def __init__(self, al=0, tl=0, ar=0, tr=1):
-        self.al = al
-        self.tl = tl
-        self.ar = ar
-        self.tr = tr
+    def __init__(self, al=0.0, tl=0.0, ar=0.0, tr=1.0):
+        # Store the parameters and their gradients in matrices.
+        # This is to make them usable for optimizers.
+        self.x = tf.Variable(tf.constant([al, tl, ar, tr], dtype=tf.float32))
+        self.Dx = tf.Variable(tf.constant([0, 0, 0, 0], dtype=tf.float32))
 
     def __call__(self, X: Matrix) -> Matrix:
-        return Srelu(self.al, self.tl, self.ar, self.tr)(X)
+        al, tl, ar, tr = self.x
+        return Srelu(al, tl, ar, tr)(X)
 
     def gradient(self, X: Matrix) -> Matrix:
-        return Srelu_gradient(self.al, self.tl, self.ar, self.tr)(X)
+        al, tl, ar, tr = self.x
+        return Srelu_gradient(al, tl, ar, tr)(X)
 
 
 def parse_activation(text: str) -> ActivationFunction:

@@ -2,12 +2,14 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from typing import Tuple
+from collections.abc import Callable
+from typing import Tuple, Any
 
 from symbolic.tensorflow.activation_functions import *
 from symbolic.tensorflow.optimizers import parse_optimizer
 from symbolic.tensorflow.softmax_functions import *
 from symbolic.tensorflow.weight_initializers import set_layer_weights
+from symbolic.optimizers import CompositeOptimizer, Optimizer
 
 Matrix = tf.Tensor
 
@@ -73,6 +75,9 @@ class LinearLayer(Layer):
         """
         K, D = self.W.shape
         return D, K
+
+    def set_optimizer(self, make_optimizer):
+        self.optimizer = CompositeOptimizer([make_optimizer(self.W, self.DW), make_optimizer(self.b, self.Db)])
 
     def set_weights(self, weight_initializer):
         set_layer_weights(self, weight_initializer)
@@ -171,20 +176,25 @@ class SReLULayer(ActivationLayer):
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
         super().backpropagate(Y, DY)
         Z = self.Z
-        al = self.act.al
-        tl = self.act.tl
-        ar = self.act.ar
-        tr = self.act.tr
+        al, tl, ar, tr = self.act.x
 
         Al = lambda Z: tf.where(Z <= tl, Z - tl, 0)
-        Ar = lambda Z: tf.where((Z <= tl) | (Z < tr), 0, Z - tr)
         Tl = lambda Z: tf.where(Z <= tl, 1 - al, 0)
+        Ar = lambda Z: tf.where((Z <= tl) | (Z < tr), 0, Z - tr)
         Tr = lambda Z: tf.where((Z <= tl) | (Z < tr), 0, 1 - ar)
 
-        self.Dal = elements_sum(hadamard(DY, Al(Z)))
-        self.Dar = elements_sum(hadamard(DY, Ar(Z)))
-        self.Dtl = elements_sum(hadamard(DY, Tl(Z)))
-        self.Dtr = elements_sum(hadamard(DY, Tr(Z)))
+        Dal = elements_sum(hadamard(DY, Al(Z)))
+        Dtl = elements_sum(hadamard(DY, Tl(Z)))
+        Dar = elements_sum(hadamard(DY, Ar(Z)))
+        Dtr = elements_sum(hadamard(DY, Tr(Z)))
+
+        self.act.Dx.assign(tf.stack([Dal, Dtl, Dar, Dtr]))
+
+    def set_optimizer(self, make_optimizer):
+        self.optimizer = CompositeOptimizer([make_optimizer(self.W, self.DW),
+                                             make_optimizer(self.b, self.Db),
+                                             make_optimizer(self.act.x, self.act.Dx)
+                                            ])
 
 
 class SoftmaxLayer(LinearLayer):
@@ -275,6 +285,7 @@ class BatchNormalizationLayer(Layer):
         self.beta = tf.Variable(zeros(1, D))
         self.Dbeta = tf.Variable(zeros(1, D))
         self.power_minus_half_Sigma = tf.Variable(zeros(1, D))
+        self.optimizer = None
 
     def feedforward(self, X: Matrix) -> Matrix:
         self.X = X
@@ -308,10 +319,8 @@ class BatchNormalizationLayer(Layer):
         self.Dgamma.assign(Dgamma)
         self.DX.assign(DX)
 
-    def optimize(self, eta):
-        # use gradient descent; TODO: generalize this
-        self.beta -= eta * self.Dbeta
-        self.gamma -= eta * self.Dgamma
+    def set_optimizer(self, make_optimizer: Callable[[Any, Any], Optimizer]):
+        self.optimizer = CompositeOptimizer([make_optimizer(self.beta, self.Dbeta), make_optimizer(self.gamma, self.Dgamma)])
 
 
 def parse_linear_layer(text: str,
@@ -335,6 +344,6 @@ def parse_linear_layer(text: str,
     else:
         act = parse_activation(text)
         layer = ActivationLayer(D, K, N, act)
-    layer.optimizer = parse_optimizer(optimizer, layer)
+    layer.set_optimizer(parse_optimizer(optimizer))
     layer.set_weights(weight_initializer)
     return layer
