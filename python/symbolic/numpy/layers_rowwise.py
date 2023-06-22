@@ -21,6 +21,7 @@ class Layer(object):
     def __init__(self, m: int, n: int):
         self.X = zeros(m, n)
         self.DX = zeros(m, n)
+        self.optimizer = None
 
     def feedforward(self, X: Matrix) -> Matrix:
         raise NotImplementedError
@@ -29,7 +30,8 @@ class Layer(object):
         raise NotImplementedError
 
     def optimize(self, eta):
-        raise NotImplementedError
+        if self.optimizer:
+            self.optimizer.update(eta)
 
 
 class LinearLayer(Layer):
@@ -65,9 +67,6 @@ class LinearLayer(Layer):
         self.DW[:] = DW
         self.Db[:] = Db
         self.DX[:] = DX
-
-    def optimize(self, eta):
-        self.optimizer.update(eta)
 
     def input_output_sizes(self) -> Tuple[int, int]:
         """
@@ -277,14 +276,14 @@ class BatchNormalizationLayer(Layer):
     A batch normalization layer
     """
     def __init__(self, D: int, N: int):
-        super().__init__(D, N)
-        self.Z = zeros(D, N)
-        self.DZ = zeros(D, N)
-        self.gamma = ones(D, 1)
-        self.Dgamma = zeros(D, 1)
-        self.beta = zeros(D, 1)
-        self.Dbeta = zeros(D, 1)
-        self.power_minus_half_Sigma = zeros(D, 1)
+        super().__init__(N, D)
+        self.Z = zeros(N, D)
+        self.DZ = zeros(N, D)
+        self.gamma = ones(1, D)
+        self.Dgamma = zeros(1, D)
+        self.beta = zeros(1, D)
+        self.Dbeta = zeros(1, D)
+        self.power_minus_half_Sigma = zeros(1, D)
         self.optimizer = None
 
     def feedforward(self, X: Matrix) -> Matrix:

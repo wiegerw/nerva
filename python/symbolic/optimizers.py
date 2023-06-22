@@ -18,7 +18,6 @@ class CompositeOptimizer(Optimizer):
         for optimizer in self.optimizers:
             optimizer.update(eta)
 
-
 class GradientDescentOptimizer(Optimizer):
     def __init__(self, x, Dx):
         self.x = x

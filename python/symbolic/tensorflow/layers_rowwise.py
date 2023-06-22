@@ -21,6 +21,7 @@ class Layer(object):
     def __init__(self, m: int, n: int):
         self.X = tf.Variable(zeros(m, n))
         self.DX = tf.Variable(zeros(m, n))
+        self.optimizer = None
 
     def feedforward(self, X: Matrix) -> Matrix:
         raise NotImplementedError
@@ -29,7 +30,8 @@ class Layer(object):
         raise NotImplementedError
 
     def optimize(self, eta):
-        raise NotImplementedError
+        if self.optimizer:
+            self.optimizer.update(eta)
 
 
 class LinearLayer(Layer):
@@ -65,9 +67,6 @@ class LinearLayer(Layer):
         self.DW.assign(DW)
         self.Db.assign(Db)
         self.DX.assign(DX)
-
-    def optimize(self, eta):
-        self.optimizer.update(eta)
 
     def input_output_sizes(self) -> Tuple[int, int]:
         """
@@ -277,7 +276,7 @@ class BatchNormalizationLayer(Layer):
     A batch normalization layer
     """
     def __init__(self, D: int, N: int):
-        super().__init__(D, N)
+        super().__init__(N, D)
         self.Z = tf.Variable(zeros(N, D))
         self.DZ = tf.Variable(zeros(N, D))
         self.gamma = tf.Variable(ones(1, D))

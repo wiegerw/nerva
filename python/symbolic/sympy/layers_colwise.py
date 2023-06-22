@@ -19,6 +19,7 @@ class Layer(object):
     def __init__(self, m: int, n: int):
         self.X = zeros(m, n)
         self.DX = zeros(m, n)
+        self.optimizer = None
 
     def feedforward(self, X: Matrix) -> Matrix:
         raise NotImplementedError
@@ -27,7 +28,8 @@ class Layer(object):
         raise NotImplementedError
 
     def optimize(self, eta):
-        raise NotImplementedError
+        if self.optimizer:
+            self.optimizer.update(eta)
 
 
 class LinearLayer(Layer):
@@ -64,15 +66,15 @@ class LinearLayer(Layer):
         self.Db[:] = Db
         self.DX[:] = DX
 
-    def optimize(self, eta):
-        self.optimizer.update(eta)
-
     def input_output_sizes(self) -> Tuple[int, int]:
         """
         Returns the input and output sizes of the layer
         """
         K, D = self.W.shape
         return D, K
+
+    def set_optimizer(self, make_optimizer):
+        self.optimizer = CompositeOptimizer([make_optimizer(self.W, self.DW), make_optimizer(self.b, self.Db)])
 
     def set_weights(self, weight_initializer):
         set_layer_weights(self, weight_initializer)

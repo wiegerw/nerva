@@ -61,28 +61,32 @@ class MultilayerPerceptron(object):
 
 def parse_multilayer_perceptron(layer_specifications: List[str],
                                 linear_layer_sizes: List[int],
-                                linear_layer_optimizers: List[str],
+                                optimizers: List[str],
                                 linear_layer_weight_initializers: List[str],
                                 batch_size: int
                                ) -> MultilayerPerceptron:
 
-    assert len(linear_layer_optimizers) == len(linear_layer_weight_initializers) == len(linear_layer_sizes) - 1
+    assert len(linear_layer_weight_initializers) == len(linear_layer_sizes) - 1
     layers = []
 
     linear_layer_index = 0
+    optimizer_index = 0
     D = linear_layer_sizes[linear_layer_index]  # the input size of the current layer
     N = batch_size
 
     for specification in layer_specifications:
         if specification == 'BatchNormalization':
             layer = BatchNormalizationLayer(D, N)
+            optimizer = optimizers[optimizer_index]
+            layer.set_optimizer(parse_optimizer(optimizer))
+            optimizer_index += 1
         else:
             K = linear_layer_sizes[linear_layer_index + 1]  # the output size of the layer
-            optimizer = linear_layer_optimizers[linear_layer_index]
+            optimizer = optimizers[optimizer_index]
             weight_initializer = linear_layer_weight_initializers[linear_layer_index]
             layer = parse_linear_layer(specification, D, K, N, optimizer, weight_initializer)
+            optimizer_index += 1
             linear_layer_index += 1
             D = K
         layers.append(layer)
-
     return MultilayerPerceptron(layers)
