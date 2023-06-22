@@ -65,8 +65,6 @@ class LinearLayer(Layer):
         self.DX[:] = DX
 
     def optimize(self, eta):
-        assert id(self.W) == id(self.optimizer.W)
-        assert id(self.b) == id(self.optimizer.b)
         self.optimizer.update(eta)
 
     def input_output_sizes(self) -> Tuple[int, int]:
