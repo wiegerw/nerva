@@ -14,7 +14,7 @@ import tensorflow as tf
 
 
 def to_one_hot_numpy_rowwise(x: np.ndarray, n_classes: int):
-    one_hot = np.zeros((len(x), n_classes), dtype=np.float)
+    one_hot = np.zeros((len(x), n_classes), dtype=float)
     one_hot[np.arange(len(x)), x] = 1
     return one_hot
 

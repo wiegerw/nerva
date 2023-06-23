@@ -184,17 +184,17 @@ class TestSoftmaxValues(TestCase):
         X = np.array([
             [1, 2, 3],
             [7, 3, 4]
-        ], dtype=float)
+        ], dtype=np.float32)
 
         xc = np.array([
             [9],
             [3],
             [12],
-        ], dtype=float)
+        ], dtype=np.float32)
 
         xr = np.array([
             [11, 2, 3]
-        ], dtype=float)
+        ], dtype=np.float32)
 
         return X, xc, xr
 

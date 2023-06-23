@@ -10,13 +10,21 @@ def is_vector(x: Matrix) -> bool:
     return len(x.shape) == 1
 
 
+def is_column_vector(x: Matrix) -> bool:
+    return is_vector(x) or x.shape[1] == 1
+
+
+def is_row_vector(x: Matrix) -> bool:
+    return is_vector(x) or x.shape[0] == 1
+
+
 def is_square(X: Matrix) -> bool:
     m, n = X.shape
     return m == n
 
 
 def dot(x, y):
-    return tf.transpose(x) @ y
+    return tf.tensordot(tf.squeeze(x), tf.squeeze(y), axes=1)
 
 
 def zeros(m: int, n=None) -> Matrix:
@@ -49,7 +57,7 @@ def hadamard(X: Matrix, Y: Matrix) -> Matrix:
 
 
 def diag(X: Matrix) -> Matrix:
-    return tf.expand_dims(tf.linalg.diag_part(X), axis=1)
+    return tf.linalg.diag_part(X)
 
 
 def Diag(x: Matrix) -> Matrix:
@@ -64,13 +72,17 @@ def elements_sum(X: Matrix):
 
 
 def column_repeat(x: Matrix, n: int) -> Matrix:
-    assert is_vector(x)
-    return tf.tile(tf.expand_dims(x, axis=1), [1, n])
+    assert is_column_vector(x)
+    if len(tf.shape(x)) == 1:
+        x = tf.expand_dims(x, axis=1)  # Add a dimension to make it (m, 1)
+    return tf.tile(x, [1, n])
 
 
-def row_repeat(x: Matrix, m: int) -> Matrix:
-    assert is_vector(x)
-    return tf.tile(tf.expand_dims(x, axis=0), [m, 1])
+def row_repeat(x: tf.Tensor, m: int) -> tf.Tensor:
+    assert is_row_vector(x)
+    if len(tf.shape(x)) == 1:
+        x = tf.expand_dims(x, axis=0)  # Add a dimension to make it (1, n)
+    return tf.tile(x, [m, 1])          # Tile the expanded tensor along the first dimension
 
 
 def columns_sum(X: Matrix) -> Matrix:

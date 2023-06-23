@@ -10,13 +10,21 @@ def is_vector(x: Matrix) -> bool:
     return len(x.shape) == 1
 
 
+def is_column_vector(x: Matrix) -> bool:
+    return is_vector(x) or x.shape[1] == 1
+
+
+def is_row_vector(x: Matrix) -> bool:
+    return is_vector(x) or x.shape[0] == 1
+
+
 def is_square(X: Matrix) -> bool:
     m, n = X.shape
     return m == n
 
 
 def dot(x: Matrix, y: Matrix):
-    return x.T @ y
+    return torch.dot(torch.squeeze(x), torch.squeeze(y))
 
 
 def zeros(m: int, n=None) -> Matrix:
@@ -49,7 +57,7 @@ def hadamard(X: Matrix, Y: Matrix) -> Matrix:
 
 
 def diag(X: Matrix) -> Matrix:
-    return torch.unsqueeze(torch.diag(X), dim=1)
+    return torch.diag(X)
 
 
 def Diag(x: Matrix) -> Matrix:
@@ -64,13 +72,17 @@ def elements_sum(X: Matrix):
 
 
 def column_repeat(x: Matrix, n: int) -> Matrix:
-    assert is_vector(x)
-    return x.unsqueeze(1).repeat(1, n)
+    assert is_column_vector(x)
+    if len(x.shape) == 1:
+        x = x.unsqueeze(1)
+    return x.repeat(1, n)
 
 
 def row_repeat(x: Matrix, m: int) -> Matrix:
-    assert is_vector(x)
-    return x.unsqueeze(0).repeat(m, 1)
+    assert is_row_vector(x)
+    if len(x.shape) == 1:
+        x = x.unsqueeze(0)
+    return x.repeat(m, 1)
 
 
 def columns_sum(X: Matrix) -> Matrix:

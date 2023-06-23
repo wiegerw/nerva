@@ -10,13 +10,21 @@ def is_vector(x: Matrix) -> bool:
     return len(x.shape) == 1
 
 
+def is_column_vector(x: Matrix) -> bool:
+    return is_vector(x) or x.shape[1] == 1
+
+
+def is_row_vector(x: Matrix) -> bool:
+    return is_vector(x) or x.shape[0] == 1
+
+
 def is_square(X: Matrix) -> bool:
     m, n = X.shape
     return m == n
 
 
 def dot(x: Matrix, y: Matrix):
-    return x.T @ y
+    return np.dot(np.squeeze(x), np.squeeze(y))
 
 
 def zeros(m: int, n=None) -> Matrix:
@@ -64,13 +72,17 @@ def elements_sum(X: Matrix):
 
 
 def column_repeat(x: Matrix, n: int) -> Matrix:
-    assert is_vector(x)
-    return np.tile(x[:, np.newaxis], (1, n))
+    assert is_column_vector(x)
+    if len(x.shape) == 1:
+        x = x[:, np.newaxis]
+    return np.tile(x, (1, n))
 
 
 def row_repeat(x: Matrix, m: int) -> Matrix:
-    assert is_vector(x)
-    return np.tile(x[np.newaxis, :], (m, 1))
+    assert is_row_vector(x)
+    if len(x.shape) == 1:
+        x = x[np.newaxis, :]
+    return np.tile(x, (m, 1))
 
 
 def columns_sum(X: Matrix) -> Matrix:

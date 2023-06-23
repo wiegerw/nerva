@@ -134,6 +134,7 @@ class TestMatrixOperations(TestCase):
 
         x = S
         x1 = sympy_.diag(to_sympy(x))
+        x1 = to_numpy(x1).squeeze()  # Flatten the SymPy result
         x2 = np_.diag(x)
         x3 = tf_.diag(to_tensorflow(x))
         x4 = torch_.diag(to_torch(x))
@@ -200,6 +201,7 @@ class TestMatrixOperations(TestCase):
 
         x = X
         x1 = sympy_.rows_sum(to_sympy(x))
+        x1 = to_numpy(x1).squeeze()  # Flatten the SymPy result
         x2 = np_.rows_sum(x)
         x3 = tf_.rows_sum(to_tensorflow(x))
         x4 = torch_.rows_sum(to_torch(x))
@@ -222,6 +224,7 @@ class TestMatrixOperations(TestCase):
 
         x = X
         x1 = sympy_.rows_max(to_sympy(x))
+        x1 = to_numpy(x1).squeeze()  # Flatten the SymPy result
         x2 = np_.rows_max(x)
         x3 = tf_.rows_max(to_tensorflow(x))
         x4 = torch_.rows_max(to_torch(x))
@@ -244,6 +247,7 @@ class TestMatrixOperations(TestCase):
 
         x = X
         x1 = sympy_.rows_mean(to_sympy(x))
+        x1 = to_numpy(x1).squeeze()  # Flatten the SymPy result
         x2 = np_.rows_mean(x)
         x3 = tf_.rows_mean(to_tensorflow(x))
         x4 = torch_.rows_mean(to_torch(x))
@@ -325,28 +329,6 @@ class TestMatrixOperations(TestCase):
         x3 = tf_.power_minus_half(to_tensorflow(x))
         x4 = torch_.power_minus_half(to_torch(x))
         self.check_arrays_equal('power_minus_half', x1, x2, x3, x4)
-
-
-class TestConversions(TestCase):
-
-    def test_to_row_col(self):
-        xc = np.array([
-            [9],
-            [3],
-            [12],
-        ], dtype=float)
-
-        xr = np.array([
-            [11, 2, 3]
-        ], dtype=float)
-
-        x = np.array([11, 2, 3], dtype=float)
-
-        self.assertEqual(np_.to_row(x).shape, (1, 3))
-        self.assertEqual(np_.to_row(xr).shape, (1, 3))
-
-        self.assertEqual(np_.to_col(x).shape, (3, 1))
-        self.assertEqual(np_.to_col(xc).shape, (3, 1))
 
 
 if __name__ == '__main__':

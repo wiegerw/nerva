@@ -197,7 +197,7 @@ class TestColwiseLossFunctionValues(TestCase):
     def _test_loss_function(self, function_name: str):
         yc, tc, yr, tr, Y, T = self.make_variables()
 
-        # test loss on vectors
+        print('=== test loss on vectors ===')
         name = function_name
         f_sympy = getattr(sympy_, name)
         f_numpy = getattr(np_, name)
@@ -210,7 +210,7 @@ class TestColwiseLossFunctionValues(TestCase):
         x4 = f_torch(to_torch(y), to_torch(t))
         self.check_numbers_equal(function_name, [x1, x2, x3, x4])
 
-        # test loss gradient on vectors
+        print('=== test loss gradient on vectors ===')
         name = f'{function_name}_gradient'
         f_sympy = getattr(sympy_, name)
         f_numpy = getattr(np_, name)
@@ -223,7 +223,7 @@ class TestColwiseLossFunctionValues(TestCase):
         x4 = f_torch(to_torch(y), to_torch(t))
         self.check_arrays_equal(function_name, [x1, x2, x3, x4])
 
-        # test loss on matrices
+        print('=== test loss on matrices ===')
         name = function_name.capitalize()
         f_sympy = getattr(sympy_, name)
         f_numpy = getattr(np_, name)
@@ -236,7 +236,7 @@ class TestColwiseLossFunctionValues(TestCase):
         x4 = f_torch(to_torch(y), to_torch(t))
         self.check_numbers_equal(function_name, [x1, x2, x3, x4])
 
-        # test loss gradient on matrices
+        print('=== test loss gradient on matrices ===')
         name = f'{function_name.capitalize()}_gradient'
         f_sympy = getattr(sympy_, name)
         f_numpy = getattr(np_, name)
