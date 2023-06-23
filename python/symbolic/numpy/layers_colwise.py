@@ -6,7 +6,6 @@ from collections.abc import Callable
 from typing import Tuple, Any
 
 from symbolic.numpy.activation_functions import *
-from symbolic.numpy.optimizers import parse_optimizer, parse_optimizer
 from symbolic.numpy.softmax_functions import *
 from symbolic.numpy.weight_initializers import set_layer_weights
 from symbolic.optimizers import CompositeOptimizer, Optimizer
@@ -320,29 +319,3 @@ class BatchNormalizationLayer(Layer):
 
     def set_optimizer(self, make_optimizer: Callable[[Any, Any], Optimizer]):
         self.optimizer = CompositeOptimizer([make_optimizer(self.beta, self.Dbeta), make_optimizer(self.gamma, self.Dgamma)])
-
-
-def parse_linear_layer(text: str,
-                       D: int,
-                       K: int,
-                       N: int,
-                       optimizer: str,
-                       weight_initializer: str
-                      ) -> Layer:
-    if text == 'Linear':
-        layer = LinearLayer(D, K, N)
-    elif text == 'Sigmoid':
-        layer = SigmoidLayer(D, K, N)
-    elif text == 'Softmax':
-        layer = SoftmaxLayer(D, K, N)
-    elif text == 'LogSoftmax':
-        layer = LogSoftmaxLayer(D, K, N)
-    elif text.startswith('SReLU'):
-        act = parse_srelu_activation(text)
-        layer = SReLULayer(D, K, N, act)
-    else:
-        act = parse_activation(text)
-        layer = ActivationLayer(D, K, N, act)
-    layer.set_optimizer(parse_optimizer(optimizer))
-    layer.set_weights(weight_initializer)
-    return layer

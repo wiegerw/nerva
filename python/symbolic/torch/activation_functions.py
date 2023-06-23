@@ -2,7 +2,6 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-import re
 import torch
 
 Matrix = torch.Tensor
@@ -127,38 +126,3 @@ class SReLUActivation(ActivationFunction):
     def gradient(self, X: Matrix) -> Matrix:
         al, tl, ar, tr = self.x
         return Srelu_gradient(al, tl, ar, tr)(X)
-
-
-def parse_activation(text: str) -> ActivationFunction:
-    try:
-        if text == 'ReLU':
-            return ReLUActivation()
-        elif text == 'HyperbolicTangent':
-            return HyperbolicTangentActivation()
-        elif text.startswith('AllReLU'):
-            m = re.match(r'AllReLU\((.*)\)$', text)
-            alpha = float(m.group(1))
-            return AllReLUActivation(alpha)
-        elif text.startswith('LeakyReLU'):
-            m = re.match(r'LeakyReLU\((.*)\)$', text)
-            alpha = float(m.group(1))
-            return LeakyReLUActivation(alpha)
-    except:
-        pass
-    raise RuntimeError(f'Could not parse activation "{text}"')
-
-
-def parse_srelu_activation(text: str) -> SReLUActivation:
-    try:
-        if text == 'SReLU':
-            return SReLUActivation()
-        else:
-            m = re.match(r'SReLU\(([^,]*),([^,]*),([^,]*),([^,]*)\)$', text)
-            al = float(m.group(1))
-            tl = float(m.group(2))
-            ar = float(m.group(3))
-            tr = float(m.group(4))
-            return SReLUActivation(al, tl, ar, tr)
-    except:
-        pass
-    raise RuntimeError(f'Could not parse SReLU activation "{text}"')

@@ -2,10 +2,7 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from typing import Tuple
-
 from symbolic.sympy.activation_functions import *
-from symbolic.sympy.optimizers import parse_optimizer
 from symbolic.sympy.softmax_functions import *
 from symbolic.sympy.weight_initializers import set_layer_weights
 
@@ -310,29 +307,3 @@ class BatchNormalizationLayer(Layer):
         self.Dbeta[:] = Dbeta
         self.Dgamma[:] = Dgamma
         self.DX[:] = DX
-
-
-def parse_linear_layer(text: str,
-                       D: int,
-                       K: int,
-                       N: int,
-                       optimizer: str,
-                       weight_initializer: str
-                      ) -> Layer:
-    if text == 'Linear':
-        layer = LinearLayer(D, K, N)
-    elif text == 'Sigmoid':
-        layer = SigmoidLayer(D, K, N)
-    elif text == 'Softmax':
-        layer = SoftmaxLayer(D, K, N)
-    elif text == 'LogSoftmax':
-        layer = LogSoftmaxLayer(D, K, N)
-    elif text.startswith('SReLU'):
-        act = parse_srelu_activation(text)
-        layer = SReLULayer(D, K, N, act)
-    else:
-        act = parse_activation(text)
-        layer = ActivationLayer(D, K, N, act)
-    layer.optimizer = parse_optimizer(optimizer, layer)
-    layer.set_weights(weight_initializer)
-    return layer

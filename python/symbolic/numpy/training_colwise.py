@@ -5,10 +5,11 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from typing import List
-from symbolic.learning_rate import ConstantScheduler, LearningRateScheduler, parse_learning_rate
+from symbolic.learning_rate import parse_learning_rate
 from symbolic.numpy.datasets import DataLoader, create_npz_dataloaders
 from symbolic.numpy.loss_functions_colwise import *
-from symbolic.numpy.multilayer_perceptron_colwise import MultilayerPerceptron, parse_multilayer_perceptron
+from symbolic.numpy.multilayer_perceptron_colwise import MultilayerPerceptron
+from symbolic.numpy.parse_mlp_colwise import parse_multilayer_perceptron, parse_loss_function
 from symbolic.numpy.utilities import pp, set_numpy_options
 from symbolic.training import SGDOptions, print_epoch
 from symbolic.utilities import StopWatch

@@ -6,13 +6,13 @@
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-import tensorflow as tf
 
 from typing import List
-from symbolic.learning_rate import ConstantScheduler, LearningRateScheduler, parse_learning_rate
+from symbolic.learning_rate import parse_learning_rate
 from symbolic.tensorflow.datasets import DataLoader, create_npz_dataloaders
 from symbolic.tensorflow.loss_functions_rowwise import *
-from symbolic.tensorflow.multilayer_perceptron_rowwise import MultilayerPerceptron, parse_multilayer_perceptron
+from symbolic.tensorflow.multilayer_perceptron_rowwise import MultilayerPerceptron
+from symbolic.tensorflow.parse_mlp_rowwise import parse_multilayer_perceptron, parse_loss_function
 from symbolic.tensorflow.utilities import pp, set_tensorflow_options
 from symbolic.training import SGDOptions, print_epoch
 from symbolic.utilities import StopWatch

@@ -5,10 +5,11 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from typing import List
-from symbolic.learning_rate import ConstantScheduler, LearningRateScheduler, parse_learning_rate
+from symbolic.learning_rate import parse_learning_rate
 from symbolic.torch.datasets import DataLoader, create_npz_dataloaders
 from symbolic.torch.loss_functions_rowwise import *
-from symbolic.torch.multilayer_perceptron_rowwise import MultilayerPerceptron, parse_multilayer_perceptron
+from symbolic.torch.multilayer_perceptron_rowwise import MultilayerPerceptron
+from symbolic.torch.parse_mlp_rowwise import parse_multilayer_perceptron, parse_loss_function
 from symbolic.torch.utilities import set_torch_options, pp
 from symbolic.training import SGDOptions, print_epoch
 from symbolic.utilities import StopWatch

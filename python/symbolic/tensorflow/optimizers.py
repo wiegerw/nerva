@@ -2,14 +2,10 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-import re
-from collections.abc import Callable
-from typing import Any
-
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
-from symbolic.optimizers import Optimizer, GradientDescentOptimizer
+from symbolic.optimizers import GradientDescentOptimizer
 
 
 class MomentumOptimizer(GradientDescentOptimizer):
@@ -34,20 +30,3 @@ class NesterovOptimizer(GradientDescentOptimizer):
         self.delta_x_prev = self.delta_x
         self.delta_x = self.mu * self.delta_x - eta * self.Dx
         self.x.assign(self.x + (-self.mu * self.delta_x_prev + (1 + self.mu) * self.delta_x))
-
-
-def parse_optimizer(text: str) -> Callable[[Any, Any], Optimizer]:
-    try:
-        if text == 'GradientDescent':
-            return lambda x, Dx: GradientDescentOptimizer(x, Dx)
-        elif text.startswith('Momentum'):
-            m = re.match(r'Momentum\((.*)\)$', text)
-            mu = float(m.group(1))
-            return lambda x, Dx: MomentumOptimizer(x, Dx, mu)
-        elif text.startswith('Nesterov'):
-            m = re.match(r'Nesterov\((.*)\)$', text)
-            mu = float(m.group(1))
-            return lambda x, Dx: NesterovOptimizer(x, Dx, mu)
-    except:
-        pass
-    raise RuntimeError(f'Could not parse optimizer "{text}"')

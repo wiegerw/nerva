@@ -2,9 +2,8 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-import re
 from symbolic.sympy.matrix_operations import zeros
-from symbolic.optimizers import Optimizer, CompositeOptimizer, GradientDescentOptimizer
+from symbolic.optimizers import GradientDescentOptimizer
 
 
 class MomentumOptimizer(GradientDescentOptimizer):
@@ -33,22 +32,3 @@ class NesterovOptimizer(GradientDescentOptimizer):
         self.delta_x_prev = self.delta_x
         self.delta_x = self.mu * self.delta_x - eta * self.Dx
         self.x += (-self.mu * self.delta_x_prev + (1 + self.mu) * self.delta_x)
-
-
-def parse_optimizer(text: str,
-                    layer
-                   ) -> Optimizer:
-    try:
-        if text == 'GradientDescent':
-            return CompositeOptimizer([GradientDescentOptimizer(layer.W, layer.DW), GradientDescentOptimizer(layer.b, layer.Db)])
-        elif text.startswith('Momentum'):
-            m = re.match(r'Momentum\((.*)\)$', text)
-            mu = float(m.group(1))
-            return CompositeOptimizer([MomentumOptimizer(layer.W, layer.DW, mu), MomentumOptimizer(layer.b, layer.Db, mu)])
-        elif text.startswith('Nesterov'):
-            m = re.match(r'Nesterov\((.*)\)$', text)
-            mu = float(m.group(1))
-            return CompositeOptimizer([NesterovOptimizer(layer.W, layer.DW, mu), NesterovOptimizer(layer.b, layer.Db, mu)])
-    except:
-        pass
-    raise RuntimeError(f'Could not parse optimizer "{text}"')

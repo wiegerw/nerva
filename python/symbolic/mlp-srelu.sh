@@ -32,9 +32,9 @@ function train()
         	2>&1 | tee $logfile
 }
 
-#train "numpy-srelu-colwise"      --numpy      --colwise
-#train "numpy-srelu-rowwise"      --numpy      --rowwise
+train "numpy-srelu-colwise"      --numpy      --colwise
+train "numpy-srelu-rowwise"      --numpy      --rowwise
 train "tensorflow-srelu-colwise" --tensorflow --colwise
 train "tensorflow-srelu-rowwise" --tensorflow --rowwise
-#train "torch-srelu-colwise"      --torch      --colwise
-#train "torch-srelu-rowwise"      --torch      --rowwise
+train "torch-srelu-colwise"      --torch      --colwise
+train "torch-srelu-rowwise"      --torch      --rowwise
