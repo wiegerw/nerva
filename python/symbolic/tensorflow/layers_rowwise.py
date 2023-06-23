@@ -292,7 +292,7 @@ class BatchNormalizationLayer(Layer):
         beta = self.beta
 
         R = X - row_repeat(columns_mean(X), N)
-        Sigma = tf.transpose(diag(tf.transpose(R) @ R)) / N
+        Sigma = diag(tf.transpose(R) @ R) / N
         power_minus_half_Sigma = power_minus_half(Sigma)
         Z = hadamard(row_repeat(power_minus_half_Sigma, N), R)
         Y = hadamard(row_repeat(gamma, N), Z) + row_repeat(beta, N)
@@ -310,7 +310,7 @@ class BatchNormalizationLayer(Layer):
         DZ = hadamard(row_repeat(gamma, N), DY)
         Dbeta = columns_sum(DY)
         Dgamma = columns_sum(hadamard(Z, DY))
-        DX = hadamard(row_repeat(power_minus_half_Sigma / N, N), (N * identity(N) - ones(N, N)) @ DZ - hadamard(Z, row_repeat(tf.transpose(diag(tf.transpose(Z) @ DZ)), N)))
+        DX = hadamard(row_repeat(power_minus_half_Sigma / N, N), (N * identity(N) - ones(N, N)) @ DZ - hadamard(Z, row_repeat(diag(tf.transpose(Z) @ DZ), N)))
 
         self.DZ.assign(DZ)
         self.Dbeta.assign(Dbeta)

@@ -34,11 +34,11 @@ def zeros(m: int, n=None) -> Matrix:
     return np.zeros((m, n)) if n else np.zeros(m)
 
 
-def ones(m: int, n: int = 1) -> Matrix:
+def ones(m: int, n=None) -> Matrix:
     """
     Returns an mxn matrix with all elements equal to 1.
     """
-    return np.ones((m, n))
+    return np.ones((m, n)) if n else np.ones(m)
 
 
 def identity(n: int) -> Matrix:
