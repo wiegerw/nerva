@@ -53,5 +53,5 @@ class MultilayerPerceptron(object):
         for layer in self.layers:
             if isinstance(layer, LinearLayer):
                 layer.W.assign(data[f'W{index}'])
-                layer.b.assign(to_col(data[f'b{index}']))  # TODO: fix the to_col
+                layer.b.assign(data[f'b{index}'])
                 index += 1

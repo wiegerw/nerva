@@ -41,8 +41,8 @@ class LinearLayer(Layer):
         super().__init__(D, N)
         self.W = tf.Variable(zeros(K, D))
         self.DW = tf.Variable(zeros(K, D))
-        self.b = tf.Variable(zeros(K, 1))
-        self.Db = tf.Variable(zeros(K, 1))
+        self.b = tf.Variable(zeros(K))
+        self.Db = tf.Variable(zeros(K))
         self.optimizer = None
 
     def feedforward(self, X: Matrix) -> Matrix:
@@ -278,11 +278,11 @@ class BatchNormalizationLayer(Layer):
         super().__init__(D, N)
         self.Z = tf.Variable(zeros(D, N))
         self.DZ = tf.Variable(zeros(D, N))
-        self.gamma = tf.Variable(ones(D, 1))
-        self.Dgamma = tf.Variable(zeros(D, 1))
-        self.beta = tf.Variable(zeros(D, 1))
-        self.Dbeta = tf.Variable(zeros(D, 1))
-        self.power_minus_half_Sigma = tf.Variable(zeros(D, 1))
+        self.gamma = tf.Variable(ones(D))
+        self.Dgamma = tf.Variable(zeros(D))
+        self.beta = tf.Variable(zeros(D))
+        self.Dbeta = tf.Variable(zeros(D))
+        self.power_minus_half_Sigma = tf.Variable(zeros(D))
         self.optimizer = None
 
     def feedforward(self, X: Matrix) -> Matrix:
