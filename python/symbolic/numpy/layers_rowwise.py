@@ -41,8 +41,8 @@ class LinearLayer(Layer):
         super().__init__(N, D)
         self.W = zeros(K, D)
         self.DW = zeros(K, D)
-        self.b = zeros(1, K)
-        self.Db = zeros(1, K)
+        self.b = zeros(K)
+        self.Db = zeros(K)
         self.optimizer = None
 
     def feedforward(self, X: Matrix) -> Matrix:
@@ -278,11 +278,11 @@ class BatchNormalizationLayer(Layer):
         super().__init__(N, D)
         self.Z = zeros(N, D)
         self.DZ = zeros(N, D)
-        self.gamma = ones(1, D)
-        self.Dgamma = zeros(1, D)
-        self.beta = zeros(1, D)
-        self.Dbeta = zeros(1, D)
-        self.power_minus_half_Sigma = zeros(1, D)
+        self.gamma = ones(D)
+        self.Dgamma = zeros(D)
+        self.beta = zeros(D)
+        self.Dbeta = zeros(D)
+        self.power_minus_half_Sigma = zeros(D)
         self.optimizer = None
 
     def feedforward(self, X: Matrix) -> Matrix:

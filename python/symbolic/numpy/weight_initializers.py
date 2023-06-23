@@ -8,8 +8,7 @@ Matrix = np.ndarray
 
 
 def set_bias_to_zero(b: Matrix):
-    K, D = b.shape
-    b[:] = np.zeros((K, D))
+    b[:] = np.zeros_like(b)
 
 
 def set_weights_xavier(W: Matrix):

@@ -6,14 +6,8 @@ import numpy as np
 
 Matrix = np.ndarray
 
-def is_column_vector(x: Matrix) -> bool:
-    m, n = x.shape
-    return n == 1
-
-
-def is_row_vector(x: Matrix) -> bool:
-    m, n = x.shape
-    return m == 1
+def is_vector(x: Matrix) -> bool:
+    return len(x.shape) == 1
 
 
 def is_square(X: Matrix) -> bool:
@@ -22,30 +16,14 @@ def is_square(X: Matrix) -> bool:
 
 
 def dot(x: Matrix, y: Matrix):
-    if is_column_vector(x) and is_column_vector(y):
-        return x.T @ y
-    elif is_row_vector(x) and is_row_vector(y):
-        return x @ y.T
-    raise RuntimeError('dot: received illegal input')
+    return x.T @ y
 
 
-def to_row(x: Matrix) -> Matrix:
-    if len(x.shape) == 1:
-        return np.expand_dims(x, axis=0)
-    return x
-
-
-def to_col(x: Matrix) -> Matrix:
-    if len(x.shape) == 1:
-        return np.expand_dims(x, axis=1)
-    return x
-
-
-def zeros(m: int, n: int = 1) -> Matrix:
+def zeros(m: int, n=None) -> Matrix:
     """
     Returns an mxn matrix with all elements equal to 0.
     """
-    return np.zeros((m, n))
+    return np.zeros((m, n)) if n else np.zeros(m)
 
 
 def ones(m: int, n: int = 1) -> Matrix:
@@ -71,7 +49,7 @@ def hadamard(X: Matrix, Y: Matrix) -> Matrix:
 
 
 def diag(X: Matrix) -> Matrix:
-    return to_col(np.diag(X))
+    return np.diag(X)
 
 
 def Diag(x: Matrix) -> Matrix:
@@ -86,49 +64,49 @@ def elements_sum(X: Matrix):
 
 
 def column_repeat(x: Matrix, n: int) -> Matrix:
-    assert is_column_vector(x)
-    return np.tile(x, (1, n))
+    assert is_vector(x)
+    return np.tile(x[:, np.newaxis], (1, n))
 
 
 def row_repeat(x: Matrix, m: int) -> Matrix:
-    assert is_row_vector(x)
-    return np.tile(x, (m, 1))
+    assert is_vector(x)
+    return np.tile(x[np.newaxis, :], (m, 1))
 
 
 def columns_sum(X: Matrix) -> Matrix:
-    return to_row(np.sum(X, axis=0))
+    return np.sum(X, axis=0)
 
 
 def rows_sum(X: Matrix) -> Matrix:
-    return to_col(np.sum(X, axis=1))
+    return np.sum(X, axis=1)
 
 
 def columns_max(X: Matrix) -> Matrix:
     """
     Returns a column vector with the maximum values of each row in X.
     """
-    return to_row(np.max(X, axis=0))
+    return np.max(X, axis=0)
 
 
 def rows_max(X: Matrix) -> Matrix:
     """
     Returns a row vector with the maximum values of each column in X.
     """
-    return to_col(np.max(X, axis=1))
+    return np.max(X, axis=1)
 
 
 def columns_mean(X: Matrix) -> Matrix:
     """
     Returns a column vector with the mean values of each row in X.
     """
-    return to_row(np.mean(X, axis=0))
+    return np.mean(X, axis=0)
 
 
 def rows_mean(X: Matrix) -> Matrix:
     """
     Returns a row vector with the mean values of each column in X.
     """
-    return to_col(np.mean(X, axis=1))
+    return np.mean(X, axis=1)
 
 
 def apply(f, X: Matrix) -> Matrix:
