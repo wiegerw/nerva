@@ -5,6 +5,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from typing import List
+import numpy as np
 from symbolic.learning_rate import parse_learning_rate
 from symbolic.jax.datasets import DataLoader, create_npz_dataloaders
 from symbolic.jax.loss_functions_rowwise import *
@@ -16,9 +17,9 @@ from symbolic.utilities import StopWatch
 
 
 def to_one_hot(x: jnp.ndarray, n_classes: int):
-    one_hot = jnp.zeros((len(x), n_classes), dtype=float)
-    one_hot[jnp.arange(len(x)), x] = 1
-    return one_hot
+    one_hot = np.zeros((len(x), n_classes), dtype=float)
+    one_hot[np.arange(len(x)), x] = 1
+    return jnp.array(one_hot)
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):

@@ -3,8 +3,7 @@ from typing import Callable, Any
 
 from symbolic.jax.activation_functions import SReLUActivation, ActivationFunction, ReLUActivation, \
     HyperbolicTangentActivation, AllReLUActivation, LeakyReLUActivation
-from symbolic.jax.optimizers import MomentumOptimizer, NesterovOptimizer
-from symbolic.optimizers import Optimizer, GradientDescentOptimizer
+from symbolic.jax.optimizers import Optimizer, GradientDescentOptimizer, MomentumOptimizer, NesterovOptimizer
 
 
 def parse_activation(text: str) -> ActivationFunction:
@@ -42,18 +41,18 @@ def parse_srelu_activation(text: str) -> SReLUActivation:
     raise RuntimeError(f'Could not parse SReLU activation "{text}"')
 
 
-def parse_optimizer(text: str) -> Callable[[Any, Any], Optimizer]:
+def parse_optimizer(text: str) -> Callable[[Any, str, str], Optimizer]:
     try:
         if text == 'GradientDescent':
-            return lambda x, Dx: GradientDescentOptimizer(x, Dx)
+            return lambda obj, attr_x, attr_Dx: GradientDescentOptimizer(obj, attr_x, attr_Dx)
         elif text.startswith('Momentum'):
             m = re.match(r'Momentum\((.*)\)$', text)
             mu = float(m.group(1))
-            return lambda x, Dx: MomentumOptimizer(x, Dx, mu)
+            return lambda obj, attr_x, attr_Dx: MomentumOptimizer(obj, attr_x, attr_Dx, mu)
         elif text.startswith('Nesterov'):
             m = re.match(r'Nesterov\((.*)\)$', text)
             mu = float(m.group(1))
-            return lambda x, Dx: NesterovOptimizer(x, Dx, mu)
+            return lambda obj, attr_x, attr_Dx: NesterovOptimizer(obj, attr_x, attr_Dx, mu)
     except:
         pass
     raise RuntimeError(f'Could not parse optimizer "{text}"')

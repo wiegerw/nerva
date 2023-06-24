@@ -75,7 +75,7 @@ class LinearLayer(Layer):
         return D, K
 
     def set_optimizer(self, make_optimizer):
-        self.optimizer = CompositeOptimizer([make_optimizer(self.W, self.DW), make_optimizer(self.b, self.Db)])
+        self.optimizer = CompositeOptimizer([make_optimizer(self, 'W', 'DW'), make_optimizer(self, 'b', 'Db')])
 
     def set_weights(self, weight_initializer):
         set_layer_weights(self, weight_initializer)
@@ -189,9 +189,9 @@ class SReLULayer(ActivationLayer):
         self.act.Dx = jnp.array([Dal, Dtl, Dar, Dtr])
 
     def set_optimizer(self, make_optimizer):
-        self.optimizer = CompositeOptimizer([make_optimizer(self.W, self.DW),
-                                             make_optimizer(self.b, self.Db),
-                                             make_optimizer(self.act.x, self.act.Dx)
+        self.optimizer = CompositeOptimizer([make_optimizer(self, 'W', 'DW'),
+                                             make_optimizer(self, 'b', 'Db'),
+                                             make_optimizer(self.act, 'x', 'Dx')
                                             ])
 
 
@@ -317,5 +317,5 @@ class BatchNormalizationLayer(Layer):
         self.Dgamma = Dgamma
         self.DX = DX
 
-    def set_optimizer(self, make_optimizer: Callable[[Any, Any], Optimizer]):
-        self.optimizer = CompositeOptimizer([make_optimizer(self.beta, self.Dbeta), make_optimizer(self.gamma, self.Dgamma)])
+    def set_optimizer(self, make_optimizer: Callable[[Any, str, str], Optimizer]):
+        self.optimizer = CompositeOptimizer([make_optimizer(self, 'beta', 'Dbeta'), make_optimizer(self, 'gamma', 'Dgamma')])

@@ -38,3 +38,6 @@ train "tensorflow-batchnorm-colwise" --tensorflow --colwise
 train "tensorflow-batchnorm-rowwise" --tensorflow --rowwise
 train "torch-batchnorm-colwise"      --torch      --colwise
 train "torch-batchnorm-rowwise"      --torch      --rowwise
+train "jax-batchnorm-colwise"        --jax        --colwise
+train "jax-batchnorm-rowwise"        --jax        --rowwise
+

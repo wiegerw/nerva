@@ -38,6 +38,8 @@ train "tensorflow-colwise" --tensorflow --colwise
 train "tensorflow-rowwise" --tensorflow --rowwise
 train "torch-colwise"      --torch      --colwise
 train "torch-rowwise"      --torch      --rowwise
+train "jax-colwise"        --jax      --colwise
+train "jax-rowwise"        --jax      --rowwise
 
 train "numpy-colwise-debug"      --numpy      --colwise --debug
 train "numpy-rowwise-debug"      --numpy      --rowwise --debug
@@ -45,3 +47,6 @@ train "tensorflow-colwise-debug" --tensorflow --colwise --debug
 train "tensorflow-rowwise-debug" --tensorflow --rowwise --debug
 train "torch-colwise-debug"      --torch      --colwise --debug
 train "torch-rowwise-debug"      --torch      --rowwise --debug
+train "jax-colwise-debug"        --jax      --colwise --debug
+train "jax-rowwise-debug"        --jax      --rowwise --debug
+

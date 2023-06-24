@@ -38,3 +38,6 @@ train "tensorflow-srelu-colwise" --tensorflow --colwise
 train "tensorflow-srelu-rowwise" --tensorflow --rowwise
 train "torch-srelu-colwise"      --torch      --colwise
 train "torch-srelu-rowwise"      --torch      --rowwise
+train "jax-srelu-colwise"        --jax        --colwise
+train "jax-srelu-rowwise"        --jax        --rowwise
+

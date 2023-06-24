@@ -52,6 +52,6 @@ class MultilayerPerceptron(object):
         index = 1
         for layer in self.layers:
             if isinstance(layer, LinearLayer):
-                layer.W = data[f'W{index}']
-                layer.b = data[f'b{index}']
+                layer.W = jnp.array(data[f'W{index}'])
+                layer.b = jnp.array(data[f'b{index}'])
                 index += 1

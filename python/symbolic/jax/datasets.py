@@ -31,7 +31,7 @@ class MemoryDataLoader(object):
         N = self.Xdata.shape[0]  # N is the number of examples
         K = N // self.batch_size  # K is the number of batches
         for k in range(K):
-            batch = range(k * self.batch_size, (k + 1) * self.batch_size)
+            batch = jnp.array(range(k * self.batch_size, (k + 1) * self.batch_size))
             if self.rowwise:
                 yield self.Xdata[batch], self.Tdata[batch]
             else:
@@ -62,6 +62,6 @@ def create_npz_dataloaders(filename: str, batch_size: int, rowwise=True) -> Tupl
 
     data = dict(jnp.load(filename, allow_pickle=True))
     Xtrain, Ttrain, Xtest, Ttest = data['Xtrain'], data['Ttrain'], data['Xtest'], data['Ttest']
-    train_loader = MemoryDataLoader(Xtrain, Ttrain, batch_size, rowwise)
-    test_loader = MemoryDataLoader(Xtest, Ttest, batch_size, rowwise)
+    train_loader = MemoryDataLoader(jnp.array(Xtrain), jnp.array(Ttrain), batch_size, rowwise)
+    test_loader = MemoryDataLoader(jnp.array(Xtest), jnp.array(Ttest), batch_size, rowwise)
     return train_loader, test_loader
