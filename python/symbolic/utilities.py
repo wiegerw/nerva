@@ -7,6 +7,7 @@ from typing import Union
 
 import numpy as np
 import sympy as sp
+import jax.numpy as jnp
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
@@ -31,7 +32,7 @@ def instantiate(X: sp.Matrix, low=0, high=10) -> sp.Matrix:
     return X0
 
 
-def to_numpy(x: Union[sp.Matrix, np.ndarray, torch.Tensor, tf.Tensor]) -> np.ndarray:
+def to_numpy(x: Union[sp.Matrix, np.ndarray, torch.Tensor, tf.Tensor, jnp.ndarray]) -> np.ndarray:
     if isinstance(x, sp.Matrix):
         return np.array(x.tolist(), dtype=np.float64)
     elif isinstance(x, np.ndarray):
@@ -40,6 +41,8 @@ def to_numpy(x: Union[sp.Matrix, np.ndarray, torch.Tensor, tf.Tensor]) -> np.nda
         return x.detach().cpu().numpy()
     elif isinstance(x, tf.Tensor):
         return x.numpy()
+    elif isinstance(x, jnp.ndarray):
+        return np.array(x)
     else:
         raise ValueError("Unsupported input type. Input must be one of sp.Matrix, np.ndarray, torch.Tensor, or tf.Tensor.")
 
@@ -54,6 +57,10 @@ def to_torch(X: np.ndarray) -> torch.Tensor:
 
 def to_tensorflow(X: np.ndarray) -> tf.Tensor:
     return tf.convert_to_tensor(X)
+
+
+def to_jax(X: np.ndarray) -> jnp.ndarray:
+    return jnp.array(X)
 
 
 def squared_error(X: Matrix):
