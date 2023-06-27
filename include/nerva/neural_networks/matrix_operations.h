@@ -30,6 +30,12 @@ bool is_square(const Matrix& X)
   return X.rows() == X.cols();
 }
 
+template <typename Vector>
+auto dot(const Vector& x, const Vector& y)
+{
+  return x.dot(y);
+}
+
 //////////////////////////////////////////////////////////////////////////////
 
 template <typename Matrix>
