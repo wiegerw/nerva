@@ -28,7 +28,8 @@ auto softmax_colwise_jacobian(const Vector& x)
 {
   assert(is_column_vector(x));
   auto y = softmax_colwise(x);
-  return Diag(y) - y * y.transpose();
+  // return Diag(y) - y * y.transpose();  TODO: unfortunately asDiagonal is broken: it does not support addition / subtractio
+  return Diag(y).toDenseMatrix() - y * y.transpose();
 }
 
 template <typename Matrix>
@@ -90,7 +91,8 @@ auto softmax_rowwise_jacobian(const Vector& x)
 {
   assert(is_row_vector(x));
   auto y = softmax_rowwise(x);
-  return Diag(y) - y.transpose() * y;
+  // return Diag(y) - y.transpose() * y;  TODO: unfortunately asDiagonal is broken: it does not support addition / subtractio
+  return Diag(y).toDenseMatrix() - y.transpose() * y;
 }
 
 template <typename Matrix>
