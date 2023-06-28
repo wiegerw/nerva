@@ -12,13 +12,13 @@ import numpy as np
 import sympy as sp
 
 from symbolic.sympy.matrix_operations import substitute
-from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, matrix, equal_matrices, to_jax
+from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, matrix, equal_matrices, to_jax, to_eigen
 import symbolic.numpy.loss_functions as np_
 import symbolic.tensorflow.loss_functions as tf_
 import symbolic.torch.loss_functions as torch_
 import symbolic.sympy.loss_functions as sympy_
 import symbolic.jax.loss_functions as jnp_
-
+import nervalib as eigen_
 
 def instantiate_one_hot_colwise(X: sp.Matrix) -> sp.Matrix:
     m, n = X.shape
@@ -144,7 +144,7 @@ class TestRowwiseLossFunctionGradients(TestCaseLossFunction):
         self._test_loss_function('negative_log_likelihood_loss_rowwise')
 
 
-class TestColwiseLossFunctionValues(TestCase):
+class TestLossFunctionValues(TestCase):
     def check_arrays_equal(self, operation, values):
         print(f'--- {operation} ---')
         values = [to_numpy(x) for x in values]
@@ -167,31 +167,31 @@ class TestColwiseLossFunctionValues(TestCase):
             [9],
             [3],
             [12],
-        ], dtype=float)
+        ], dtype=np.float32)
 
         tc = np.array([
             [0],
             [0],
             [1],
-        ], dtype=float)
+        ], dtype=np.float32)
 
         yr = np.array([
             [11, 2, 3]
-        ], dtype=float)
+        ], dtype=np.float32)
 
         tr = np.array([
             [0, 1, 0]
-        ], dtype=float)
+        ], dtype=np.float32)
 
         Y = np.array([
             [1, 2, 3],
             [7, 3, 4]
-        ], dtype=float)
+        ], dtype=np.float32)
 
         T = np.array([
             [1, 0, 0],
             [0, 1, 0]
-        ], dtype=float)
+        ], dtype=np.float32)
 
         return yc, tc, yr, tr, Y, T
 
@@ -205,13 +205,16 @@ class TestColwiseLossFunctionValues(TestCase):
         f_tensorflow = getattr(tf_, name)
         f_torch = getattr(torch_, name)
         f_jax = getattr(jnp_, name)
+        f_eigen = getattr(eigen_, name)
+
         y, t = (yc, tc) if 'colwise' in name else (yr, tr)
         x1 = f_sympy(to_sympy(y), to_sympy(t))
         x2 = f_numpy(to_numpy(y), to_numpy(t))
         x3 = f_tensorflow(to_tensorflow(y), to_tensorflow(t))
         x4 = f_torch(to_torch(y), to_torch(t))
         x5 = f_jax(to_jax(y), to_jax(t))
-        self.check_numbers_equal(function_name, [x1, x2, x3, x4, x5])
+        x6 = f_eigen(to_eigen(y), to_eigen(t))
+        self.check_numbers_equal(function_name, [x1, x2, x3, x4, x5, x6])
 
         print('=== test loss gradient on vectors ===')
         name = f'{function_name}_gradient'
@@ -220,13 +223,15 @@ class TestColwiseLossFunctionValues(TestCase):
         f_tensorflow = getattr(tf_, name)
         f_torch = getattr(torch_, name)
         f_jax = getattr(jnp_, name)
+        f_eigen = getattr(eigen_, name)
         y, t = (yc, tc) if 'colwise' in name else (yr, tr)
         x1 = f_sympy(to_sympy(y), to_sympy(t))
         x2 = f_numpy(to_numpy(y), to_numpy(t))
         x3 = f_tensorflow(to_tensorflow(y), to_tensorflow(t))
         x4 = f_torch(to_torch(y), to_torch(t))
         x5 = f_jax(to_jax(y), to_jax(t))
-        self.check_arrays_equal(function_name, [x1, x2, x3, x4, x5])
+        x6 = f_eigen(to_eigen(y), to_eigen(t))
+        self.check_arrays_equal(function_name, [x1, x2, x3, x4, x5, x6])
 
         print('=== test loss on matrices ===')
         name = function_name.capitalize()
@@ -235,13 +240,16 @@ class TestColwiseLossFunctionValues(TestCase):
         f_tensorflow = getattr(tf_, name)
         f_torch = getattr(torch_, name)
         f_jax = getattr(jnp_, name)
+        f_eigen = getattr(eigen_, name)
         y, t = (Y.T, T.T) if 'colwise' in name else (Y, T)
+
         x1 = f_sympy(to_sympy(y), to_sympy(t))
         x2 = f_numpy(to_numpy(y), to_numpy(t))
         x3 = f_tensorflow(to_tensorflow(y), to_tensorflow(t))
         x4 = f_torch(to_torch(y), to_torch(t))
         x5 = f_jax(to_jax(y), to_jax(t))
-        self.check_numbers_equal(function_name, [x1, x2, x3, x4, x5])
+        x6 = f_eigen(to_eigen(y), to_eigen(t))
+        self.check_numbers_equal(function_name, [x1, x2, x3, x4, x5, x6])
 
         print('=== test loss gradient on matrices ===')
         name = f'{function_name.capitalize()}_gradient'
@@ -250,13 +258,15 @@ class TestColwiseLossFunctionValues(TestCase):
         f_tensorflow = getattr(tf_, name)
         f_torch = getattr(torch_, name)
         f_jax = getattr(jnp_, name)
+        f_eigen = getattr(eigen_, name)
         y, t = (Y.T, T.T) if 'colwise' in name else (Y, T)
         x1 = f_sympy(to_sympy(y), to_sympy(t))
         x2 = f_numpy(to_numpy(y), to_numpy(t))
         x3 = f_tensorflow(to_tensorflow(y), to_tensorflow(t))
         x4 = f_torch(to_torch(y), to_torch(t))
         x5 = f_jax(to_jax(y), to_jax(t))
-        self.check_arrays_equal(function_name, [x1, x2, x3, x4, x5])
+        x6 = f_eigen(to_eigen(y), to_eigen(t))
+        self.check_arrays_equal(function_name, [x1, x2, x3, x4, x5, x6])
 
     def test_squared_error_loss_colwise(self):
         self._test_loss_function('squared_error_loss_colwise')

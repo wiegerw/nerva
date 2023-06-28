@@ -10,6 +10,8 @@
 #ifndef NERVA_NEURAL_NETWORKS_MATRIX_OPERATIONS_H
 #define NERVA_NEURAL_NETWORKS_MATRIX_OPERATIONS_H
 
+#include <iostream>
+
 namespace nerva::eigen {
 
 template <class Matrix>
@@ -30,10 +32,18 @@ bool is_square(const Matrix& X)
   return X.rows() == X.cols();
 }
 
-template <typename Vector>
-auto dot(const Vector& x, const Vector& y)
+template <typename Vector1, typename Vector2>
+auto dot(const Vector1& x, const Vector2& y)
 {
-  return x.dot(y);
+  // return x.dot(y);  N.B. this only works for vector types
+  if (x.cols() == 1)
+  {
+    return (x.transpose() * y)(0, 0);
+  }
+  else
+  {
+    return (x * y.transpose())(0, 0);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////

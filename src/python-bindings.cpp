@@ -13,6 +13,7 @@
 #include "nerva/neural_networks/dropout_layers.h"
 #include "nerva/neural_networks/global_timer.h"
 #include "nerva/neural_networks/learning_rate_schedulers.h"
+#include "nerva/neural_networks/loss_functions.h"
 #include "nerva/neural_networks/masking.h"
 #include "nerva/neural_networks/mlp_algorithms.h"
 #include "nerva/neural_networks/parse_layer.h"
@@ -531,6 +532,75 @@ PYBIND11_MODULE(nervalib, m)
     .def(py::init<scalar>(), py::return_value_policy::copy)
     .def("__call__", [](eigen::Trimmed_relu_gradient& f, const eigen::matrix_ref<scalar>& X) { return f(X); })
     ;
+
+  /////////////////////////////////////////////////////////////////////////
+  //                       loss functions
+  /////////////////////////////////////////////////////////////////////////
+
+  m.def("squared_error_loss_colwise"                                , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::squared_error_loss_colwise(y, t); });
+  m.def("squared_error_loss_colwise_gradient"                       , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::squared_error_loss_colwise_gradient(y, t); });
+  m.def("Squared_error_loss_colwise"                                , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Squared_error_loss_colwise(Y, T); });
+  m.def("Squared_error_loss_colwise_gradient"                       , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Squared_error_loss_colwise_gradient(Y, T); });
+  m.def("mean_squared_error_loss_colwise"                           , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::mean_squared_error_loss_colwise(y, t); });
+  m.def("mean_squared_error_loss_colwise_gradient"                  , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::mean_squared_error_loss_colwise_gradient(y, t); });
+  m.def("Mean_squared_error_loss_colwise"                           , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Mean_squared_error_loss_colwise(Y, T); });
+  m.def("Mean_squared_error_loss_colwise_gradient"                  , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Mean_squared_error_loss_colwise_gradient(Y, T); });
+  m.def("cross_entropy_loss_colwise"                                , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::cross_entropy_loss_colwise(y, t); });
+  m.def("cross_entropy_loss_colwise_gradient"                       , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::cross_entropy_loss_colwise_gradient(y, t); });
+  m.def("Cross_entropy_loss_colwise"                                , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Cross_entropy_loss_colwise(Y, T); });
+  m.def("Cross_entropy_loss_colwise_gradient"                       , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Cross_entropy_loss_colwise_gradient(Y, T); });
+  m.def("softmax_cross_entropy_loss_colwise"                        , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::softmax_cross_entropy_loss_colwise(y, t); });
+  m.def("softmax_cross_entropy_loss_colwise_gradient"               , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::softmax_cross_entropy_loss_colwise_gradient(y, t); });
+  m.def("softmax_cross_entropy_loss_colwise_gradient_one_hot"       , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::softmax_cross_entropy_loss_colwise_gradient_one_hot(y, t); });
+  m.def("Softmax_cross_entropy_loss_colwise"                        , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Softmax_cross_entropy_loss_colwise(Y, T); });
+  m.def("Softmax_cross_entropy_loss_colwise_gradient"               , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Softmax_cross_entropy_loss_colwise_gradient(Y, T); });
+  m.def("Softmax_cross_entropy_loss_colwise_gradient_one_hot"       , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Softmax_cross_entropy_loss_colwise_gradient_one_hot(Y, T); });
+  m.def("stable_softmax_cross_entropy_loss_colwise"                 , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::stable_softmax_cross_entropy_loss_colwise(y, t); });
+  m.def("stable_softmax_cross_entropy_loss_colwise_gradient"        , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::stable_softmax_cross_entropy_loss_colwise_gradient(y, t); });
+  m.def("stable_softmax_cross_entropy_loss_colwise_gradient_one_hot", [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::stable_softmax_cross_entropy_loss_colwise_gradient_one_hot(y, t); });
+  m.def("Stable_softmax_cross_entropy_loss_colwise"                 , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Stable_softmax_cross_entropy_loss_colwise(Y, T); });
+  m.def("Stable_softmax_cross_entropy_loss_colwise_gradient"        , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Stable_softmax_cross_entropy_loss_colwise_gradient(Y, T); });
+  m.def("Stable_softmax_cross_entropy_loss_colwise_gradient_one_hot", [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Stable_softmax_cross_entropy_loss_colwise_gradient_one_hot(Y, T); });
+  m.def("logistic_cross_entropy_loss_colwise"                       , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::logistic_cross_entropy_loss_colwise(y, t); });
+  m.def("logistic_cross_entropy_loss_colwise_gradient"              , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::logistic_cross_entropy_loss_colwise_gradient(y, t); });
+  m.def("Logistic_cross_entropy_loss_colwise"                       , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Logistic_cross_entropy_loss_colwise(Y, T); });
+  m.def("Logistic_cross_entropy_loss_colwise_gradient"              , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Logistic_cross_entropy_loss_colwise_gradient(Y, T); });
+  m.def("negative_log_likelihood_loss_colwise"                      , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::negative_log_likelihood_loss_colwise(y, t); });
+  m.def("negative_log_likelihood_loss_colwise_gradient"             , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::negative_log_likelihood_loss_colwise_gradient(y, t); });
+  m.def("Negative_log_likelihood_loss_colwise"                      , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Negative_log_likelihood_loss_colwise(Y, T); });
+  m.def("Negative_log_likelihood_loss_colwise_gradient"             , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Negative_log_likelihood_loss_colwise_gradient(Y, T); });
+  m.def("squared_error_loss_rowwise"                                , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::squared_error_loss_rowwise(y, t); });
+  m.def("squared_error_loss_rowwise_gradient"                       , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::squared_error_loss_rowwise_gradient(y, t); });
+  m.def("Squared_error_loss_rowwise"                                , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Squared_error_loss_rowwise(Y, T); });
+  m.def("Squared_error_loss_rowwise_gradient"                       , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Squared_error_loss_rowwise_gradient(Y, T); });
+  m.def("mean_squared_error_loss_rowwise"                           , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::mean_squared_error_loss_rowwise(y, t); });
+  m.def("mean_squared_error_loss_rowwise_gradient"                  , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::mean_squared_error_loss_rowwise_gradient(y, t); });
+  m.def("Mean_squared_error_loss_rowwise"                           , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Mean_squared_error_loss_rowwise(Y, T); });
+  m.def("Mean_squared_error_loss_rowwise_gradient"                  , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Mean_squared_error_loss_rowwise_gradient(Y, T); });
+  m.def("cross_entropy_loss_rowwise"                                , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::cross_entropy_loss_rowwise(y, t); });
+  m.def("cross_entropy_loss_rowwise_gradient"                       , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::cross_entropy_loss_rowwise_gradient(y, t); });
+  m.def("Cross_entropy_loss_rowwise"                                , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Cross_entropy_loss_rowwise(Y, T); });
+  m.def("Cross_entropy_loss_rowwise_gradient"                       , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Cross_entropy_loss_rowwise_gradient(Y, T); });
+  m.def("softmax_cross_entropy_loss_rowwise"                        , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::softmax_cross_entropy_loss_rowwise(y, t); });
+  m.def("softmax_cross_entropy_loss_rowwise_gradient"               , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::softmax_cross_entropy_loss_rowwise_gradient(y, t); });
+  m.def("softmax_cross_entropy_loss_rowwise_gradient_one_hot"       , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::softmax_cross_entropy_loss_rowwise_gradient_one_hot(y, t); });
+  m.def("Softmax_cross_entropy_loss_rowwise"                        , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Softmax_cross_entropy_loss_rowwise(Y, T); });
+  m.def("Softmax_cross_entropy_loss_rowwise_gradient"               , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Softmax_cross_entropy_loss_rowwise_gradient(Y, T); });
+  m.def("Softmax_cross_entropy_loss_rowwise_gradient_one_hot"       , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Softmax_cross_entropy_loss_rowwise_gradient_one_hot(Y, T); });
+  m.def("stable_softmax_cross_entropy_loss_rowwise"                 , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::stable_softmax_cross_entropy_loss_rowwise(y, t); });
+  m.def("stable_softmax_cross_entropy_loss_rowwise_gradient"        , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::stable_softmax_cross_entropy_loss_rowwise_gradient(y, t); });
+  m.def("stable_softmax_cross_entropy_loss_rowwise_gradient_one_hot", [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::stable_softmax_cross_entropy_loss_rowwise_gradient_one_hot(y, t); });
+  m.def("Stable_softmax_cross_entropy_loss_rowwise"                 , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Stable_softmax_cross_entropy_loss_rowwise(Y, T); });
+  m.def("Stable_softmax_cross_entropy_loss_rowwise_gradient"        , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Stable_softmax_cross_entropy_loss_rowwise_gradient(Y, T); });
+  m.def("Stable_softmax_cross_entropy_loss_rowwise_gradient_one_hot", [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Stable_softmax_cross_entropy_loss_rowwise_gradient_one_hot(Y, T); });
+  m.def("logistic_cross_entropy_loss_rowwise"                       , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::logistic_cross_entropy_loss_rowwise(y, t); });
+  m.def("logistic_cross_entropy_loss_rowwise_gradient"              , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::logistic_cross_entropy_loss_rowwise_gradient(y, t); });
+  m.def("Logistic_cross_entropy_loss_rowwise"                       , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Logistic_cross_entropy_loss_rowwise(Y, T); });
+  m.def("Logistic_cross_entropy_loss_rowwise_gradient"              , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Logistic_cross_entropy_loss_rowwise_gradient(Y, T); });
+  m.def("negative_log_likelihood_loss_rowwise"                      , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::negative_log_likelihood_loss_rowwise(y, t); });
+  m.def("negative_log_likelihood_loss_rowwise_gradient"             , [](const eigen::matrix_ref<scalar>& y, const eigen::matrix_ref<scalar>& t) { return eigen::negative_log_likelihood_loss_rowwise_gradient(y, t); });
+  m.def("Negative_log_likelihood_loss_rowwise"                      , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Negative_log_likelihood_loss_rowwise(Y, T); });
+  m.def("Negative_log_likelihood_loss_rowwise_gradient"             , [](const eigen::matrix_ref<scalar>& Y, const eigen::matrix_ref<scalar>& T) { return eigen::Negative_log_likelihood_loss_rowwise_gradient(Y, T); });
 
   /////////////////////////////////////////////////////////////////////////
   //                       softmax functions

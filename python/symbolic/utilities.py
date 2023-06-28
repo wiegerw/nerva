@@ -64,7 +64,7 @@ def to_jax(X: np.ndarray) -> jnp.ndarray:
 
 
 def to_eigen(X: np.ndarray) -> np.ndarray:
-    return np.asfortranarray(X)
+    return np.asfortranarray(np.copy(X, order='C'))
 
 
 def squared_error(X: Matrix):
