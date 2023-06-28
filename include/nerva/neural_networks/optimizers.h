@@ -37,10 +37,10 @@ struct gradient_descent_optimizer: public layer_optimizer
 {
   Matrix& W;
   Matrix& DW;
-  eigen::vector& b;
-  eigen::vector& Db;
+  eigen::matrix& b;
+  eigen::matrix& Db;
 
-  gradient_descent_optimizer(Matrix& W_, Matrix& DW_, eigen::vector& b_, eigen::vector& Db_)
+  gradient_descent_optimizer(Matrix& W_, Matrix& DW_, eigen::matrix& b_, eigen::matrix& Db_)
     : W(W_), DW(DW_), b(b_), Db(Db_)
   {}
 
@@ -74,7 +74,7 @@ struct momentum_optimizer: public gradient_descent_optimizer<Matrix>
   static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
 
   Matrix delta_W;
-  eigen::vector delta_b;
+  eigen::matrix delta_b;
   scalar mu;
 
   void reset_support() override
@@ -85,10 +85,10 @@ struct momentum_optimizer: public gradient_descent_optimizer<Matrix>
     }
   }
 
-  momentum_optimizer(Matrix& W, Matrix& DW, eigen::vector& b, eigen::vector& Db, scalar mu_)
+  momentum_optimizer(Matrix& W, Matrix& DW, eigen::matrix& b, eigen::matrix& Db, scalar mu_)
    : super(W, DW, b, Db),
      delta_W(W.rows(), W.cols()),
-     delta_b(b.size()),
+     delta_b(b.rows(), b.cols()),
      mu(mu_)
   {
     if constexpr (IsSparse)
@@ -137,8 +137,8 @@ struct nesterov_optimizer: public gradient_descent_optimizer<Matrix>
 
   Matrix delta_W;
   Matrix delta_W_prev;
-  eigen::vector delta_b;
-  eigen::vector delta_b_prev;
+  eigen::matrix delta_b;
+  eigen::matrix delta_b_prev;
   scalar mu;
 
   void reset_support() override
@@ -150,12 +150,12 @@ struct nesterov_optimizer: public gradient_descent_optimizer<Matrix>
     }
   }
 
-  nesterov_optimizer(Matrix& W, Matrix& DW, eigen::vector& b, eigen::vector& Db, scalar mu_)
+  nesterov_optimizer(Matrix& W, Matrix& DW, eigen::matrix& b, eigen::matrix& Db, scalar mu_)
       : super(W, DW, b, Db),
         delta_W(W.rows(), W.cols()),
         delta_W_prev(W.rows(), W.cols()),
-        delta_b(b.size()),
-        delta_b_prev(b.size()),
+        delta_b(b.rows(), b.cols()),
+        delta_b_prev(b.rows(), b.cols()),
         mu(mu_)
   {
     if constexpr (IsSparse)

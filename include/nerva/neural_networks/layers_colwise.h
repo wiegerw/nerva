@@ -58,13 +58,13 @@ struct linear_layer: public neural_network_layer
   static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
 
   Matrix W;
-  eigen::vector b;
+  eigen::matrix b;
   Matrix DW;
-  eigen::vector Db;
+  eigen::matrix Db;
   std::shared_ptr<layer_optimizer> optimizer;
 
   explicit linear_layer(std::size_t D, std::size_t K, std::size_t N)
-   : super(D, N), W(K, D), b(K), DW(K, D), Db(K)
+   : super(D, N), W(K, D), b(K, 1), DW(K, D), Db(K, 1)
   {}
 
   [[nodiscard]] std::size_t input_size() const

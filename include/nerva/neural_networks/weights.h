@@ -33,7 +33,7 @@ struct weight_initializer
 
   virtual void initialize_weights(mkl::sparse_matrix_csr<scalar>& W) const = 0;
 
-  virtual void initialize_bias(eigen::vector& b)
+  virtual void initialize_bias(eigen::matrix& b)
   {
     b.array() = scalar(0);
   }
@@ -227,7 +227,7 @@ struct pytorch_weight_initializer: public weight_initializer
     return dist(rng);
   }
 
-  void initialize_bias(eigen::vector& b) override
+  void initialize_bias(eigen::matrix& b) override
   {
     b.array() = scalar(0.01);  // initialize b with small positive values
   }
@@ -287,7 +287,7 @@ std::shared_ptr<weight_initializer> make_weight_initializer(weight_initializatio
 }
 
 template <typename Matrix>
-void initialize_weights(weight_initialization w, Matrix& W, eigen::vector& b, std::mt19937& rng)
+void initialize_weights(weight_initialization w, Matrix& W, eigen::matrix& b, std::mt19937& rng)
 {
   auto init = make_weight_initializer(w, W, rng);
   init->initialize_weights(W);

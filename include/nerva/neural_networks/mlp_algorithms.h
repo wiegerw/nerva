@@ -220,7 +220,7 @@ void save_weights_and_bias(const multilayer_perceptron& M, const std::string& fi
     if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
       eigen::matrix W = dlayer->W;
-      eigen::vector b = dlayer->b.reshaped().transpose();
+      eigen::matrix b = dlayer->b.reshaped().transpose();
       data[name("W").c_str()] = pybind11::array_t<scalar, py::array::f_style>({W.rows(), W.cols()}, W.data());
       data[name("b").c_str()] = pybind11::array_t<scalar, py::array::f_style>(b.size(), b.data());
       index++;
@@ -228,7 +228,7 @@ void save_weights_and_bias(const multilayer_perceptron& M, const std::string& fi
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
       eigen::matrix W = mkl::to_eigen(slayer->W);
-      eigen::vector b = slayer->b.reshaped().transpose();
+      eigen::matrix b = slayer->b.transpose();
       data[name("W").c_str()] = pybind11::array_t<scalar, py::array::f_style>({W.rows(), W.cols()}, W.data());
       data[name("b").c_str()] = pybind11::array_t<scalar, py::array::f_style>(b.size(), b.data());
       index++;

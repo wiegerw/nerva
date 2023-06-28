@@ -148,15 +148,15 @@ PYBIND11_MODULE(nervalib, m)
     ;
 
   py::class_<gradient_descent_optimizer<eigen::matrix>, layer_optimizer, std::shared_ptr<gradient_descent_optimizer<eigen::matrix>>>(m, "gradient_descent_optimizer")
-    .def(py::init<eigen::matrix&, eigen::matrix&, eigen::vector&, eigen::vector&>(), py::return_value_policy::copy)
+    .def(py::init<eigen::matrix&, eigen::matrix&, eigen::matrix&, eigen::matrix&>(), py::return_value_policy::copy)
     ;
 
   py::class_<momentum_optimizer<eigen::matrix>, layer_optimizer, std::shared_ptr<momentum_optimizer<eigen::matrix>>>(m, "momentum_optimizer")
-    .def(py::init<eigen::matrix&, eigen::matrix&, eigen::vector&, eigen::vector&, scalar>(), py::return_value_policy::copy)
+    .def(py::init<eigen::matrix&, eigen::matrix&, eigen::matrix&, eigen::matrix&, scalar>(), py::return_value_policy::copy)
     ;
 
   py::class_<nesterov_optimizer<eigen::matrix>, layer_optimizer, std::shared_ptr<nesterov_optimizer<eigen::matrix>>>(m, "nesterov_optimizer")
-    .def(py::init<eigen::matrix&, eigen::matrix&, eigen::vector&, eigen::vector&, scalar>(), py::return_value_policy::copy)
+    .def(py::init<eigen::matrix&, eigen::matrix&, eigen::matrix&, eigen::matrix&, scalar>(), py::return_value_policy::copy)
     ;
 
   /////////////////////////////////////////////////////////////////////////

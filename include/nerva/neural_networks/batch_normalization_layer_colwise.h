@@ -23,11 +23,11 @@ struct batch_normalization_layer: public neural_network_layer
 
   eigen::matrix Z;
   eigen::matrix DZ;
-  eigen::vector gamma;
-  eigen::vector Dgamma;
-  eigen::vector beta;
-  eigen::vector Dbeta;
-  eigen::vector power_minus_half_Sigma;
+  eigen::matrix gamma;
+  eigen::matrix Dgamma;
+  eigen::matrix beta;
+  eigen::matrix Dbeta;
+  eigen::matrix power_minus_half_Sigma;
 
   explicit batch_normalization_layer(std::size_t D, std::size_t N = 1)
    : super(D, N), Z(D, N), DZ(D, N), gamma(D, 1), Dgamma(D, 1), beta(D, 1), Dbeta(D, 1), power_minus_half_Sigma(D, 1)
@@ -91,7 +91,7 @@ struct simple_batch_normalization_layer: public neural_network_layer
   using super::X;
   using super::DX;
 
-  eigen::vector power_minus_half_Sigma;
+  eigen::matrix power_minus_half_Sigma;
 
   explicit simple_batch_normalization_layer(std::size_t D, std::size_t N = 1)
     : super(D, N), power_minus_half_Sigma(D, 1)
