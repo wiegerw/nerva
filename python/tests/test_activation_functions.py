@@ -8,27 +8,32 @@ from unittest import TestCase
 
 import numpy as np
 
-from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow
+from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, to_jax
 import symbolic.numpy.activation_functions as np_
 import symbolic.tensorflow.activation_functions as tf_
 import symbolic.torch.activation_functions as torch_
 import symbolic.sympy.activation_functions as sympy_
+import symbolic.jax.activation_functions as jnp_
+import nervalib as eigen_
 
 
 class TestActivationFunctions(TestCase):
-    def check_arrays_equal(self, operation, x1, x2, x3, x4):
+    def check_arrays_equal(self, operation, values):
         print(f'--- {operation} ---')
-        x1 = to_numpy(x1)
-        x2 = to_numpy(x2)
-        x3 = to_numpy(x3)
-        x4 = to_numpy(x4)
-        print(x1)
-        print(x2)
-        print(x3)
-        print(x4)
-        self.assertTrue(np.allclose(x1, x2, atol=1e-5))
-        self.assertTrue(np.allclose(x1, x3, atol=1e-5))
-        self.assertTrue(np.allclose(x1, x4, atol=1e-5))
+        values = [to_numpy(x) for x in values]
+        for x in values:
+            print(x)
+        x0 = values[0]
+        for x in values[1:]:
+            self.assertTrue(np.allclose(x0, x, atol=1e-5))
+
+    def check_numbers_equal(self, operation, values):
+        print(f'--- {operation} ---')
+        for x in values:
+            print(x, x.__class__)
+        x0 = values[0]
+        for x in values[1:]:
+            self.assertAlmostEqual(x0, x, delta=1e-5)
 
     def make_variables(self):
         X = np.array([
@@ -52,13 +57,15 @@ class TestActivationFunctions(TestCase):
         x2 = np_.Relu(to_numpy(x))
         x3 = tf_.Relu(to_tensorflow(x))
         x4 = torch_.Relu(to_torch(x))
-        self.check_arrays_equal('Relu', x1, x2, x3, x4)
+        x5 = jnp_.Relu(to_jax(x))
+        self.check_arrays_equal('Relu', [x1, x2, x3, x4, x5])
 
         x1 = sympy_.Relu_gradient(to_sympy(x))
         x2 = np_.Relu_gradient(to_numpy(x))
         x3 = tf_.Relu_gradient(to_tensorflow(x))
         x4 = torch_.Relu_gradient(to_torch(x))
-        self.check_arrays_equal('Relu_gradient', x1, x2, x3, x4)
+        x5 = jnp_.Relu_gradient(to_jax(x))
+        self.check_arrays_equal('Relu_gradient', [x1, x2, x3, x4, x5])
 
     def test_leaky_relu(self):
         X, alpha, al, tl, ar, tr = self.make_variables()
@@ -68,13 +75,15 @@ class TestActivationFunctions(TestCase):
         x2 = np_.Leaky_relu(alpha)(to_numpy(x))
         x3 = tf_.Leaky_relu(alpha)(to_tensorflow(x))
         x4 = torch_.Leaky_relu(alpha)(to_torch(x))
-        self.check_arrays_equal('Leaky_relu', x1, x2, x3, x4)
+        x5 = jnp_.Leaky_relu(alpha)(to_jax(x))
+        self.check_arrays_equal('Leaky_relu', [x1, x2, x3, x4, x5])
 
         x1 = sympy_.Leaky_relu_gradient(alpha)(to_sympy(x))
         x2 = np_.Leaky_relu_gradient(alpha)(to_numpy(x))
         x3 = tf_.Leaky_relu_gradient(alpha)(to_tensorflow(x))
         x4 = torch_.Leaky_relu_gradient(alpha)(to_torch(x))
-        self.check_arrays_equal('Leaky_relu_gradient', x1, x2, x3, x4)
+        x5 = jnp_.Leaky_relu_gradient(alpha)(to_jax(x))
+        self.check_arrays_equal('Leaky_relu_gradient', [x1, x2, x3, x4, x5])
 
     def test_All_relu(self):
         X, alpha, al, tl, ar, tr = self.make_variables()
@@ -84,13 +93,15 @@ class TestActivationFunctions(TestCase):
         x2 = np_.All_relu(alpha)(to_numpy(x))
         x3 = tf_.All_relu(alpha)(to_tensorflow(x))
         x4 = torch_.All_relu(alpha)(to_torch(x))
-        self.check_arrays_equal('All_relu', x1, x2, x3, x4)
+        x5 = jnp_.All_relu(alpha)(to_jax(x))
+        self.check_arrays_equal('All_relu', [x1, x2, x3, x4, x5])
 
         x1 = sympy_.All_relu_gradient(alpha)(to_sympy(x))
         x2 = np_.All_relu_gradient(alpha)(to_numpy(x))
         x3 = tf_.All_relu_gradient(alpha)(to_tensorflow(x))
         x4 = torch_.All_relu_gradient(alpha)(to_torch(x))
-        self.check_arrays_equal('All_relu_gradient', x1, x2, x3, x4)
+        x5 = jnp_.All_relu_gradient(alpha)(to_jax(x))
+        self.check_arrays_equal('All_relu_gradient', [x1, x2, x3, x4, x5])
 
     def test_Hyperbolic_tangent(self):
         X, alpha, al, tl, ar, tr = self.make_variables()
@@ -100,13 +111,15 @@ class TestActivationFunctions(TestCase):
         x2 = np_.Hyperbolic_tangent(to_numpy(x))
         x3 = tf_.Hyperbolic_tangent(to_tensorflow(x))
         x4 = torch_.Hyperbolic_tangent(to_torch(x))
-        self.check_arrays_equal('Hyperbolic_tangent', x1, x2, x3, x4)
+        x5 = jnp_.Hyperbolic_tangent(to_jax(x))
+        self.check_arrays_equal('Hyperbolic_tangent', [x1, x2, x3, x4, x5])
 
         x1 = sympy_.Hyperbolic_tangent_gradient(to_sympy(x))
         x2 = np_.Hyperbolic_tangent_gradient(to_numpy(x))
         x3 = tf_.Hyperbolic_tangent_gradient(to_tensorflow(x))
         x4 = torch_.Hyperbolic_tangent_gradient(to_torch(x))
-        self.check_arrays_equal('Hyperbolic_tangent_gradient', x1, x2, x3, x4)
+        x5 = jnp_.Hyperbolic_tangent_gradient(to_jax(x))
+        self.check_arrays_equal('Hyperbolic_tangent_gradient', [x1, x2, x3, x4, x5])
 
     def test_Sigmoid(self):
         X, alpha, al, tl, ar, tr = self.make_variables()
@@ -116,13 +129,15 @@ class TestActivationFunctions(TestCase):
         x2 = np_.Sigmoid(to_numpy(x))
         x3 = tf_.Sigmoid(to_tensorflow(x))
         x4 = torch_.Sigmoid(to_torch(x))
-        self.check_arrays_equal('Sigmoid', x1, x2, x3, x4)
+        x5 = jnp_.Sigmoid(to_jax(x))
+        self.check_arrays_equal('Sigmoid', [x1, x2, x3, x4, x5])
 
         x1 = sympy_.Sigmoid_gradient(to_sympy(x))
         x2 = np_.Sigmoid_gradient(to_numpy(x))
         x3 = tf_.Sigmoid_gradient(to_tensorflow(x))
         x4 = torch_.Sigmoid_gradient(to_torch(x))
-        self.check_arrays_equal('Sigmoid_gradient', x1, x2, x3, x4)
+        x5 = jnp_.Sigmoid_gradient(to_jax(x))
+        self.check_arrays_equal('Sigmoid_gradient', [x1, x2, x3, x4, x5])
 
     def test_Srelu(self):
         X, alpha, al, tl, ar, tr = self.make_variables()
@@ -132,13 +147,15 @@ class TestActivationFunctions(TestCase):
         x2 = np_.Srelu(al, tl, ar, tr)(to_numpy(x))
         x3 = tf_.Srelu(al, tl, ar, tr)(to_tensorflow(x))
         x4 = torch_.Srelu(al, tl, ar, tr)(to_torch(x))
-        self.check_arrays_equal('Srelu', x1, x2, x3, x4)
+        x5 = jnp_.Srelu(al, tl, ar, tr)(to_jax(x))
+        self.check_arrays_equal('Srelu', [x1, x2, x3, x4, x5])
 
         x1 = sympy_.Srelu_gradient(al, tl, ar, tr)(to_sympy(x))
         x2 = np_.Srelu_gradient(al, tl, ar, tr)(to_numpy(x))
         x3 = tf_.Srelu_gradient(al, tl, ar, tr)(to_tensorflow(x))
         x4 = torch_.Srelu_gradient(al, tl, ar, tr)(to_torch(x))
-        self.check_arrays_equal('Srelu_gradient', x1, x2, x3, x4)
+        x5 = jnp_.Srelu_gradient(al, tl, ar, tr)(to_jax(x))
+        self.check_arrays_equal('Srelu_gradient', [x1, x2, x3, x4, x5])
 
 
 if __name__ == '__main__':
