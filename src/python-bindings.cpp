@@ -493,6 +493,24 @@ PYBIND11_MODULE(nervalib, m)
   m.def("hyperbolic_tangent", [](const eigen::matrix_ref<scalar>& X) { return hyperbolic_tangent_activation()(X); });
 
   /////////////////////////////////////////////////////////////////////////
+  //                       softmax functions
+  /////////////////////////////////////////////////////////////////////////
+
+  m.def("softmax_colwise", [](const eigen::matrix_ref<scalar>& X) { return eigen::softmax_colwise(X); });
+  m.def("softmax_colwise_jacobian", [](const eigen::matrix_ref<scalar>& X) { return eigen::softmax_colwise_jacobian(X); });
+  m.def("stable_softmax_colwise", [](const eigen::matrix_ref<scalar>& X) { return eigen::stable_softmax_colwise(X); });
+  m.def("log_softmax_colwise", [](const eigen::matrix_ref<scalar>& X) { return eigen::log_softmax_colwise(X); });
+  m.def("stable_log_softmax_colwise", [](const eigen::matrix_ref<scalar>& X) { return eigen::stable_log_softmax_colwise(X); });
+  m.def("log_softmax_colwise_jacobian", [](const eigen::matrix_ref<scalar>& X) { return eigen::log_softmax_colwise_jacobian(X); });
+  m.def("softmax_rowwise", [](const eigen::matrix_ref<scalar>& X) { return eigen::softmax_rowwise(X); });
+  m.def("softmax_rowwise_jacobian", [](const eigen::matrix_ref<scalar>& X) { return eigen::softmax_rowwise_jacobian(X); });
+  m.def("stable_softmax_rowwise", [](const eigen::matrix_ref<scalar>& X) { return eigen::stable_softmax_rowwise(X); });
+  m.def("log_softmax_rowwise", [](const eigen::matrix_ref<scalar>& X) { return eigen::log_softmax_rowwise(X); });
+  m.def("log_softmax_rowwise_jacobian", [](const eigen::matrix_ref<scalar>& X) { return eigen::log_softmax_rowwise_jacobian(X); });
+  m.def("stable_log_softmax_rowwise", [](const eigen::matrix_ref<scalar>& X) { return eigen::stable_log_softmax_rowwise(X); });
+
+
+  /////////////////////////////////////////////////////////////////////////
   //                       random
   /////////////////////////////////////////////////////////////////////////
 

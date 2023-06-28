@@ -14,7 +14,8 @@ import symbolic.tensorflow.softmax_functions as tf_
 import symbolic.torch.softmax_functions as torch_
 import symbolic.sympy.softmax_functions as sympy_
 import symbolic.jax.softmax_functions as jnp_
-from symbolic.utilities import to_numpy, to_sympy, to_tensorflow, to_torch, to_jax
+import nervalib as eigen_
+from symbolic.utilities import to_numpy, to_sympy, to_tensorflow, to_torch, to_jax, to_eigen
 
 Matrix = sp.Matrix
 
@@ -204,17 +205,19 @@ class TestSoftmaxValues(TestCase):
         f_tensorflow = getattr(tf_, function_name)
         f_torch = getattr(torch_, function_name)
         f_jax = getattr(jnp_, function_name)
+        f_eigen = getattr(eigen_, function_name)
 
         x1 = f_sympy(to_sympy(x))
         x2 = f_numpy(to_numpy(x))
         x3 = f_tensorflow(to_tensorflow(x))
         x4 = f_torch(to_torch(x))
         x5 = f_jax(to_jax(x))
+        x6 = f_eigen(to_eigen(x))
 
         if isinstance(x1, sp.Matrix):
-            self.check_arrays_equal(function_name, [x1, x2, x3, x4, x5])
+            self.check_arrays_equal(function_name, [x1, x2, x3, x4, x5, x6])
         else:
-            self.check_numbers_equal(function_name, [x1, x2, x3, x4, x5])
+            self.check_numbers_equal(function_name, [x1, x2, x3, x4, x5, x6])
 
     def test_all(self):
         X, xc, xr = self.make_variables()

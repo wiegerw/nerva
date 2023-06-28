@@ -78,7 +78,7 @@ auto diag(const Matrix& X)
 template <class Matrix>
 auto Diag(const Matrix& x)
 {
-  assert(is_column_vector(x) || is_row_vector(x));
+  assert(is_column_vector(x));
   return x.asDiagonal();
 }
 

@@ -63,6 +63,10 @@ def to_jax(X: np.ndarray) -> jnp.ndarray:
     return jnp.array(X)
 
 
+def to_eigen(X: np.ndarray) -> np.ndarray:
+    return np.asfortranarray(X)
+
+
 def squared_error(X: Matrix):
     m, n = X.shape
 

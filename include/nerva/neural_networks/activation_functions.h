@@ -18,7 +18,7 @@
 
 namespace nerva {
 
-namespace abc {
+namespace eigen {
 
 inline
 scalar relu(scalar x)
@@ -543,7 +543,7 @@ struct srelu_activation
   }
 };
 
-} // namespace abc
+} // namespace eigen
 
 struct sigmoid
 {
