@@ -7,8 +7,9 @@
 /// \file src/python-bindings.cpp
 /// \brief add your file description here.
 
-#include "nerva/neural_networks/batch_normalization_layer_colwise.h"
 #include "nerva/datasets/dataset.h"
+#include "nerva/neural_networks/activation_functions.h"
+#include "nerva/neural_networks/batch_normalization_layer_colwise.h"
 #include "nerva/neural_networks/dropout_layers.h"
 #include "nerva/neural_networks/global_timer.h"
 #include "nerva/neural_networks/learning_rate_schedulers.h"
@@ -484,13 +485,52 @@ PYBIND11_MODULE(nervalib, m)
   //                       activation functions
   /////////////////////////////////////////////////////////////////////////
 
-  m.def("relu", [](const eigen::matrix_ref<scalar>& X) { return relu_activation()(X); });
-  m.def("sigmoid", [](const eigen::matrix_ref<scalar>& X) { return sigmoid_activation()(X); });
-  m.def("stable_softmax", [](const eigen::matrix_ref<scalar>& X) { return eigen::stable_softmax_colwise(X); });
-  m.def("stable_softmax_rowwise", [](const eigen::matrix_ref<scalar>& X) { return eigen::stable_softmax_rowwise(X); });
-  m.def("stable_log_softmax", [](const eigen::matrix_ref<scalar>& X) { return eigen::stable_log_softmax_colwise(X); });
-  m.def("stable_log_softmax_rowwise", [](const eigen::matrix_ref<scalar>& X) { return eigen::stable_log_softmax_rowwise(X); });
-  m.def("hyperbolic_tangent", [](const eigen::matrix_ref<scalar>& X) { return hyperbolic_tangent_activation()(X); });
+  m.def("Relu", [](const eigen::matrix_ref<scalar>& X) { return eigen::Relu(X); });
+  m.def("Relu_gradient", [](const eigen::matrix_ref<scalar>& X) { return eigen::Relu_gradient(X); });
+  m.def("Sigmoid", [](const eigen::matrix_ref<scalar>& X) { return eigen::Sigmoid(X); });
+  m.def("Sigmoid_gradient", [](const eigen::matrix_ref<scalar>& X) { return eigen::Sigmoid_gradient(X); });
+  m.def("Hyperbolic_tangent", [](const eigen::matrix_ref<scalar>& X) { return eigen::Hyperbolic_tangent(X); });
+  m.def("Hyperbolic_tangent_gradient", [](const eigen::matrix_ref<scalar>& X) { return eigen::Hyperbolic_tangent_gradient(X); });
+
+  py::class_<eigen::Leaky_relu>(m, "Leaky_relu")
+    .def(py::init<scalar>(), py::return_value_policy::copy)
+    .def("__call__", [](eigen::Leaky_relu& f, const eigen::matrix_ref<scalar>& X) { return f(X); })
+    ;
+
+  py::class_<eigen::Leaky_relu_gradient>(m, "Leaky_relu_gradient")
+    .def(py::init<scalar>(), py::return_value_policy::copy)
+    .def("__call__", [](eigen::Leaky_relu_gradient& f, const eigen::matrix_ref<scalar>& X) { return f(X); })
+    ;
+
+  py::class_<eigen::All_relu>(m, "All_relu")
+    .def(py::init<scalar>(), py::return_value_policy::copy)
+    .def("__call__", [](eigen::All_relu& f, const eigen::matrix_ref<scalar>& X) { return f(X); })
+    ;
+
+  py::class_<eigen::All_relu_gradient>(m, "All_relu_gradient")
+    .def(py::init<scalar>(), py::return_value_policy::copy)
+    .def("__call__", [](eigen::All_relu_gradient& f, const eigen::matrix_ref<scalar>& X) { return f(X); })
+    ;
+
+  py::class_<eigen::Srelu>(m, "Srelu")
+    .def(py::init<scalar, scalar, scalar, scalar>(), py::return_value_policy::copy)
+    .def("__call__", [](eigen::Srelu& f, const eigen::matrix_ref<scalar>& X) { return f(X); })
+    ;
+
+  py::class_<eigen::Srelu_gradient>(m, "Srelu_gradient")
+    .def(py::init<scalar, scalar, scalar, scalar>(), py::return_value_policy::copy)
+    .def("__call__", [](eigen::Srelu_gradient& f, const eigen::matrix_ref<scalar>& X) { return f(X); })
+    ;
+
+  py::class_<eigen::Trimmed_relu>(m, "Trimmed_relu")
+    .def(py::init<scalar>(), py::return_value_policy::copy)
+    .def("__call__", [](eigen::Trimmed_relu& f, const eigen::matrix_ref<scalar>& X) { return f(X); })
+    ;
+
+  py::class_<eigen::Trimmed_relu_gradient>(m, "Trimmed_relu_gradient")
+    .def(py::init<scalar>(), py::return_value_policy::copy)
+    .def("__call__", [](eigen::Trimmed_relu_gradient& f, const eigen::matrix_ref<scalar>& X) { return f(X); })
+    ;
 
   /////////////////////////////////////////////////////////////////////////
   //                       softmax functions
@@ -508,7 +548,6 @@ PYBIND11_MODULE(nervalib, m)
   m.def("log_softmax_rowwise", [](const eigen::matrix_ref<scalar>& X) { return eigen::log_softmax_rowwise(X); });
   m.def("log_softmax_rowwise_jacobian", [](const eigen::matrix_ref<scalar>& X) { return eigen::log_softmax_rowwise_jacobian(X); });
   m.def("stable_log_softmax_rowwise", [](const eigen::matrix_ref<scalar>& X) { return eigen::stable_log_softmax_rowwise(X); });
-
 
   /////////////////////////////////////////////////////////////////////////
   //                       random

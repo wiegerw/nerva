@@ -228,7 +228,7 @@ struct Leaky_relu
 {
   scalar alpha;
 
-  Leaky_relu(scalar alpha_)
+  explicit Leaky_relu(scalar alpha_)
     : alpha(alpha_)
   {}
 
@@ -243,7 +243,7 @@ struct Leaky_relu_gradient
 {
   scalar alpha;
 
-  Leaky_relu_gradient(scalar alpha_)
+  explicit Leaky_relu_gradient(scalar alpha_)
     : alpha(alpha_)
   {}
 
@@ -258,7 +258,7 @@ struct All_relu
 {
   scalar alpha;
 
-  All_relu(scalar alpha_)
+  explicit All_relu(scalar alpha_)
     : alpha(alpha_)
   {}
 
@@ -273,7 +273,7 @@ struct All_relu_gradient
 {
   scalar alpha;
 
-  All_relu_gradient(scalar alpha_)
+  explicit All_relu_gradient(scalar alpha_)
     : alpha(alpha_)
   {}
 
@@ -348,7 +348,7 @@ struct Trimmed_relu
 {
   scalar epsilon;
 
-  Trimmed_relu(scalar epsilon_)
+  explicit Trimmed_relu(scalar epsilon_)
     : epsilon(epsilon_)
   {}
 
@@ -363,7 +363,7 @@ struct Trimmed_relu_gradient
 {
   scalar epsilon;
 
-  Trimmed_relu_gradient(scalar epsilon_)
+  explicit Trimmed_relu_gradient(scalar epsilon_)
     : epsilon(epsilon_)
   {}
 
