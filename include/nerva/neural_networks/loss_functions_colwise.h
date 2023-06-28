@@ -151,7 +151,9 @@ struct logistic_cross_entropy_loss: public loss_function
   scalar operator()(const eigen::matrix& Y, const Target& T) const
   {
     using eigen::hadamard;
-    auto log_sigmoid_Y = Y.unaryExpr([](scalar x) { return std::log(sigmoid()(x)); });
+    using eigen::sigmoid;
+
+    auto log_sigmoid_Y = Y.unaryExpr([](scalar x) { return std::log(sigmoid(x)); });
     return (hadamard(-T, log_sigmoid_Y).colwise().sum()).sum();
   }
 
@@ -159,16 +161,18 @@ struct logistic_cross_entropy_loss: public loss_function
   {
     using eigen::elements_sum;
     using eigen::hadamard;
+    using eigen::sigmoid;
 
-    auto log_sigmoid_Y = Y.unaryExpr([](scalar x) { return std::log(sigmoid()(x)); });
+    auto log_sigmoid_Y = Y.unaryExpr([](scalar x) { return std::log(sigmoid(x)); });
     return elements_sum(hadamard(-T, log_sigmoid_Y));
   }
 
   [[nodiscard]] eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
   {
     using eigen::hadamard;
+    using eigen::sigmoid;
 
-    auto one_minus_sigmoid_Y = Y.unaryExpr([](scalar x) { return scalar(1.0) - sigmoid()(x); });
+    auto one_minus_sigmoid_Y = Y.unaryExpr([](scalar x) { return scalar(1.0) - sigmoid(x); });
     return hadamard(-T, one_minus_sigmoid_Y);
   }
 

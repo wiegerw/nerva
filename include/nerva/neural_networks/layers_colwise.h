@@ -219,19 +219,20 @@ struct sigmoid_layer : public linear_layer<Matrix>
   void feedforward(eigen::matrix& result) override
   {
     using eigen::column_repeat;
+    using eigen::Sigmoid;
 
     if constexpr (IsSparse)
     {
       auto N = X.cols();
       mkl::dsd_product(Z, W, X);
       Z += column_repeat(b, N);
-      result = sigmoid()(Z);
+      result = Sigmoid(Z);
     }
     else
     {
       auto N = X.cols();
       Z = W * X + column_repeat(b, N);
-      result = sigmoid()(Z);
+      result = Sigmoid(Z);
     }
   }
 
@@ -320,7 +321,7 @@ struct activation_layer : public linear_layer<Matrix>
 
     if constexpr (IsSparse)
     {
-      DZ = hadamard(DY, act.prime(Z));
+      DZ = hadamard(DY, act.gradient(Z));
       mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
       // mkl::sdd_product(DW, DZ, X.transpose());
       Db = rows_sum(DZ);
@@ -328,7 +329,7 @@ struct activation_layer : public linear_layer<Matrix>
     }
     else
     {
-      DZ = hadamard(DY, act.prime(Z));
+      DZ = hadamard(DY, act.gradient(Z));
       DW = DZ * X.transpose();
       Db = rows_sum(DZ);
       DX = W.transpose() * DZ;
@@ -337,12 +338,12 @@ struct activation_layer : public linear_layer<Matrix>
 };
 
 template <typename Matrix>
-struct hyperbolic_tangent_layer : public activation_layer<Matrix, hyperbolic_tangent_activation>
+struct hyperbolic_tangent_layer : public activation_layer<Matrix, eigen::hyperbolic_tangent_activation>
 {
-  using super = activation_layer<Matrix, hyperbolic_tangent_activation>;
+  using super = activation_layer<Matrix, eigen::hyperbolic_tangent_activation>;
 
   explicit hyperbolic_tangent_layer(std::size_t D, std::size_t K, std::size_t N)
-   : super(D, K, N, hyperbolic_tangent_activation())
+   : super(D, K, N, eigen::hyperbolic_tangent_activation())
   {}
 };
 
@@ -350,12 +351,12 @@ using dense_hyperbolic_tangent_layer = hyperbolic_tangent_layer<eigen::matrix>;
 using sparse_hyperbolic_tangent_layer = hyperbolic_tangent_layer<mkl::sparse_matrix_csr<scalar>>;
 
 template <typename Matrix>
-struct relu_layer : public activation_layer<Matrix, relu_activation>
+struct relu_layer : public activation_layer<Matrix, eigen::relu_activation>
 {
-  using super = activation_layer<Matrix, relu_activation>;
+  using super = activation_layer<Matrix, eigen::relu_activation>;
 
   explicit relu_layer(std::size_t D, std::size_t K, std::size_t N)
-      : super(D, K, N, relu_activation())
+      : super(D, K, N, eigen::relu_activation())
   {}
 };
 
@@ -363,12 +364,12 @@ using dense_relu_layer = relu_layer<eigen::matrix>;
 using sparse_relu_layer = relu_layer<mkl::sparse_matrix_csr<scalar>>;
 
 template <typename Matrix>
-struct trelu_layer : public activation_layer<Matrix, trimmed_relu_activation>
+struct trelu_layer : public activation_layer<Matrix, eigen::trimmed_relu_activation>
 {
-  using super = activation_layer<Matrix, trimmed_relu_activation>;
+  using super = activation_layer<Matrix, eigen::trimmed_relu_activation>;
 
   explicit trelu_layer(std::size_t D, std::size_t K, std::size_t N, scalar epsilon)
-    : super(D, K, N, trimmed_relu_activation(epsilon))
+    : super(D, K, N, eigen::trimmed_relu_activation(epsilon))
   {}
 };
 
@@ -376,12 +377,12 @@ using dense_trelu_layer = trelu_layer<eigen::matrix>;
 using sparse_trelu_layer = trelu_layer<mkl::sparse_matrix_csr<scalar>>;
 
 template <typename Matrix>
-struct leaky_relu_layer : public activation_layer<Matrix, leaky_relu_activation>
+struct leaky_relu_layer : public activation_layer<Matrix, eigen::leaky_relu_activation>
 {
-  using super = activation_layer<Matrix, leaky_relu_activation>;
+  using super = activation_layer<Matrix, eigen::leaky_relu_activation>;
 
   explicit leaky_relu_layer(std::size_t D, std::size_t K, std::size_t N, scalar alpha)
-      : super(D, K, N, leaky_relu_activation(alpha))
+      : super(D, K, N, eigen::leaky_relu_activation(alpha))
   {}
 };
 
@@ -389,12 +390,12 @@ using dense_leaky_relu_layer = leaky_relu_layer<eigen::matrix>;
 using sparse_leaky_relu_layer = leaky_relu_layer<mkl::sparse_matrix_csr<scalar>>;
 
 template <typename Matrix>
-struct all_relu_layer : public activation_layer<Matrix, all_relu_activation>
+struct all_relu_layer : public activation_layer<Matrix, eigen::all_relu_activation>
 {
-  using super = activation_layer<Matrix, all_relu_activation>;
+  using super = activation_layer<Matrix, eigen::all_relu_activation>;
 
   explicit all_relu_layer(std::size_t D, std::size_t K, std::size_t N, scalar alpha)
-      : super(D, K, N, all_relu_activation(alpha))
+      : super(D, K, N, eigen::all_relu_activation(alpha))
   {}
 };
 
@@ -402,9 +403,9 @@ using dense_all_relu_layer = all_relu_layer<eigen::matrix>;
 using sparse_all_relu_layer = all_relu_layer<mkl::sparse_matrix_csr<scalar>>;
 
 template <typename Matrix>
-struct srelu_layer : public activation_layer<Matrix, srelu_activation>
+struct srelu_layer : public activation_layer<Matrix, eigen::srelu_activation>
 {
-  using super = activation_layer<Matrix, srelu_activation>;
+  using super = activation_layer<Matrix, eigen::srelu_activation>;
   using super::backpropagate;
   using super::optimize;
   using super::Z;
@@ -416,7 +417,7 @@ struct srelu_layer : public activation_layer<Matrix, srelu_activation>
   scalar Dtr = 0;
 
   explicit srelu_layer(std::size_t D, std::size_t K, std::size_t N, scalar al = 1, scalar tl = 0, scalar ar = 1, scalar tr = 0)
-    : super(D, K, N, srelu_activation(al, tl, ar, tr))
+    : super(D, K, N, eigen::srelu_activation(al, tl, ar, tr))
   {}
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override

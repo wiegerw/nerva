@@ -26,11 +26,6 @@
 
 namespace nerva {
 
-// prototypes
-template <typename Matrix> struct linear_layer;
-template <typename Matrix> struct dropout_layer;
-template <typename Matrix> struct batch_normalization_layer;
-
 struct neural_network_layer
 {
   eigen::matrix X;  // the input
