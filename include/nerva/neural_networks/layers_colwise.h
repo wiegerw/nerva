@@ -61,7 +61,7 @@ struct linear_layer: public neural_network_layer
   eigen::matrix b;
   Matrix DW;
   eigen::matrix Db;
-  std::shared_ptr<layer_optimizer> optimizer;
+  std::shared_ptr<optimizer_function> optimizer;
 
   explicit linear_layer(std::size_t D, std::size_t K, std::size_t N)
    : super(D, N), W(K, D), b(K, 1), DW(K, D), Db(K, 1)
@@ -603,17 +603,17 @@ void set_optimizer(linear_layer<Matrix>& layer, const std::string& text)
 
   if (text == "GradientDescent")
   {
-    layer.optimizer = std::make_shared<gradient_descent_optimizer<Matrix>>(layer.W, layer.DW, layer.b, layer.Db);
+    layer.optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<Matrix>>(layer.W, layer.DW, layer.b, layer.Db);
   }
   else if (utilities::starts_with(text, "Momentum"))  // e.g. "momentum(0.9)"
   {
     scalar mu = parse_argument();
-    layer.optimizer = std::make_shared<momentum_optimizer<Matrix>>(layer.W, layer.DW, layer.b, layer.Db, mu);
+    layer.optimizer = std::make_shared<momentum_linear_layer_optimizer<Matrix>>(layer.W, layer.DW, layer.b, layer.Db, mu);
   }
   else if (utilities::starts_with(text, "Nesterov"))
   {
     scalar mu = parse_argument();
-    layer.optimizer = std::make_shared<nesterov_optimizer<Matrix>>(layer.W, layer.DW, layer.b, layer.Db, mu);
+    layer.optimizer = std::make_shared<nesterov_linear_layer_optimizer<Matrix>>(layer.W, layer.DW, layer.b, layer.Db, mu);
   }
   else
   {

@@ -35,7 +35,7 @@ bool is_square(const Matrix& X)
 template <typename Vector1, typename Vector2>
 auto dot(const Vector1& x, const Vector2& y)
 {
-  // return x.dot(y);  N.B. this only works for vector types
+  assert(is_column_vector(x) || is_row_vector(x));
   if (x.cols() == 1)
   {
     return (x.transpose() * y)(0, 0);
@@ -44,6 +44,7 @@ auto dot(const Vector1& x, const Vector2& y)
   {
     return (x * y.transpose())(0, 0);
   }
+  // N.B. We cannot use x.dot(y), since this operation is only supported for vector types.
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -90,6 +91,8 @@ auto Diag(const Matrix& x)
 {
   assert(is_column_vector(x));
   return x.asDiagonal();
+  // N.B. The asDiagonal operation in Eigen has very limited functionality.
+  // It seems impossible to make this function work with row vectors.
 }
 
 template <typename Matrix>

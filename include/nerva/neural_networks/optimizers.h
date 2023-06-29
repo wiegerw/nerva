@@ -18,78 +18,64 @@
 
 namespace nerva {
 
-struct layer_optimizer
+// Generic optimizer_function for dense or sparse matrices.
+struct optimizer_function
 {
   virtual void update(scalar eta) = 0;
 
+  // Update the support (i.e. the set of nonzero entries). Only applies to sparse matrices.
+  virtual void reset_support()
+  {}
+
   [[nodiscard]] virtual std::string to_string() const = 0;
 
-  // If the layer is sparse, the nonzero entries of the weight matrices in the
-  // optimizer need to be updated
-  virtual void reset_support()
-  { }
-
-  virtual ~layer_optimizer() = default;
+  virtual ~optimizer_function() = default;
 };
 
-template <typename Matrix>
-struct gradient_descent_optimizer: public layer_optimizer
+template <typename T>
+struct gradient_descent_optimizer: public optimizer_function
 {
-  Matrix& W;
-  Matrix& DW;
-  eigen::matrix& b;
-  eigen::matrix& Db;
+  T& x;
+  T& Dx;
 
-  gradient_descent_optimizer(Matrix& W_, Matrix& DW_, eigen::matrix& b_, eigen::matrix& Db_)
-    : W(W_), DW(DW_), b(b_), Db(Db_)
+  gradient_descent_optimizer(T& x_, T& Dx_)
+    : x(x_), Dx(Dx_)
   {}
 
   [[nodiscard]] std::string to_string() const override
   {
-    return "GradientDescent()";
+    return "gradient_descent";
   }
 
   void update(scalar eta) override
   {
-    if constexpr (std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value)
+    if constexpr (std::is_same<T, mkl::sparse_matrix_csr<scalar>>::value)
     {
-      mkl::ss_sum(W, DW, scalar(1), -eta);
+      mkl::ss_sum(x, Dx, scalar(1), -eta);
     }
     else
     {
-      W -= eta * DW;
+      x -= eta * Dx;
     }
-    b -= eta * Db;
   }
 };
 
-template <typename Matrix>
-struct momentum_optimizer: public gradient_descent_optimizer<Matrix>
+template <typename T>
+struct momentum_optimizer: public gradient_descent_optimizer<T>
 {
-  using super = gradient_descent_optimizer<Matrix>;
-  using super::W;
-  using super::DW;
-  using super::b;
-  using super::Db;
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+  using super = gradient_descent_optimizer<T>;
+  using super::x;
+  using super::Dx;
+  using super::reset_support;
+  static const bool IsSparse = std::is_same<T, mkl::sparse_matrix_csr<scalar>>::value;
 
-  Matrix delta_W;
-  eigen::matrix delta_b;
+  T delta_x;
   scalar mu;
 
-  void reset_support() override
-  {
-    if constexpr (IsSparse)
-    {
-      delta_W.reset_support(W);
-    }
-  }
-
-  momentum_optimizer(Matrix& W, Matrix& DW, eigen::matrix& b, eigen::matrix& Db, scalar mu_)
-   : super(W, DW, b, Db),
-     delta_W(W.rows(), W.cols()),
-     delta_b(b.rows(), b.cols()),
-     mu(mu_)
+  momentum_optimizer(T& x, T& Dx, scalar mu_)
+    : super(x, Dx),
+      delta_x(x.rows(), x.cols()),
+      mu(mu_)
   {
     if constexpr (IsSparse)
     {
@@ -97,9 +83,8 @@ struct momentum_optimizer: public gradient_descent_optimizer<Matrix>
     }
     else
     {
-      initialize_matrix(delta_W, scalar(0));
+      delta_x.array() = scalar(0);
     }
-    delta_b.array() = scalar(0);
   }
 
   [[nodiscard]] std::string to_string() const override
@@ -111,52 +96,43 @@ struct momentum_optimizer: public gradient_descent_optimizer<Matrix>
   {
     if constexpr (IsSparse)
     {
-      mkl::ss_sum(delta_W, DW, mu, -eta);
-      mkl::ss_sum(W, delta_W, scalar(1), scalar(1));
+      mkl::ss_sum(delta_x, Dx, mu, -eta);
+      mkl::ss_sum(x, delta_x, scalar(1), scalar(1));
     }
     else
     {
-      delta_W = mu * delta_W - eta * DW;
-      W += delta_W;
+      delta_x = mu * delta_x - eta * Dx;
+      x += delta_x;
     }
-
-    delta_b = mu * delta_b - eta * Db;
-    b += delta_b;
   }
 };
 
-template <typename Matrix>
-struct nesterov_optimizer: public gradient_descent_optimizer<Matrix>
+template <typename T>
+struct nesterov_optimizer: public gradient_descent_optimizer<T>
 {
-  using super = gradient_descent_optimizer<Matrix>;
-  using super::W;
-  using super::DW;
-  using super::b;
-  using super::Db;
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+  using super = gradient_descent_optimizer<T>;
+  using super::x;
+  using super::Dx;
+  static const bool IsSparse = std::is_same<T, mkl::sparse_matrix_csr<scalar>>::value;
 
-  Matrix delta_W;
-  Matrix delta_W_prev;
-  eigen::matrix delta_b;
-  eigen::matrix delta_b_prev;
+  T delta_x;
+  T delta_x_prev;
   scalar mu;
 
   void reset_support() override
   {
     if constexpr (IsSparse)
     {
-      delta_W.reset_support(W);
-      delta_W_prev.reset_support(W);
+      delta_x.reset_support(x);
+      delta_x_prev.reset_support(x);
     }
   }
 
-  nesterov_optimizer(Matrix& W, Matrix& DW, eigen::matrix& b, eigen::matrix& Db, scalar mu_)
-      : super(W, DW, b, Db),
-        delta_W(W.rows(), W.cols()),
-        delta_W_prev(W.rows(), W.cols()),
-        delta_b(b.rows(), b.cols()),
-        delta_b_prev(b.rows(), b.cols()),
-        mu(mu_)
+  nesterov_optimizer(T& x, T& Dx, scalar mu_)
+    : super(x, Dx),
+      delta_x(x.rows(), x.cols()),
+      delta_x_prev(x.rows(), x.cols()),
+      mu(mu_)
   {
     if constexpr (IsSparse)
     {
@@ -164,11 +140,9 @@ struct nesterov_optimizer: public gradient_descent_optimizer<Matrix>
     }
     else
     {
-      delta_W.array() = scalar(0);
-      delta_W_prev.array() = scalar(0);
+      delta_x.array() = scalar(0);
+      delta_x_prev.array() = scalar(0);
     }
-    delta_b.array() = scalar(0);
-    delta_b_prev.array() = scalar(0);
   }
 
   [[nodiscard]] std::string to_string() const override
@@ -180,20 +154,101 @@ struct nesterov_optimizer: public gradient_descent_optimizer<Matrix>
   {
     if constexpr (IsSparse)
     {
-      mkl::assign_matrix(delta_W_prev, delta_W);
-      mkl::ss_sum(delta_W, DW, mu, -eta);
-      mkl::sss_sum(W, delta_W, delta_W_prev, scalar(1), scalar(1) + mu, -mu);
+      mkl::assign_matrix(delta_x_prev, delta_x);
+      mkl::ss_sum(delta_x, Dx, mu, -eta);
+      mkl::sss_sum(x, delta_x, delta_x_prev, scalar(1), scalar(1) + mu, -mu);
     }
     else
     {
-      delta_W_prev = delta_W;
-      delta_W = mu * delta_W - eta * DW;
-      W += (-mu * delta_W_prev + (scalar(1) + mu) * delta_W);
+      delta_x_prev = delta_x;
+      delta_x = mu * delta_x - eta * Dx;
+      x += (-mu * delta_x_prev + (scalar(1) + mu) * delta_x);
     }
+  }
+};
 
-    delta_b_prev = delta_b;
-    delta_b = mu * delta_b - eta * Db;
-    b += (-mu * delta_b_prev + (scalar(1) + mu) * delta_b);
+// Linear layer optimizers consist of an optimizer_function for the weights and an optimizer_function for the bias
+template <typename Matrix>
+struct gradient_descent_linear_layer_optimizer: public optimizer_function
+{
+  gradient_descent_optimizer<Matrix> optimizer_W;
+  gradient_descent_optimizer<eigen::matrix> optimizer_b;
+
+  gradient_descent_linear_layer_optimizer(Matrix& W, Matrix& DW, eigen::matrix& b, eigen::matrix& Db)
+    : optimizer_W(W, DW), optimizer_b(b, Db)
+  {}
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return "GradientDescent()";
+  }
+
+  void update(scalar eta) override
+  {
+    optimizer_W.update(eta);
+    optimizer_b.update(eta);
+  }
+
+  void reset_support() override
+  {
+    optimizer_W.reset_support();
+    optimizer_b.reset_support();
+  }
+};
+
+template <typename Matrix>
+struct momentum_linear_layer_optimizer: public optimizer_function
+{
+  momentum_optimizer<Matrix> optimizer_W;
+  momentum_optimizer<eigen::matrix> optimizer_b;
+
+  momentum_linear_layer_optimizer(Matrix& W, Matrix& DW, eigen::matrix& b, eigen::matrix& Db, scalar mu)
+    : optimizer_W(W, DW, mu), optimizer_b(b, Db, mu)
+  {}
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("Momentum({:7.5f})", optimizer_W.mu);
+  }
+
+  void update(scalar eta) override
+  {
+    optimizer_W.update(eta);
+    optimizer_b.update(eta);
+  }
+
+  void reset_support() override
+  {
+    optimizer_W.reset_support();
+    optimizer_b.reset_support();
+  }
+};
+
+template <typename Matrix>
+struct nesterov_linear_layer_optimizer: public optimizer_function
+{
+  nesterov_optimizer<Matrix> optimizer_W;
+  nesterov_optimizer<eigen::matrix> optimizer_b;
+
+  nesterov_linear_layer_optimizer(Matrix& W, Matrix& DW, eigen::matrix& b, eigen::matrix& Db, scalar mu)
+    : optimizer_W(W, DW, mu), optimizer_b(b, Db, mu)
+  {}
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("Nesterov({:7.5f})", optimizer_W.mu);
+  }
+
+  void update(scalar eta) override
+  {
+    optimizer_W.update(eta);
+    optimizer_b.update(eta);
+  }
+
+  void reset_support() override
+  {
+    optimizer_W.reset_support();
+    optimizer_b.reset_support();
   }
 };
 

@@ -49,19 +49,19 @@ TEST_CASE("test_mlp")
   {
     auto layer1 = std::make_shared<relu_layer<eigen::matrix>>(2, 2, batch_size);
     M.layers.push_back(layer1);
-    layer1->optimizer = std::make_shared<gradient_descent_optimizer<eigen::matrix>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
+    layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
     layer1->W = W1;
     layer1->b = b1;
 
     auto layer2 = std::make_shared<relu_layer<eigen::matrix>>(2, 2, batch_size);
     M.layers.push_back(layer2);
-    layer2->optimizer = std::make_shared<gradient_descent_optimizer<eigen::matrix>>(layer2->W, layer2->DW, layer2->b, layer2->Db);
+    layer2->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer2->W, layer2->DW, layer2->b, layer2->Db);
     layer2->W = W2;
     layer2->b = b2;
 
     auto layer3 = std::make_shared<linear_layer<eigen::matrix>>(2, 2, batch_size);
     M.layers.push_back(layer3);
-    layer3->optimizer = std::make_shared<gradient_descent_optimizer<eigen::matrix>>(layer3->W, layer3->DW, layer3->b, layer3->Db);
+    layer3->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer3->W, layer3->DW, layer3->b, layer3->Db);
     layer3->W = W3;
     layer3->b = b3;
   }
