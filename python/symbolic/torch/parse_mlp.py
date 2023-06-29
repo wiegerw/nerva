@@ -5,54 +5,43 @@ from symbolic.optimizers import Optimizer, GradientDescentOptimizer
 from symbolic.torch.activation_functions import ActivationFunction, ReLUActivation, HyperbolicTangentActivation, \
     AllReLUActivation, LeakyReLUActivation, SReLUActivation
 from symbolic.torch.optimizers import MomentumOptimizer, NesterovOptimizer
+from symbolic.utilities import parse_function_call
 
 
 def parse_activation(text: str) -> ActivationFunction:
     try:
-        if text == 'ReLU':
+        name, args = parse_function_call(text)
+        if name == 'ReLU':
             return ReLUActivation()
-        elif text == 'HyperbolicTangent':
+        elif name == 'HyperbolicTangent':
             return HyperbolicTangentActivation()
-        elif text.startswith('AllReLU'):
-            m = re.match(r'AllReLU\((.*)\)$', text)
-            alpha = float(m.group(1))
+        elif name == 'AllReLU':
+            alpha = args['alpha']
             return AllReLUActivation(alpha)
         elif text.startswith('LeakyReLU'):
-            m = re.match(r'LeakyReLU\((.*)\)$', text)
-            alpha = float(m.group(1))
+            alpha = args['alpha']
             return LeakyReLUActivation(alpha)
+        elif name == 'SReLU':
+            al = float(args.get('al', 0))
+            tl = float(args.get('tl', 0))
+            ar = float(args.get('ar', 0))
+            tr = float(args.get('tr', 1))
+            return SReLUActivation(al, tl, ar, tr)
     except:
         pass
     raise RuntimeError(f'Could not parse activation "{text}"')
 
 
-def parse_srelu_activation(text: str) -> SReLUActivation:
-    try:
-        if text == 'SReLU':
-            return SReLUActivation()
-        else:
-            m = re.match(r'SReLU\(([^,]*),([^,]*),([^,]*),([^,]*)\)$', text)
-            al = float(m.group(1))
-            tl = float(m.group(2))
-            ar = float(m.group(3))
-            tr = float(m.group(4))
-            return SReLUActivation(al, tl, ar, tr)
-    except:
-        pass
-    raise RuntimeError(f'Could not parse SReLU activation "{text}"')
-
-
 def parse_optimizer(text: str) -> Callable[[Any, Any], Optimizer]:
     try:
-        if text == 'GradientDescent':
+        name, args = parse_function_call(text)
+        if name == 'GradientDescent':
             return lambda x, Dx: GradientDescentOptimizer(x, Dx)
-        elif text.startswith('Momentum'):
-            m = re.match(r'Momentum\((.*)\)$', text)
-            mu = float(m.group(1))
+        elif name == 'Momentum':
+            mu = float(args['mu'])
             return lambda x, Dx: MomentumOptimizer(x, Dx, mu)
-        elif text.startswith('Nesterov'):
-            m = re.match(r'Nesterov\((.*)\)$', text)
-            mu = float(m.group(1))
+        elif name == 'Nesterov':
+            mu = float(args['mu'])
             return lambda x, Dx: NesterovOptimizer(x, Dx, mu)
     except:
         pass

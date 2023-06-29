@@ -3,7 +3,7 @@ from typing import List
 from symbolic.torch.loss_functions_rowwise import LossFunction, SquaredErrorLossFunction, MeanSquaredErrorLossFunction, \
     CrossEntropyLossFunction, StableSoftmaxCrossEntropyLossFunction, LogisticCrossEntropyLossFunction, \
     NegativeLogLikelihoodLossFunction
-from symbolic.torch.parse_mlp import parse_activation, parse_srelu_activation, parse_optimizer
+from symbolic.torch.parse_mlp import parse_activation, parse_optimizer
 from symbolic.torch.layers_rowwise import BatchNormalizationLayer, Layer, LinearLayer, SigmoidLayer, SoftmaxLayer, \
     LogSoftmaxLayer, SReLULayer, ActivationLayer
 from symbolic.torch.multilayer_perceptron_rowwise import MultilayerPerceptron
@@ -58,7 +58,7 @@ def parse_linear_layer(text: str,
     elif text == 'LogSoftmax':
         layer = LogSoftmaxLayer(D, K, N)
     elif text.startswith('SReLU'):
-        act = parse_srelu_activation(text)
+        act = parse_activation(text)
         layer = SReLULayer(D, K, N, act)
     else:
         act = parse_activation(text)

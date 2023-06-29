@@ -2,8 +2,9 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
+import re
 import time
-from typing import Union
+from typing import Union, Dict, Tuple
 
 import numpy as np
 import sympy as sp
@@ -86,3 +87,32 @@ class StopWatch(object):
 
     def reset(self):
         self.start = time.perf_counter()
+
+
+def contains_any_char(text: str, chars: str):
+    """ Check whether string text contains any character in chars."""
+    return 1 in [c in text for c in chars]
+
+
+def parse_function_call(text: str) -> Tuple[str, Dict[str, str]]:
+    text = text.strip()
+    try:
+        if re.match(r"\w*$", text):  # no arguments case
+            name = text
+            return name, {}
+        else:
+            m = re.match(r"(\w*)\((.*?)\)", text)
+            name = m.group(1)
+            args = {}
+            for arg in m.group(2).split(','):
+                key, value = arg.split('=')
+                key = key.strip()
+                value = value.strip()
+                if key in args:
+                    raise ValueError(f'Duplicate key in function call "{text}"')
+                args[key] = value
+            return name, args
+    except Exception as e:
+        print(e)
+        pass
+    raise RuntimeError(f'Could not parse function call "{text}"')

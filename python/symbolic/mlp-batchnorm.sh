@@ -3,7 +3,7 @@
 PYTHONPATH=..
 layers="ReLU;BatchNormalization;ReLU;Linear"
 sizes="3072,1024,512,10"
-optimizers="Momentum(0.9);Momentum(0.9);Momentum(0.9);Momentum(0.9)"
+optimizers="Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9)"
 init_weights="Xavier,Xavier,Xavier"
 batch_size=100
 epochs=2

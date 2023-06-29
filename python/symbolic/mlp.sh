@@ -3,7 +3,7 @@
 PYTHONPATH=..
 layers="ReLU;ReLU;Linear"
 sizes="3072,1024,512,10"
-optimizers="Momentum(0.9);Momentum(0.9);Momentum(0.9)"
+optimizers="Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9)"
 init_weights="Xavier,Xavier,Xavier"
 batch_size=100
 epochs=1
@@ -47,6 +47,6 @@ train "tensorflow-colwise-debug" --tensorflow --colwise --debug
 train "tensorflow-rowwise-debug" --tensorflow --rowwise --debug
 train "torch-colwise-debug"      --torch      --colwise --debug
 train "torch-rowwise-debug"      --torch      --rowwise --debug
-train "jax-colwise-debug"        --jax      --colwise --debug
-train "jax-rowwise-debug"        --jax      --rowwise --debug
+train "jax-colwise-debug"        --jax        --colwise --debug
+train "jax-rowwise-debug"        --jax        --rowwise --debug
 

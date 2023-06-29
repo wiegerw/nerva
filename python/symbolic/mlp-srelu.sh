@@ -1,9 +1,9 @@
 #!/bin/bash
 
 PYTHONPATH=..
-layers="SReLU;SReLU;Linear"
+layers="SReLU(al=0, tl=0, ar=0, tr=1);SReLU;Linear"
 sizes="3072,1024,512,10"
-optimizers="Momentum(0.9);Momentum(0.9);Momentum(0.9)"
+optimizers="Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9)"
 init_weights="Xavier,Xavier,Xavier"
 batch_size=100
 epochs=2
@@ -18,7 +18,7 @@ function train()
   shift
   extra_args=$*
   python3 -u mlp.py \
-          --layers=$layers \
+          --layers="$layers" \
           --sizes=$sizes \
           --optimizers=$optimizers \
           --init-weights=$init_weights \
