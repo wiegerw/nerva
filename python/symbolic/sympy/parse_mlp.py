@@ -1,4 +1,6 @@
-import re
+# Copyright 2023 Wieger Wesselink.
+# Distributed under the Boost Software License, Version 1.0.
+# (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from symbolic.optimizers import Optimizer, CompositeOptimizer, GradientDescentOptimizer
 from symbolic.sympy.activation_functions import ActivationFunction, ReLUActivation, HyperbolicTangentActivation, \
@@ -17,7 +19,7 @@ def parse_activation(text: str) -> ActivationFunction:
         elif name == 'AllReLU':
             alpha = args['alpha']
             return AllReLUActivation(alpha)
-        elif text.startswith('LeakyReLU'):
+        elif name == 'LeakyReLU':
             alpha = args['alpha']
             return LeakyReLUActivation(alpha)
         elif name == 'SReLU':
