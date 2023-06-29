@@ -28,6 +28,7 @@ struct batch_normalization_layer: public neural_network_layer
   eigen::matrix beta;
   eigen::matrix Dbeta;
   eigen::matrix power_minus_half_Sigma;
+  std::shared_ptr<optimizer_function> optimizer;
 
   explicit batch_normalization_layer(std::size_t D, std::size_t N = 1)
    : super(D, N), Z(D, N), DZ(D, N), gamma(D, 1), Dgamma(D, 1), beta(D, 1), Dbeta(D, 1), power_minus_half_Sigma(D, 1)
@@ -39,13 +40,6 @@ struct batch_normalization_layer: public neural_network_layer
   [[nodiscard]] std::string to_string() const override
   {
     return "BatchNormalization()";
-  }
-
-  void optimize(scalar eta) override
-  {
-    // TODO use an optimizer as in linear_layer?
-    beta -= eta * Dbeta;
-    gamma -= eta * Dgamma;
   }
 
   void feedforward(eigen::matrix& result) override
@@ -80,6 +74,11 @@ struct batch_normalization_layer: public neural_network_layer
     DZ = hadamard(column_repeat(gamma, N), DY);
     DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Z, column_repeat(-diag(DZ * Z.transpose()), N)) + DZ * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
   }
+
+  void optimize(scalar eta) override
+  {
+    optimizer->update(eta);
+  }
 };
 
 using dense_batch_normalization_layer = batch_normalization_layer;
@@ -92,6 +91,7 @@ struct simple_batch_normalization_layer: public neural_network_layer
   using super::DX;
 
   eigen::matrix power_minus_half_Sigma;
+  std::shared_ptr<optimizer_function> optimizer;
 
   explicit simple_batch_normalization_layer(std::size_t D, std::size_t N = 1)
     : super(D, N), power_minus_half_Sigma(D, 1)
@@ -101,9 +101,6 @@ struct simple_batch_normalization_layer: public neural_network_layer
   {
     return "SimpleBatchNormalization()";
   }
-
-  void optimize(scalar eta) override
-  {}
 
   void feedforward(eigen::matrix& result) override
   {
@@ -131,6 +128,11 @@ struct simple_batch_normalization_layer: public neural_network_layer
 
     auto N = X.cols();
     DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Y, column_repeat(-diag(DY * Y.transpose()), N)) + DY * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
+  }
+
+  void optimize(scalar eta) override
+  {
+    optimizer->update(eta);
   }
 };
 
@@ -189,6 +191,14 @@ struct affine_layer: public neural_network_layer
 };
 
 using dense_affine_layer = affine_layer;
+
+template <typename BatchNormalizationLayer>
+void set_batch_normalization_layer_optimizer(BatchNormalizationLayer& layer, const std::string& text)
+{
+  auto optimizer_beta = parse_optimizer<eigen::matrix>(text, layer.beta, layer.Dbeta);
+  auto optimizer_gamma = parse_optimizer<eigen::matrix>(text, layer.gamma, layer.Dgamma);
+  layer.optimizer = make_composite_optimizer(optimizer_beta, optimizer_gamma);
+}
 
 } // namespace nerva
 

@@ -79,11 +79,11 @@ void set_optimizers(multilayer_perceptron& M, const std::string& optimizer)
   {
     if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
-      set_optimizer(*dlayer, optimizer);
+      set_linear_layer_optimizer(*dlayer, optimizer);
     }
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
-      set_optimizer(*slayer, optimizer);
+      set_linear_layer_optimizer(*slayer, optimizer);
     }
   }
 }

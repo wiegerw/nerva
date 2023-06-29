@@ -18,6 +18,7 @@
 #include "nerva/neural_networks/softmax_colwise.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
+#include "nerva/utilities/parse.h"
 #include "nerva/utilities/string_utility.h"
 #include "fmt/format.h"
 #include <iostream>
@@ -586,39 +587,12 @@ struct log_softmax_layer : public linear_layer<Matrix>
 using dense_log_softmax_layer = log_softmax_layer<eigen::matrix>;
 using sparse_log_softmax_layer = log_softmax_layer<mkl::sparse_matrix_csr<scalar>>;
 
-// Sets the optimizer in a layer
 template <typename Matrix>
-void set_optimizer(linear_layer<Matrix>& layer, const std::string& text)
+void set_linear_layer_optimizer(linear_layer<Matrix>& layer, const std::string& text)
 {
-  auto parse_argument = [&text]()
-  {
-    auto startpos = text.find('(');
-    auto endpos = text.find(')');
-    if (startpos == std::string::npos || endpos == std::string::npos || endpos <= startpos)
-    {
-      throw std::runtime_error("could not parse optimizer '" + text + "'");
-    }
-    return parse_scalar(text.substr(startpos + 1, endpos - startpos - 1));
-  };
-
-  if (text == "GradientDescent")
-  {
-    layer.optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<Matrix>>(layer.W, layer.DW, layer.b, layer.Db);
-  }
-  else if (utilities::starts_with(text, "Momentum"))  // e.g. "momentum(0.9)"
-  {
-    scalar mu = parse_argument();
-    layer.optimizer = std::make_shared<momentum_linear_layer_optimizer<Matrix>>(layer.W, layer.DW, layer.b, layer.Db, mu);
-  }
-  else if (utilities::starts_with(text, "Nesterov"))
-  {
-    scalar mu = parse_argument();
-    layer.optimizer = std::make_shared<nesterov_linear_layer_optimizer<Matrix>>(layer.W, layer.DW, layer.b, layer.Db, mu);
-  }
-  else
-  {
-    throw std::runtime_error("unknown optimizer '" + text + "'");
-  }
+  auto optimizer_W = parse_optimizer<Matrix>(text, layer.W, layer.DW);
+  auto optimizer_b = parse_optimizer<eigen::matrix>(text, layer.b, layer.Db);
+  layer.optimizer = make_composite_optimizer(optimizer_W, optimizer_b);
 }
 
 } // namespace nerva

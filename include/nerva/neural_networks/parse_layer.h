@@ -327,7 +327,7 @@ struct layer_builder
       {
         std::shared_ptr<dense_linear_layer> layer = make_dense_linear_layer(layer_description, D, K, batch_size);
         set_weights_and_bias(*layer, w, rng);
-        set_optimizer(*layer, optimizer);
+        set_linear_layer_optimizer(*layer, optimizer);
         return layer;
       }
       else
@@ -335,7 +335,7 @@ struct layer_builder
         std::shared_ptr<sparse_linear_layer> layer =  make_sparse_linear_layer(layer_description, D, K, batch_size);
         set_support_random(*layer, density, rng);
         set_weights_and_bias(*layer, w, rng);
-        set_optimizer(*layer, optimizer);
+        set_linear_layer_optimizer(*layer, optimizer);
         return layer;
       }
     }
@@ -344,7 +344,7 @@ struct layer_builder
       std::shared_ptr<neural_network_layer> layer = make_dense_linear_dropout_layer(layer_description, D, K, batch_size, dropout_rate);
       std::shared_ptr<dense_linear_layer> dlayer(dynamic_cast<dense_linear_layer*>(layer.get()));
       set_weights_and_bias(*dlayer, w, rng);
-      set_optimizer(*dlayer, optimizer);
+      set_linear_layer_optimizer(*dlayer, optimizer);
       return layer;
     }
   }
@@ -368,7 +368,9 @@ struct layer_builder
       }
       else if (layer == "BatchNorm")
       {
-        result.push_back(std::make_shared<dense_batch_normalization_layer>(linear_layer_sizes[i], batch_size));
+        auto blayer = std::make_shared<dense_batch_normalization_layer>(linear_layer_sizes[i], batch_size);
+        set_batch_normalization_layer_optimizer(*blayer, "GradientDescent");  // TODO: pass the batch norm optimizer as an argument
+        result.push_back(blayer);
       }
       else if (is_linear_layer(layer))
       {

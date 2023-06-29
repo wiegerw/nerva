@@ -10,6 +10,7 @@
 #ifndef NERVA_UTILITIES_PARSE_H
 #define NERVA_UTILITIES_PARSE_H
 
+#include "nerva/utilities/parse_numbers.h"
 #include "nerva/utilities/string_utility.h"
 
 namespace nerva::utilities {
@@ -36,6 +37,19 @@ std::vector<std::string> parse_arguments(const std::string& text, const std::str
   }
   return result;
 }
+
+// Parses the argument of a string of the shape <name>(<argument>), and converts it to a double value.
+inline
+double parse_numeric_argument(const std::string& text)
+{
+  auto startpos = text.find('(');
+  auto endpos = text.find(')');
+  if (startpos == std::string::npos || endpos == std::string::npos || endpos <= startpos)
+  {
+    throw std::runtime_error("could not parse optimizer '" + text + "'");
+  }
+  return parse_double(text.substr(startpos + 1, endpos - startpos - 1));
+};
 
 } // namespace nerva::utilities
 

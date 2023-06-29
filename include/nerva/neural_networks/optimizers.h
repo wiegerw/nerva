@@ -13,6 +13,7 @@
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/neural_networks/matrix.h"
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
+#include "nerva/utilities/parse.h"
 #include "nerva/utilities/parse_numbers.h"
 #include "fmt/format.h"
 
@@ -167,7 +168,72 @@ struct nesterov_optimizer: public gradient_descent_optimizer<T>
   }
 };
 
-// Linear layer optimizers consist of an optimizer_function for the weights and an optimizer_function for the bias
+struct composite_optimizer: public optimizer_function
+{
+  std::vector<std::shared_ptr<optimizer_function>> optimizers;
+
+  composite_optimizer() = default;
+
+  composite_optimizer(const composite_optimizer& other)
+    : optimizers(other.optimizers)
+  {}
+
+  composite_optimizer(std::initializer_list<std::shared_ptr<optimizer_function>> items)
+    : optimizers(items)
+  {}
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return optimizers.front()->to_string();
+  }
+
+  void update(scalar eta) override
+  {
+    for (auto& optimizer: optimizers)
+    {
+      optimizer->update(eta);
+    }
+  }
+
+  void reset_support() override
+  {
+    for (auto& optimizer: optimizers)
+    {
+      optimizer->reset_support();
+    }
+  }
+};
+
+template <typename... Args>
+std::shared_ptr<optimizer_function> make_composite_optimizer(Args&&... args)
+{
+  return std::make_shared<composite_optimizer>(std::initializer_list<std::shared_ptr<optimizer_function>>{std::forward<Args>(args)...});
+}
+
+template <typename T>
+std::shared_ptr<optimizer_function> parse_optimizer(const std::string& text, T& x, T& Dx)
+{
+  if (text == "GradientDescent")
+  {
+    return std::make_shared<gradient_descent_optimizer<T>>(x, Dx);
+  }
+  else if (utilities::starts_with(text, "Momentum"))  // e.g. "momentum(0.9)"
+  {
+    auto mu = static_cast<scalar>(utilities::parse_numeric_argument(text));
+    return std::make_shared<momentum_optimizer<T>>(x, Dx, mu);
+  }
+  else if (utilities::starts_with(text, "Nesterov"))
+  {
+    auto mu = static_cast<scalar>(utilities::parse_numeric_argument(text));
+    return std::make_shared<nesterov_optimizer<T>>(x, Dx, mu);
+  }
+  else
+  {
+    throw std::runtime_error("unknown optimizer '" + text + "'");
+  }
+}
+
+// TODO: remove the classes below; currently they are still used in the tests and the python bindings
 template <typename Matrix>
 struct gradient_descent_linear_layer_optimizer: public optimizer_function
 {

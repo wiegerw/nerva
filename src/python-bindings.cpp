@@ -183,7 +183,7 @@ PYBIND11_MODULE(nervalib, m)
     .def("backpropagate", &dense_linear_layer::backpropagate)
     .def("optimize", &dense_linear_layer::optimize)
     .def("initialize_weights", [](dense_linear_layer& layer, weight_initialization w) { initialize_weights(w, layer.W, layer.b, nerva_rng); })
-    .def("set_optimizer", [](dense_linear_layer& layer, const std::string& text) { set_optimizer(layer, text); })
+    .def("set_linear_layer_optimizer", [](dense_linear_layer& layer, const std::string& text) { set_linear_layer_optimizer<eigen::matrix>(layer, text); })
     .def("set_weights_and_bias", [](dense_linear_layer& layer, weight_initialization w) { set_weights_and_bias(layer, w, nerva_rng); })
     ;
 
@@ -223,7 +223,8 @@ PYBIND11_MODULE(nervalib, m)
   py::class_<dense_linear_dropout_layer, dense_linear_layer, std::shared_ptr<dense_linear_dropout_layer>>(m, "linear_dropout_layer")
     .def(py::init<std::size_t, std::size_t, std::size_t, scalar>(), py::return_value_policy::copy)
     .def("initialize_weights", [](dense_linear_dropout_layer& layer, weight_initialization w) { initialize_weights(w, layer.W, layer.b, nerva_rng); })
-    .def("set_optimizer", [](dense_linear_dropout_layer& layer, const std::string& text) { set_optimizer(layer, text); })
+    .def("set_linear_layer_optimizer", [](dense_linear_dropout_layer& layer, const std::string& text) {
+      set_linear_layer_optimizer(layer, text); })
     ;
 
   py::class_<dense_relu_dropout_layer, dense_linear_layer, std::shared_ptr<dense_relu_dropout_layer>>(m, "relu_dropout_layer")
@@ -282,7 +283,8 @@ PYBIND11_MODULE(nervalib, m)
     .def("backpropagate", &sparse_linear_layer::backpropagate)
     .def("optimize", &sparse_linear_layer::optimize)
     .def("initialize_weights", [](sparse_linear_layer& layer, weight_initialization w) { initialize_weights(w, layer.W, layer.b, nerva_rng); })
-    .def("set_optimizer", [](sparse_linear_layer& layer, const std::string& text) { set_optimizer(layer, text); })
+    .def("set_linear_layer_optimizer", [](sparse_linear_layer& layer, const std::string& text) {
+      set_linear_layer_optimizer(layer, text); })
     .def("shape", [](sparse_linear_layer& layer) { return std::make_pair(layer.W.rows(), layer.W.cols()); })
     .def("weight_count", [](sparse_linear_layer& layer) { return support_size(layer.W); })
     .def("positive_weight_count", [](sparse_linear_layer& layer) { return count_positive_elements(layer.W); })
@@ -367,7 +369,7 @@ PYBIND11_MODULE(nervalib, m)
     layer_builder builder(nerva_rng);
     auto layer = builder.make_dense_linear_layer(layer_description, D, K, batch_size);
     set_weights_and_bias(*layer, w, nerva_rng);
-    set_optimizer(*layer, optimizer);
+    set_linear_layer_optimizer(*layer, optimizer);
     return layer;
   });
   m.def("make_dense_linear_dropout_layer", [](const std::string& layer_description,
@@ -383,7 +385,7 @@ PYBIND11_MODULE(nervalib, m)
     auto layer = builder.make_dense_linear_dropout_layer(layer_description, D, K, batch_size, dropout_rate);
     auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get());
     set_weights_and_bias(*dlayer, w, nerva_rng);
-    set_optimizer(*dlayer, optimizer);
+    set_linear_layer_optimizer(*dlayer, optimizer);
     return layer;
   });
   m.def("make_sparse_linear_layer", [](const std::string& layer_description,
@@ -399,7 +401,7 @@ PYBIND11_MODULE(nervalib, m)
     auto layer = builder.make_sparse_linear_layer(layer_description, D, K, batch_size);
     set_support_random(*layer, density, nerva_rng);
     set_weights_and_bias(*layer, w, nerva_rng);
-    set_optimizer(*layer, optimizer);
+    set_linear_layer_optimizer(*layer, optimizer);
     return layer;
   });
 
