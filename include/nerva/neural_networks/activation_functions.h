@@ -514,29 +514,42 @@ struct trimmed_relu_activation
 
 struct srelu_activation
 {
-  scalar al;
-  scalar tl;
-  scalar ar;
-  scalar tr;
+  // N.B. The parameters are stored in vectors so that an optimizer can be used
+  eigen::vector x;  // contains al, tl, ar, tr
+  eigen::vector Dx; // contains Dal, Dtl, Dar, Dtr
 
-  explicit srelu_activation(scalar al_ = 0, scalar tl_ = 0, scalar ar_ = 0, scalar tr_ = 1)
-    : al(al_), tl(tl_), ar(ar_), tr(tr_)
-  {}
+  explicit srelu_activation(scalar al = 0, scalar tl = 0, scalar ar = 0, scalar tr = 1)
+  {
+    x = eigen::vector{{al, tl, ar, tr}};
+    Dx = eigen::vector{{0, 0, 0, 0}};
+  }
 
   template <typename Matrix>
   auto operator()(const Matrix& X) const
   {
+    auto al = x(0);
+    auto tl = x(1);
+    auto ar = x(2);
+    auto tr = x(3);
     return Srelu(al, tl, ar, tr)(X);
   }
 
   template <typename Matrix>
   auto gradient(const Matrix& X) const
   {
+    auto al = x(0);
+    auto tl = x(1);
+    auto ar = x(2);
+    auto tr = x(3);
     return Srelu_gradient(al, tl, ar, tr)(X);
   }
 
   [[nodiscard]] std::string to_string() const
   {
+    auto al = x(0);
+    auto tl = x(1);
+    auto ar = x(2);
+    auto tr = x(3);
     return fmt::format("SReLU({},{},{},{})", al, tl, ar, tr);
   }
 };

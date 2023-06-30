@@ -412,11 +412,6 @@ struct srelu_layer : public activation_layer<Matrix, eigen::srelu_activation>
   using super::Z;
   using super::act;
 
-  scalar Dal = 0;
-  scalar Dtl = 0;
-  scalar Dar = 0;
-  scalar Dtr = 0;
-
   explicit srelu_layer(std::size_t D, std::size_t K, std::size_t N, scalar al = 1, scalar tl = 0, scalar ar = 1, scalar tr = 0)
     : super(D, K, N, eigen::srelu_activation(al, tl, ar, tr))
   {}
@@ -429,24 +424,22 @@ struct srelu_layer : public activation_layer<Matrix, eigen::srelu_activation>
 
     super::backpropagate(Y, DY);
 
-    auto Al = [this](scalar x) { return x <= act.tl ? x - act.tl : scalar(0); };
-    auto Ar = [this](scalar x) { return x <= act.tl || x < act.tr ? scalar(0) : x - act.tr; };
-    auto Tl = [this](scalar x) { return x <= act.tl ? scalar(1) - act.al : scalar(0); };
-    auto Tr = [this](scalar x) { return x >= act.tr ? scalar(1) - act.ar : scalar(0); };
+    auto al = act.x(0);
+    auto tl = act.x(1);
+    auto ar = act.x(2);
+    auto tr = act.x(3);
 
-    Dal = elements_sum(hadamard(DY, apply(Al, Z)));
-    Dar = elements_sum(hadamard(DY, apply(Ar, Z)));
-    Dtl = elements_sum(hadamard(DY, apply(Tl, Z)));
-    Dtr = elements_sum(hadamard(DY, apply(Tr, Z)));
-  }
+    auto Al = [tl](scalar x)     { return x <= tl ? x - tl : scalar(0); };
+    auto Ar = [tl, tr](scalar x) { return x <= tl || x < tr ? scalar(0) : x - tr; };
+    auto Tl = [tl, al](scalar x) { return x <= tl ? scalar(1) - al : scalar(0); };
+    auto Tr = [tr, ar](scalar x) { return x >= tr ? scalar(1) - ar : scalar(0); };
 
-  void optimize(scalar eta) override
-  {
-    super::optimize(eta);
-    act.al -= eta * Dal;
-    act.ar -= eta * Dar;
-    act.tl -= eta * Dtl;
-    act.tr -= eta * Dtr;
+    auto Dal = elements_sum(hadamard(DY, apply(Al, Z)));
+    auto Dar = elements_sum(hadamard(DY, apply(Ar, Z)));
+    auto Dtl = elements_sum(hadamard(DY, apply(Tl, Z)));
+    auto Dtr = elements_sum(hadamard(DY, apply(Tr, Z)));
+
+    act.Dx = eigen::vector{{Dal, Dtl, Dar, Dtr}};
   }
 };
 
@@ -590,9 +583,18 @@ using sparse_log_softmax_layer = log_softmax_layer<mkl::sparse_matrix_csr<scalar
 template <typename Matrix>
 void set_linear_layer_optimizer(linear_layer<Matrix>& layer, const std::string& text)
 {
-  auto optimizer_W = parse_optimizer<Matrix>(text, layer.W, layer.DW);
-  auto optimizer_b = parse_optimizer<eigen::matrix>(text, layer.b, layer.Db);
+  auto optimizer_W = parse_optimizer(text, layer.W, layer.DW);
+  auto optimizer_b = parse_optimizer(text, layer.b, layer.Db);
   layer.optimizer = make_composite_optimizer(optimizer_W, optimizer_b);
+}
+
+template <typename Matrix>
+void set_srelu_layer_optimizer(srelu_layer<Matrix>& layer, const std::string& text)
+{
+  auto optimizer_W = parse_optimizer(text, layer.W, layer.DW);
+  auto optimizer_b = parse_optimizer(text, layer.b, layer.Db);
+  auto optimizer_srelu = parse_optimizer(text, layer.act.x, layer.act.Dx);
+  layer.optimizer = make_composite_optimizer(optimizer_W, optimizer_b, optimizer_srelu);
 }
 
 } // namespace nerva

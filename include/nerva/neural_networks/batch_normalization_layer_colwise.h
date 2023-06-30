@@ -148,6 +148,7 @@ struct affine_layer: public neural_network_layer
   eigen::matrix Dgamma;
   eigen::matrix beta;
   eigen::matrix Dbeta;
+  std::shared_ptr<optimizer_function> optimizer;
 
   explicit affine_layer(std::size_t D, std::size_t N = 1)
     : super(D, N), gamma(D, 1), Dgamma(D, 1), beta(D, 1), Dbeta(D, 1)
@@ -159,13 +160,6 @@ struct affine_layer: public neural_network_layer
   [[nodiscard]] std::string to_string() const override
   {
     return "Affine()";
-  }
-
-  void optimize(scalar eta) override
-  {
-    // TODO use an optimizer as in linear_layer?
-    beta -= eta * Dbeta;
-    gamma -= eta * Dgamma;
   }
 
   void feedforward(eigen::matrix& result) override
@@ -188,6 +182,11 @@ struct affine_layer: public neural_network_layer
     Dbeta = rows_sum(DY);
     Dgamma = rows_sum(hadamard(X, DY));
   }
+
+  void optimize(scalar eta) override
+  {
+    optimizer->update(eta);
+  }
 };
 
 using dense_affine_layer = affine_layer;
@@ -195,8 +194,8 @@ using dense_affine_layer = affine_layer;
 template <typename BatchNormalizationLayer>
 void set_batch_normalization_layer_optimizer(BatchNormalizationLayer& layer, const std::string& text)
 {
-  auto optimizer_beta = parse_optimizer<eigen::matrix>(text, layer.beta, layer.Dbeta);
-  auto optimizer_gamma = parse_optimizer<eigen::matrix>(text, layer.gamma, layer.Dgamma);
+  auto optimizer_beta = parse_optimizer(text, layer.beta, layer.Dbeta);
+  auto optimizer_gamma = parse_optimizer(text, layer.gamma, layer.Dgamma);
   layer.optimizer = make_composite_optimizer(optimizer_beta, optimizer_gamma);
 }
 
