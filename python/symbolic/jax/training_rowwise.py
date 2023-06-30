@@ -11,9 +11,9 @@ from symbolic.jax.datasets import DataLoader, create_npz_dataloaders
 from symbolic.jax.loss_functions_rowwise import *
 from symbolic.jax.multilayer_perceptron_rowwise import MultilayerPerceptron
 from symbolic.jax.parse_mlp_rowwise import parse_multilayer_perceptron, parse_loss_function
-from symbolic.jax.utilities import pp, set_numpy_options
+from symbolic.jax.utilities import set_numpy_options
 from symbolic.training import SGDOptions, print_epoch
-from symbolic.utilities import StopWatch
+from symbolic.utilities import StopWatch, ppn
 
 
 def to_one_hot(x: jnp.ndarray, n_classes: int):
@@ -80,9 +80,9 @@ def sgd(M: MultilayerPerceptron,
             if SGDOptions.debug:
                 print(f'epoch: {epoch} batch: {k}')
                 M.info()
-                pp("X", X)
-                pp("Y", Y)
-                pp("DY", DY)
+                ppn("X", X)
+                ppn("Y", Y)
+                ppn("DY", DY)
 
             M.backpropagate(Y, DY)
             M.optimize(lr)

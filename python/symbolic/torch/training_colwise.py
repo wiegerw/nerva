@@ -10,9 +10,8 @@ from symbolic.torch.datasets import DataLoader, create_npz_dataloaders
 from symbolic.torch.loss_functions_colwise import *
 from symbolic.torch.multilayer_perceptron_colwise import MultilayerPerceptron
 from symbolic.torch.parse_mlp_colwise import parse_multilayer_perceptron, parse_loss_function
-from symbolic.torch.utilities import set_torch_options, pp
 from symbolic.training import SGDOptions, print_epoch
-from symbolic.utilities import StopWatch
+from symbolic.utilities import StopWatch, ppn
 
 
 def to_one_hot(x: torch.LongTensor, n_classes: int):
@@ -79,9 +78,9 @@ def sgd(M: MultilayerPerceptron,
             if SGDOptions.debug:
                 print(f'epoch: {epoch} batch: {k}')
                 M.info()
-                pp("X", X.T)
-                pp("Y", Y.T)
-                pp("DY", DY.T)
+                ppn("X", X.T)
+                ppn("Y", Y.T)
+                ppn("DY", DY.T)
 
             M.backpropagate(Y, DY)
             M.optimize(lr)
@@ -106,7 +105,6 @@ def train(layer_specifications: List[str],
           debug: bool
          ):
     SGDOptions.debug = debug
-    set_torch_options()
     loss = parse_loss_function(loss)
     learning_rate = parse_learning_rate(learning_rate)
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers, batch_size)

@@ -14,6 +14,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import torch
 from sympy import Matrix
+import symbolic.numpy.utilities
 
 
 def matrix(name: str, rows: int, columns: int) -> Matrix:
@@ -33,7 +34,7 @@ def instantiate(X: sp.Matrix, low=0, high=10) -> sp.Matrix:
     return X0
 
 
-def to_numpy(x: Union[sp.Matrix, np.ndarray, torch.Tensor, tf.Tensor, jnp.ndarray]) -> np.ndarray:
+def to_numpy(x: Union[sp.Matrix, np.ndarray, torch.Tensor, tf.Tensor, tf.Variable, jnp.ndarray]) -> np.ndarray:
     if isinstance(x, sp.Matrix):
         return np.array(x.tolist(), dtype=np.float64)
     elif isinstance(x, np.ndarray):
@@ -41,6 +42,8 @@ def to_numpy(x: Union[sp.Matrix, np.ndarray, torch.Tensor, tf.Tensor, jnp.ndarra
     elif isinstance(x, torch.Tensor):
         return x.detach().cpu().numpy()
     elif isinstance(x, tf.Tensor):
+        return x.numpy()
+    elif isinstance(x, tf.Variable):
         return x.numpy()
     elif isinstance(x, jnp.ndarray):
         return np.array(x)
@@ -116,3 +119,13 @@ def parse_function_call(text: str) -> Tuple[str, Dict[str, str]]:
         print(e)
         pass
     raise RuntimeError(f'Could not parse function call "{text}"')
+
+
+def ppn(name: str, x: Union[sp.Matrix, np.ndarray, torch.Tensor, tf.Tensor, tf.Variable, jnp.ndarray]):
+    """
+    Pretty print in NumPy format
+    :param name: the name of the matrix
+    :param x: a matrix
+    """
+    x = to_numpy(x)
+    return symbolic.numpy.utilities.pp(name, x)

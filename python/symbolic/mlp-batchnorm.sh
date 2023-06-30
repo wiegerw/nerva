@@ -32,6 +32,9 @@ function train()
         	2>&1 | tee $logfile
 }
 
+# create directory logs if it does not exist
+mkdir -p logs
+
 train "numpy-batchnorm-colwise"      --numpy      --colwise
 train "numpy-batchnorm-rowwise"      --numpy      --rowwise
 train "tensorflow-batchnorm-colwise" --tensorflow --colwise

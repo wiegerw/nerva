@@ -4,7 +4,7 @@
 
 from nerva.datasets import load_dict_from_npz
 from symbolic.sympy.layers_rowwise import *
-from symbolic.sympy.utilities import pp
+from symbolic.utilities import ppn
 
 Matrix = sp.Matrix
 
@@ -36,8 +36,8 @@ class MultilayerPerceptron(object):
         index = 1
         for layer in self.layers:
             if isinstance(layer, LinearLayer):
-                pp(f'W{index}', layer.W)
-                pp(f'b{index}', layer.b)
+                ppn(f'W{index}', layer.W)
+                ppn(f'b{index}', layer.b)
                 index += 1
 
     def load_weights_and_bias(self, filename: str):

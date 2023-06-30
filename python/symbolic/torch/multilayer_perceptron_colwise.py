@@ -4,7 +4,7 @@
 
 from nerva.datasets import load_dict_from_npz
 from symbolic.torch.layers_colwise import *
-from symbolic.torch.utilities import pp
+from symbolic.utilities import ppn
 
 Matrix = torch.Tensor
 
@@ -36,8 +36,8 @@ class MultilayerPerceptron(object):
         index = 1
         for layer in self.layers:
             if isinstance(layer, LinearLayer):
-                pp(f'W{index}', layer.W)
-                pp(f'b{index}', layer.b.T)  # TODO: avoid the transpose
+                ppn(f'W{index}', layer.W)
+                ppn(f'b{index}', layer.b)
                 index += 1
 
     def load_weights_and_bias(self, filename: str):

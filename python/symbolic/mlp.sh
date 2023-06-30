@@ -29,8 +29,11 @@ function train()
           --weights=$weights \
           --dataset=$dataset \
           $extra_args \
-        	2>&1 | tee $logfile
+          2>&1 | tee $logfile
 }
+
+# create directory logs if it does not exist
+mkdir -p logs
 
 train "numpy-colwise"      --numpy      --colwise
 train "numpy-rowwise"      --numpy      --rowwise

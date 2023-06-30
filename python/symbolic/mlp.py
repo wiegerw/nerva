@@ -13,6 +13,10 @@ import symbolic.torch.training_colwise
 import symbolic.torch.training_rowwise
 import symbolic.jax.training_colwise
 import symbolic.jax.training_rowwise
+from symbolic.numpy.utilities import set_numpy_options
+from symbolic.tensorflow.utilities import set_tensorflow_options
+from symbolic.torch.utilities import set_torch_options
+
 
 def make_argument_parser():
     cmdline_parser = argparse.ArgumentParser()
@@ -66,6 +70,10 @@ def print_header(header: str):
 def main():
     cmdline_parser = make_argument_parser()
     args = cmdline_parser.parse_args()
+
+    set_tensorflow_options()
+    set_torch_options()
+    set_numpy_options()
 
     linear_layer_sizes = [int(s) for s in args.sizes.split(',')]
     layer_specifications = args.layers.split(';')

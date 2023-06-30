@@ -32,6 +32,9 @@ function train()
         	2>&1 | tee $logfile
 }
 
+# create directory logs if it does not exist
+mkdir -p logs
+
 train "numpy-srelu-colwise"      --numpy      --colwise
 train "numpy-srelu-rowwise"      --numpy      --rowwise
 train "tensorflow-srelu-colwise" --tensorflow --colwise
