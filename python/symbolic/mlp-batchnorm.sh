@@ -6,7 +6,7 @@ sizes="3072,1024,512,10"
 optimizers="Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9)"
 init_weights="Xavier,Xavier,Xavier"
 batch_size=100
-epochs=2
+epochs=1
 loss=SoftmaxCrossEntropy
 learning_rate="Constant(0.01)"
 weights="../mlp-compare.npz"
@@ -43,4 +43,13 @@ train "torch-batchnorm-colwise"      --torch      --colwise
 train "torch-batchnorm-rowwise"      --torch      --rowwise
 train "jax-batchnorm-colwise"        --jax        --colwise
 train "jax-batchnorm-rowwise"        --jax        --rowwise
+
+train "numpy-batchnorm-colwise-debug"      --numpy      --colwise --debug
+train "numpy-batchnorm-rowwise-debug"      --numpy      --rowwise --debug
+train "tensorflow-batchnorm-colwise-debug" --tensorflow --colwise --debug
+train "tensorflow-batchnorm-rowwise-debug" --tensorflow --rowwise --debug
+train "torch-batchnorm-colwise-debug"      --torch      --colwise --debug
+train "torch-batchnorm-rowwise-debug"      --torch      --rowwise --debug
+train "jax-batchnorm-colwise-debug"        --jax        --colwise --debug
+train "jax-batchnorm-rowwise-debug"        --jax        --rowwise --debug
 

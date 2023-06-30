@@ -1,6 +1,7 @@
 # Copyright 2023 Wieger Wesselink.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
+
 from typing import List
 
 from symbolic.jax.layers_rowwise import BatchNormalizationLayer, Layer, LinearLayer, SigmoidLayer, SoftmaxLayer, \
@@ -61,7 +62,7 @@ def parse_linear_layer(text: str,
     elif text == 'LogSoftmax':
         layer = LogSoftmaxLayer(D, K, N)
     elif text.startswith('SReLU'):
-        act = parse_srelu_activation(text)
+        act = parse_activation(text)
         layer = SReLULayer(D, K, N, act)
     else:
         act = parse_activation(text)
