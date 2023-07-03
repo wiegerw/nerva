@@ -45,18 +45,16 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
   using super::Db;
   using super::X;
   using super::DX;
+  using super::optimizer;
   using super::to_string;
+  using super::input_size;
+  using super::output_size;
   using dropout_layer<Matrix>::p;
   using dropout_layer<Matrix>::R;
 
   linear_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
    : super(D, K, N), dropout_layer<Matrix>(D, K, p)
   {}
-
-  [[nodiscard]] std::string to_string() const override
-  {
-    return fmt::format("Dropout({})\n{}", p, super::to_string());
-  }
 
   void feedforward(eigen::matrix& result) override
   {
@@ -83,6 +81,11 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
     Db = rows_sum(DY);
     DX = hadamard(W, R).transpose() * DY;
   }
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("Dense(units={}, optimizer={}, activation=NoActivation(), dropout={})", output_size(), optimizer->to_string(), p);
+  }
 };
 
 using dense_linear_dropout_layer = linear_dropout_layer<eigen::matrix>;
@@ -99,6 +102,9 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
   using super::DX;
   using super::Z;
   using super::DZ;
+  using super::optimizer;
+  using super::input_size;
+  using super::output_size;
   using super::to_string;
   using dropout_layer<Matrix>::p;
   using dropout_layer<Matrix>::R;
@@ -106,11 +112,6 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
   sigmoid_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
       : super(D, K, N), dropout_layer<Matrix>(D, K, p)
   {}
-
-  [[nodiscard]] std::string to_string() const override
-  {
-    return fmt::format("Dropout({})\n{}", p, super::to_string());
-  }
 
   void feedforward(eigen::matrix& result) override
   {
@@ -140,6 +141,11 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
     Db = rows_sum(DZ);
     DX = hadamard(W, R).transpose() * DZ;
   }
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("Dense(units={}, optimizer={}, activation=Sigmoid(), dropout={})", output_size(), optimizer->to_string(), p);
+  }
 };
 
 using dense_sigmoid_dropout_layer = sigmoid_dropout_layer<eigen::matrix>;
@@ -156,6 +162,8 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
   using super::DX;
   using super::Z;
   using super::DZ;
+  using super::optimizer;
+  using super::output_size;
   using super::to_string;
   using dropout_layer<Matrix>::p;
   using dropout_layer<Matrix>::R;
@@ -164,11 +172,6 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
   activation_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, ActivationFunction act)
       : super(D, K, N, act), dropout_layer<Matrix>(D, K, p)
   {}
-
-  [[nodiscard]] std::string to_string() const override
-  {
-    return fmt::format("Dropout({})\n{}", p, super::to_string());
-  }
 
   void feedforward(eigen::matrix& result) override
   {
@@ -196,6 +199,11 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
     }
     Db = rows_sum(DZ);
     DX = hadamard(W, R).transpose() * DZ;
+  }
+
+  [[nodiscard]] std::string to_string() const override
+  {
+    return fmt::format("Dense(units={}, optimizer={}, activation={}, dropout={})", output_size(), optimizer->to_string(), act.to_string(), p);
   }
 };
 
