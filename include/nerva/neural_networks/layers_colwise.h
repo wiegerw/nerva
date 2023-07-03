@@ -588,8 +588,8 @@ void set_linear_layer_optimizer(linear_layer<Matrix>& layer, const std::string& 
   layer.optimizer = make_composite_optimizer(optimizer_W, optimizer_b);
 }
 
-template <typename Matrix>
-void set_srelu_layer_optimizer(srelu_layer<Matrix>& layer, const std::string& text)
+template <typename Layer>
+void set_srelu_layer_optimizer(Layer& layer, const std::string& text)
 {
   auto optimizer_W = parse_optimizer(text, layer.W, layer.DW);
   auto optimizer_b = parse_optimizer(text, layer.b, layer.Db);

@@ -15,6 +15,7 @@
 #include "nerva/neural_networks/dropout_layers.h"
 #include "nerva/neural_networks/sgd_options.h"
 #include "nerva/utilities/parse_numbers.h"
+#include "nerva/utilities/parse.h"
 #include "nerva/utilities/string_utility.h"
 #include <iostream>
 #include <memory>
@@ -155,251 +156,360 @@ std::vector<std::size_t> compute_linear_layer_sizes(const std::string& linear_la
   return linear_layer_sizes;
 }
 
+template <typename Layer>
+void set_weights_and_bias(Layer& layer, const std::string& weights, std::mt19937& rng)
+{
+  return set_weights_and_bias(layer, parse_weight_initialization(weights), rng);
+}
+
 struct layer_builder
 {
-  double dropout_rate = 0;  // dropout rate of the next linear layer
   std::mt19937& rng;        // needed for creating sparse matrices
 
   explicit layer_builder(std::mt19937& rng_)
     : rng(rng_)
   {}
 
-  std::shared_ptr<dense_linear_layer> make_dense_linear_layer(const std::string& layer_description, std::size_t D, std::size_t K, long N)
+  std::shared_ptr<dense_linear_layer> make_dense_linear_layer(const std::string& name,
+                                                              const std::map<std::string, std::string>& arguments,
+                                                              std::size_t D,
+                                                              std::size_t K,
+                                                              long N,
+                                                              const std::string& weights,
+                                                              const std::string& optimizer
+                                                              )
   {
-    if (layer_description == "Linear")
+    if (name == "Linear")
     {
-      return std::make_shared<dense_linear_layer>(D, K, N);
+      auto layer = std::make_shared<dense_linear_layer>(D, K, N);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (layer_description == "Sigmoid")
+    else if (name == "Sigmoid")
     {
-      return std::make_shared<dense_sigmoid_layer>(D, K, N);
+      auto layer = std::make_shared<dense_sigmoid_layer>(D, K, N);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (layer_description == "ReLU")
+    else if (name == "ReLU")
     {
-      return std::make_shared<dense_relu_layer>(D, K, N);
+      auto layer = std::make_shared<dense_relu_layer>(D, K, N);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (layer_description == "Softmax")
+    else if (name == "Softmax")
     {
-      return std::make_shared<dense_softmax_layer>(D, K, N);
+      auto layer = std::make_shared<dense_softmax_layer>(D, K, N);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (layer_description == "LogSoftmax")
+    else if (name == "LogSoftmax")
     {
-      return std::make_shared<dense_log_softmax_layer>(D, K, N);
+      auto layer = std::make_shared<dense_log_softmax_layer>(D, K, N);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (layer_description == "HyperbolicTangent")
+    else if (name == "HyperbolicTangent")
     {
-      return std::make_shared<dense_hyperbolic_tangent_layer>(D, K, N);
+      auto layer = std::make_shared<dense_hyperbolic_tangent_layer>(D, K, N);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (utilities::starts_with(layer_description, "AllRelu"))
+    else if (name == "AllRelu")
     {
-      scalar alpha = parse_scalar_argument(layer_description);
-      return std::make_shared<dense_trelu_layer>(alpha, D, K, N);
+      scalar alpha = utilities::get_scalar_argument(arguments, "alpha");
+      auto layer = std::make_shared<dense_trelu_layer>(alpha, D, K, N);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (utilities::starts_with(layer_description, "LeakyRelu"))
+    else if (name == "LeakyRelu")
     {
-      scalar alpha = parse_scalar_argument(layer_description);
-      return std::make_shared<dense_leaky_relu_layer>(alpha, D, K, N);
+      scalar alpha = utilities::get_scalar_argument(arguments, "alpha");
+      auto layer = std::make_shared<dense_leaky_relu_layer>(alpha, D, K, N);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (utilities::starts_with(layer_description, "TReLU"))
+    else if (name == "TReLU")
     {
-      scalar epsilon = parse_scalar_argument(layer_description);
-      return std::make_shared<dense_trelu_layer>(epsilon, D, K, N);
+      scalar epsilon = utilities::get_scalar_argument(arguments, "epsilon");
+      auto layer = std::make_shared<dense_trelu_layer>(epsilon, D, K, N);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (utilities::starts_with(layer_description, "SReLU"))
+    else if (name == "SReLU")
     {
-      const auto [al, tl, ar, tr] = parse_scalar_arguments<4>(layer_description);
-      return std::make_shared<dense_srelu_layer>(D, K, N, al, tl, ar, tr);
+      scalar al = utilities::get_scalar_argument(arguments, "al", 0);
+      scalar tl = utilities::get_scalar_argument(arguments, "tl", 0);
+      scalar ar = utilities::get_scalar_argument(arguments, "ar", 0);
+      scalar tr = utilities::get_scalar_argument(arguments, "tr", 1);
+      auto layer = std::make_shared<dense_srelu_layer>(D, K, N, al, tl, ar, tr);
+      set_weights_and_bias(*layer, weights, rng);
+      set_srelu_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    throw std::runtime_error("unsupported dense layer '" + layer_description + "'");
+    throw std::runtime_error("unsupported dense layer '" + name + "'");
   }
 
   inline
-  std::shared_ptr<sparse_linear_layer> make_sparse_linear_layer(const std::string& layer_description, std::size_t D, std::size_t K, long N)
+  std::shared_ptr<sparse_linear_layer> make_sparse_linear_layer(const std::string& name,
+                                                                const std::map<std::string, std::string>& arguments,
+                                                                std::size_t D,
+                                                                std::size_t K,
+                                                                long N,
+                                                                scalar density,
+                                                                const std::string& weights,
+                                                                const std::string& optimizer)
   {
-    if (layer_description == "Linear")
+    if (name == "Linear")
     {
-      return std::make_shared<sparse_linear_layer>(D, K, N);
+      auto layer = std::make_shared<sparse_linear_layer>(D, K, N);
+      set_support_random(*layer, density, rng);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (layer_description == "Sigmoid")
+    else if (name == "Sigmoid")
     {
-      return std::make_shared<sparse_sigmoid_layer>(D, K, N);
+      auto layer = std::make_shared<sparse_sigmoid_layer>(D, K, N);
+      set_support_random(*layer, density, rng);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (layer_description == "ReLU")
+    else if (name == "ReLU")
     {
-      return std::make_shared<sparse_relu_layer>(D, K, N);
+      auto layer = std::make_shared<sparse_relu_layer>(D, K, N);
+      set_support_random(*layer, density, rng);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (layer_description == "Softmax")
+    else if (name == "Softmax")
     {
-      return std::make_shared<sparse_softmax_layer>(D, K, N);
+      auto layer = std::make_shared<sparse_softmax_layer>(D, K, N);
+      set_support_random(*layer, density, rng);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (layer_description == "LogSoftmax")
+    else if (name == "LogSoftmax")
     {
-      return std::make_shared<sparse_log_softmax_layer>(D, K, N);
+      auto layer = std::make_shared<sparse_log_softmax_layer>(D, K, N);
+      set_support_random(*layer, density, rng);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (layer_description == "HyperbolicTangent")
+    else if (name == "HyperbolicTangent")
     {
-      return std::make_shared<sparse_hyperbolic_tangent_layer>(D, K, N);
+      auto layer = std::make_shared<sparse_hyperbolic_tangent_layer>(D, K, N);
+      set_support_random(*layer, density, rng);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (utilities::starts_with(layer_description, "AllReLU"))
+    else if (name == "AllReLU")
     {
-      scalar alpha = parse_scalar_argument(layer_description);
-      return std::make_shared<sparse_trelu_layer>(D, K, N, alpha);
+      scalar alpha = utilities::get_scalar_argument(arguments, "alpha");
+      auto layer = std::make_shared<sparse_trelu_layer>(D, K, N, alpha);
+      set_support_random(*layer, density, rng);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (utilities::starts_with(layer_description, "LeakyReLU"))
+    else if (name == "LeakyReLU")
     {
-      scalar alpha = parse_scalar_argument(layer_description);
-      return std::make_shared<sparse_leaky_relu_layer>(D, K, N, alpha);
+      scalar alpha = utilities::get_scalar_argument(arguments, "alpha");
+      auto layer = std::make_shared<sparse_leaky_relu_layer>(D, K, N, alpha);
+      set_support_random(*layer, density, rng);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (utilities::starts_with(layer_description, "TReLU"))
+    else if (name == "TReLU")
     {
-      scalar epsilon = parse_scalar_argument(layer_description);
-      return std::make_shared<sparse_trelu_layer>(D, K, N, epsilon);
+      scalar epsilon = utilities::get_scalar_argument(arguments, "epsilon");
+      auto layer = std::make_shared<sparse_trelu_layer>(D, K, N, epsilon);
+      set_support_random(*layer, density, rng);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (utilities::starts_with(layer_description, "SReLU"))
+    else if (name == "SReLU")
     {
-      const auto [al, tl, ar, tr] = parse_scalar_arguments<4>(layer_description);
-      return std::make_shared<sparse_srelu_layer>(D, K, N, al, tl, ar, tr);
+      scalar al = utilities::get_scalar_argument(arguments, "al", 0);
+      scalar tl = utilities::get_scalar_argument(arguments, "tl", 0);
+      scalar ar = utilities::get_scalar_argument(arguments, "ar", 0);
+      scalar tr = utilities::get_scalar_argument(arguments, "tr", 1);
+      auto layer = std::make_shared<sparse_srelu_layer>(D, K, N, al, tl, ar, tr);
+      set_support_random(*layer, density, rng);
+      set_weights_and_bias(*layer, weights, rng);
+      set_srelu_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    throw std::runtime_error("unsupported sparse layer '" + layer_description + "'");
+    throw std::runtime_error("unsupported sparse layer '" + name + "'");
   }
 
-  std::shared_ptr<neural_network_layer> make_dense_linear_dropout_layer(const std::string& layer_description, std::size_t D, std::size_t K, long N, scalar dropout)
+  std::shared_ptr<neural_network_layer> make_dense_linear_dropout_layer(const std::string& name,
+                                                                        const std::map<std::string, std::string>& arguments,
+                                                                        std::size_t D,
+                                                                        std::size_t K,
+                                                                        long N,
+                                                                        scalar dropout,
+                                                                        const std::string& weights,
+                                                                        const std::string& optimizer)
   {
-    if (layer_description == "Linear")
+    if (name == "Linear")
     {
-      return std::make_shared<dense_linear_dropout_layer>(D, K, N, dropout);
+      auto layer = std::make_shared<dense_linear_dropout_layer>(D, K, N, dropout);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (layer_description == "Sigmoid")
+    else if (name == "Sigmoid")
     {
-      return std::make_shared<dense_sigmoid_dropout_layer>(D, K, N, dropout);
+      auto layer = std::make_shared<dense_sigmoid_dropout_layer>(D, K, N, dropout);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (layer_description == "ReLU")
+    else if (name == "ReLU")
     {
-      return std::make_shared<dense_relu_dropout_layer>(D, K, N, dropout);
+      auto layer = std::make_shared<dense_relu_dropout_layer>(D, K, N, dropout);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (layer_description == "Softmax")
+    else if (name == "Softmax")
     {
-      return std::make_shared<dense_softmax_dropout_layer>(D, K, N, dropout);
+      auto layer = std::make_shared<dense_softmax_dropout_layer>(D, K, N, dropout);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (layer_description == "LogSoftmax")
+    else if (name == "LogSoftmax")
     {
-      return std::make_shared<dense_log_softmax_dropout_layer>(D, K, N, dropout);
+      auto layer = std::make_shared<dense_log_softmax_dropout_layer>(D, K, N, dropout);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (layer_description == "HyperbolicTangent")
+    else if (name == "HyperbolicTangent")
     {
-      return std::make_shared<dense_hyperbolic_tangent_dropout_layer>(D, K, N, dropout);
+      auto layer = std::make_shared<dense_hyperbolic_tangent_dropout_layer>(D, K, N, dropout);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (utilities::starts_with(layer_description, "AllRelu"))
+    else if (name == "AllRelu")
     {
-      scalar alpha = parse_scalar_argument(layer_description);
-      return std::make_shared<dense_trelu_dropout_layer>(alpha, D, K, N, dropout);
+      scalar alpha = utilities::get_scalar_argument(arguments, "alpha");
+      auto layer = std::make_shared<dense_trelu_dropout_layer>(alpha, D, K, N, dropout);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (utilities::starts_with(layer_description, "LeakyRelu"))
+    else if (name == "LeakyRelu")
     {
-      scalar alpha = parse_scalar_argument(layer_description);
-      return std::make_shared<dense_leaky_relu_dropout_layer>(alpha, D, K, N, dropout);
+      scalar alpha = utilities::get_scalar_argument(arguments, "alpha");
+      auto layer = std::make_shared<dense_leaky_relu_dropout_layer>(alpha, D, K, N, dropout);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (utilities::starts_with(layer_description, "TReLU"))
+    else if (name == "TReLU")
     {
-      scalar epsilon = parse_scalar_argument(layer_description);
-      return std::make_shared<dense_trelu_dropout_layer>(epsilon, D, K, N, dropout);
+      scalar epsilon = utilities::get_scalar_argument(arguments, "epsilon");
+      auto layer = std::make_shared<dense_trelu_dropout_layer>(epsilon, D, K, N, dropout);
+      set_weights_and_bias(*layer, weights, rng);
+      set_linear_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    else if (utilities::starts_with(layer_description, "SReLU"))
+    else if (name == "SReLU")
     {
-      const auto [al, tl, ar, tr] = parse_scalar_arguments<4>(layer_description);
-      return std::make_shared<dense_srelu_dropout_layer>(D, K, N, dropout, al, tl, ar, tr);
+      scalar al = utilities::get_scalar_argument(arguments, "al", 0);
+      scalar tl = utilities::get_scalar_argument(arguments, "tl", 0);
+      scalar ar = utilities::get_scalar_argument(arguments, "ar", 0);
+      scalar tr = utilities::get_scalar_argument(arguments, "tr", 1);
+      auto layer = std::make_shared<dense_srelu_dropout_layer>(D, K, N, dropout, al, tl, ar, tr);
+      set_weights_and_bias(*layer, weights, rng);
+      set_srelu_layer_optimizer(*layer, optimizer);
+      return layer;
     }
-    throw std::runtime_error("unsupported dropout layer '" + layer_description + "'");
+    throw std::runtime_error("unsupported dropout layer '" + name + "'");
   }
 
-  std::shared_ptr<neural_network_layer> make_linear_layer(const std::string& layer_description,
+  std::shared_ptr<neural_network_layer> make_linear_layer(const std::string& name,
+                                                          const std::map<std::string, std::string>& arguments,
                                                           std::size_t input_size,
                                                           std::size_t output_size,
                                                           long batch_size,
-                                                          double density,
-                                                          weight_initialization w,
+                                                          scalar density,
+                                                          const std::string& weights,
                                                           const std::string& optimizer
                                                          )
   {
     auto D = input_size;
     auto K = output_size;
     auto N = batch_size;
+
+    auto it = arguments.find("dropout");
+    scalar dropout_rate = it == arguments.end() ? scalar(0) : parse_scalar(it->second);
+
     if (dropout_rate == 0)
     {
       if (density == 1)
       {
-        std::shared_ptr<dense_linear_layer> layer = make_dense_linear_layer(layer_description, D, K, N);
-        set_weights_and_bias(*layer, w, rng);
-        if (utilities::starts_with(layer_description, "SReLU"))
-        {
-          set_srelu_layer_optimizer(*dynamic_cast<dense_srelu_layer*>(layer.get()), optimizer);
-        }
-        else
-        {
-          set_linear_layer_optimizer(*layer, optimizer);
-        }
-        return layer;
+        return make_dense_linear_layer(name, arguments, D, K, N, weights, optimizer);
       }
       else
       {
-        std::shared_ptr<sparse_linear_layer> layer = make_sparse_linear_layer(layer_description, D, K, N);
-        set_support_random(*layer, density, rng);
-        set_weights_and_bias(*layer, w, rng);
-        if (utilities::starts_with(layer_description, "SReLU"))
-        {
-          set_srelu_layer_optimizer(*dynamic_cast<sparse_srelu_layer*>(layer.get()), optimizer);
-        }
-        else
-        {
-          set_linear_layer_optimizer(*layer, optimizer);
-        }
-        return layer;
+        return make_sparse_linear_layer(name, arguments, D, K, N, density, weights, optimizer);
       }
     }
     else
     {
-      std::shared_ptr<neural_network_layer> layer = make_dense_linear_dropout_layer(layer_description, D, K, N, dropout_rate);
-      std::shared_ptr<dense_linear_layer> dlayer(dynamic_cast<dense_linear_layer*>(layer.get()));
-      set_weights_and_bias(*dlayer, w, rng);
-      if (utilities::starts_with(layer_description, "SReLU"))
-      {
-        set_srelu_layer_optimizer(*dynamic_cast<dense_srelu_layer*>(layer.get()), optimizer);
-      }
-      else
-      {
-        set_linear_layer_optimizer(*dlayer, optimizer);
-      }
-      return layer;
+      return make_dense_linear_dropout_layer(name, arguments, D, K, N, dropout_rate, weights, optimizer);
     }
   }
 
   std::vector<std::shared_ptr<neural_network_layer>> build(const std::vector<std::string>& layer_specifications,
                                                            const std::vector<std::size_t>& linear_layer_sizes,
                                                            const std::vector<double>& linear_layer_densities,
-                                                           const std::vector<weight_initialization>& linear_layer_weights,
-                                                           const std::vector<std::string>& linear_layer_optimizers,
+                                                           const std::vector<std::string>& linear_layer_weights,
+                                                           const std::vector<std::string>& optimizers,
                                                            long batch_size)
   {
     std::vector<std::shared_ptr<neural_network_layer>> result;
 
-    unsigned int i = 0;  // index of the linear layers
+    unsigned int layer_index = 0;
+    unsigned int optimizer_index = 0;
     for (const std::string& layer: layer_specifications)
     {
-      if (utilities::starts_with("Dropout", layer))
+      auto [name, arguments] = utilities::parse_function_call(layer);
+
+      if (name == "BatchNorm")
       {
-        auto arguments = parse_arguments(layer, 1);
-        dropout_rate = parse_double(arguments.front());
-      }
-      else if (layer == "BatchNorm")
-      {
-        auto blayer = std::make_shared<dense_batch_normalization_layer>(linear_layer_sizes[i], batch_size);
-        set_batch_normalization_layer_optimizer(*blayer, "GradientDescent");  // TODO: pass the batch norm optimizer as an argument
+        auto blayer = std::make_shared<dense_batch_normalization_layer>(linear_layer_sizes[layer_index++], batch_size);
+        set_batch_normalization_layer_optimizer(*blayer, optimizers[optimizer_index++]);
         result.push_back(blayer);
       }
-      else if (is_linear_layer(layer))
+      else
       {
-        result.push_back(make_linear_layer(layer, linear_layer_sizes[i], linear_layer_sizes[i + 1], batch_size, linear_layer_densities[i], linear_layer_weights[i], linear_layer_optimizers[i]));
-        i++;
+        auto D = linear_layer_sizes[layer_index];
+        auto K = linear_layer_sizes[layer_index + 1];
+        auto N = batch_size;
+        result.push_back(make_linear_layer(name, arguments, D, K, N, static_cast<scalar>(linear_layer_densities[layer_index]), linear_layer_weights[layer_index], optimizers[optimizer_index++]));
+        layer_index++;
       }
     }
 
@@ -410,7 +520,7 @@ struct layer_builder
 std::vector<std::shared_ptr<neural_network_layer>> construct_layers(const std::vector<std::string>& layer_specifications,
                                                                     const std::vector<std::size_t>& linear_layer_sizes,
                                                                     const std::vector<double>& linear_layer_densities,
-                                                                    const std::vector<weight_initialization>& linear_layer_weights,
+                                                                    const std::vector<std::string>& linear_layer_weights,
                                                                     const std::vector<std::string>& linear_layer_optimizers,
                                                                     long batch_size,
                                                                     std::mt19937& rng

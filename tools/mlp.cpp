@@ -33,14 +33,14 @@
 using namespace nerva;
 
 inline
-std::vector<weight_initialization> parse_init_weights(const std::string& text, const std::vector<std::string>& linear_layer_specifications)
+std::vector<std::string> parse_init_weights(const std::string& text, const std::vector<std::string>& linear_layer_specifications)
 {
   std::vector<std::string> words = utilities::regex_split(utilities::trim_copy(text), ";");
   std::size_t n = linear_layer_specifications.size();
 
   if (words.size() == 1)
   {
-    weight_initialization init = parse_weight_initialization(words.front());
+    auto init = words.front();
     return { n, init };
   }
 
@@ -49,12 +49,7 @@ std::vector<weight_initialization> parse_init_weights(const std::string& text, c
     throw std::runtime_error(fmt::format("the number of weight initializers ({}) does not match with the number of linear layers ({})", words.size(), n));
   }
 
-  std::vector<weight_initialization> result;
-  for (const auto& word: words)
-  {
-    result.push_back(parse_weight_initialization(word));
-  }
-  return result;
+  return words;
 }
 
 inline
@@ -284,11 +279,11 @@ class tool: public command_line_tool
       auto linear_layer_sizes = compute_linear_layer_sizes(linear_layer_sizes_text, linear_layer_specifications);
       auto linear_layer_densities = compute_linear_layer_densities(densities_text, overall_density, linear_layer_specifications, linear_layer_sizes);
       auto linear_layer_weights = parse_init_weights(init_weights_text, linear_layer_specifications);
-      auto linear_layer_optimizers = parse_optimizers(options.optimizer, linear_layer_specifications.size());
+      auto optimizers = parse_optimizers(options.optimizer, linear_layer_specifications.size());
 
       // construct the multilayer perceptron M
       multilayer_perceptron M;
-      M.layers = construct_layers(layer_specifications, linear_layer_sizes, linear_layer_densities, linear_layer_weights, linear_layer_optimizers, options.batch_size, rng);
+      M.layers = construct_layers(layer_specifications, linear_layer_sizes, linear_layer_densities, linear_layer_weights, optimizers, options.batch_size, rng);
 
       if (!load_weights_file.empty())
       {

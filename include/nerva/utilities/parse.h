@@ -12,6 +12,8 @@
 
 #include "nerva/utilities/parse_numbers.h"
 #include "nerva/utilities/string_utility.h"
+#include "fmt/format.h"
+#include <map>
 
 namespace nerva::utilities {
 
@@ -50,6 +52,113 @@ double parse_numeric_argument(const std::string& text)
   }
   return parse_double(text.substr(startpos + 1, endpos - startpos - 1));
 };
+
+// Parse a string of the shape "NAME(key1=value1, key2=value2, ...)".
+// If there are no arguments the parentheses may be omitted.
+// If there is only one parameter, it is allowed to pass "NAME(value)" instead of "NAME(key=value)"
+inline
+std::pair<std::string, std::map<std::string, std::string>> parse_function_call(std::string text)
+{
+  utilities::trim(text);
+
+  auto error = [&text]()
+  {
+    throw std::runtime_error(fmt::format("Could not parse function call \"{}\"", text));
+  };
+
+  std::string name;
+  std::map<std::string, std::string> arguments;
+
+  std::smatch m;
+
+  // no parentheses
+  bool result = std::regex_match(text, m, std::regex(R"((\w+$))"));
+  if (result)
+  {
+    name = m[1];
+    return {name, arguments};
+  }
+
+  // with parentheses
+  result = std::regex_match(text, m, std::regex(R"((\w+)\((.*?)\))"));
+  if (result)
+  {
+    name = m[1];
+    std::vector<std::string> args = regex_split(m[2], ",");
+
+    if (args.size() == 1 && args.front().find('=') == std::string::npos)
+    {
+      // NAME(value)
+      auto value = utilities::trim_copy(args.front());
+      arguments[""] = value;
+      return {name, arguments};
+    }
+    else
+    {
+      // NAME(key1=value1, ...)
+      for (const auto& arg: args)
+      {
+        auto words = regex_split(arg, R"(\s*=\s*)");
+        if (words.size() == 2)
+        {
+          auto key = words[0];
+          auto value = words[1];
+          if (const auto &[it, inserted] = arguments.emplace(key, value); !inserted)
+          {
+            std::cout << "Key \"" << key << "\" appears multiple times.\n";
+            error();
+          }
+        }
+        else
+        {
+          error();
+        }
+      }
+      return {name, arguments};
+    }
+  }
+
+  error();
+  return {name, arguments};  // to silence warnings
+}
+
+inline
+scalar get_scalar_argument(const std::map<std::string, std::string>& arguments, const std::string& key)
+{
+  auto i = arguments.find(key);
+  if (i != arguments.end())
+  {
+    return parse_scalar(i->second);
+  }
+  if (arguments.size() == 1)
+  {
+    const auto& [key1, value1] = *arguments.begin();
+    if (key1.empty())
+    {
+      return parse_scalar(value1);
+    }
+  }
+  throw std::runtime_error(fmt::format("could not find key \"{}\"", key));
+}
+
+inline
+scalar get_scalar_argument(const std::map<std::string, std::string>& arguments, const std::string& key, scalar default_value)
+{
+  auto i = arguments.find(key);
+  if (i != arguments.end())
+  {
+    return parse_scalar(i->second);
+  }
+  if (arguments.size() == 1)
+  {
+    const auto& [key1, value1] = *arguments.begin();
+    if (key1.empty())
+    {
+      return parse_scalar(value1);
+    }
+  }
+  return default_value;
+}
 
 } // namespace nerva::utilities
 

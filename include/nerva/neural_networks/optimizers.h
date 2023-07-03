@@ -213,18 +213,20 @@ std::shared_ptr<optimizer_function> make_composite_optimizer(Args&&... args)
 template <typename T>
 std::shared_ptr<optimizer_function> parse_optimizer(const std::string& text, T& x, T& Dx)
 {
-  if (text == "GradientDescent")
+  auto [name, arguments] = utilities::parse_function_call(text);
+
+  if (name == "GradientDescent")
   {
     return std::make_shared<gradient_descent_optimizer<T>>(x, Dx);
   }
-  else if (utilities::starts_with(text, "Momentum"))  // e.g. "momentum(0.9)"
+  else if (name == "Momentum")  // e.g. "Momentum(mu=0.9)"
   {
-    auto mu = static_cast<scalar>(utilities::parse_numeric_argument(text));
+    scalar mu = utilities::get_scalar_argument(arguments, "mu");
     return std::make_shared<momentum_optimizer<T>>(x, Dx, mu);
   }
-  else if (utilities::starts_with(text, "Nesterov"))
+  else if (name == "Nesterov")
   {
-    auto mu = static_cast<scalar>(utilities::parse_numeric_argument(text));
+    scalar mu = utilities::get_scalar_argument(arguments, "mu");
     return std::make_shared<nesterov_optimizer<T>>(x, Dx, mu);
   }
   else

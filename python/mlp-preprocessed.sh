@@ -8,8 +8,8 @@ init_weights=XavierNormalized
 density=0.05
 sizes="3072,1024,512,10"
 layers="ReLU;ReLU;Linear"
-optimizers="Nesterov(0.9)"
-learning_rate="Constant(0.1)"
+optimizers="Nesterov(mu=0.9)"
+learning_rate="Constant(lr=0.1)"
 loss=SoftmaxCrossEntropy
 batch_size=100
 epochs=5
