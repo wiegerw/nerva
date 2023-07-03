@@ -68,7 +68,7 @@ class Dense(Layer):
         if dropout_rate == 0.0:
             layer = nervalib.make_dense_linear_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, self.weight_initializer.compile(), self.optimizer.compile())
         else:
-            layer = nervalib.make_dense_linear_dropout_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, self.weight_initializer.compile(), self.optimizer.compile(), dropout_rate)
+            layer = nervalib.make_dense_linear_dropout_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, dropout_rate, self.weight_initializer.compile(), self.optimizer.compile())
         self._layer = layer
         return layer
 

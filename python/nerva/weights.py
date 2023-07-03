@@ -11,14 +11,14 @@ class WeightInitializer(object):
 
 class Xavier(WeightInitializer):
     def compile(self):
-        return nervalib.Weights.Xavier
+        return 'Xavier'
 
     def __str__(self):
         return 'Xavier()'
 
 class XavierNormalized(WeightInitializer):
     def compile(self):
-        return nervalib.Weights.XavierNormalized
+        return 'XavierNormalized'
 
     def __str__(self):
         return 'XavierNormalized()'
@@ -26,7 +26,7 @@ class XavierNormalized(WeightInitializer):
 
 class He(WeightInitializer):
     def compile(self):
-        return nervalib.Weights.He
+        return 'He'
 
     def __str__(self):
         return 'He()'
@@ -34,7 +34,7 @@ class He(WeightInitializer):
 
 class Uniform(WeightInitializer):
     def compile(self):
-        return nervalib.Weights.Uniform
+        return 'Uniform'
 
     def __str__(self):
         return 'Uniform()'
@@ -42,7 +42,7 @@ class Uniform(WeightInitializer):
 
 class PyTorch(WeightInitializer):
     def compile(self):
-        return nervalib.Weights.PyTorch
+        return 'PyTorch'
 
     def __str__(self):
         return 'PyTorch()'
@@ -50,7 +50,7 @@ class PyTorch(WeightInitializer):
 
 class Zero(WeightInitializer):
     def compile(self):
-        return nervalib.Weights.Zero
+        return 'Zero'
 
     def __str__(self):
         return 'Zero()'
@@ -58,10 +58,10 @@ class Zero(WeightInitializer):
 
 class None_(WeightInitializer):
     def compile(self):
-        return nervalib.Weights.None_
+        return 'None'
 
     def __str__(self):
-        return 'Zero()'
+        return 'None_()'
 
 
 def parse_weight_initializer(text: str):

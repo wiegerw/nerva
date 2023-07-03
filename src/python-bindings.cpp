@@ -361,47 +361,39 @@ PYBIND11_MODULE(nervalib, m)
                                       std::size_t D,
                                       std::size_t K,
                                       long batch_size,
-                                      weight_initialization w,
+                                      const std::string& weights,
                                       const std::string& optimizer
   )
   {
     layer_builder builder(nerva_rng);
-    auto layer = builder.make_dense_linear_layer(layer_description, D, K, batch_size);
-    set_weights_and_bias(*layer, w, nerva_rng);
-    set_linear_layer_optimizer(*layer, optimizer);
-    return layer;
+    auto [name, arguments] = utilities::parse_function_call(layer_description);
+    return builder.make_dense_linear_layer(name, arguments, D, K, batch_size, weights, optimizer);
   });
   m.def("make_dense_linear_dropout_layer", [](const std::string& layer_description,
                                               std::size_t D,
                                               std::size_t K,
                                               long batch_size,
-                                              weight_initialization w,
-                                              const std::string& optimizer,
-                                              scalar dropout_rate
+                                              scalar dropout_rate,
+                                              const std::string& weights,
+                                              const std::string& optimizer
   )
   {
     layer_builder builder(nerva_rng);
-    auto layer = builder.make_dense_linear_dropout_layer(layer_description, D, K, batch_size, dropout_rate);
-    auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get());
-    set_weights_and_bias(*dlayer, w, nerva_rng);
-    set_linear_layer_optimizer(*dlayer, optimizer);
-    return layer;
+    auto [name, arguments] = utilities::parse_function_call(layer_description);
+    return builder.make_dense_linear_dropout_layer(name, arguments, D, K, batch_size, dropout_rate, weights, optimizer);
   });
   m.def("make_sparse_linear_layer", [](const std::string& layer_description,
                                       std::size_t D,
                                       std::size_t K,
                                       long batch_size,
-                                      double density,
-                                      weight_initialization w,
+                                      scalar density,
+                                      const std::string& weights,
                                       const std::string& optimizer
   )
   {
     layer_builder builder(nerva_rng);
-    auto layer = builder.make_sparse_linear_layer(layer_description, D, K, batch_size);
-    set_support_random(*layer, density, nerva_rng);
-    set_weights_and_bias(*layer, w, nerva_rng);
-    set_linear_layer_optimizer(*layer, optimizer);
-    return layer;
+    auto [name, arguments] = utilities::parse_function_call(layer_description);
+    return builder.make_sparse_linear_layer(name, arguments, D, K, batch_size, density, weights, optimizer);
   });
 
   /////////////////////////////////////////////////////////////////////////
