@@ -5,7 +5,8 @@ seed=1
 init_weights=Xavier
 density=1
 sizes="3072,1024,512,10"
-layers="ReLU(dropout=0.3);ReLU;Linear"
+layers="ReLU;ReLU;Linear"
+dropouts="0.3,0,0"
 optimizers="Momentum(0.9)"
 learning_rate="Constant(0.01)"
 loss=SoftmaxCrossEntropy
@@ -20,6 +21,7 @@ print_header "Train CIFAR10 using mlp.cpp"
 	--epochs=$epochs \
 	--sizes=$sizes \
 	--layers=$layers \
+	--dropouts="$dropouts" \
 	--optimizers=$optimizers \
 	--init-weights=$init_weights \
 	--learning-rate=$learning_rate \
@@ -38,6 +40,7 @@ python3 -u mlp.py \
 	--epochs=$epochs \
 	--sizes=$sizes \
 	--layers=$layers \
+	--dropouts="$dropouts" \
 	--optimizers=$optimizers \
 	--init-weights=$init_weights \
 	--learning-rate=$learning_rate \

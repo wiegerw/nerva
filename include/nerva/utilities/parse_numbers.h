@@ -4,7 +4,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-/// \file nerva/parse_numbers.h
+/// \file nerva/utilities/parse_numbers.h
 /// \brief add your file description here.
 
 #ifndef NERVA_PARSE_NUMBERS_H

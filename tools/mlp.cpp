@@ -33,6 +33,52 @@
 using namespace nerva;
 
 inline
+std::vector<double> parse_linear_layer_densities(const std::string& densities_text,
+                                                 double overall_density,
+                                                 const std::vector<std::size_t>& linear_layer_sizes)
+{
+  std::vector<double> densities = parse_comma_separated_real_numbers(densities_text);
+  auto n = linear_layer_sizes.size() - 1;  // the number of linear layers
+
+  if (densities.empty())
+  {
+    if (overall_density == 1)
+    {
+      densities = std::vector<double>(n, 1);
+    }
+    else
+    {
+      densities = compute_sparse_layer_densities(overall_density, linear_layer_sizes);
+    }
+  }
+
+  if (densities.size() != n)
+  {
+    throw std::runtime_error("the number of densities does not match with the number of linear layers");
+  }
+
+  return densities;
+}
+
+inline
+std::vector<double> parse_linear_layer_dropouts(const std::string& dropouts_text, std::size_t linear_layer_count)
+{
+  std::vector<double> dropouts = parse_comma_separated_real_numbers(dropouts_text);
+
+  if (dropouts.empty())
+  {
+    return std::vector<double>(linear_layer_count, 0.0);
+  }
+
+  if (dropouts.size() != linear_layer_count)
+  {
+    throw std::runtime_error("the number of dropouts does not match with the number of linear layers");
+  }
+
+  return dropouts;
+}
+
+inline
 std::vector<std::string> parse_init_weights(const std::string& text, std::size_t linear_layer_count)
 {
   auto n = linear_layer_count;
@@ -164,6 +210,7 @@ class tool: public command_line_tool
     std::string save_dataset_file;
     std::string linear_layer_sizes_text;
     std::string densities_text;
+    std::string dropouts_text;
     std::string layer_specifications_text;
     std::string init_weights_text = "None";
     double overall_density = 1;
@@ -186,10 +233,11 @@ class tool: public command_line_tool
       // model parameters
       cli |= lyra::opt(linear_layer_sizes_text, "value")["--sizes"]("A comma separated list of layer sizes");
       cli |= lyra::opt(densities_text, "value")["--densities"]("A comma separated list of sparse layer densities");
+      cli |= lyra::opt(dropouts_text, "value")["--dropouts"]("A comma separated list of dropout rates");
       cli |= lyra::opt(overall_density, "value")["--overall-density"]("The overall density level of the sparse layers");
       cli |= lyra::opt(layer_specifications_text, "value")["--layers"]("A semi-colon separated lists of layers. The following layers are supported: "
                                                                   "Linear, ReLU, Sigmoid, Softmax, LogSoftmax, HyperbolicTangent, BatchNorm, "
-                                                                  "Dropout(<rate>), AllRelu(<alpha>), TReLU(<epsilon>)");
+                                                                  "AllRelu(<alpha>), TReLU(<epsilon>)");
 
       // training
       cli |= lyra::opt(options.epochs, "value")["--epochs"]("The number of epochs (default: 100)");
@@ -282,12 +330,13 @@ class tool: public command_line_tool
       auto linear_layer_sizes = parse_comma_separated_numbers(linear_layer_sizes_text);
       auto linear_layer_count = linear_layer_sizes.size() - 1;
       auto linear_layer_densities = parse_linear_layer_densities(densities_text, overall_density, linear_layer_sizes);
+      auto linear_layer_dropouts = parse_linear_layer_dropouts(dropouts_text, linear_layer_count);
       auto linear_layer_weights = parse_init_weights(init_weights_text, linear_layer_count);
       auto optimizers = parse_optimizers(options.optimizer, layer_specifications.size());
 
       // construct the multilayer perceptron M
       multilayer_perceptron M;
-      M.layers = construct_layers(layer_specifications, linear_layer_sizes, linear_layer_densities, linear_layer_weights, optimizers, options.batch_size, rng);
+      M.layers = make_layers(layer_specifications, linear_layer_sizes, linear_layer_densities, linear_layer_dropouts, linear_layer_weights, optimizers, options.batch_size, rng);
 
       if (!load_weights_file.empty())
       {

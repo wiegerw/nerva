@@ -115,34 +115,6 @@ bool is_linear_layer(const std::string& layer_description)
 }
 
 inline
-std::vector<double> parse_linear_layer_densities(const std::string& densities_text,
-                                                 double overall_density,
-                                                 const std::vector<std::size_t>& linear_layer_sizes)
-{
-  std::vector<double> densities = parse_comma_separated_real_numbers(densities_text);
-  auto n = linear_layer_sizes.size() - 1;  // the number of linear layers
-
-  if (densities.empty())
-  {
-    if (overall_density == 1)
-    {
-      densities = std::vector<double>(n, 1);
-    }
-    else
-    {
-      densities = compute_sparse_layer_densities(overall_density, linear_layer_sizes);
-    }
-  }
-
-  if (densities.size() != n)
-  {
-    throw std::runtime_error("the number of densities does not match with the number of linear layers");
-  }
-
-  return densities;
-}
-
-inline
 std::vector<std::size_t> compute_linear_layer_sizes(const std::string& linear_layer_sizes_text, const std::vector<std::string>& linear_layer_specifications)
 {
   std::vector<std::size_t> linear_layer_sizes = parse_comma_separated_numbers(linear_layer_sizes_text);
@@ -160,15 +132,16 @@ void set_weights_and_bias(Layer& layer, const std::string& weights, std::mt19937
 }
 
 inline
-std::shared_ptr<dense_linear_layer> make_dense_linear_layer(const utilities::function_call& func,
-                                                            std::size_t D,
+std::shared_ptr<dense_linear_layer> make_dense_linear_layer(std::size_t D,
                                                             std::size_t K,
                                                             long N,
+                                                            const std::string& activation,
                                                             const std::string& weights,
                                                             const std::string& optimizer,
                                                             std::mt19937& rng
                                                             )
 {
+  auto func = utilities::parse_function_call(activation);
   if (func.name == "Linear")
   {
     auto layer = std::make_shared<dense_linear_layer>(D, K, N);
@@ -250,16 +223,17 @@ std::shared_ptr<dense_linear_layer> make_dense_linear_layer(const utilities::fun
 }
 
 inline
-std::shared_ptr<sparse_linear_layer> make_sparse_linear_layer(const utilities::function_call& func,
-                                                              std::size_t D,
+std::shared_ptr<sparse_linear_layer> make_sparse_linear_layer(std::size_t D,
                                                               std::size_t K,
                                                               long N,
                                                               scalar density,
+                                                              const std::string& activation,
                                                               const std::string& weights,
                                                               const std::string& optimizer,
                                                               std::mt19937& rng
                                                               )
 {
+  auto func = utilities::parse_function_call(activation);
   if (func.name == "Linear")
   {
     auto layer = std::make_shared<sparse_linear_layer>(D, K, N);
@@ -351,16 +325,17 @@ std::shared_ptr<sparse_linear_layer> make_sparse_linear_layer(const utilities::f
 }
 
 inline
-std::shared_ptr<neural_network_layer> make_dense_linear_dropout_layer(const utilities::function_call& func,
-                                                                      std::size_t D,
+std::shared_ptr<neural_network_layer> make_dense_linear_dropout_layer(std::size_t D,
                                                                       std::size_t K,
                                                                       long N,
                                                                       scalar dropout,
+                                                                      const std::string& activation,
                                                                       const std::string& weights,
                                                                       const std::string& optimizer,
                                                                       std::mt19937& rng
                                                                       )
 {
+  auto func = utilities::parse_function_call(activation);
   if (func.name == "Linear")
   {
     auto layer = std::make_shared<dense_linear_dropout_layer>(D, K, N, dropout);
@@ -441,11 +416,12 @@ std::shared_ptr<neural_network_layer> make_dense_linear_dropout_layer(const util
   throw std::runtime_error("unsupported dropout layer '" + func.name + "'");
 }
 
-std::shared_ptr<neural_network_layer> make_linear_layer(const utilities::function_call& func,
-                                                        std::size_t input_size,
+std::shared_ptr<neural_network_layer> make_linear_layer(std::size_t input_size,
                                                         std::size_t output_size,
                                                         long batch_size,
                                                         scalar density,
+                                                        scalar dropout_rate,
+                                                        const std::string& activation,
                                                         const std::string& weights,
                                                         const std::string& optimizer,
                                                         std::mt19937& rng
@@ -455,88 +431,133 @@ std::shared_ptr<neural_network_layer> make_linear_layer(const utilities::functio
   auto K = output_size;
   auto N = batch_size;
 
-  scalar dropout_rate = func.has_key("dropout") ? func.as_scalar("dropout") : scalar(0);
-
   if (dropout_rate == 0)
   {
     if (density == 1)
     {
-      return make_dense_linear_layer(func, D, K, N, weights, optimizer, rng);
+      return make_dense_linear_layer(D, K, N, activation, weights, optimizer, rng);
     }
     else
     {
-      return make_sparse_linear_layer(func, D, K, N, density, weights, optimizer, rng);
+      return make_sparse_linear_layer(D, K, N, density, activation, weights, optimizer, rng);
     }
   }
   else
   {
-    return make_dense_linear_dropout_layer(func, D, K, N, dropout_rate, weights, optimizer, rng);
+    return make_dense_linear_dropout_layer(D, K, N, dropout_rate, activation, weights, optimizer, rng);
   }
+}
+
+inline
+std::shared_ptr<neural_network_layer> make_batch_normalization_layer(std::size_t input_size,
+                                                                     long batch_size,
+                                                                     const std::string& optimizer
+                                                                    )
+{
+  auto D = input_size;
+  auto layer = std::make_shared<batch_normalization_layer>(D, batch_size);
+  set_batch_normalization_layer_optimizer(*layer, optimizer);
+  return layer;
 }
 
 inline
 void check_sizes(const std::vector<std::string>& layer_specifications,
                  const std::vector<std::size_t>& linear_layer_sizes,
                  const std::vector<double>& linear_layer_densities,
+                 const std::vector<double>& linear_layer_dropouts,
                  const std::vector<std::string>& linear_layer_weights,
                  const std::vector<std::string>& optimizers
-)
+                )
 {
-  auto n = linear_layer_sizes.size() - 1;
-  if (linear_layer_densities.size() != n)
+  if (linear_layer_densities.size() != linear_layer_weights.size())
   {
-    throw std::runtime_error("linear_layer_densities.size() != n");
-  }
-  if (linear_layer_weights.size() != n)
-  {
-    throw std::runtime_error("linear_layer_weights.size() != n");
+    throw std::runtime_error("Size mismatch between linear_layer_densities and linear_layer_weights");
   }
 
-  // every layer needs an optimizer
+  if (linear_layer_densities.size() != linear_layer_dropouts.size())
+  {
+    throw std::runtime_error("Size mismatch between linear_layer_densities and linear_layer_dropouts");
+  }
+
+  if (linear_layer_densities.size() + 1 != linear_layer_sizes.size())
+  {
+    throw std::runtime_error("Size mismatch between linear_layer_densities and linear_layer_sizes");
+  }
+
   if (optimizers.size() != layer_specifications.size())
   {
-    throw std::runtime_error("optimizers.size() != layer_specifications.size()");
+    throw std::runtime_error("Size mismatch between optimizers and layer_specifications");
   }
 }
 
 inline
-std::vector<std::shared_ptr<neural_network_layer>> construct_layers(const std::vector<std::string>& layer_specifications,
-                                                                    const std::vector<std::size_t>& linear_layer_sizes,
-                                                                    const std::vector<double>& linear_layer_densities,
-                                                                    const std::vector<std::string>& linear_layer_weights,
-                                                                    const std::vector<std::string>& optimizers,
-                                                                    long batch_size,
-                                                                    std::mt19937& rng
-)
+std::vector<std::shared_ptr<neural_network_layer>> make_layers(const std::vector<std::string>& layer_specifications,
+                                                               const std::vector<std::size_t>& linear_layer_sizes,
+                                                               const std::vector<double>& linear_layer_densities,
+                                                               const std::vector<double>& linear_layer_dropouts,
+                                                               const std::vector<std::string>& linear_layer_weights,
+                                                               const std::vector<std::string>& optimizers,
+                                                               long batch_size,
+                                                               std::mt19937& rng
+                                                              )
 {
-  check_sizes(layer_specifications, linear_layer_sizes, linear_layer_densities, linear_layer_weights, optimizers);
+  check_sizes(layer_specifications, linear_layer_sizes, linear_layer_densities, linear_layer_dropouts, linear_layer_weights, optimizers);
   std::vector<std::shared_ptr<neural_network_layer>> result;
 
   unsigned int linear_layer_index = 0;
   unsigned int optimizer_index = 0;
+  std::size_t input_size = linear_layer_sizes[0];
+
   for (const std::string& layer: layer_specifications)
   {
-    auto func = utilities::parse_function_call(layer);
-
-    if (func.name == "BatchNorm")
+    if (layer == "BatchNorm")
     {
-      auto blayer = std::make_shared<dense_batch_normalization_layer>(linear_layer_sizes[optimizer_index], batch_size);
-      set_batch_normalization_layer_optimizer(*blayer, optimizers[optimizer_index]);
+      auto D = input_size;
+      const std::string& optimizer = optimizers[optimizer_index++];
+      auto blayer = make_batch_normalization_layer(D, batch_size, optimizer);
       result.push_back(blayer);
-      optimizer_index++;
     }
-    else
+    else // linear layer
     {
       auto D = linear_layer_sizes[linear_layer_index];
       auto K = linear_layer_sizes[linear_layer_index + 1];
       auto N = batch_size;
-      result.push_back(make_linear_layer(func, D, K, N, static_cast<scalar>(linear_layer_densities[linear_layer_index]), linear_layer_weights[linear_layer_index], optimizers[optimizer_index], rng));
-      linear_layer_index++;
-      optimizer_index++;
+      auto density = static_cast<scalar>(linear_layer_densities[linear_layer_index]);
+      auto dropout_rate = static_cast<scalar>(linear_layer_dropouts[linear_layer_index]);
+      const std::string& activation = layer;
+      const std::string& weights = linear_layer_weights[linear_layer_index++];
+      const std::string& optimizer = optimizers[optimizer_index++];
+      auto llayer = make_linear_layer(D, K, N, density, dropout_rate, activation, weights, optimizer, rng);
+      result.push_back(llayer);
     }
   }
 
   return result;
+}
+
+inline
+std::shared_ptr<neural_network_layer> make_layer(const std::map<std::string, std::string>& m, std::mt19937& rng)
+{
+  std::string type = m.at("type");
+  if (type == "batch-normalization")
+  {
+    auto D = parse_natural_number(m.at("input-size"));
+    auto N = parse_natural_number<long>(m.at("batch-size"));
+    const std::string& optimizer = m.at("optimizer");
+    return make_batch_normalization_layer(D, N, optimizer);
+  }
+  else if (type == "linear")
+  {
+    auto D = parse_natural_number(m.at("input-size"));
+    auto K = parse_natural_number(m.at("output-size"));
+    auto N = parse_natural_number<long>(m.at("batch-size"));
+    auto density = parse_scalar(m.at("density"));
+    auto dropout_rate = parse_scalar(m.at("dropout"));
+    const std::string& activation = m.at("activation");
+    const std::string& weights = m.at("weights");
+    const std::string& optimizer = m.at("optimizer");
+    return make_linear_layer(D, K, N, density, dropout_rate, activation, weights, optimizer, rng);
+  }
 }
 
 } // namespace nerva
