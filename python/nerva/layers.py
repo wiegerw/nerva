@@ -25,7 +25,8 @@ class Dense(Layer):
                  units: int,
                  activation: Activation=NoActivation(),
                  optimizer: Optimizer=GradientDescent(),
-                 weight_initializer: WeightInitializer=Xavier()
+                 weight_initializer: WeightInitializer=Xavier(),
+                 dropout_rate: float=0
                 ):
         """
         A dense layer.
@@ -34,6 +35,7 @@ class Dense(Layer):
         :param activation: the activation function
         :param optimizer: the optimizer
         :param weight_initializer: the weight initializer
+        :param dropout_rate: the dropout rate
         """
         self.units = int(units) if not isinstance(units, int) else units
         if self.units < 0:
@@ -44,11 +46,12 @@ class Dense(Layer):
         self.activation = activation
         self.optimizer = optimizer
         self.weight_initializer = weight_initializer
+        self.dropout_rate = dropout_rate
         self.input_size = -1
         self._layer = None
 
     def __str__(self):
-        return f'Dense(units={self.units}, activation={self.activation}, optimizer={self.optimizer}, weight_initializer={self.weight_initializer})'
+        return f'Dense(units={self.units}, activation={self.activation}, optimizer={self.optimizer}, weight_initializer={self.weight_initializer}, dropout={self.dropout_rate})'
 
     def density_info(self) -> str:
         N = self._layer.W.size
@@ -57,18 +60,17 @@ class Dense(Layer):
     def set_weights_and_bias(self, init: WeightInitializer) -> None:
         self._layer.set_weights_and_bias(init.compile())
 
-    def compile(self, batch_size: int, dropout_rate: float=0.0):
+    def compile(self, batch_size: int):
         """
         Compiles the model into a C++ object
 
         :param batch_size: the batch size
-        :param dropout_rate: the dropout rate
         :return:
         """
-        if dropout_rate == 0.0:
+        if self.dropout_rate == 0.0:
             layer = nervalib.make_dense_linear_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, self.weight_initializer.compile(), self.optimizer.compile())
         else:
-            layer = nervalib.make_dense_linear_dropout_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, dropout_rate, self.weight_initializer.compile(), self.optimizer.compile())
+            layer = nervalib.make_dense_linear_dropout_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, self.dropout_rate, self.weight_initializer.compile(), self.optimizer.compile())
         self._layer = layer
         return layer
 
@@ -147,14 +149,6 @@ class Sparse(Layer):
         self._layer.grow_random(weight_initializer.compile(), count)
 
 
-class Dropout(Layer):
-    def __init__(self, rate: float):
-        self.rate = rate
-
-    def __str__(self):
-        return f'Dropout({self.rate})'
-
-
 class BatchNormalization(Layer):
     def __init__(self):
         self.input_size = -1
@@ -210,14 +204,6 @@ class Sequential(object):
         if not layers:
             raise RuntimeError('No layers are defined')
 
-        # Dropout may only appear after Dense
-        for i, layer in enumerate(layers):
-            if isinstance(layer, Dropout):
-                if i == 0:
-                    raise RuntimeError('The first layer cannot be a dropout layer')
-                if not isinstance(layers[i-1], Dense):
-                    raise RuntimeError(f'Dropout layer {i} is not preceded by a Dense layer')
-
     def compile(self, input_size: int, batch_size: int) -> None:
         self._check_layers()
 
@@ -227,18 +213,11 @@ class Sequential(object):
         n = len(self.layers)
         input_size = input_size  # keep track of the input size, since it isn't stored in the layers
         for i, layer in enumerate(self.layers):
+            layer.input_size = input_size
             if isinstance(layer, (Dense, Sparse)):
-                layer.input_size = input_size
                 input_size = layer.units
-                dropout_rate = 0.0
-                if i + 1 < n and isinstance(self.layers[i+1], Dropout):
-                    dropout_rate = self.layers[i+1].rate
-                cpp_layer = layer.compile(batch_size, dropout_rate)
-                M.append_layer(cpp_layer)
-            elif isinstance(layer, (BatchNormalization, SimpleBatchNormalization, AffineTransform)):
-                layer.input_size = input_size
-                cpp_layer = layer.compile(batch_size)
-                M.append_layer(cpp_layer)
+            cpp_layer = layer.compile(batch_size)
+            M.append_layer(cpp_layer)
         self.compiled_model = M
 
     def feedforward(self, X):

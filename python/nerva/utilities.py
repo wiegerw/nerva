@@ -85,6 +85,9 @@ class FunctionCall(object):
         self.name = name
         self.arguments = arguments
 
+    def has_key(self, key: str) -> bool:
+        return key in self.arguments
+
     def get_value(self, key: str):
         if key in self.arguments:
             return self.arguments[key]

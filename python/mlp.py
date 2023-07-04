@@ -30,7 +30,7 @@ from nerva.layers import print_model_info
 class MLPNerva(nerva.layers.Sequential):
     """ Nerva Multilayer perceptron
     """
-    def __init__(self, layer_sizes, layer_densities, optimizers, linear_layer_weights, activations, loss, learning_rate, batch_size):
+    def __init__(self, layer_sizes, layer_densities, optimizers, linear_layer_weights, activations, dropout_rates, loss, learning_rate, batch_size):
         super().__init__()
         self.layer_sizes = layer_sizes
         self.layer_densities = layer_densities
@@ -44,9 +44,9 @@ class MLPNerva(nerva.layers.Sequential):
         assert len(linear_layer_weights) == n_layers
 
         output_sizes = layer_sizes[1:]
-        for (density, size, activation, optimizer, weight_initializer) in zip(layer_densities, output_sizes, activations, optimizers, linear_layer_weights):
+        for (density, size, activation, dropout_rate, optimizer, weight_initializer) in zip(layer_densities, output_sizes, activations, dropout_rates, optimizers, linear_layer_weights):
             if density == 1.0:
-                self.add(nerva.layers.Dense(size, activation=activation, optimizer=optimizer, weight_initializer=weight_initializer))
+                self.add(nerva.layers.Dense(size, activation=activation, optimizer=optimizer, weight_initializer=weight_initializer, dropout_rate=dropout_rate))
             else:
                 self.add(nerva.layers.Sparse(size, density, activation=activation, optimizer=optimizer, weight_initializer=weight_initializer))
 
@@ -241,13 +241,14 @@ def main():
 
     loss = nerva.loss.parse_loss_function(args.loss)
     learning_rate = nerva.learning_rate.parse_learning_rate(args.learning_rate)
-    activations = [nerva.activation.parse_activation(text) for text in linear_layer_specifications]
+    activations, dropout_rates = list(zip(*[nerva.activation.parse_activation(text) for text in linear_layer_specifications]))
 
     M = MLPNerva(linear_layer_sizes,
                  linear_layer_densities,
                  linear_layer_optimizers,
                  linear_layer_weights,
                  activations,
+                 dropout_rates,
                  loss,
                  learning_rate,
                  args.batch_size
