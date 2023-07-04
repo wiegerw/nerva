@@ -45,7 +45,7 @@ function run_default()
 function run_srelu()
 {
   print_header "srelu"
-  layers="SReLU(0,0,0,1);ReLU;Linear"
+  layers="SReLU;ReLU;Linear"
   run
 }
 
@@ -90,7 +90,7 @@ function run_batchnorm()
 function run_dropout()
 {
   print_header "dropout"
-  layers="Dropout(0.3);ReLU;ReLU;Linear"
+  layers="ReLU(dropout=0.3);ReLU;Linear"
   run
 }
 

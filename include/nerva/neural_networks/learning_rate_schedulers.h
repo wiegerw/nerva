@@ -147,103 +147,40 @@ struct exponential_scheduler: public learning_rate_scheduler
 };
 
 inline
-std::shared_ptr<learning_rate_scheduler> parse_constant_scheduler(const std::string& text)
-{
-  std::regex re{R"(Constant\((.*?)\))"};
-  std::smatch m;
-  bool result = std::regex_match(text, m, re);
-  if (!result)
-  {
-    throw std::runtime_error("could not parse learning scheduler '" + text + "'");
-  }
-  scalar value = parse_scalar(m[1]);
-  return std::make_shared<constant_scheduler>(value);
-}
-
-inline
-std::shared_ptr<learning_rate_scheduler> parse_multistep_lr_scheduler(const std::string& text)
-{
-  std::regex re{R"(MultistepLR\((.*?);(.*?);(.*?)\))"};
-  std::smatch m;
-  bool result = std::regex_match(text, m, re);
-  if (!result)
-  {
-    throw std::runtime_error("could not parse learning scheduler '" + text + "'");
-  }
-  scalar lr = parse_scalar(m[1]);
-  std::vector<unsigned int> milestones = parse_comma_separated_numbers<unsigned int>(m[2]);
-  scalar gamma = parse_scalar(m[3]);
-  return std::make_shared<multi_step_lr_scheduler>(lr, milestones, gamma);
-}
-
-inline
-std::shared_ptr<learning_rate_scheduler> parse_time_based_scheduler(const std::string& text)
-{
-  std::regex re{R"(TimeBased\((.*?),(.*?)\))"};
-  std::smatch m;
-  bool result = std::regex_match(text, m, re);
-  if (!result)
-  {
-    throw std::runtime_error("could not parse learning scheduler '" + text + "'");
-  }
-  scalar lr = parse_scalar(m[1]);
-  scalar decay = parse_scalar(m[2]);
-  return std::make_shared<time_based_scheduler>(lr, decay);
-}
-
-inline
-std::shared_ptr<learning_rate_scheduler> parse_step_based_scheduler(const std::string& text)
-{
-  std::regex re{R"(StepBased\((.*?),(.*?),(.*?)\))"};
-  std::smatch m;
-  bool result = std::regex_match(text, m, re);
-  if (!result)
-  {
-    throw std::runtime_error("could not parse learning scheduler '" + text + "'");
-  }
-  scalar lr = parse_scalar(m[1]);
-  scalar drop_rate = parse_scalar(m[2]);
-  scalar change_rate = parse_scalar(m[3]);
-  return std::make_shared<step_based_scheduler>(lr, drop_rate, change_rate);
-}
-
-inline
-std::shared_ptr<learning_rate_scheduler> parse_exponential_scheduler(const std::string& text)
-{
-  std::regex re{R"(exponential\((.*?),(.*?)\))"};
-  std::smatch m;
-  bool result = std::regex_match(text, m, re);
-  if (!result)
-  {
-    throw std::runtime_error("could not parse learning scheduler '" + text + "'");
-  }
-  scalar lr = parse_scalar(m[1]);
-  scalar change_rate = parse_scalar(m[2]);
-  return std::make_shared<exponential_scheduler>(lr, change_rate);
-}
-
-inline
 std::shared_ptr<learning_rate_scheduler> parse_learning_rate_scheduler(const std::string& text)
 {
-  if (utilities::starts_with(text, "Constant"))
+  auto func = utilities::parse_function_call(text);
+
+  if (func.name == "Constant")
   {
-    return parse_constant_scheduler(text);
+    auto lr = func.as_scalar("lr");
+    return std::make_shared<constant_scheduler>(lr);
   }
-  else if (utilities::starts_with(text, "MultistepLR"))
+  else if (func.name == "TimeBased")
   {
-    return parse_multistep_lr_scheduler(text);
+    auto lr = func.as_scalar("lr");
+    auto decay = func.as_scalar("decay");
+    return std::make_shared<time_based_scheduler>(lr, decay);
   }
-  else if (utilities::starts_with(text, "TimeBased"))
+  else if (func.name == "StepBased")
   {
-    return parse_time_based_scheduler(text);
+    auto lr = func.as_scalar("lr");
+    auto drop_rate = func.as_scalar("drop_rate");
+    auto change_rate = func.as_scalar("change_rate");
+    return std::make_shared<step_based_scheduler>(lr, drop_rate, change_rate);
   }
-  else if (utilities::starts_with(text, "StepBased"))
+  else if (func.name == "MultistepLR")
   {
-    return parse_step_based_scheduler(text);
+    auto lr = func.as_scalar("lr");
+    auto milestones = parse_comma_separated_numbers<unsigned int>(func.as_string("milestones"));
+    auto gamma = func.as_scalar("gamma");
+    return std::make_shared<multi_step_lr_scheduler>(lr, milestones, gamma);
   }
-  else if (utilities::starts_with(text, "Exponential"))
+  else if (func.name == "Exponential")
   {
-    return parse_exponential_scheduler(text);
+    auto lr = func.as_scalar("lr");
+    auto change_rate = func.as_scalar("change_rate");
+    return std::make_shared<exponential_scheduler>(lr, change_rate);
   }
   throw std::runtime_error("could not parse learning scheduler '" + text + "'");
 }

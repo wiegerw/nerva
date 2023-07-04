@@ -13,7 +13,9 @@
 #include "nerva/utilities/parse_numbers.h"
 #include "nerva/utilities/string_utility.h"
 #include "fmt/format.h"
+#include <limits>
 #include <map>
+#include <utility>
 
 namespace nerva::utilities {
 
@@ -53,11 +55,68 @@ double parse_numeric_argument(const std::string& text)
   return parse_double(text.substr(startpos + 1, endpos - startpos - 1));
 };
 
+struct function_call
+{
+  std::string name;
+  std::map<std::string, std::string> arguments;
+
+  function_call(std::string name_, std::map<std::string, std::string> arguments_)
+   : name(std::move(name_)), arguments(std::move(arguments_))
+  {}
+
+  [[nodiscard]] bool has_key(const std::string& key) const
+  {
+    return arguments.find(key) != arguments.end();
+  }
+
+  [[nodiscard]] std::string get_value(const std::string& key) const
+  {
+    auto i = arguments.find(key);
+    if (i == arguments.end() && arguments.size() == 1)
+    {
+      i = arguments.find("");
+    }
+    if (i != arguments.end())
+    {
+      return i->second;
+    }
+    return ""; // return the empty string to indicate nothing was found
+  }
+
+  [[nodiscard]] scalar as_scalar(const std::string& key, float default_value = std::numeric_limits<scalar>::quiet_NaN()) const
+  {
+    std::string value = get_value(key);
+    if (!value.empty())
+    {
+      return parse_scalar(value);
+    }
+    if (!std::isnan(default_value))
+    {
+      return default_value;
+    }
+    throw std::runtime_error(fmt::format("Could not find an argument named \"{}\"", key));
+  }
+
+  [[nodiscard]] std::string as_string(const std::string& key, const std::string& default_value = "") const
+  {
+    std::string value = get_value(key);
+    if (!value.empty())
+    {
+      return value;
+    }
+    if (!default_value.empty())
+    {
+      return default_value;
+    }
+    throw std::runtime_error(fmt::format("Could not find an argument named \"{}\"", key));
+  }
+};
+
 // Parse a string of the shape "NAME(key1=value1, key2=value2, ...)".
 // If there are no arguments the parentheses may be omitted.
 // If there is only one parameter, it is allowed to pass "NAME(value)" instead of "NAME(key=value)"
 inline
-std::pair<std::string, std::map<std::string, std::string>> parse_function_call(std::string text)
+function_call parse_function_call(std::string text)
 {
   utilities::trim(text);
 
@@ -99,18 +158,15 @@ std::pair<std::string, std::map<std::string, std::string>> parse_function_call(s
       for (const auto& arg: args)
       {
         auto words = regex_split(arg, R"(\s*=\s*)");
-        if (words.size() == 2)
+        if (words.size() != 2)
         {
-          auto key = words[0];
-          auto value = words[1];
-          if (const auto &[it, inserted] = arguments.emplace(key, value); !inserted)
-          {
-            std::cout << "Key \"" << key << "\" appears multiple times.\n";
-            error();
-          }
+          error();
         }
-        else
+        auto key = words[0];
+        auto value = words[1];
+        if (const auto &[it, inserted] = arguments.emplace(key, value); !inserted)
         {
+          std::cout << "Key \"" << key << "\" appears multiple times.\n";
           error();
         }
       }
@@ -120,44 +176,6 @@ std::pair<std::string, std::map<std::string, std::string>> parse_function_call(s
 
   error();
   return {name, arguments};  // to silence warnings
-}
-
-inline
-scalar get_scalar_argument(const std::map<std::string, std::string>& arguments, const std::string& key)
-{
-  auto i = arguments.find(key);
-  if (i != arguments.end())
-  {
-    return parse_scalar(i->second);
-  }
-  if (arguments.size() == 1)
-  {
-    const auto& [key1, value1] = *arguments.begin();
-    if (key1.empty())
-    {
-      return parse_scalar(value1);
-    }
-  }
-  throw std::runtime_error(fmt::format("could not find key \"{}\"", key));
-}
-
-inline
-scalar get_scalar_argument(const std::map<std::string, std::string>& arguments, const std::string& key, scalar default_value)
-{
-  auto i = arguments.find(key);
-  if (i != arguments.end())
-  {
-    return parse_scalar(i->second);
-  }
-  if (arguments.size() == 1)
-  {
-    const auto& [key1, value1] = *arguments.begin();
-    if (key1.empty())
-    {
-      return parse_scalar(value1);
-    }
-  }
-  return default_value;
 }
 
 } // namespace nerva::utilities

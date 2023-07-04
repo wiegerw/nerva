@@ -6,6 +6,8 @@ import re
 from typing import List
 import nervalib
 
+from nerva.utilities import parse_function_call
+
 
 class LearningRateScheduler(nervalib.learning_rate_scheduler):
     pass
@@ -52,30 +54,26 @@ class ExponentialScheduler(nervalib.exponential_scheduler):
 
 
 def parse_learning_rate(text: str) -> LearningRateScheduler:
-    if text.startswith('Constant'):
-        m = re.match(r'Constant\((.*)\)', text)
-        lr = float(m.group(1))
+    func = parse_function_call(text)
+    if func.name == 'Constant':
+        lr = func.as_float('lr')
         return ConstantScheduler(lr)
-    elif text.startswith('TimeBased'):
-        m = re.match(r'TimeBased\((.*),(.*)\)', text)
-        lr = float(m.group(1))
-        decay = float(m.group(2))
+    elif func.name == 'TimeBased':
+        lr = func.as_float('lr')
+        decay = func.as_float('decay')
         return TimeBasedScheduler(lr, decay)
-    elif text.startswith('StepBased'):
-        m = re.match(r'StepBased\((.*),(.*),(.*)\)', text)
-        lr = float(m.group(1))
-        drop_rate = float(m.group(2))
-        change_rate = float(m.group(3))
+    elif func.name == 'StepBased':
+        lr = func.as_float('lr')
+        drop_rate = func.as_float('drop_rate')
+        change_rate = func.as_float('change_rate')
         return StepBasedScheduler(lr, drop_rate, change_rate)
-    elif text.startswith('MultiStepLR'):
-        m = re.match(r'MultiStepLR\((.*);(.*);(.*)\)', text)
-        lr = float(m.group(1))
-        milestones = [int(x) for x in m.group(2).split(',')]
-        gamma = float(m.group(3))
+    elif func.name == 'MultiStepLR':
+        lr = func.as_float('lr')
+        milestones = [int(x) for x in func.as_string('milestones').split('|')]
+        gamma = func.as_float('gamma')
         return MultiStepLRScheduler(lr, milestones, gamma)
-    elif text.startswith('Exponential'):
-        m = re.match(r'Exponential\((.*),(.*)\)', text)
-        lr = float(m.group(1))
-        change_rate = float(m.group(2))
+    elif func.name == 'Exponential':
+        lr = func.as_float('lr')
+        change_rate = func.as_float('change_rate')
         return ExponentialScheduler(lr, change_rate)
-    raise RuntimeError(f"could not parse learning rate scheduler '{text}'")
+    raise RuntimeError(f"Could not parse learning rate scheduler '{text}'")

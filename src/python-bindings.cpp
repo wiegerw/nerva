@@ -366,8 +366,8 @@ PYBIND11_MODULE(nervalib, m)
   )
   {
     layer_builder builder(nerva_rng);
-    auto [name, arguments] = utilities::parse_function_call(layer_description);
-    return builder.make_dense_linear_layer(name, arguments, D, K, batch_size, weights, optimizer);
+    auto func = utilities::parse_function_call(layer_description);
+    return builder.make_dense_linear_layer(func, D, K, batch_size, weights, optimizer);
   });
   m.def("make_dense_linear_dropout_layer", [](const std::string& layer_description,
                                               std::size_t D,
@@ -379,8 +379,8 @@ PYBIND11_MODULE(nervalib, m)
   )
   {
     layer_builder builder(nerva_rng);
-    auto [name, arguments] = utilities::parse_function_call(layer_description);
-    return builder.make_dense_linear_dropout_layer(name, arguments, D, K, batch_size, dropout_rate, weights, optimizer);
+    auto func = utilities::parse_function_call(layer_description);
+    return builder.make_dense_linear_dropout_layer(func, D, K, batch_size, dropout_rate, weights, optimizer);
   });
   m.def("make_sparse_linear_layer", [](const std::string& layer_description,
                                       std::size_t D,
@@ -392,8 +392,8 @@ PYBIND11_MODULE(nervalib, m)
   )
   {
     layer_builder builder(nerva_rng);
-    auto [name, arguments] = utilities::parse_function_call(layer_description);
-    return builder.make_sparse_linear_layer(name, arguments, D, K, batch_size, density, weights, optimizer);
+    auto func = utilities::parse_function_call(layer_description);
+    return builder.make_sparse_linear_layer(func, D, K, batch_size, density, weights, optimizer);
   });
 
   /////////////////////////////////////////////////////////////////////////

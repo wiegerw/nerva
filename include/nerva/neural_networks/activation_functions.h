@@ -550,7 +550,7 @@ struct srelu_activation
     auto tl = x(1);
     auto ar = x(2);
     auto tr = x(3);
-    return fmt::format("SReLU({},{},{},{})", al, tl, ar, tr);
+    return fmt::format("SReLU(al={},tl={},ar={},tr={})", al, tl, ar, tr);
   }
 };
 

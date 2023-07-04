@@ -53,16 +53,20 @@ std::vector<std::string> parse_init_weights(const std::string& text, const std::
 }
 
 inline
-std::vector<std::string> parse_optimizers(const std::string& text, std::size_t linear_layer_count)
+std::vector<std::string> parse_optimizers(const std::string& text, std::size_t count)
 {
   std::vector<std::string> words = utilities::regex_split(text, "\\s*,\\s*");
   if (words.empty())
   {
-    return {linear_layer_count, "GradientDescent"};
+    return {count, "GradientDescent"};
   }
   if (words.size() == 1)
   {
-    return {linear_layer_count, words.front()};
+    return {count, words.front()};
+  }
+  if (words.size() != count)
+  {
+    throw std::runtime_error(fmt::format("expected {} optimizers instead of {}", count, words.size()));
   }
   return words;
 }
@@ -149,6 +153,36 @@ class sgd_algorithm: public stochastic_gradient_descent_algorithm<datasets::data
       // print_srelu_layers(M);
     }
 };
+
+void check_sizes(const std::vector<std::string>& layer_specifications,
+                 const std::vector<std::string>&  linear_layer_specifications,
+                 const std::vector<std::size_t>&  linear_layer_sizes,
+                 const std::vector<double>&  linear_layer_densities,
+                 const std::vector<std::string>&  linear_layer_weights,
+                 const std::vector<std::string>&  optimizers
+                )
+{
+  // every linear layer needs two sizes + density + weights
+  auto n = linear_layer_sizes.size() - 1;
+  if (linear_layer_specifications.size() != n)
+  {
+    throw std::runtime_error("linear_layer_specifications.size() != n");
+  }
+  if (linear_layer_densities.size() != n)
+  {
+    throw std::runtime_error("linear_layer_densities.size() != n");
+  }
+  if (linear_layer_weights.size() != n)
+  {
+    throw std::runtime_error("linear_layer_weights.size() != n");
+  }
+
+  // every layer needs an optimizer
+  if (optimizers.size() != layer_specifications.size())
+  {
+    throw std::runtime_error("optimizers.size() != layer_specifications.size()");
+  }
+}
 
 class tool: public command_line_tool
 {
@@ -279,7 +313,9 @@ class tool: public command_line_tool
       auto linear_layer_sizes = compute_linear_layer_sizes(linear_layer_sizes_text, linear_layer_specifications);
       auto linear_layer_densities = compute_linear_layer_densities(densities_text, overall_density, linear_layer_specifications, linear_layer_sizes);
       auto linear_layer_weights = parse_init_weights(init_weights_text, linear_layer_specifications);
-      auto optimizers = parse_optimizers(options.optimizer, linear_layer_specifications.size());
+      auto optimizers = parse_optimizers(options.optimizer, layer_specifications.size());
+
+      check_sizes(layer_specifications, linear_layer_specifications, linear_layer_sizes, linear_layer_densities, linear_layer_weights, optimizers);
 
       // construct the multilayer perceptron M
       multilayer_perceptron M;

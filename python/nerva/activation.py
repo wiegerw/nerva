@@ -2,7 +2,8 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-import re
+from nerva.utilities import parse_function_call
+
 
 class Activation(object):
     pass
@@ -65,7 +66,7 @@ class SReLU(Activation):
         self.tr = tr
 
     def __str__(self):
-        return f'SReLU({self.al},{self.tl},{self.ar},{self.tr})'
+        return f'SReLU(al={self.al},tl={self.tl},ar={self.ar},tr={self.tr})'
 
 
 class HyperbolicTangent(Activation):
@@ -74,35 +75,32 @@ class HyperbolicTangent(Activation):
 
 
 def parse_activation(text: str) -> Activation:
-    if text == 'ReLU':
+    func = parse_function_call(text)
+    if func.name == 'ReLU':
         return ReLU()
-    elif text == 'Sigmoid':
+    elif func.name == 'Sigmoid':
         return Sigmoid()
-    elif text == 'Softmax':
+    elif func.name == 'Softmax':
         return Softmax()
-    elif text == 'LogSoftmax':
+    elif func.name == 'LogSoftmax':
         return LogSoftmax()
-    elif text == 'HyperbolicTangent':
+    elif func.name == 'HyperbolicTangent':
         return HyperbolicTangent()
-    elif text.startswith('TReLU'):
-        m = re.match(r'TReLU\((.*)\)', text)
-        alpha = float(m.group(1))
-        return TReLU(alpha)
-    elif text.startswith('LeakyReLU'):
-        m = re.match(r'LeakyReLU\((.*)\)', text)
-        alpha = float(m.group(1))
+    elif func.name == 'TReLU':
+        epsilon = func.as_float('epsilon')
+        return TReLU(epsilon)
+    elif func.name == 'LeakyReLU':
+        alpha = func.as_float('alpha')
         return LeakyReLU(alpha)
-    elif text.startswith('AllReLU'):
-        m = re.match(r'AllReLU\((.*)\)', text)
-        alpha = float(m.group(1))
+    elif func.name == 'AllReLU':
+        alpha = func.as_float('alpha')
         return AllReLU(alpha)
-    elif text == 'Linear':
+    elif func.name == 'Linear':
         return NoActivation()
-    elif text.startswith('SReLU'):
-        m = re.match(r'SReLU\((.*),(.*),(.*),(.*)\)', text)
-        al = float(m.group(1))
-        tl = float(m.group(2))
-        ar = float(m.group(3))
-        tr = float(m.group(4))
+    elif func.name == 'SReLU':
+        al = func.as_float('al', 0)
+        tl = func.as_float('tl', 0)
+        ar = func.as_float('ar', 0)
+        tr = func.as_float('tr', 1)
         return SReLU(al, tl, ar, tr)
     raise RuntimeError(f"could not parse activation '{text}'")

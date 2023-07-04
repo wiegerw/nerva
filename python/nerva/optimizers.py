@@ -2,7 +2,8 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-import re
+from nerva.utilities import parse_function_call
+
 
 class Optimizer(object):
     def compile(self):
@@ -40,14 +41,13 @@ class Nesterov(Optimizer):
 
 
 def parse_optimizer(text: str) -> Optimizer:
-    if text == 'GradientDescent':
+    func = parse_function_call(text)
+    if func.name =='GradientDescent':
         return GradientDescent()
-    elif text.startswith('Momentum'):
-        m = re.match(r'Momentum\((.*)\)', text)
-        momentum = float(m.group(1))
+    elif func.name =='Momentum':
+        momentum = func.as_float('momentum')
         return Momentum(momentum)
-    elif text.startswith('Nesterov'):
-        m = re.match(r'Nesterov\((.*)\)', text)
-        momentum = float(m.group(1))
+    elif func.name =='Nesterov':
+        momentum = func.as_float('momentum')
         return Nesterov(momentum)
     raise RuntimeError(f"could not parse optimizer '{text}'")
