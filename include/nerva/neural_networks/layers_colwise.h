@@ -82,11 +82,11 @@ struct linear_layer: public neural_network_layer
   {
     if constexpr (IsSparse)
     {
-      return fmt::format("Sparse(units={}, density={}, optimizer={}, activation=NoActivation())", output_size(), W.density(), optimizer->to_string());
+      return fmt::format("Sparse(input_size={}, output_size={}, density={}, optimizer={}, activation=NoActivation())", input_size(), output_size(), W.density(), optimizer->to_string());
     }
     else
     {
-      return fmt::format("Dense(units={}, optimizer={}, activation=NoActivation())", output_size(), optimizer->to_string());
+      return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation=NoActivation())", input_size(), output_size(), optimizer->to_string());
     }
   }
 
@@ -195,6 +195,7 @@ struct sigmoid_layer : public linear_layer<Matrix>
   using super::X;
   using super::DX;
   using super::optimizer;
+  using super::input_size;
   using super::output_size;
   static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
 
@@ -209,11 +210,11 @@ struct sigmoid_layer : public linear_layer<Matrix>
   {
     if constexpr (IsSparse)
     {
-      return fmt::format("Sparse(units={}, density={}, optimizer={}, activation=Sigmoid())", output_size(), W.density(), optimizer->to_string());
+      return fmt::format("Sparse(input_size={}, output_size={}, density={}, optimizer={}, activation=Sigmoid())", input_size(), output_size(), W.density(), optimizer->to_string());
     }
     else
     {
-      return fmt::format("Dense(units={}, optimizer={}, activation=Sigmoid())", output_size(), optimizer->to_string());
+      return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation=Sigmoid())", input_size(), output_size(), optimizer->to_string());
     }
   }
 
@@ -273,6 +274,7 @@ struct activation_layer : public linear_layer<Matrix>
   using super::X;
   using super::DX;
   using super::optimizer;
+  using super::input_size;
   using super::output_size;
   static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
 
@@ -288,11 +290,11 @@ struct activation_layer : public linear_layer<Matrix>
   {
     if constexpr (IsSparse)
     {
-      return fmt::format("Sparse(units={}, density={}, optimizer={}, activation={})", output_size(), W.density(), optimizer->to_string(), act.to_string());
+      return fmt::format("Sparse(input_size={}, output_size={}, density={}, optimizer={}, activation={})", input_size(), output_size(), W.density(), optimizer->to_string(), act.to_string());
     }
     else
     {
-      return fmt::format("Dense(units={}, optimizer={}, activation={})", output_size(), optimizer->to_string(), act.to_string());
+      return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation={})", input_size(), output_size(), optimizer->to_string(), act.to_string());
     }
   }
 

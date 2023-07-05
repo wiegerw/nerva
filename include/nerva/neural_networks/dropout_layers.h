@@ -84,7 +84,7 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
 
   [[nodiscard]] std::string to_string() const override
   {
-    return fmt::format("Dense(units={}, optimizer={}, activation=NoActivation(), dropout={})", output_size(), optimizer->to_string(), p);
+    return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation=NoActivation(), dropout={})", input_size(), output_size(), optimizer->to_string(), p);
   }
 };
 
@@ -144,7 +144,7 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
 
   [[nodiscard]] std::string to_string() const override
   {
-    return fmt::format("Dense(units={}, optimizer={}, activation=Sigmoid(), dropout={})", output_size(), optimizer->to_string(), p);
+    return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation=Sigmoid(), dropout={})", input_size(), output_size(), optimizer->to_string(), p);
   }
 };
 
@@ -163,6 +163,7 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
   using super::Z;
   using super::DZ;
   using super::optimizer;
+  using super::input_size;
   using super::output_size;
   using super::to_string;
   using dropout_layer<Matrix>::p;
@@ -203,7 +204,7 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
 
   [[nodiscard]] std::string to_string() const override
   {
-    return fmt::format("Dense(units={}, optimizer={}, activation={}, dropout={})", output_size(), optimizer->to_string(), act.to_string(), p);
+    return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation={}, dropout={})", input_size(), output_size(), optimizer->to_string(), act.to_string(), p);
   }
 };
 

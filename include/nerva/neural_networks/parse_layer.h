@@ -529,6 +529,7 @@ std::vector<std::shared_ptr<neural_network_layer>> make_layers(const std::vector
       const std::string& optimizer = optimizers[optimizer_index++];
       auto llayer = make_linear_layer(D, K, N, density, dropout_rate, activation, weights, optimizer, rng);
       result.push_back(llayer);
+      input_size = K;
     }
   }
 

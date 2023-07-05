@@ -11,6 +11,7 @@
 #define NERVA_NEURAL_NETWORKS_BATCH_NORMALIZATION_LAYER_COLWISE_H
 
 #include "nerva/neural_networks/layers_colwise.h"
+#include "fmt/format.h"
 #include <random>
 
 namespace nerva {
@@ -39,7 +40,7 @@ struct batch_normalization_layer: public neural_network_layer
 
   [[nodiscard]] std::string to_string() const override
   {
-    return "BatchNormalization()";
+    return fmt::format("BatchNormalization(input_size={}, output_size={})", Z.rows(), Z.rows());
   }
 
   void feedforward(eigen::matrix& result) override
