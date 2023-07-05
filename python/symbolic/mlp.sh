@@ -11,6 +11,7 @@ loss=SoftmaxCrossEntropy
 learning_rate="Constant(0.01)"
 weights="../mlp-compare.npz"
 dataset="../cifar1/epoch0.npz"
+num_classes=10
 
 function train()
 {
@@ -28,6 +29,7 @@ function train()
           --learning-rate=$learning_rate \
           --weights=$weights \
           --dataset=$dataset \
+          --num-classes=$num_classes \
           $extra_args \
           2>&1 | tee $logfile
 }

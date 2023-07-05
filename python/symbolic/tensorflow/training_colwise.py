@@ -8,7 +8,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from typing import List
-from symbolic.learning_rate import parse_learning_rate
+from symbolic.learning_rate import parse_learning_rate, LearningRateScheduler
 from symbolic.tensorflow.datasets import DataLoader, create_npz_dataloaders
 from symbolic.tensorflow.loss_functions_colwise import *
 from symbolic.tensorflow.multilayer_perceptron_colwise import MultilayerPerceptron
@@ -55,13 +55,13 @@ def compute_statistics(M, lr, loss, train_loader, test_loader, num_classes, epoc
 
 def sgd(M: MultilayerPerceptron,
         epochs: int,
-        loss,
-        learning_rate,
+        loss: LossFunction,
+        learning_rate: LearningRateScheduler,
         train_loader: DataLoader,
         test_loader: DataLoader,
-        batch_size: int
+        batch_size: int,
+        num_classes: int
        ):
-    num_classes = 10
 
     lr = learning_rate(0)
     compute_statistics(M, lr, loss, train_loader, test_loader, num_classes, epoch=0)
@@ -103,6 +103,7 @@ def train(layer_specifications: List[str],
           learning_rate: str,
           weights_and_bias_file: str,
           dataset_file: str,
+          num_classes: int,
           debug: bool
          ):
     SGDOptions.debug = debug
@@ -111,7 +112,7 @@ def train(layer_specifications: List[str],
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers, batch_size)
     M.load_weights_and_bias(weights_and_bias_file)
     train_loader, test_loader = create_npz_dataloaders(dataset_file, batch_size=batch_size, rowwise=False)
-    sgd(M, epochs, loss, learning_rate, train_loader, test_loader, batch_size)
+    sgd(M, epochs, loss, learning_rate, train_loader, test_loader, batch_size, num_classes)
 
 
 if __name__ == '__main__':
@@ -126,6 +127,7 @@ if __name__ == '__main__':
     weights_and_bias_file = '../../mlp-compare.npz'
     dataset_file = '../../cifar1/epoch0.npz'
     debug = False
+    num_classes = 10
 
     train(layer_specifications,
           linear_layer_sizes,
@@ -137,5 +139,6 @@ if __name__ == '__main__':
           learning_rate,
           weights_and_bias_file,
           dataset_file,
+          num_classes,
           debug
          )

@@ -16,7 +16,7 @@ class LossFunction(object):
 
 
 class SquaredErrorLossFunction(LossFunction):
-    def __call__(self, Y: Matrix, T: Matrix) -> Matrix:
+    def __call__(self, Y: Matrix, T: Matrix) -> float:
         return Squared_error_loss_rowwise(Y, T)
 
     def gradient(self, Y: Matrix, T: Matrix) -> Matrix:
@@ -24,7 +24,7 @@ class SquaredErrorLossFunction(LossFunction):
 
 
 class MeanSquaredErrorLossFunction(LossFunction):
-    def __call__(self, Y: Matrix, T: Matrix) -> Matrix:
+    def __call__(self, Y: Matrix, T: Matrix) -> float:
         return Mean_squared_error_loss_rowwise(Y, T)
 
     def gradient(self, Y: Matrix, T: Matrix) -> Matrix:
@@ -32,7 +32,7 @@ class MeanSquaredErrorLossFunction(LossFunction):
 
 
 class CrossEntropyLossFunction(LossFunction):
-    def __call__(self, Y: Matrix, T: Matrix) -> Matrix:
+    def __call__(self, Y: Matrix, T: Matrix) -> float:
         return Cross_entropy_loss_rowwise(Y, T)
 
     def gradient(self, Y: Matrix, T: Matrix) -> Matrix:
@@ -40,7 +40,7 @@ class CrossEntropyLossFunction(LossFunction):
 
 
 class SoftmaxCrossEntropyLossFunction(LossFunction):
-    def __call__(self, Y: Matrix, T: Matrix) -> Matrix:
+    def __call__(self, Y: Matrix, T: Matrix) -> float:
         return Softmax_cross_entropy_loss_rowwise(Y, T)
 
     def gradient(self, Y: Matrix, T: Matrix) -> Matrix:
@@ -48,7 +48,7 @@ class SoftmaxCrossEntropyLossFunction(LossFunction):
 
 
 class StableSoftmaxCrossEntropyLossFunction(LossFunction):
-    def __call__(self, Y: Matrix, T: Matrix) -> Matrix:
+    def __call__(self, Y: Matrix, T: Matrix) -> float:
         return Stable_softmax_cross_entropy_loss_rowwise(Y, T)
 
     def gradient(self, Y: Matrix, T: Matrix) -> Matrix:
@@ -56,7 +56,7 @@ class StableSoftmaxCrossEntropyLossFunction(LossFunction):
 
 
 class LogisticCrossEntropyLossFunction(LossFunction):
-    def __call__(self, Y: Matrix, T: Matrix) -> Matrix:
+    def __call__(self, Y: Matrix, T: Matrix) -> float:
         return Logistic_cross_entropy_loss_rowwise(Y, T)
 
     def gradient(self, Y: Matrix, T: Matrix) -> Matrix:
@@ -64,7 +64,7 @@ class LogisticCrossEntropyLossFunction(LossFunction):
 
 
 class NegativeLogLikelihoodLossFunction(LossFunction):
-    def __call__(self, Y: Matrix, T: Matrix) -> Matrix:
+    def __call__(self, Y: Matrix, T: Matrix) -> float:
         return Negative_log_likelihood_loss_rowwise(Y, T)
 
     def gradient(self, Y: Matrix, T: Matrix) -> Matrix:
