@@ -14,7 +14,7 @@ class Layer(object):
     pass
 
 
-def make_layer_description(activation: Activation) -> str:
+def print_activation(activation: Activation) -> str:
     if isinstance(activation, NoActivation):
         return 'Linear'
     return str(activation).replace('()', '')
@@ -22,7 +22,8 @@ def make_layer_description(activation: Activation) -> str:
 
 class Dense(Layer):
     def __init__(self,
-                 units: int,
+                 input_size: int,
+                 output_size: int,
                  activation: Activation=NoActivation(),
                  optimizer: Optimizer=GradientDescent(),
                  weight_initializer: WeightInitializer=Xavier(),
@@ -31,27 +32,23 @@ class Dense(Layer):
         """
         A dense layer.
 
-        :param units: the number of outputs of the layer
+        :param input_size: the number of inputs of the layer
+        :param output_size: the number of outputs of the layer
         :param activation: the activation function
         :param optimizer: the optimizer
         :param weight_initializer: the weight initializer
         :param dropout_rate: the dropout rate
         """
-        self.units = int(units) if not isinstance(units, int) else units
-        if self.units < 0:
-            raise ValueError(
-                f"Received an invalid value for `units`, expected "
-                f"a positive integer. Received: units={units}"
-            )
+        self.input_size = input_size
+        self.output_size = output_size
         self.activation = activation
         self.optimizer = optimizer
         self.weight_initializer = weight_initializer
         self.dropout_rate = dropout_rate
-        self.input_size = -1
         self._layer = None
 
     def __str__(self):
-        return f'Dense(units={self.units}, activation={self.activation}, optimizer={self.optimizer}, weight_initializer={self.weight_initializer}, dropout={self.dropout_rate})'
+        return f'Dense(output_size={self.output_size}, activation={self.activation}, optimizer={self.optimizer}, weight_initializer={self.weight_initializer}, dropout={self.dropout_rate})'
 
     def density_info(self) -> str:
         N = self._layer.W.size
@@ -67,40 +64,43 @@ class Dense(Layer):
         :param batch_size: the batch size
         :return:
         """
+        activation = print_activation(self.activation)
         if self.dropout_rate == 0.0:
-            layer = nervalib.make_dense_linear_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, self.weight_initializer.compile(), self.optimizer.compile())
+            layer = nervalib.make_dense_linear_layer(self.input_size, self.output_size, batch_size, activation, self.weight_initializer.compile(), self.optimizer.compile())
         else:
-            layer = nervalib.make_dense_linear_dropout_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, self.dropout_rate, self.weight_initializer.compile(), self.optimizer.compile())
+            layer = nervalib.make_dense_linear_dropout_layer(self.input_size, self.output_size, batch_size, self.dropout_rate, activation, self.weight_initializer.compile(), self.optimizer.compile())
         self._layer = layer
         return layer
 
 
 class Sparse(Layer):
-    def __init__(self, units: int, density: float, activation: Activation=NoActivation(), optimizer=GradientDescent(), weight_initializer=Xavier()):
+    def __init__(self,
+                 input_size: int,
+                 output_size: int,
+                 density: float,
+                 activation: Activation=NoActivation(),
+                 optimizer=GradientDescent(),
+                 weight_initializer=Xavier()):
         """
         A sparse layer.
 
-        :param units: the number of outputs of the layer
+        :param input_size: the number of inputs of the layer
+        :param output_size: the number of outputs of the layer
         :param density: a hint for the maximum density of the layer. This is a number between 0.0 (fully sparse) and
          1.0 (fully dense). Memory will be reserved to store a matrix with the given density.
         :param activation: the activation function
         :param optimizer: the optimizer
         """
-        self.units = int(units) if not isinstance(units, int) else units
-        if self.units < 0:
-            raise ValueError(
-                f"Received an invalid value for `units`, expected "
-                f"a positive integer. Received: units={units}"
-            )
+        self.input_size = input_size
+        self.output_size = output_size
         self.density = density
         self.activation = activation
         self.optimizer = optimizer
         self.weight_initializer = weight_initializer
-        self.input_size = -1
         self._layer = None
 
     def __str__(self):
-        return f'Sparse(units={self.units}, density={self.density}, activation={self.activation}, optimizer={self.optimizer}, weight_initializer={self.weight_initializer})'
+        return f'Sparse(output_size={self.output_size}, density={self.density}, activation={self.activation}, optimizer={self.optimizer}, weight_initializer={self.weight_initializer})'
 
     def density_info(self) -> str:
         n, N = self._layer.W.nonzero_count()
@@ -114,7 +114,8 @@ class Sparse(Layer):
         :param dropout_rate: the dropout rate
         :return:
         """
-        layer = nervalib.make_sparse_linear_layer(make_layer_description(self.activation), self.input_size, self.units, batch_size, self.density, self.weight_initializer.compile(), self.optimizer.compile())
+        activation = print_activation(self.activation)
+        layer = nervalib.make_sparse_linear_layer(self.input_size, self.output_size, batch_size, self.density, activation, self.weight_initializer.compile(), self.optimizer.compile())
         self._layer = layer
         return layer
 
@@ -150,8 +151,13 @@ class Sparse(Layer):
 
 
 class BatchNormalization(Layer):
-    def __init__(self):
-        self.input_size = -1
+    def __init__(self,
+                 input_size: int,
+                 output_size: int
+                ):
+        assert input_size == output_size
+        self.input_size = input_size
+        self.output_size = output_size
 
     def compile(self, batch_size: int):
         return nervalib.batch_normalization_layer(self.input_size, batch_size)
@@ -161,8 +167,13 @@ class BatchNormalization(Layer):
 
 
 class SimpleBatchNormalization(Layer):
-    def __init__(self):
-        self.input_size = -1
+    def __init__(self,
+                 input_size: int,
+                 output_size: int
+                ):
+        assert input_size == output_size
+        self.input_size = input_size
+        self.output_size = output_size
 
     def compile(self, batch_size: int):
         return nervalib.simple_batch_normalization_layer(self.input_size, batch_size)
@@ -172,8 +183,13 @@ class SimpleBatchNormalization(Layer):
 
 
 class AffineTransform(Layer):
-    def __init__(self):
-        self.input_size = -1
+    def __init__(self,
+                 input_size: int,
+                 output_size: int
+                ):
+        assert input_size == output_size
+        self.input_size = input_size
+        self.output_size = output_size
 
     def compile(self, batch_size: int):
         return nervalib.affine_layer(self.input_size, batch_size)
@@ -204,18 +220,13 @@ class Sequential(object):
         if not layers:
             raise RuntimeError('No layers are defined')
 
-    def compile(self, input_size: int, batch_size: int) -> None:
+    def compile(self, batch_size: int) -> None:
         self._check_layers()
 
         M = nervalib.MLP()
 
         # add layers
-        n = len(self.layers)
-        input_size = input_size  # keep track of the input size, since it isn't stored in the layers
         for i, layer in enumerate(self.layers):
-            layer.input_size = input_size
-            if isinstance(layer, (Dense, Sparse)):
-                input_size = layer.units
             cpp_layer = layer.compile(batch_size)
             M.append_layer(cpp_layer)
         self.compiled_model = M

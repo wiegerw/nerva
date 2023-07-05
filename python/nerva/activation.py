@@ -75,39 +75,38 @@ class HyperbolicTangent(Activation):
         return 'HyperbolicTangent()'
 
 
-def parse_activation(text: str) -> Tuple[Activation, float]:
+def parse_activation(text: str) -> Activation:
     """
     Returns an activation function and a dropout rate
     :param text:
     :return:
     """
     func = parse_function_call(text)
-    dropout = float(func.as_float('dropout')) if func.has_key('dropout') else 0.0
     if func.name == 'ReLU':
-        return ReLU(), dropout
+        return ReLU()
     elif func.name == 'Sigmoid':
-        return Sigmoid(), dropout
+        return Sigmoid()
     elif func.name == 'Softmax':
-        return Softmax(), dropout
+        return Softmax()
     elif func.name == 'LogSoftmax':
-        return LogSoftmax(), dropout
+        return LogSoftmax()
     elif func.name == 'HyperbolicTangent':
-        return HyperbolicTangent(), dropout
+        return HyperbolicTangent()
     elif func.name == 'TReLU':
         epsilon = func.as_float('epsilon')
-        return TReLU(epsilon), dropout
+        return TReLU(epsilon)
     elif func.name == 'LeakyReLU':
         alpha = func.as_float('alpha')
-        return LeakyReLU(alpha), dropout
+        return LeakyReLU(alpha)
     elif func.name == 'AllReLU':
         alpha = func.as_float('alpha')
-        return AllReLU(alpha), dropout
+        return AllReLU(alpha)
     elif func.name == 'Linear':
-        return NoActivation(), dropout
+        return NoActivation()
     elif func.name == 'SReLU':
         al = func.as_float('al', 0)
         tl = func.as_float('tl', 0)
         ar = func.as_float('ar', 0)
         tr = func.as_float('tr', 1)
-        return SReLU(al, tl, ar, tr), dropout
+        return SReLU(al, tl, ar, tr)
     raise RuntimeError(f"could not parse activation '{text}'")

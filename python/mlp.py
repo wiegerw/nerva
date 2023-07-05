@@ -8,7 +8,7 @@ import argparse
 import shlex
 import sys
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 import torch
 
@@ -21,43 +21,130 @@ import nerva.random
 import nerva.utilities
 import nerva.weights
 import nervalib
+from nerva.activation import parse_activation, Activation
+from nerva.optimizers import parse_optimizer, Optimizer
 from nerva.pruning import PruneFunction, GrowFunction, PruneGrow, parse_prune_function, parse_grow_function
 from nerva.training import StochasticGradientDescentAlgorithm, SGDOptions, compute_sparse_layer_densities
 from nerva.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, create_npz_dataloaders
-from nerva.layers import print_model_info
+from nerva.layers import print_model_info, BatchNormalization, Dense, Sparse, Layer
+from nerva.weights import parse_weight_initializer, WeightInitializer
+
+
+def make_batch_normalization_layer(input_size: int, output_size: int, optimizer: Optimizer) -> BatchNormalization:
+    layer = BatchNormalization(input_size, output_size)
+    layer.optimizer = optimizer
+    return layer
+
+
+def make_linear_layer(input_size: int,
+                      output_size: int,
+                      density: float,
+                      dropout_rate: float,
+                      activation: Activation,
+                      weight_initializer: WeightInitializer,
+                      optimizer: Optimizer
+                     ) -> Union[Dense, Sparse]:
+    if density == 1.0:
+        return Dense(input_size,
+                     output_size,
+                     activation=activation,
+                     optimizer=optimizer,
+                     weight_initializer=weight_initializer,
+                     dropout_rate=dropout_rate)
+    else:
+        return Sparse(input_size,
+                      output_size,
+                      density,
+                      activation=activation,
+                      optimizer=optimizer,
+                      weight_initializer=weight_initializer)
+
+
+def make_layers(layer_specifications: list[str],
+                linear_layer_sizes: list[int],
+                linear_layer_densities: list[float],
+                linear_layer_dropouts: list[float],
+                linear_layer_weights: list[WeightInitializer],
+                optimizers: list[Optimizer]
+               ) -> List[Layer]:
+
+    assert len(linear_layer_densities) == len(linear_layer_dropouts) == len(linear_layer_weights) == len(linear_layer_sizes) - 1
+    assert len(optimizers) == len(layer_specifications)
+
+    result = []
+
+    linear_layer_index = 0
+    optimizer_index = 0
+    input_size = linear_layer_sizes[0]
+
+    for spec in layer_specifications:
+        if spec == "BatchNorm":
+            output_size = input_size
+            optimizer = optimizers[optimizer_index]
+            optimizer_index += 1
+            blayer = make_batch_normalization_layer(input_size, output_size, optimizer)
+            result.append(blayer)
+        else:  # linear spec
+            output_size = linear_layer_sizes[linear_layer_index + 1]
+            density = linear_layer_densities[linear_layer_index]
+            dropout_rate = linear_layer_dropouts[linear_layer_index]
+            activation = parse_activation(spec)
+            weights = linear_layer_weights[linear_layer_index]
+            optimizer = optimizers[optimizer_index]
+            linear_layer_index += 1
+            optimizer_index += 1
+            llayer = make_linear_layer(input_size, output_size, density, dropout_rate, activation, weights, optimizer)
+            result.append(llayer)
+        input_size = output_size
+
+    return result
 
 
 class MLPNerva(nerva.layers.Sequential):
     """ Nerva Multilayer perceptron
     """
-    def __init__(self, layer_sizes, layer_densities, optimizers, linear_layer_weights, activations, dropout_rates, loss, learning_rate, batch_size):
+    def __init__(self,
+                 linear_layer_sizes: List[int],
+                 linear_layer_densities: List[float],
+                 optimizers: List[Optimizer],
+                 linear_layer_weights: List[WeightInitializer],
+                 layer_specifications: List[str],
+                 linear_layer_dropouts: List[float],
+                 loss,
+                 learning_rate,
+                 batch_size
+                ):
         super().__init__()
-        self.layer_sizes = layer_sizes
-        self.layer_densities = layer_densities
+        self.layer_sizes = linear_layer_sizes
+        self.layer_densities = linear_layer_densities
         self.loss = loss
         self.learning_rate = learning_rate
-
-        n_layers = len(layer_densities)
-        assert len(layer_sizes) == n_layers + 1
-        assert len(activations) == n_layers
-        assert len(optimizers) == n_layers
-        assert len(linear_layer_weights) == n_layers
-
-        output_sizes = layer_sizes[1:]
-        for (density, size, activation, dropout_rate, optimizer, weight_initializer) in zip(layer_densities, output_sizes, activations, dropout_rates, optimizers, linear_layer_weights):
-            if density == 1.0:
-                self.add(nerva.layers.Dense(size, activation=activation, optimizer=optimizer, weight_initializer=weight_initializer, dropout_rate=dropout_rate))
-            else:
-                self.add(nerva.layers.Sparse(size, density, activation=activation, optimizer=optimizer, weight_initializer=weight_initializer))
-
-        self.compile(layer_sizes[0], batch_size)
+        self.layers = make_layers(layer_specifications, linear_layer_sizes, linear_layer_densities, linear_layer_dropouts, linear_layer_weights, optimizers)
+        self.compile(batch_size)
 
     def __str__(self):
-        density_info = [layer.density_info() for layer in self.layers]
+        density_info = [layer.density_info() for layer in self.layers if isinstance(layer, (Dense, Sparse))]
         return f'{super().__str__()}\nloss = {self.loss}\nscheduler = {self.learning_rate}\nlayer densities: {", ".join(density_info)}\n'
 
 
-def parse_init_weights(text: str, linear_layer_count: int) -> List[nerva.weights.WeightInitializer]:
+def parse_dropouts(text: str, linear_layer_count: int) -> List[float]:
+    n = linear_layer_count
+
+    if not text:
+        return [0.0] * n
+
+    dropouts = [float(x) for x in text.strip().split(',')]
+
+    if len(dropouts) == 1:
+        return [dropouts[0]] * n
+
+    if len(dropouts) != n:
+        raise RuntimeError(f'the number of dropouts ({len(dropouts)}) does not match with the number of linear layers ({n})')
+
+    return dropouts
+
+
+def parse_init_weights(text: str, linear_layer_count: int) -> List[WeightInitializer]:
     words = text.strip().split(';')
     n = linear_layer_count
 
@@ -71,7 +158,7 @@ def parse_init_weights(text: str, linear_layer_count: int) -> List[nerva.weights
     return [nerva.weights.parse_weight_initializer(word) for word in words]
 
 
-def parse_optimizers(text: str, linear_layer_count: int) -> List[nerva.optimizers.Optimizer]:
+def parse_optimizers(text: str, linear_layer_count: int) -> List[Optimizer]:
     words = text.strip().split(';')
     n = linear_layer_count
 
@@ -99,6 +186,7 @@ def make_argument_parser():
     cmdline_parser.add_argument('--sizes', type=str, default='3072,128,64,10', help='A comma separated list of layer sizes, e.g. "3072,128,64,10".')
     cmdline_parser.add_argument('--densities', type=str, help='A comma separated list of layer densities, e.g. "0.05,0.05,1.0".')
     cmdline_parser.add_argument('--overall-density', type=float, default=1.0, help='The overall density of the layers.')
+    cmdline_parser.add_argument('--dropouts', help='A comma separated list of dropout rates')
     cmdline_parser.add_argument('--layers', type=str, help='A semi-colon separated lists of layers.')
 
     # learning rate
@@ -226,6 +314,7 @@ def main():
         train_loader, test_loader = None, None
 
     linear_layer_sizes = [int(s) for s in args.sizes.split(',')]
+    linear_layer_count = len(linear_layer_sizes) - 1
 
     if args.densities:
         linear_layer_densities = list(float(d) for d in args.densities.split(','))
@@ -236,19 +325,18 @@ def main():
 
     layer_specifications = args.layers.split(';')
     linear_layer_specifications = [spec for spec in layer_specifications if nervalib.is_linear_layer(spec)]
-    linear_layer_weights = parse_init_weights(args.init_weights, len(linear_layer_sizes) - 1)
-    linear_layer_optimizers = parse_optimizers(args.optimizers, len(linear_layer_sizes) - 1)
-
+    linear_layer_weights = parse_init_weights(args.init_weights, linear_layer_count)
+    layer_optimizers = parse_optimizers(args.optimizers, linear_layer_count)
+    linear_layer_dropouts = parse_dropouts(args.dropouts, linear_layer_count)
     loss = nerva.loss.parse_loss_function(args.loss)
     learning_rate = nerva.learning_rate.parse_learning_rate(args.learning_rate)
-    activations, dropout_rates = list(zip(*[nerva.activation.parse_activation(text) for text in linear_layer_specifications]))
 
     M = MLPNerva(linear_layer_sizes,
                  linear_layer_densities,
-                 linear_layer_optimizers,
+                 layer_optimizers,
                  linear_layer_weights,
-                 activations,
-                 dropout_rates,
+                 linear_layer_specifications,
+                 linear_layer_dropouts,
                  loss,
                  learning_rate,
                  args.batch_size
