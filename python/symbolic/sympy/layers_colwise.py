@@ -3,6 +3,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from symbolic.sympy.activation_functions import *
+from symbolic.sympy.parse_mlp import parse_optimizer
 from symbolic.sympy.softmax_functions import *
 from symbolic.sympy.weight_initializers import set_layer_weights
 
@@ -70,7 +71,8 @@ class LinearLayer(Layer):
         K, D = self.W.shape
         return D, K
 
-    def set_optimizer(self, make_optimizer):
+    def set_optimizer(self, optimizer: str):
+        make_optimizer = parse_optimizer(optimizer)
         self.optimizer = CompositeOptimizer([make_optimizer(self.W, self.DW), make_optimizer(self.b, self.Db)])
 
     def set_weights(self, weight_initializer):
@@ -184,6 +186,13 @@ class SReLULayer(ActivationLayer):
         self.Dar = elements_sum(hadamard(DY, Ar(Z)))
         self.Dtl = elements_sum(hadamard(DY, Tl(Z)))
         self.Dtr = elements_sum(hadamard(DY, Tr(Z)))
+
+    def set_optimizer(self, optimizer: str):
+        make_optimizer = parse_optimizer(optimizer)
+        self.optimizer = CompositeOptimizer([make_optimizer(self.W, self.DW),
+                                             make_optimizer(self.b, self.Db),
+                                             make_optimizer(self.act.x, self.act.Dx)
+                                            ])
 
 
 class SoftmaxLayer(LinearLayer):
@@ -306,3 +315,7 @@ class BatchNormalizationLayer(Layer):
         self.Dbeta[:] = Dbeta
         self.Dgamma[:] = Dgamma
         self.DX[:] = DX
+
+    def set_optimizer(self, optimizer: str):
+        make_optimizer = parse_optimizer(optimizer)
+        self.optimizer = CompositeOptimizer([make_optimizer(self.beta, self.Dbeta), make_optimizer(self.gamma, self.Dgamma)])

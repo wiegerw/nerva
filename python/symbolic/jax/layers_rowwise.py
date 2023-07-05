@@ -6,6 +6,7 @@ from collections.abc import Callable
 from typing import Tuple, Any
 
 from symbolic.jax.activation_functions import *
+from symbolic.jax.parse_mlp import parse_optimizer
 from symbolic.jax.softmax_functions import *
 from symbolic.jax.weight_initializers import set_layer_weights
 from symbolic.optimizers import CompositeOptimizer, Optimizer
@@ -74,7 +75,8 @@ class LinearLayer(Layer):
         K, D = self.W.shape
         return D, K
 
-    def set_optimizer(self, make_optimizer):
+    def set_optimizer(self, optimizer: str):
+        make_optimizer = parse_optimizer(optimizer)
         self.optimizer = CompositeOptimizer([make_optimizer(self, 'W', 'DW'), make_optimizer(self, 'b', 'Db')])
 
     def set_weights(self, weight_initializer):
@@ -188,7 +190,8 @@ class SReLULayer(ActivationLayer):
 
         self.act.Dx = jnp.array([Dal, Dtl, Dar, Dtr])
 
-    def set_optimizer(self, make_optimizer):
+    def set_optimizer(self, optimizer: str):
+        make_optimizer = parse_optimizer(optimizer)
         self.optimizer = CompositeOptimizer([make_optimizer(self, 'W', 'DW'),
                                              make_optimizer(self, 'b', 'Db'),
                                              make_optimizer(self.act, 'x', 'Dx')
@@ -317,5 +320,6 @@ class BatchNormalizationLayer(Layer):
         self.Dgamma = Dgamma
         self.DX = DX
 
-    def set_optimizer(self, make_optimizer: Callable[[Any, str, str], Optimizer]):
+    def set_optimizer(self, optimizer: str):
+        make_optimizer = parse_optimizer(optimizer)
         self.optimizer = CompositeOptimizer([make_optimizer(self, 'beta', 'Dbeta'), make_optimizer(self, 'gamma', 'Dgamma')])

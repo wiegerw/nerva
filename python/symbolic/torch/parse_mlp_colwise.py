@@ -31,7 +31,7 @@ def parse_multilayer_perceptron(layer_specifications: List[str],
         if specification == 'BatchNormalization':
             layer = BatchNormalizationLayer(D, N)
             optimizer = optimizers[optimizer_index]
-            layer.set_optimizer(parse_optimizer(optimizer))
+            layer.set_optimizer(optimizer)
             optimizer_index += 1
         else:
             K = linear_layer_sizes[linear_layer_index + 1]  # the output size of the layer
@@ -66,7 +66,7 @@ def parse_linear_layer(text: str,
     else:
         act = parse_activation(text)
         layer = ActivationLayer(D, K, N, act)
-    layer.set_optimizer(parse_optimizer(optimizer))
+    layer.set_optimizer(optimizer)
     layer.set_weights(weight_initializer)
     return layer
 
