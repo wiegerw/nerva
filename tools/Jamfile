@@ -6,9 +6,11 @@ project nerva_tools
 
 exe mlpd : mlp.cpp : <scalar>double ;
 exe mlp : mlp.cpp : <scalar>float ;
+exe mkl : mkl.cpp : <scalar>float ;
 
 install dist
   :
+    mkl
     mlp
     mlpd
   ;
