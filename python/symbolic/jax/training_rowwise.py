@@ -33,9 +33,10 @@ def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
     return total_correct / N
 
 
-def compute_loss(M: MultilayerPerceptron, data_loader: DataLoader, loss: LossFunction, num_classes: int):
+def compute_loss(M: MultilayerPerceptron, data_loader: DataLoader, loss: LossFunction):
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
+    num_classes = M.layers[-1].output_size()
     for X, T in data_loader:
         T = to_one_hot(T, num_classes)
         Y = M.feedforward(X)
@@ -44,9 +45,9 @@ def compute_loss(M: MultilayerPerceptron, data_loader: DataLoader, loss: LossFun
     return total_loss / N
 
 
-def compute_statistics(M, lr, loss, train_loader, test_loader, num_classes, epoch, elapsed_seconds=0.0, print_statistics=True):
+def compute_statistics(M, lr, loss, train_loader, test_loader, epoch, elapsed_seconds=0.0, print_statistics=True):
     if print_statistics:
-        train_loss = compute_loss(M, train_loader, loss, num_classes)
+        train_loss = compute_loss(M, train_loader, loss)
         train_accuracy = compute_accuracy(M, train_loader)
         test_accuracy = compute_accuracy(M, test_loader)
         print_epoch(epoch, lr, train_loss, train_accuracy, test_accuracy, elapsed_seconds)
@@ -60,13 +61,13 @@ def sgd(M: MultilayerPerceptron,
         learning_rate: LearningRateScheduler,
         train_loader: DataLoader,
         test_loader: DataLoader,
-        batch_size: int,
-        num_classes: int
+        batch_size: int
        ):
 
     lr = learning_rate(0)
-    compute_statistics(M, lr, loss, train_loader, test_loader, num_classes, epoch=0)
+    compute_statistics(M, lr, loss, train_loader, test_loader, epoch=0)
     training_time = 0.0
+    num_classes = M.layers[-1].output_size()
 
     for epoch in range(epochs):
         timer = StopWatch()
@@ -89,7 +90,7 @@ def sgd(M: MultilayerPerceptron,
 
         seconds = timer.seconds()
         training_time += seconds
-        compute_statistics(M, lr, loss, train_loader, test_loader, num_classes, epoch=epoch + 1, elapsed_seconds=seconds)
+        compute_statistics(M, lr, loss, train_loader, test_loader, epoch=epoch + 1, elapsed_seconds=seconds)
 
     print(f'Total training time for the {epochs} epochs: {training_time:.8f}s\n')
 
@@ -104,17 +105,16 @@ def train(layer_specifications: List[str],
           learning_rate: str,
           weights_and_bias_file: str,
           dataset_file: str,
-          num_classes: int,
           debug: bool
          ):
     SGDOptions.debug = debug
     set_numpy_options()
     loss = parse_loss_function(loss)
     learning_rate = parse_learning_rate(learning_rate)
-    M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers, batch_size)
+    M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers)
     M.load_weights_and_bias(weights_and_bias_file)
     train_loader, test_loader = create_npz_dataloaders(dataset_file, batch_size=batch_size)
-    sgd(M, epochs, loss, learning_rate, train_loader, test_loader, batch_size, num_classes)
+    sgd(M, epochs, loss, learning_rate, train_loader, test_loader, batch_size)
 
 
 if __name__ == '__main__':
@@ -129,7 +129,6 @@ if __name__ == '__main__':
     weights_and_bias_file = '../../mlp-compare.npz'
     dataset_file = '../../cifar1/epoch0.npz'
     debug = False
-    num_classes = 10
 
     train(layer_specifications,
           linear_layer_sizes,
@@ -141,6 +140,5 @@ if __name__ == '__main__':
           learning_rate,
           weights_and_bias_file,
           dataset_file,
-          num_classes,
           debug
          )

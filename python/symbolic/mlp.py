@@ -40,7 +40,6 @@ def make_argument_parser():
 
     # dataset
     cmdline_parser.add_argument('--dataset', type=str, help='The .npz file containing train and test data')
-    cmdline_parser.add_argument('--num-classes', type=int, help='The number of classes of the targets')
 
     # weights
     cmdline_parser.add_argument('--weights', type=str, help='The .npz file containing weights and bias values')
@@ -111,7 +110,6 @@ def main():
               args.learning_rate,
               args.weights,
               args.dataset,
-              args.num_classes,
               args.debug
              )
 

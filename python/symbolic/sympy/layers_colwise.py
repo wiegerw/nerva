@@ -14,9 +14,9 @@ class Layer(object):
     """
     Base class for layers of a neural network with data in column layout
     """
-    def __init__(self, m: int, n: int):
-        self.X = zeros(m, n)
-        self.DX = zeros(m, n)
+    def __init__(self):
+        self.X = None
+        self.DX = None
         self.optimizer = None
 
     def feedforward(self, X: Matrix) -> Matrix:
@@ -34,8 +34,8 @@ class LinearLayer(Layer):
     """
     Linear layer of a neural network
     """
-    def __init__(self, D: int, K: int, N: int):
-        super().__init__(D, N)
+    def __init__(self, D: int, K: int):
+        super().__init__()
         self.W = zeros(K, D)
         self.DW = zeros(K, D)
         self.b = zeros(K, 1)
@@ -62,14 +62,13 @@ class LinearLayer(Layer):
 
         self.DW[:] = DW
         self.Db[:] = Db
-        self.DX[:] = DX
+        self.DX = DX
 
-    def input_output_sizes(self) -> Tuple[int, int]:
-        """
-        Returns the input and output sizes of the layer
-        """
-        K, D = self.W.shape
-        return D, K
+    def input_size(self) -> int:
+        return self.W.shape[1]
+
+    def output_size(self) -> int:
+        return self.W.shape[0]
 
     def set_optimizer(self, optimizer: str):
         make_optimizer = parse_optimizer(optimizer)
@@ -83,10 +82,10 @@ class ActivationLayer(LinearLayer):
     """
     Linear layer with an activation function
     """
-    def __init__(self, D: int, K: int, N: int, act: ActivationFunction):
-        super().__init__(D, K, N)
-        self.Z = zeros(K, N)
-        self.DZ = zeros(K, N)
+    def __init__(self, D: int, K: int, act: ActivationFunction):
+        super().__init__(D, K)
+        self.Z = None
+        self.DZ = None
         self.act = act
 
     def feedforward(self, X: Matrix) -> Matrix:
@@ -99,7 +98,7 @@ class ActivationLayer(LinearLayer):
         Z = W * X + column_repeat(b, N)
         Y = act(Z)
 
-        self.Z[:] = Z
+        self.Z = Z
         return Y
 
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
@@ -113,10 +112,10 @@ class ActivationLayer(LinearLayer):
         Db = rows_sum(DZ)
         DX = W.T * DZ
 
-        self.DZ[:] = DZ
+        self.DZ = DZ
         self.DW[:] = DW
         self.Db[:] = Db
-        self.DX[:] = DX
+        self.DX = DX
 
 
 class SigmoidLayer(LinearLayer):
@@ -124,10 +123,10 @@ class SigmoidLayer(LinearLayer):
     Linear layer with a sigmoid activation function. This is not strictly needed,
     but it shows that the backpropagation can be calculated in a different way
     """
-    def __init__(self, D: int, K: int, N: int):
-        super().__init__(D, K, N)
-        self.Z = zeros(K, N)
-        self.DZ = zeros(K, N)
+    def __init__(self, D: int, K: int):
+        super().__init__(D, K)
+        self.Z = None
+        self.DZ = None
 
     def feedforward(self, X: Matrix) -> Matrix:
         self.X = X
@@ -138,7 +137,7 @@ class SigmoidLayer(LinearLayer):
         Z = W * X + column_repeat(b, N)
         Y = Sigmoid(Z)
 
-        self.Z[:] = Z
+        self.Z = Z
         return Y
 
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
@@ -151,10 +150,10 @@ class SigmoidLayer(LinearLayer):
         Db = rows_sum(DZ)
         DX = W.T * DZ
 
-        self.DZ[:] = DZ
+        self.DZ = DZ
         self.DW[:] = DW
         self.Db[:] = Db
-        self.DX[:] = DX
+        self.DX = DX
 
 
 class SReLULayer(ActivationLayer):
@@ -162,8 +161,8 @@ class SReLULayer(ActivationLayer):
     Linear layer with an SReLU activation function. It adds learning of the parameters
     al, tl, ar and tr.
     """
-    def __init__(self, D: int, K: int, N: int, act: SReLUActivation):
-        super().__init__(D, K, N, act)
+    def __init__(self, D: int, K: int, act: SReLUActivation):
+        super().__init__(D, K, act)
         self.Dal = 0
         self.Dtl = 0
         self.Dar = 0
@@ -199,10 +198,10 @@ class SoftmaxLayer(LinearLayer):
     """
     Linear layer with a softmax activation function
     """
-    def __init__(self, D: int, K: int, N: int):
-        super().__init__(D, K, N)
-        self.Z = zeros(K, N)
-        self.DZ = zeros(K, N)
+    def __init__(self, D: int, K: int):
+        super().__init__(D, K)
+        self.Z = None
+        self.DZ = None
 
     def feedforward(self, X: Matrix) -> Matrix:
         self.X = X
@@ -213,7 +212,7 @@ class SoftmaxLayer(LinearLayer):
         Z = W * X + column_repeat(b, N)
         Y = softmax_colwise(Z)
 
-        self.Z[:] = Z
+        self.Z = Z
         return Y
 
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
@@ -226,20 +225,20 @@ class SoftmaxLayer(LinearLayer):
         Db = rows_sum(DZ)
         DX = W.T * DZ
 
-        self.DZ[:] = DZ
+        self.DZ = DZ
         self.DW[:] = DW
         self.Db[:] = Db
-        self.DX[:] = DX
+        self.DX = DX
 
 
 class LogSoftmaxLayer(LinearLayer):
     """
     Linear layer with a log_softmax activation function
     """
-    def __init__(self, D: int, K: int, N: int):
-        super().__init__(D, K, N)
-        self.Z = zeros(K, N)
-        self.DZ = zeros(K, N)
+    def __init__(self, D: int, K: int):
+        super().__init__(D, K)
+        self.Z = None
+        self.DZ = None
 
     def feedforward(self, X: Matrix) -> Matrix:
         self.X = X
@@ -250,7 +249,7 @@ class LogSoftmaxLayer(LinearLayer):
         Z = W * X + column_repeat(b, N)
         Y = log_softmax_colwise(Z)
 
-        self.Z[:] = Z
+        self.Z = Z
         return Y
 
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
@@ -264,20 +263,20 @@ class LogSoftmaxLayer(LinearLayer):
         Db = rows_sum(DZ)
         DX = W.T * DZ
 
-        self.DZ[:] = DZ
+        self.DZ = DZ
         self.DW[:] = DW
         self.Db[:] = Db
-        self.DX[:] = DX
+        self.DX = DX
 
 
 class BatchNormalizationLayer(Layer):
     """
     A batch normalization layer
     """
-    def __init__(self, D: int, N: int):
-        super().__init__(D, N)
-        self.Z = zeros(D, N)
-        self.DZ = zeros(D, N)
+    def __init__(self, D: int):
+        super().__init__()
+        self.Z = None
+        self.DZ = None
         self.gamma = ones(D, 1)
         self.Dgamma = zeros(D, 1)
         self.beta = zeros(D, 1)
@@ -297,7 +296,7 @@ class BatchNormalizationLayer(Layer):
         Y = hadamard(column_repeat(gamma, N), Z) + column_repeat(beta, N)
 
         self.power_minus_half_Sigma[:] = power_minus_half_Sigma
-        self.Z[:] = Z
+        self.Z = Z
         return Y
 
     def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
@@ -311,10 +310,16 @@ class BatchNormalizationLayer(Layer):
         Dgamma = rows_sum(hadamard(DY, Z))
         DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Z, column_repeat(-diag(DZ * Z.T), N)) + DZ * (N * identity(N) - ones(N, N)))
 
-        self.DZ[:] = DZ
+        self.DZ = DZ
         self.Dbeta[:] = Dbeta
         self.Dgamma[:] = Dgamma
-        self.DX[:] = DX
+        self.DX = DX
+
+    def input_size(self) -> int:
+        return vector_size(self.gamma)
+
+    def output_size(self) -> int:
+        return vector_size(self.gamma)
 
     def set_optimizer(self, optimizer: str):
         make_optimizer = parse_optimizer(optimizer)

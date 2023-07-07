@@ -19,6 +19,10 @@ def is_row_vector(x: Matrix) -> bool:
     return is_vector(x) or x.shape[0] == 1
 
 
+def vector_size(x: Matrix) -> int:
+    return x.shape[0]
+
+
 def is_square(X: Matrix) -> bool:
     m, n = X.shape
     return m == n
