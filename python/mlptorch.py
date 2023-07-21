@@ -9,7 +9,7 @@ import random
 import re
 import shlex
 import sys
-from typing import List
+from typing import List, Callable
 
 import torch
 import torch.nn as nn
@@ -21,6 +21,9 @@ from nerva.datasets import create_npz_dataloaders, create_cifar10_augmented_data
     save_dict_to_npz, load_dict_from_npz
 from nerva.training import compute_sparse_layer_densities, print_epoch
 from nerva.utilities import StopWatch, pp, parse_function_call
+
+
+ActivationFunction = Callable[[torch.Tensor], torch.Tensor]
 
 
 def reservoir_sample(k: int, n: int) -> List[int]:
@@ -57,10 +60,11 @@ def create_mask(W: torch.Tensor, non_zero_count: int) -> torch.Tensor:
 class MLPPyTorch(nn.Module):
     """ PyTorch Multilayer perceptron that supports sparse layers using binary masks.
     """
-    def __init__(self, layer_sizes, layer_densities):
+    def __init__(self, layer_sizes, layer_densities, layer_activations: List[ActivationFunction]):
         super().__init__()
         self.layer_sizes = layer_sizes
         self.optimizer = None
+        self.activations = layer_activations
         self.masks = None
         n = len(layer_sizes) - 1  # the number of layers
         self.layers = nn.ModuleList()
@@ -86,10 +90,13 @@ class MLPPyTorch(nn.Module):
         self.optimizer.step()
 
     def forward(self, x):
-        for i in range(len(self.layers) - 1):
-            x = F.relu(self.layers[i](x))
-        x = self.layers[-1](x)  # output layer does not have an activation function
+        for act, layer in zip(self.activations, self.layers):
+            x = act(layer(x))
         return x
+        # for i in range(len(self.layers) - 1):
+        #     x = F.relu(self.layers[i](x))
+        # x = self.layers[-1](x)  # output layer does not have an activation function
+        # return x
 
     def save_weights_and_bias(self, filename: str):
         print(f'Saving weights and bias to {filename}')
@@ -126,23 +133,6 @@ class MLPPyTorch(nn.Module):
         return f'{super().__str__()}\nscheduler = {self.learning_rate}\nlayer densities: {", ".join(density_info)}\n'
 
 
-class MLPPyTorchTRelu(MLPPyTorch):
-    """ PyTorch Multilayer perceptron that supports sparse layers using binary masks.
-        It uses a trimmed ReLU activation function.
-    """
-    def __init__(self, layer_sizes, layer_densities, epsilon: float):
-        super().__init__(layer_sizes, layer_densities)
-        self.epsilon = epsilon
-        print(f'epsilon = {epsilon}')
-
-    def forward(self, x):
-        for i in range(len(self.layers) - 1):
-            z = self.layers[i](x)
-            x = torch.where(z < self.epsilon, 0, z)  # apply trimmed ReLU to z
-        x = self.layers[-1](x)  # output layer does not have an activation function
-        return x
-
-
 def parse_learning_rate(text: str) -> float:
     try:
         func = parse_function_call(text)
@@ -159,10 +149,8 @@ def parse_learning_rate_scheduler(text: str, optimizer) -> torch.optim.lr_schedu
     try:
         func = parse_function_call(text)
         if func.name == 'Constant':
-            lr = func.as_float('lr')
             return torch.optim.lr_scheduler.ConstantLR(optimizer, factor=1.0)
         elif func.name == 'MultiStepLR':
-            lr = func.as_float('lr')
             milestones = [int(x) for x in func.as_string('milestones').split('|')]
             gamma = func.as_float('gamma')
             return torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones, gamma=gamma, last_epoch=-1)
@@ -176,6 +164,37 @@ def parse_loss_function(text: str):
         return nn.CrossEntropyLoss()
     else:
         raise RuntimeError(f"unsupported loss function '{text}'")
+
+
+def trelu(x: torch.Tensor, epsilon: float) -> torch.Tensor:
+    y = F.relu(x)
+    return torch.where(y < epsilon, 0, y)
+
+
+def parse_activation_function(text: str) -> ActivationFunction:
+    try:
+        func = parse_function_call(text)
+        if func.name == 'Linear':
+            return lambda x: x
+        elif func.name == 'ReLU':
+            return F.relu
+        elif func.name == 'Sigmoid':
+            return F.sigmoid
+        elif func.name == 'Softmax':
+            return F.softmax
+        elif func.name == 'LogSoftmax':
+            return F.log_softmax
+        elif func.name == 'HyperbolicTangent':
+            return F.tanh
+        elif func.name == 'LeakyReLU':
+            alpha = func.as_float('alpha')
+            return lambda x: F.leaky_relu(x, negative_slope=alpha)
+        elif func.name == 'TReLU':
+            epsilon = func.as_float('epsilon')
+            return lambda x: trelu(x, epsilon)
+    except Exception as e:
+        print(e)
+    raise RuntimeError(f'Could not parse activation "{text}"')
 
 
 # N.B. We only support one optimizer for all layers.
@@ -200,7 +219,8 @@ def parse_optimizer(text: str, M: MLPPyTorch, lr: float) -> optim.SGD:
 
 def make_torch_model(args, linear_layer_sizes, densities):
     lr = parse_learning_rate(args.learning_rate)
-    M = MLPPyTorch(linear_layer_sizes, densities) if args.trim_relu == 0 else MLPPyTorchTRelu(linear_layer_sizes, densities, args.trim_relu)
+    activations = [parse_activation_function(act) for act in args.layers.split(';')]
+    M = MLPPyTorch(linear_layer_sizes, densities, activations)
     M.optimizer = parse_optimizer(args.optimizers, M, lr)
     M.loss = parse_loss_function(args.loss)
     M.learning_rate = parse_learning_rate_scheduler(args.learning_rate, M.optimizer)
