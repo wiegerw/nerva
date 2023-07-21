@@ -380,8 +380,17 @@ Scalar l2_distance(const mkl::sparse_matrix_csr<Scalar>& A, const Eigen::Matrix<
   return (B - to_eigen(A)).squaredNorm();
 }
 
+template <typename Scalar>
+bool equal_support(const mkl::sparse_matrix_csr<Scalar>& A, const mkl::sparse_matrix_csr<Scalar>& B)
+{
+  return (A.rows() == B.rows()) &&
+         (A.cols() == B.cols()) &&
+         (A.col_index() == B.col_index()) &&
+         (A.row_index() == B.row_index());
+}
+
 // Does the assignment A := alpha * A + beta * B, with A, B sparse.
-// A and B must have the same non-zero mask
+// A and B must have equal support
 template <typename Scalar>
 void ss_sum(mkl::sparse_matrix_csr<Scalar>& A,
             const mkl::sparse_matrix_csr<Scalar>& B,
@@ -389,10 +398,7 @@ void ss_sum(mkl::sparse_matrix_csr<Scalar>& A,
             Scalar beta = 1.0
 )
 {
-  assert(A.rows() == B.rows());
-  assert(A.cols() == B.cols());
-  assert(A.col_index() == B.col_index());
-  assert(A.row_index() == B.row_index());
+  assert(equal_support(A, B));
 
   eigen::vector_map<Scalar> A1(const_cast<Scalar*>(A.values().data()), A.values().size());
   eigen::vector_map<Scalar> B1(const_cast<Scalar*>(B.values().data()), B.values().size());
@@ -402,7 +408,7 @@ void ss_sum(mkl::sparse_matrix_csr<Scalar>& A,
 }
 
 // Does the assignment A := alpha * A + beta * B + gamma * C, with A, B, C sparse.
-// A, B and C must have the same support
+// A, B and C must have equal support
 template <typename Scalar>
 void sss_sum(mkl::sparse_matrix_csr<Scalar>& A,
              const mkl::sparse_matrix_csr<Scalar>& B,
@@ -412,12 +418,7 @@ void sss_sum(mkl::sparse_matrix_csr<Scalar>& A,
              Scalar gamma = 0.0
 )
 {
-  assert(A.rows() == B.rows());
-  assert(A.rows() == C.rows());
-  assert(A.cols() == B.cols());
-  assert(A.cols() == C.cols());
-  assert(A.values().size() == B.values().size());
-  assert(A.values().size() == C.values().size());
+  assert(equal_support(A, B) && equal_support(A, C));
 
   eigen::vector_map<Scalar> A1(const_cast<Scalar*>(A.values().data()), A.values().size());
   eigen::vector_map<Scalar> B1(const_cast<Scalar*>(B.values().data()), B.values().size());

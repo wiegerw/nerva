@@ -106,6 +106,14 @@ struct momentum_optimizer: public gradient_descent_optimizer<T>
       x += delta_x;
     }
   }
+
+  void reset_support() override
+  {
+    if constexpr (IsSparse)
+    {
+      delta_x.reset_support(x);
+    }
+  }
 };
 
 template <typename T>
@@ -205,7 +213,7 @@ struct composite_optimizer: public optimizer_function
 };
 
 template <typename... Args>
-std::shared_ptr<optimizer_function> make_composite_optimizer(Args&&... args)
+std::shared_ptr<composite_optimizer> make_composite_optimizer(Args&&... args)
 {
   return std::make_shared<composite_optimizer>(std::initializer_list<std::shared_ptr<optimizer_function>>{std::forward<Args>(args)...});
 }
