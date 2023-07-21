@@ -356,12 +356,7 @@ def make_argument_parser():
     cmdline_parser.add_argument('--sizes', type=str, default='3072,128,64,10', help='A comma separated list of layer sizes, e.g. "3072,128,64,10".')
     cmdline_parser.add_argument('--densities', type=str, help='A comma separated list of layer densities, e.g. "0.05,0.05,1.0".')
     cmdline_parser.add_argument('--overall-density', type=float, default=1.0, help='The overall density of the layers.')
-    cmdline_parser.add_argument('--trim-relu', type=float, default=0.0, help='The threshold for trimming ReLU outputs.')
-    cmdline_parser.add_argument('--layers', type=str, help='A semi-colon separated lists of layers.')
-
-    # optimizer
-    cmdline_parser.add_argument('--momentum', type=float, default=0.9, help='the momentum value (default: off)')
-    cmdline_parser.add_argument("--nesterov", help="apply nesterov", action="store_true")
+    cmdline_parser.add_argument('--layers', type=str, help='A semi-colon separated lists of layer specifications.')
 
     # learning rate
     cmdline_parser.add_argument("--learning-rate", type=str, help="The learning rate scheduler")
