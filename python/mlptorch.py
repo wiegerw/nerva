@@ -9,7 +9,7 @@ import random
 import re
 import shlex
 import sys
-from typing import List, Tuple
+from typing import List
 
 import torch
 import torch.nn as nn
@@ -20,7 +20,7 @@ from torch.nn import Linear
 from nerva.datasets import create_npz_dataloaders, create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, \
     save_dict_to_npz, load_dict_from_npz
 from nerva.training import compute_sparse_layer_densities, print_epoch
-from nerva.utilities import StopWatch, pp
+from nerva.utilities import StopWatch, pp, parse_function_call
 
 
 def reservoir_sample(k: int, n: int) -> List[int]:
@@ -143,21 +143,32 @@ class MLPPyTorchTRelu(MLPPyTorch):
         return x
 
 
-def parse_learning_rate(text: str, optimizer) -> torch.optim.lr_scheduler:
+def parse_learning_rate(text: str) -> float:
     try:
-        if text.startswith('Constant'):
-            m = re.match(r'Constant\((.*)\)', text)
-            lr = float(m.group(1))  # N.B. ignored!
+        func = parse_function_call(text)
+        if func.name == 'Constant':
+            return func.as_float('lr')
+        elif func.name == 'MultiStepLR':
+            return func.as_float('lr')
+    except:
+        pass
+    raise RuntimeError(f"Could not parse learning rate from '{text}'")
+
+
+def parse_learning_rate_scheduler(text: str, optimizer) -> torch.optim.lr_scheduler:
+    try:
+        func = parse_function_call(text)
+        if func.name == 'Constant':
+            lr = func.as_float('lr')
             return torch.optim.lr_scheduler.ConstantLR(optimizer, factor=1.0)
-        elif text.startswith('MultiStepLR'):
-            m = re.match(r'MultiStepLR\((.*);(.*);(.*)\)', text)
-            lr = float(m.group(1))  # N.B. ignored!
-            milestones = [int(x) for x in m.group(2).split(',')]
-            gamma = float(m.group(3))
+        elif func.name == 'MultiStepLR':
+            lr = func.as_float('lr')
+            milestones = [int(x) for x in func.as_string('milestones').split('|')]
+            gamma = func.as_float('gamma')
             return torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones, gamma=gamma, last_epoch=-1)
     except:
         pass
-    raise RuntimeError(f"could not parse learning rate scheduler '{text}'")
+    raise RuntimeError(f"Could not parse learning rate scheduler '{text}'")
 
 
 def parse_loss_function(text: str):
@@ -167,7 +178,7 @@ def parse_loss_function(text: str):
         raise RuntimeError(f"unsupported loss function '{text}'")
 
 
-# N.B. Currently we only support one optimizer for all layers.
+# N.B. We only support one optimizer for all layers.
 def parse_optimizer(text: str, M: MLPPyTorch, lr: float) -> optim.SGD:
     try:
         momentum = 0.0
@@ -188,10 +199,11 @@ def parse_optimizer(text: str, M: MLPPyTorch, lr: float) -> optim.SGD:
 
 
 def make_torch_model(args, linear_layer_sizes, densities):
+    lr = parse_learning_rate(args.learning_rate)
     M = MLPPyTorch(linear_layer_sizes, densities) if args.trim_relu == 0 else MLPPyTorchTRelu(linear_layer_sizes, densities, args.trim_relu)
-    M.optimizer = parse_optimizer(args.optimizers, M, args.lr)
+    M.optimizer = parse_optimizer(args.optimizers, M, lr)
     M.loss = parse_loss_function(args.loss)
-    M.learning_rate = parse_learning_rate(args.learning_rate, M.optimizer)
+    M.learning_rate = parse_learning_rate_scheduler(args.learning_rate, M.optimizer)
     for layer in M.layers:
         nn.init.xavier_uniform_(layer.weight)
     M.apply_masks()
@@ -336,9 +348,6 @@ def make_argument_parser():
     cmdline_parser.add_argument("--nesterov", help="apply nesterov", action="store_true")
 
     # learning rate
-    # N.B. In PyTorch the learning rate is tied to the optimizer instead of to the learning rate scheduler.
-    # Due to this design decision, a separate command line option for the learning rate is necessary.
-    cmdline_parser.add_argument("--lr", help="The initial learning rate", type=float, default=0.1)
     cmdline_parser.add_argument("--learning-rate", type=str, help="The learning rate scheduler")
 
     # loss function
