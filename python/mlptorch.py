@@ -93,10 +93,6 @@ class MLPPyTorch(nn.Module):
         for act, layer in zip(self.activations, self.layers):
             x = act(layer(x))
         return x
-        # for i in range(len(self.layers) - 1):
-        #     x = F.relu(self.layers[i](x))
-        # x = self.layers[-1](x)  # output layer does not have an activation function
-        # return x
 
     def save_weights_and_bias(self, filename: str):
         print(f'Saving weights and bias to {filename}')
@@ -381,7 +377,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--optimizers", type=str, help="The optimizer (GradientDescent, Momentum(<mu>), Nesterov(<mu>))", default="GradientDescent")
 
     # dataset
-    cmdline_parser.add_argument('--datadir', type=str, default='', help='the data directory (default: ./data)')
+    cmdline_parser.add_argument('--datadir', type=str, default='./data', help='the data directory (default: ./data)')
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
     cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
 
@@ -398,6 +394,9 @@ def make_argument_parser():
 
     # multi-threading
     cmdline_parser.add_argument("--threads", help="The number of threads being used", type=int)
+
+    # gpu
+    cmdline_parser.add_argument("--gpu", help="use the GPU (if available)", action="store_true")
 
     # timer
     cmdline_parser.add_argument("--timer", help="Enable timer messages", action="store_true")
