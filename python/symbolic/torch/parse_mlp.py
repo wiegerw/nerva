@@ -16,6 +16,8 @@ def parse_activation(text: str) -> ActivationFunction:
         name, args = parse_function_call(text)
         if name == 'ReLU':
             return ReLUActivation()
+        elif name == 'Sigmoid':
+            return SigmoidActivation()
         elif name == 'HyperbolicTangent':
             return HyperbolicTangentActivation()
         elif name == 'AllReLU':

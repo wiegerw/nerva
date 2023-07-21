@@ -5,7 +5,7 @@
 from typing import Callable, Any
 
 from symbolic.jax.activation_functions import SReLUActivation, ActivationFunction, ReLUActivation, \
-    HyperbolicTangentActivation, AllReLUActivation, LeakyReLUActivation
+    HyperbolicTangentActivation, AllReLUActivation, LeakyReLUActivation, SigmoidActivation
 from symbolic.jax.optimizers import Optimizer, GradientDescentOptimizer, MomentumOptimizer, NesterovOptimizer
 from symbolic.utilities import parse_function_call
 
@@ -15,6 +15,8 @@ def parse_activation(text: str) -> ActivationFunction:
         name, args = parse_function_call(text)
         if name == 'ReLU':
             return ReLUActivation()
+        elif name == 'Sigmoid':
+            return SigmoidActivation()
         elif name == 'HyperbolicTangent':
             return HyperbolicTangentActivation()
         elif name == 'AllReLU':
