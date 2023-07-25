@@ -70,15 +70,15 @@ class MLPPyTorch(nn.Module):
         self.layers = nn.ModuleList()
         for i in range(n):
             self.layers.append(nn.Linear(layer_sizes[i], layer_sizes[i + 1]))
-        self._set_masks(layer_densities)
+        #self._set_masks(layer_densities)
 
-    def _set_masks(self, layer_densities):
+    def _set_masks(self, layer_densities, device):
         self.masks = []
         for layer, density in zip(self.layers, layer_densities):
             if density == 1.0:
                 self.masks.append(None)
             else:
-                self.masks.append(create_mask(layer.weight, round(density * layer.weight.numel())))
+                self.masks.append(create_mask(layer.weight, round(density * layer.weight.numel())).to(device))
 
     def apply_masks(self):
         for layer, mask in zip(self.layers, self.masks):
@@ -213,10 +213,12 @@ def parse_optimizer(text: str, M: MLPPyTorch, lr: float) -> optim.SGD:
     raise RuntimeError(f"could not parse optimizer '{text}'")
 
 
-def make_torch_model(args, linear_layer_sizes, densities):
+def make_torch_model(args, linear_layer_sizes, densities, device):
     lr = parse_learning_rate(args.learning_rate)
     activations = [parse_activation_function(act) for act in args.layers.split(';')]
     M = MLPPyTorch(linear_layer_sizes, densities, activations)
+    M = M.to(device)
+    M._set_masks(densities, device)
     M.optimizer = parse_optimizer(args.optimizers, M, lr)
     M.loss = parse_loss_function(args.loss)
     M.learning_rate = parse_learning_rate_scheduler(args.learning_rate, M.optimizer)
@@ -226,41 +228,47 @@ def make_torch_model(args, linear_layer_sizes, densities):
     return M
 
 
-def compute_accuracy_torch(M: MLPPyTorch, data_loader):
+def compute_accuracy_torch(M: MLPPyTorch, data_loader, device):
     N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
     for X, T in data_loader:
+        X = X.to(device)
+        T = T.to(device)
         Y = M(X)
         predicted = Y.argmax(axis=1)  # the predicted classes for the batch
         total_correct += (predicted == T).sum().item()
     return total_correct / N
 
 
-def compute_loss_torch(M: MLPPyTorch, data_loader):
+def compute_loss_torch(M: MLPPyTorch, data_loader, device):
     N = len(data_loader.dataset)  # N is the number of examples
     batch_size = N // len(data_loader)
     total_loss = 0.0
     for X, T in data_loader:
+        X = X.to(device)
+        T = T.to(device)
         Y = M(X)
         total_loss += M.loss(Y, T).sum()
     return batch_size * total_loss / N
 
 
-def train_torch(M, train_loader, test_loader, epochs, debug=False):
+def train_torch(M, train_loader, test_loader, epochs, device, debug=False):
     M.train()  # Set model in training mode
     watch = StopWatch()
 
     print_epoch(epoch=0,
                 lr=M.optimizer.param_groups[0]["lr"],
-                loss=compute_loss_torch(M, train_loader),
-                train_accuracy=compute_accuracy_torch(M, train_loader),
-                test_accuracy=compute_accuracy_torch(M, test_loader),
+                loss=compute_loss_torch(M, train_loader, device),
+                train_accuracy=compute_accuracy_torch(M, train_loader, device),
+                test_accuracy=compute_accuracy_torch(M, test_loader, device),
                 elapsed=0)
 
     for epoch in range(epochs):
         elapsed = 0.0
         for k, (X, T) in enumerate(train_loader):
             watch.reset()
+            X = X.to(device)
+            T = T.to(device)
             M.optimizer.zero_grad()
             Y = M(X)
 
@@ -284,16 +292,16 @@ def train_torch(M, train_loader, test_loader, epochs, debug=False):
 
         print_epoch(epoch=epoch + 1,
                     lr=M.optimizer.param_groups[0]["lr"],
-                    loss=compute_loss_torch(M, train_loader),
-                    train_accuracy=compute_accuracy_torch(M, train_loader),
-                    test_accuracy=compute_accuracy_torch(M, test_loader),
+                    loss=compute_loss_torch(M, train_loader, device),
+                    train_accuracy=compute_accuracy_torch(M, train_loader, device),
+                    test_accuracy=compute_accuracy_torch(M, test_loader, device),
                     elapsed=elapsed)
 
         M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
 
 
 # At every epoch a new dataset in .npz format is read from datadir.
-def train_torch_preprocessed(M, datadir, epochs, batch_size, debug=False):
+def train_torch_preprocessed(M, datadir, epochs, batch_size, device, debug=False):
     M.train()  # Set model in training mode
     watch = StopWatch()
 
@@ -301,9 +309,9 @@ def train_torch_preprocessed(M, datadir, epochs, batch_size, debug=False):
 
     print_epoch(epoch=0,
                 lr=M.optimizer.param_groups[0]["lr"],
-                loss=compute_loss_torch(M, train_loader),
-                train_accuracy=compute_accuracy_torch(M, train_loader),
-                test_accuracy=compute_accuracy_torch(M, test_loader),
+                loss=compute_loss_torch(M, train_loader, device),
+                train_accuracy=compute_accuracy_torch(M, train_loader, device),
+                test_accuracy=compute_accuracy_torch(M, test_loader, device),
                 elapsed=0)
 
     for epoch in range(epochs):
@@ -316,6 +324,8 @@ def train_torch_preprocessed(M, datadir, epochs, batch_size, debug=False):
                 X.requires_grad_(True)
 
             watch.reset()
+            X = X.to(device)
+            T = T.to(device)
             M.optimizer.zero_grad()
             Y = M(X)
 
@@ -338,9 +348,9 @@ def train_torch_preprocessed(M, datadir, epochs, batch_size, debug=False):
 
         print_epoch(epoch=epoch + 1,
                     lr=M.optimizer.param_groups[0]["lr"],
-                    loss=compute_loss_torch(M, train_loader),
-                    train_accuracy=compute_accuracy_torch(M, train_loader),
-                    test_accuracy=compute_accuracy_torch(M, test_loader),
+                    loss=compute_loss_torch(M, train_loader, device),
+                    train_accuracy=compute_accuracy_torch(M, train_loader, device),
+                    test_accuracy=compute_accuracy_torch(M, test_loader, device),
                     elapsed=elapsed)
 
         M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
@@ -391,7 +401,8 @@ def make_argument_parser():
     cmdline_parser.add_argument("--threads", help="The number of threads being used", type=int)
 
     # gpu
-    cmdline_parser.add_argument("--gpu", help="use the GPU (if available)", action="store_true")
+    cmdline_parser.add_argument('--no-cuda', action='store_true', default=True, help='disables CUDA training')
+    cmdline_parser.add_argument("--gpu", help="use the GPU (if available)", type=str, default='0')
 
     # timer
     cmdline_parser.add_argument("--timer", help="Enable timer messages", action="store_true")
@@ -432,6 +443,9 @@ def main():
 
     initialize_frameworks(args)
 
+    use_cuda = not args.no_cuda and torch.cuda.is_available()
+    device = torch.device('cuda:{}'.format(args.gpu) if use_cuda else "cpu")
+
     if args.datadir:
         if args.augmented:
             train_loader, test_loader = create_cifar10_augmented_dataloaders(args.batch_size, args.batch_size, args.datadir)
@@ -449,7 +463,8 @@ def main():
     else:
         linear_layer_densities = [1.0] * (len(linear_layer_sizes) - 1)
 
-    M = make_torch_model(args, linear_layer_sizes, linear_layer_densities)
+    M = make_torch_model(args, linear_layer_sizes, linear_layer_densities, device)
+    #M = M.to(device)
     print('=== PyTorch model ===')
     print(M)
 
@@ -461,9 +476,9 @@ def main():
     if args.epochs > 0:
         print('\n=== Training PyTorch model ===')
         if args.preprocessed:
-            train_torch_preprocessed(M, args.preprocessed, args.epochs, args.batch_size, args.debug)
+            train_torch_preprocessed(M, args.preprocessed, args.epochs, args.batch_size, device, args.debug)
         else:
-            train_torch(M, train_loader, test_loader, args.epochs, args.debug)
+            train_torch(M, train_loader, test_loader, args.epochs, device, args.debug)
 
 
 if __name__ == '__main__':
