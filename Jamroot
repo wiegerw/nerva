@@ -10,7 +10,8 @@ feature.compose <scalar>double : <define>NERVA_USE_DOUBLE ;
 project nerva
    : requirements
        <include>include
-       <include>/usr/include/eigen3
+       #<include>/usr/include/eigen3
+       <include>../eigen
        <include>/usr/include/python3.10  # TODO: find a better way for this
        <cxxflags>-std=c++17
        <define>FMT_HEADER_ONLY
@@ -35,6 +36,13 @@ project nerva
        <toolset>gcc:<cxxflags>-Wno-unused-value
        <toolset>gcc:<cxxflags>-Wno-write-strings
        <toolset>gcc:<cxxflags>-fopenmp
+
+       #--- intel ---#
+       <toolset>intel:<include>/opt/intel/oneapi/compiler/latest/linux/include
+       <toolset>intel:<include>/opt/intel/oneapi/compiler/latest/linux/include/sycl
+       <toolset>intel:<cxxflags>-DMKL_ILP64
+       <toolset>intel:<cxxflags>-m64
+       <toolset>intel:<linkflags>-L/opt/intel/oneapi/compiler/latest/linux/compiler/lib/intel64_lin
    ;
 
 lib nervalib
