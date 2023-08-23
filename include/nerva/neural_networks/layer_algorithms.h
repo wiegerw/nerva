@@ -44,10 +44,9 @@ void compare_sizes(const mkl::sparse_matrix_csr<scalar>& W1, const eigen::matrix
 }
 
 inline
-std::vector<double> compute_sparse_layer_densities(double overall_density,
-                                                   const std::vector<std::size_t>& layer_sizes,
-                                                   double erk_power_scale = 1
-)
+auto compute_sparse_layer_densities(double overall_density,
+                                    const std::vector<std::size_t>& layer_sizes,
+                                    double erk_power_scale = 1) -> std::vector<double>
 {
   std::vector<std::pair<std::size_t, std::size_t>> layer_shapes;
   for (std::size_t i = 0; i < layer_sizes.size() - 1; i++)
@@ -55,7 +54,7 @@ std::vector<double> compute_sparse_layer_densities(double overall_density,
     layer_shapes.emplace_back(layer_sizes[i], layer_sizes[i+1]);
   }
 
-  std::size_t n = layer_shapes.size(); // the number of layers
+  std::size_t const n = layer_shapes.size(); // the number of layers
 
   if (overall_density == 1)
   {
@@ -89,8 +88,8 @@ std::vector<double> compute_sparse_layer_densities(double overall_density,
       }
     }
     epsilon = rhs / divisor;
-    double max_prob = *std::max_element(raw_probabilities.begin(), raw_probabilities.end());
-    double max_prob_one = max_prob * epsilon;
+    double const max_prob = *std::max_element(raw_probabilities.begin(), raw_probabilities.end());
+    double const max_prob_one = max_prob * epsilon;
     if (max_prob_one > 1)
     {
       for (std::size_t j = 0; j < n; j++)
@@ -117,7 +116,7 @@ std::vector<double> compute_sparse_layer_densities(double overall_density,
     }
     else
     {
-      double probability_one = epsilon * raw_probabilities[i];
+      double const probability_one = epsilon * raw_probabilities[i];
       densities[i] = probability_one;
     }
   }

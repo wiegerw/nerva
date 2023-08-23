@@ -21,11 +21,11 @@ namespace nerva {
 
 struct loss_function
 {
-  [[nodiscard]] virtual scalar value(const eigen::matrix& Y, const eigen::matrix& T) const = 0;
+  [[nodiscard]] virtual auto value(const eigen::matrix& Y, const eigen::matrix& T) const -> scalar = 0;
 
-  [[nodiscard]] virtual eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const = 0;
+  [[nodiscard]] virtual auto gradient(const eigen::matrix& Y, const eigen::matrix& T) const -> eigen::matrix = 0;
 
-  [[nodiscard]] virtual std::string to_string() const = 0;
+  [[nodiscard]] virtual auto to_string() const -> std::string = 0;
 
   virtual ~loss_function() = default;
 };
@@ -33,28 +33,28 @@ struct loss_function
 struct squared_error_loss: public loss_function
 {
   template <typename Target>
-  scalar operator()(const eigen::vector& y, const Target& t) const
+  auto operator()(const eigen::vector& y, const Target& t) const -> scalar
   {
     return (y - t).squaredNorm() / scalar(2);
   }
 
   template <typename Target>
-  scalar operator()(const eigen::matrix& Y, const Target& T) const
+  auto operator()(const eigen::matrix& Y, const Target& T) const -> scalar
   {
     return ((Y - T).colwise().squaredNorm() / scalar(2)).sum();
   }
 
-  [[nodiscard]] scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
+  [[nodiscard]] auto value(const eigen::matrix& Y, const eigen::matrix& T) const -> scalar override
   {
     return ((Y - T).colwise().squaredNorm() / scalar(2)).sum();
   }
 
-  [[nodiscard]] eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
+  [[nodiscard]] auto gradient(const eigen::matrix& Y, const eigen::matrix& T) const -> eigen::matrix override
   {
     return Y - T;
   }
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     return "SquaredErrorLoss()";
   }
@@ -63,21 +63,21 @@ struct squared_error_loss: public loss_function
 struct cross_entropy_loss: public loss_function
 {
   template <typename Target>
-  scalar operator()(const eigen::vector& y, const Target& t) const
+  auto operator()(const eigen::vector& y, const Target& t) const -> scalar
   {
     auto log_y = y.unaryExpr([](scalar x) { return std::log(x); });
     return -t.transpose() * log_y;
   }
 
   template <typename Target>
-  scalar operator()(const eigen::matrix& Y, const Target& T) const
+  auto operator()(const eigen::matrix& Y, const Target& T) const -> scalar
   {
     using eigen::hadamard;
     auto log_Y = Y.unaryExpr([](scalar x) { return std::log(x); });
     return (hadamard(-T, log_Y).colwise().sum()).sum();
   }
 
-  [[nodiscard]] scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
+  [[nodiscard]] auto value(const eigen::matrix& Y, const eigen::matrix& T) const -> scalar override
   {
     using eigen::elements_sum;
     using eigen::hadamard;
@@ -86,7 +86,7 @@ struct cross_entropy_loss: public loss_function
     return elements_sum(hadamard(-T, log(Y)));
   }
 
-  [[nodiscard]] eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
+  [[nodiscard]] auto gradient(const eigen::matrix& Y, const eigen::matrix& T) const -> eigen::matrix override
   {
     using eigen::hadamard;
     using eigen::inverse;
@@ -94,7 +94,7 @@ struct cross_entropy_loss: public loss_function
     return hadamard(-T, inverse(Y));
   }
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     return "CrossEntropyLoss()";
   }
@@ -103,7 +103,7 @@ struct cross_entropy_loss: public loss_function
 struct softmax_cross_entropy_loss: public loss_function
 {
   template <typename Target>
-  scalar operator()(const eigen::vector& y, const Target& t) const
+  auto operator()(const eigen::vector& y, const Target& t) const -> scalar
   {
     eigen::vector softmax_y = stable_softmax()(y);
     auto log_softmax_y = softmax_y.unaryExpr([](scalar x) { return std::log(x); });
@@ -111,7 +111,7 @@ struct softmax_cross_entropy_loss: public loss_function
   }
 
   template <typename Target>
-  scalar operator()(const eigen::matrix& Y, const Target& T) const  // TODO: can the return type become auto?
+  auto operator()(const eigen::matrix& Y, const Target& T) const -> scalar  // TODO: can the return type become auto?
   {
     using eigen::elements_sum;
     using eigen::hadamard;
@@ -119,7 +119,7 @@ struct softmax_cross_entropy_loss: public loss_function
     return elements_sum(hadamard(-T, stable_log_softmax()(Y)));
   }
 
-  [[nodiscard]] scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
+  [[nodiscard]] auto value(const eigen::matrix& Y, const eigen::matrix& T) const -> scalar override
   {
     using eigen::elements_sum;
     using eigen::hadamard;
@@ -127,12 +127,12 @@ struct softmax_cross_entropy_loss: public loss_function
     return elements_sum(hadamard(-T, stable_log_softmax()(Y)));
   }
 
-  [[nodiscard]] eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
+  [[nodiscard]] auto gradient(const eigen::matrix& Y, const eigen::matrix& T) const -> eigen::matrix override
   {
     return stable_softmax()(Y) - T;
   }
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     return "SoftmaxCrossEntropyLoss()";
   }
@@ -141,14 +141,14 @@ struct softmax_cross_entropy_loss: public loss_function
 struct logistic_cross_entropy_loss: public loss_function
 {
   template <typename Target>
-  scalar operator()(const eigen::vector& y, const Target& t) const
+  auto operator()(const eigen::vector& y, const Target& t) const -> scalar
   {
     auto log_1_plus_exp_minus_y = y.unaryExpr([](scalar x) { return std::log1p(std::exp(-x)); });
     return t.transpose() * log_1_plus_exp_minus_y;
   }
 
   template <typename Target>
-  scalar operator()(const eigen::matrix& Y, const Target& T) const
+  auto operator()(const eigen::matrix& Y, const Target& T) const -> scalar
   {
     using eigen::hadamard;
     using eigen::sigmoid;
@@ -157,7 +157,7 @@ struct logistic_cross_entropy_loss: public loss_function
     return (hadamard(-T, log_sigmoid_Y).colwise().sum()).sum();
   }
 
-  [[nodiscard]] scalar value(const eigen::matrix& Y, const eigen::matrix& T) const override
+  [[nodiscard]] auto value(const eigen::matrix& Y, const eigen::matrix& T) const -> scalar override
   {
     using eigen::elements_sum;
     using eigen::hadamard;
@@ -167,7 +167,7 @@ struct logistic_cross_entropy_loss: public loss_function
     return elements_sum(hadamard(-T, log_sigmoid_Y));
   }
 
-  [[nodiscard]] eigen::matrix gradient(const eigen::matrix& Y, const eigen::matrix& T) const override
+  [[nodiscard]] auto gradient(const eigen::matrix& Y, const eigen::matrix& T) const -> eigen::matrix override
   {
     using eigen::hadamard;
     using eigen::sigmoid;
@@ -176,14 +176,14 @@ struct logistic_cross_entropy_loss: public loss_function
     return hadamard(-T, one_minus_sigmoid_Y);
   }
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     return "LogisticCrossEntropyLoss()";
   }
 };
 
 inline
-std::shared_ptr<loss_function> parse_loss_function(const std::string& text)
+auto parse_loss_function(const std::string& text) -> std::shared_ptr<loss_function>
 {
   if (text == "SquaredError")
   {

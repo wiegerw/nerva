@@ -36,7 +36,7 @@ struct neural_network_layer
    : X(D, N), DX(D, N)
   {}
 
-  [[nodiscard]] virtual std::string to_string() const = 0;
+  [[nodiscard]] virtual auto to_string() const -> std::string = 0;
 
   virtual void optimize(scalar eta) = 0;
 
@@ -56,7 +56,7 @@ struct linear_layer: public neural_network_layer
   using super = neural_network_layer;
   using super::X;
   using super::DX;
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+  static const bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   Matrix W;
   eigen::matrix b;
@@ -68,17 +68,17 @@ struct linear_layer: public neural_network_layer
    : super(D, N), W(K, D), b(K, 1), DW(K, D), Db(K, 1)
   {}
 
-  [[nodiscard]] std::size_t input_size() const
+  [[nodiscard]] auto input_size() const -> std::size_t
   {
     return W.cols();
   }
 
-  [[nodiscard]] std::size_t output_size() const
+  [[nodiscard]] auto output_size() const -> std::size_t
   {
     return W.rows();
   }
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     if constexpr (IsSparse)
     {
@@ -107,7 +107,7 @@ struct linear_layer: public neural_network_layer
     }
   }
 
-  void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
+  void backpropagate(const eigen::matrix& /* Y */, const eigen::matrix& DY) override
   {
     using eigen::rows_sum;
 
@@ -197,7 +197,7 @@ struct sigmoid_layer : public linear_layer<Matrix>
   using super::optimizer;
   using super::input_size;
   using super::output_size;
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+  static const bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   eigen::matrix Z;
   eigen::matrix DZ;
@@ -206,7 +206,7 @@ struct sigmoid_layer : public linear_layer<Matrix>
       : super(D, K, N), Z(K, N), DZ(K, N)
   {}
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     if constexpr (IsSparse)
     {
@@ -276,7 +276,7 @@ struct activation_layer : public linear_layer<Matrix>
   using super::optimizer;
   using super::input_size;
   using super::output_size;
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+  static const bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   ActivationFunction act;
   eigen::matrix Z;
@@ -286,7 +286,7 @@ struct activation_layer : public linear_layer<Matrix>
    : super(D, K, N), act(act_), Z(K, N), DZ(K, N)
   {}
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     if constexpr (IsSparse)
     {
@@ -458,7 +458,7 @@ struct softmax_layer : public linear_layer<Matrix>
   using super::Db;
   using super::X;
   using super::DX;
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+  static const bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   eigen::matrix Z;
   eigen::matrix DZ;
@@ -525,7 +525,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
   using super::Db;
   using super::X;
   using super::DX;
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+  static const bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   eigen::matrix Z;
   eigen::matrix DZ;

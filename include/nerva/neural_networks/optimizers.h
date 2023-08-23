@@ -28,7 +28,7 @@ struct optimizer_function
   virtual void reset_support()
   {}
 
-  [[nodiscard]] virtual std::string to_string() const = 0;
+  [[nodiscard]] virtual auto to_string() const -> std::string = 0;
 
   virtual ~optimizer_function() = default;
 };
@@ -43,7 +43,7 @@ struct gradient_descent_optimizer: public optimizer_function
     : x(x_), Dx(Dx_)
   {}
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     return "gradient_descent";
   }
@@ -68,7 +68,7 @@ struct momentum_optimizer: public gradient_descent_optimizer<T>
   using super::x;
   using super::Dx;
   using super::reset_support;
-  static const bool IsSparse = std::is_same<T, mkl::sparse_matrix_csr<scalar>>::value;
+  static const bool IsSparse = std::is_same_v<T, mkl::sparse_matrix_csr<scalar>>;
 
   T delta_x;
   scalar mu;
@@ -88,7 +88,7 @@ struct momentum_optimizer: public gradient_descent_optimizer<T>
     }
   }
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     return fmt::format("Momentum({:7.5f})", mu);
   }
@@ -122,7 +122,7 @@ struct nesterov_optimizer: public gradient_descent_optimizer<T>
   using super = gradient_descent_optimizer<T>;
   using super::x;
   using super::Dx;
-  static const bool IsSparse = std::is_same<T, mkl::sparse_matrix_csr<scalar>>::value;
+  static const bool IsSparse = std::is_same_v<T, mkl::sparse_matrix_csr<scalar>>;
 
   T delta_x;
   T delta_x_prev;
@@ -154,7 +154,7 @@ struct nesterov_optimizer: public gradient_descent_optimizer<T>
     }
   }
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     return fmt::format("Nesterov({:7.5f})", mu);
   }
@@ -190,7 +190,7 @@ struct composite_optimizer: public optimizer_function
     : optimizers(items)
   {}
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     return optimizers.front()->to_string();
   }
@@ -213,13 +213,13 @@ struct composite_optimizer: public optimizer_function
 };
 
 template <typename... Args>
-std::shared_ptr<composite_optimizer> make_composite_optimizer(Args&&... args)
+auto make_composite_optimizer(Args&&... args) -> std::shared_ptr<composite_optimizer>
 {
   return std::make_shared<composite_optimizer>(std::initializer_list<std::shared_ptr<optimizer_function>>{std::forward<Args>(args)...});
 }
 
 template <typename T>
-std::shared_ptr<optimizer_function> parse_optimizer(const std::string& text, T& x, T& Dx)
+auto parse_optimizer(const std::string& text, T& x, T& Dx) -> std::shared_ptr<optimizer_function>
 {
   auto func = utilities::parse_function_call(text);
 
@@ -254,7 +254,7 @@ struct gradient_descent_linear_layer_optimizer: public optimizer_function
     : optimizer_W(W, DW), optimizer_b(b, Db)
   {}
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     return "GradientDescent()";
   }
@@ -282,7 +282,7 @@ struct momentum_linear_layer_optimizer: public optimizer_function
     : optimizer_W(W, DW, mu), optimizer_b(b, Db, mu)
   {}
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     return fmt::format("Momentum({:7.5f})", optimizer_W.mu);
   }
@@ -310,7 +310,7 @@ struct nesterov_linear_layer_optimizer: public optimizer_function
     : optimizer_W(W, DW, mu), optimizer_b(b, Db, mu)
   {}
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     return fmt::format("Nesterov({:7.5f})", optimizer_W.mu);
   }

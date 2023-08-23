@@ -20,7 +20,7 @@ namespace nerva {
 // N.B. Numerically unstable!
 struct softmax
 {
-  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
+  [[nodiscard]] auto value(const eigen::vector& x) const -> eigen::vector
   {
     using eigen::exp;
 
@@ -28,7 +28,7 @@ struct softmax
     return E / E.sum();
   }
 
-  eigen::matrix operator()(const eigen::matrix& X) const
+  auto operator()(const eigen::matrix& X) const -> eigen::matrix
   {
     using eigen::row_repeat;
     using eigen::columns_sum;
@@ -44,17 +44,17 @@ struct softmax
 
 struct stable_softmax
 {
-  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
+  [[nodiscard]] auto value(const eigen::vector& x) const -> eigen::vector
   {
     using eigen::exp;
 
     // use the log-sum-exp trick to make the computation robust, see also https://en.wikipedia.org/wiki/LogSumExp
-    scalar c = x.maxCoeff();
+    scalar const c = x.maxCoeff();
     auto E = exp((x.array() - c));
     return E / E.sum();
   }
 
-  eigen::matrix operator()(const eigen::matrix& X) const
+  auto operator()(const eigen::matrix& X) const -> eigen::matrix
   {
     using eigen::columns_sum;
     using eigen::columns_max;
@@ -73,7 +73,7 @@ struct stable_softmax
 // N.B. Numerically unstable!
 struct log_softmax
 {
-  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
+  [[nodiscard]] auto value(const eigen::vector& x) const -> eigen::vector
   {
     using eigen::row_repeat;
     using eigen::columns_sum;
@@ -85,7 +85,7 @@ struct log_softmax
     return x - row_repeat(e, N);
   }
 
-  eigen::matrix operator()(const eigen::matrix& X) const
+  auto operator()(const eigen::matrix& X) const -> eigen::matrix
   {
     using eigen::row_repeat;
     using eigen::columns_sum;
@@ -100,7 +100,7 @@ struct log_softmax
 
 struct stable_log_softmax
 {
-  [[nodiscard]] eigen::vector value(const eigen::vector& x) const
+  [[nodiscard]] auto value(const eigen::vector& x) const -> eigen::vector
   {
     using eigen::exp;
 
@@ -109,7 +109,7 @@ struct stable_log_softmax
     return x.array() - c - E;
   }
 
-  eigen::matrix operator()(const eigen::matrix& X) const
+  auto operator()(const eigen::matrix& X) const -> eigen::matrix
   {
     using eigen::columns_sum;
     using eigen::columns_max;

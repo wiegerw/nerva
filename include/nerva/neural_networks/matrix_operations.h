@@ -10,6 +10,7 @@
 #ifndef NERVA_NEURAL_NETWORKS_MATRIX_OPERATIONS_H
 #define NERVA_NEURAL_NETWORKS_MATRIX_OPERATIONS_H
 
+#include <cassert>
 #include <iostream>
 
 namespace nerva::eigen {

@@ -22,12 +22,12 @@ import nerva.utilities
 import nerva.weights
 import nervalib
 from nerva.activation import parse_activation, Activation
-from nerva.optimizers import parse_optimizer, Optimizer
+from nerva.optimizers import Optimizer
 from nerva.pruning import PruneFunction, GrowFunction, PruneGrow, parse_prune_function, parse_grow_function
 from nerva.training import StochasticGradientDescentAlgorithm, SGDOptions, compute_sparse_layer_densities
 from nerva.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, create_npz_dataloaders
 from nerva.layers import print_model_info, BatchNormalization, Dense, Sparse, Layer
-from nerva.weights import parse_weight_initializer, WeightInitializer
+from nerva.weights import WeightInitializer
 
 
 def make_batch_normalization_layer(input_size: int, output_size: int, optimizer: Optimizer) -> BatchNormalization:

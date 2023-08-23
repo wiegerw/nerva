@@ -33,9 +33,9 @@
 using namespace nerva;
 
 inline
-std::vector<double> parse_linear_layer_densities(const std::string& densities_text,
-                                                 double overall_density,
-                                                 const std::vector<std::size_t>& linear_layer_sizes)
+auto parse_linear_layer_densities(const std::string& densities_text,
+                                  double overall_density,
+                                  const std::vector<std::size_t>& linear_layer_sizes) -> std::vector<double>
 {
   std::vector<double> densities = parse_comma_separated_real_numbers(densities_text);
   auto n = linear_layer_sizes.size() - 1;  // the number of linear layers
@@ -61,7 +61,7 @@ std::vector<double> parse_linear_layer_densities(const std::string& densities_te
 }
 
 inline
-std::vector<double> parse_linear_layer_dropouts(const std::string& dropouts_text, std::size_t linear_layer_count)
+auto parse_linear_layer_dropouts(const std::string& dropouts_text, std::size_t linear_layer_count) -> std::vector<double>
 {
   std::vector<double> dropouts = parse_comma_separated_real_numbers(dropouts_text);
 
@@ -79,7 +79,7 @@ std::vector<double> parse_linear_layer_dropouts(const std::string& dropouts_text
 }
 
 inline
-std::vector<std::string> parse_init_weights(const std::string& text, std::size_t linear_layer_count)
+auto parse_init_weights(const std::string& text, std::size_t linear_layer_count) -> std::vector<std::string>
 {
   auto n = linear_layer_count;
 
@@ -99,7 +99,7 @@ std::vector<std::string> parse_init_weights(const std::string& text, std::size_t
 }
 
 inline
-std::vector<std::string> parse_optimizers(const std::string& text, std::size_t count)
+auto parse_optimizers(const std::string& text, std::size_t count) -> std::vector<std::string>
 {
   std::vector<std::string> words = utilities::regex_split(text, "\\s*,\\s*");
   if (words.empty())
@@ -282,12 +282,12 @@ class tool: public command_line_tool
       cli |= lyra::opt(options.gradient_step, "value")["--gradient-step"]("If positive, gradient checks will be done with the given step size");
     }
 
-    std::string description() const override
+    auto description() const -> std::string override
     {
       return "Multilayer perceptron test";
     }
 
-    bool run() override
+    auto run() -> bool override
     {
       NERVA_LOG(log::verbose) << command_line_call() << "\n\n";
 
@@ -314,7 +314,7 @@ class tool: public command_line_tool
       datasets::dataset dataset;
       if (!options.dataset.empty())
       {
-        NERVA_LOG(log::verbose) << "Loading dataset " << options.dataset << std::endl;
+        NERVA_LOG(log::verbose) << "Loading dataset " << options.dataset << '\n';
         dataset = datasets::make_dataset(options.dataset, options.dataset_size, rng);
         if (!save_dataset_file.empty())
         {
@@ -385,9 +385,12 @@ class tool: public command_line_tool
 
       return true;
     }
+
+  public:
+    virtual ~tool() = default;
 };
 
-int main(int argc, const char* argv[])
+auto main(int argc, const char* argv[]) -> int
 {
   pybind11::scoped_interpreter guard{};
   return tool().execute(argc, argv);

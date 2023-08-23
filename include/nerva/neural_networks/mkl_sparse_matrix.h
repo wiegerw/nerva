@@ -29,7 +29,7 @@
 namespace nerva::mkl {
 
 // prototype declarations
-template <typename Scalar> struct sparse_matrix_csr;
+template <typename Scalar> class sparse_matrix_csr;
 template <typename Scalar> void compare_sizes(const mkl::sparse_matrix_csr<Scalar>& A, const mkl::sparse_matrix_csr<Scalar>& B);
 
 inline

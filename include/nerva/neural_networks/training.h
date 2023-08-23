@@ -29,7 +29,7 @@
 namespace nerva {
 
 template <typename EigenMatrix>
-double compute_accuracy(multilayer_perceptron& M, const EigenMatrix& Xtest, const EigenMatrix& Ttest, long Q)
+auto compute_accuracy(multilayer_perceptron& M, const EigenMatrix& Xtest, const EigenMatrix& Ttest, long Q) -> double
 {
   global_timer_suspend();
 
@@ -68,7 +68,7 @@ double compute_accuracy(multilayer_perceptron& M, const EigenMatrix& Xtest, cons
 }
 
 inline
-double compute_loss(multilayer_perceptron& M, const std::shared_ptr<loss_function>& loss, const eigen::matrix& X, const eigen::matrix& T, long Q)
+auto compute_loss(multilayer_perceptron& M, const std::shared_ptr<loss_function>& loss, const eigen::matrix& X, const eigen::matrix& T, long Q) -> double
 {
   global_timer_suspend();
 
@@ -121,7 +121,7 @@ void compute_statistics(multilayer_perceptron& M,
   {
     std::cout << fmt::format(" time: {:.8f}s", elapsed_seconds);
   }
-  std::cout << std::endl;
+  std::cout << '\n';
 }
 
 template <typename DataSet = datasets::dataset>
@@ -177,7 +177,7 @@ class stochastic_gradient_descent_algorithm
     {}
 
     /// \brief Returns the sum of the measured times for the epochs
-    [[nodiscard]] double compute_training_time() const
+    [[nodiscard]] auto compute_training_time() const -> double
     {
       double result = 0;
       for (const auto& [key, value]: timer.values())
@@ -190,7 +190,7 @@ class stochastic_gradient_descent_algorithm
       return result;
     }
 
-    std::pair<double, double> run()
+    auto run() -> std::pair<double, double>
     {
       on_start_training();
 
@@ -241,7 +241,7 @@ class stochastic_gradient_descent_algorithm
 
           if (options.debug)
           {
-            std::cout << "epoch: " << epoch << " batch: " << k << std::endl;
+            std::cout << "epoch: " << epoch << " batch: " << k << '\n';
             print_model_info(M);
             eigen::print_numpy_matrix("X", X.transpose());
             eigen::print_numpy_matrix("Y", Y.transpose());
