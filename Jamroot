@@ -50,6 +50,7 @@ project nerva
        <toolset>intel:<cxxflags>-DMKL_ILP64
        <toolset>intel:<cxxflags>-m64
        <toolset>intel:<cxxflags>-Wno-writable-strings   # suppress MKL warnings
+       <toolset>intel:<cxxflags>-fhonor-nan-compares    # otherwise std::isnan gives erroneous results
        <toolset>intel:<linkflags>-L/opt/intel/oneapi/compiler/latest/linux/compiler/lib/intel64_lin
    ;
 
