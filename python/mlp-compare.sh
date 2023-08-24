@@ -21,6 +21,22 @@ function train()
 {
   local weight_file="mlp-compare.npz"
 
+  print_header "Train CIFAR10 using mlptorch.py"
+  python3 -u mlptorch.py \
+    --seed=$seed \
+    --overall-density=$density \
+    --batch-size=$batch_size \
+    --epochs=$epochs \
+    --sizes=$sizes \
+    --layers=$layers \
+    --optimizers=$optimizers \
+    --save-weights=$weight_file \
+    --learning-rate=$learning_rate \
+    --loss=$loss \
+    --preprocessed=cifar$seed \
+    --debug \
+    2>&1 | tee "logs/mlp-compare-${optimizers}-torch.log"
+
   print_header "Train CIFAR10 using mlp.cpp"
   ../tools/dist/mlp \
     --seed=$seed \
@@ -39,22 +55,6 @@ function train()
     --no-shuffle \
     --debug \
     2>&1 | tee "logs/mlp-compare-${optimizers}-cpp.log"
-
-  print_header "Train CIFAR10 using mlptorch.py"
-  python3 -u mlptorch.py \
-    --seed=$seed \
-    --overall-density=$density \
-    --batch-size=$batch_size \
-    --epochs=$epochs \
-    --sizes=$sizes \
-    --layers=$layers \
-    --optimizers=$optimizers \
-    --save-weights=$weight_file \
-    --learning-rate=$learning_rate \
-    --loss=$loss \
-    --preprocessed=cifar$seed \
-    --debug \
-    2>&1 | tee "logs/mlp-compare-${optimizers}-torch.log"
 
   print_header "Train CIFAR10 using mlp.py"
   python3 -u mlp.py \
