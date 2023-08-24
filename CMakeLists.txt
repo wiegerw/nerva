@@ -18,14 +18,7 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(include)
 
 add_compile_definitions(FMT_HEADER_ONLY EIGEN_USE_MKL_ALL)
-
-# These flags are advised by the Intel oneAPI Math Kernel Library Link Line Advisor,
-# but they are not set automatically. Note that -DMKL_ILP64 doesn't work with clang.
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    add_compile_options(-DMKL_LP64 -m64 -march=native)
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    add_compile_options(-DMKL_ILP64 -m64 -march=native)
-endif()
+add_compile_options(-DMKL_ILP64 -m64 -march=native)
 
 add_library(nervalib src/logger.cpp src/utilities.cpp)
 

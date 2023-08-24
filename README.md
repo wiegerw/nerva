@@ -6,11 +6,7 @@ dense or sparse layers. An example can be found in `python/cifar10.py`.
 ## Requirements
 A C++17 compiler and an Intel processor (due to the dependency on Intel MKL).
 
-Compilation has been tested successfully with g++-11.3, g++-12.1 and Visual Studio 2019.
-
-Compilation with clang-14 was tried, but unfortunately the compiler + linker flags mentioned
-on the web page https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html
-do not seem to work.
+Compilation has been tested successfully with g++-12.1, clang-14, icpx-2023.2.0 and Visual Studio 2019.
 
 ## Dependencies
 Nerva uses the following third-party libraries.
@@ -25,7 +21,7 @@ Nerva uses the following third-party libraries.
 ## Python build
 This section explains how to install the nerva python module on Ubuntu and on Windows.
 
-### Ubuntu
+### Ubuntu + gcc
 The Ubuntu build has been tested for both Ubuntu Focal and Ubuntu Jammy. There are docker
 files available in the `docker` subdirectory that contain the exact instructions that
 were used for the build.
@@ -61,6 +57,13 @@ The number of cores that is used can be controlled using environment variables:
 export MKL_NUM_THREADS=4
 export OMP_NUM_THREADS=4
 ```
+
+### Ubuntu + clang or icpx
+Both clang-14 and icpx-2023.2.0 require a recent version of the Eigen library
+(Eigen 3.4.0 is not good enough!). This is due to an issue between MKL and Eigen that is documented here:
+
+* https://community.intel.com/t5/Intel-oneAPI-Math-Kernel-Library/Using-MKL-2023-0-0-20221201-with-Eigen/m-p/1456044
+* https://gitlab.com/libeigen/eigen/-/issues/2586
 
 ### Windows
 The Windows build is still experimental. 
