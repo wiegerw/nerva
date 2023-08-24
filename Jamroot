@@ -3,6 +3,13 @@ import os ;
 
 local MKLROOT = [ os.environ MKLROOT ] ;
 
+# Check if the EIGENROOT environment variable is set
+local EIGEN_INCLUDE_DIR = [ os.environ EIGENROOT ] ;
+EIGEN_INCLUDE_DIR ?= /usr/include/eigen3 ;
+
+ECHO "MKLROOT = $(MKLROOT)" ;
+ECHO "EIGEN_INCLUDE_DIR = $(EIGEN_INCLUDE_DIR)" ;
+
 # Define a feature for the number type
 feature.feature scalar : float double : composite optional propagated ;
 feature.compose <scalar>double : <define>NERVA_USE_DOUBLE ;
@@ -10,8 +17,7 @@ feature.compose <scalar>double : <define>NERVA_USE_DOUBLE ;
 project nerva
    : requirements
        <include>include
-       #<include>/usr/include/eigen3
-       <include>../eigen
+       <include>$(EIGEN_INCLUDE_DIR)
        <include>/usr/include/python3.10  # TODO: find a better way for this
        <cxxflags>-std=c++17
        <define>FMT_HEADER_ONLY
@@ -26,11 +32,12 @@ project nerva
        <linkflags>-ldl
        <linkflags>-ltbb  # it seems MKL requires this now...
 
-       <toolset>clang:<cxxflags>-fopenmp=libomp
+       <toolset>clang:<cxxflags>-fopenmp=libomp         # TODO: is this needed?
        <toolset>clang:<cxxflags>-DMKL_ILP64
-       #<toolset>clang:<cxxflags>-m64
+       <toolset>clang:<cxxflags>-Wno-writable-strings   # suppress MKL warnings
+       <toolset>clang:<cxxflags>-m64
 
-       <toolset>gcc:<cxxflags>-march=native
+       <toolset>gcc:<cxxflags>-march=native             # TODO: is this needed?
        <toolset>gcc:<cxxflags>-m64
        <toolset>gcc:<cxxflags>-DMKL_ILP64
        <toolset>gcc:<cxxflags>-Wno-unused-value
@@ -42,6 +49,7 @@ project nerva
        <toolset>intel:<include>/opt/intel/oneapi/compiler/latest/linux/include/sycl
        <toolset>intel:<cxxflags>-DMKL_ILP64
        <toolset>intel:<cxxflags>-m64
+       <toolset>intel:<cxxflags>-Wno-writable-strings   # suppress MKL warnings
        <toolset>intel:<linkflags>-L/opt/intel/oneapi/compiler/latest/linux/compiler/lib/intel64_lin
    ;
 
