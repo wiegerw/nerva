@@ -6,8 +6,8 @@
 
 import argparse
 import torch
-from snn.datasets import load_dict_from_npz
-from snn import pp
+from nerva.datasets import load_dict_from_npz
+from nerva.utilities import pp
 
 
 def inspect_npz_file(filename: str):
