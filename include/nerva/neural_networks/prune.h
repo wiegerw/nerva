@@ -259,6 +259,7 @@ std::size_t prune_SET(mkl::sparse_matrix_csr<Scalar>& A, scalar zeta, Scalar val
 struct prune_function
 {
   virtual std::size_t operator()(mkl::sparse_matrix_csr<scalar>& W) const = 0;
+  virtual ~prune_function() = default;
 };
 
 struct prune_magnitude_function: public prune_function

@@ -559,6 +559,7 @@ std::shared_ptr<neural_network_layer> make_layer(const std::map<std::string, std
     const std::string& optimizer = m.at("optimizer");
     return make_linear_layer(D, K, N, density, dropout_rate, activation, weights, optimizer, rng);
   }
+  throw std::runtime_error(fmt::format("Unknown layer type '{}'", type));
 }
 
 } // namespace nerva

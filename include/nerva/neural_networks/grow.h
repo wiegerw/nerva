@@ -82,6 +82,7 @@ void grow_random(mkl::sparse_matrix_csr<Scalar>& A, const std::shared_ptr<weight
 struct grow_function
 {
   virtual void operator()(mkl::sparse_matrix_csr<scalar>& W, std::size_t count) const = 0;
+  virtual ~grow_function() = default;
 };
 
 struct grow_random_function: public grow_function

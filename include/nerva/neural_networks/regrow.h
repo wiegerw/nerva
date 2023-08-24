@@ -144,6 +144,7 @@ void regrow_interval(mkl::sparse_matrix_csr<Scalar>& W, const std::shared_ptr<we
 struct regrow_function
 {
   virtual void operator()(multilayer_perceptron& M) const = 0;
+  virtual ~regrow_function() = default;
 };
 
 // Operates on sparse layers only
