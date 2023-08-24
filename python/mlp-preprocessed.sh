@@ -27,7 +27,7 @@ python3 -u mlp.py \
 	--learning-rate=$learning_rate \
 	--loss=$loss \
 	--preprocessed=cifar$seed \
-	2>&1 | tee mlp1.log
+	2>&1 | tee logs/mlp-preprocessed-python.log
 
 print_header "Train CIFAR10 using mlp.cpp with preprocessed data"
 ../tools/dist/mlp \
@@ -45,4 +45,4 @@ print_header "Train CIFAR10 using mlp.cpp with preprocessed data"
 	--threads=4 \
 	--no-shuffle \
 	--verbose \
-	2>&1 | tee mlp2.log
+	2>&1 | tee logs/mlp-preprocessed-cpp.log

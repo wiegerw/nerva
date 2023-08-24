@@ -26,7 +26,7 @@ python3 -u mlp.py \
 	--loss=$loss \
 	--preprocessed=./cifar$seed \
 	--timer \
-	2>&1 | tee mlptimer1.log
+	2>&1 | tee logs/mlp-timer-python.log
 
 print_header "Train CIFAR10 using mlp.cpp"
 ../tools/dist/mlp \
@@ -45,4 +45,4 @@ print_header "Train CIFAR10 using mlp.cpp"
 	--no-shuffle \
 	--verbose \
 	--timer \
-	2>&1 | tee mlptimer2.log
+	2>&1 | tee logs/mlp-timer-cpp.log

@@ -28,7 +28,7 @@ print_header "Train CIFAR10 using mlp.cpp"
 	--threads=4 \
 	--no-shuffle \
 	--verbose \
-	2>&1 | tee mlp2.log
+	2>&1 | tee logs/mlp-cpp.log
 
 print_header "Train CIFAR10 using mlp.py"
 python3 -u mlp.py \
@@ -43,4 +43,4 @@ python3 -u mlp.py \
 	--learning-rate=$learning_rate \
 	--loss=$loss \
 	--datadir=./data \
-	2>&1 | tee mlp1.log
+	2>&1 | tee logs/mlp-python.log

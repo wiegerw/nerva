@@ -25,4 +25,4 @@ python3 -u mlptorch.py \
 	--learning-rate=$learning_rate \
 	--loss=$loss \
 	--datadir=./data \
-	2>&1 | tee mlptorch.log
+	2>&1 | tee logs/mlptorch.log

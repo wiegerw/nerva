@@ -11,7 +11,6 @@ density=1.0
 sizes="3072,1024,512,10"
 layers="ReLU;ReLU;Linear"
 optimizers="Nesterov(mu=0.9)"
-lr="0.1"
 learning_rate="Constant(lr=0.1)"
 loss=SoftmaxCrossEntropy
 batch_size=100
@@ -39,7 +38,7 @@ function train()
     --threads=4 \
     --no-shuffle \
     --debug \
-    2>&1 | tee "mlp-compare-${optimizers}-cpp.log"
+    2>&1 | tee "logs/mlp-compare-${optimizers}-cpp.log"
 
   print_header "Train CIFAR10 using mlptorch.py"
   python3 -u mlptorch.py \
@@ -52,11 +51,10 @@ function train()
     --optimizers=$optimizers \
     --save-weights=$weight_file \
     --learning-rate=$learning_rate \
-    --lr=$lr \
     --loss=$loss \
     --preprocessed=cifar$seed \
     --debug \
-    2>&1 | tee "mlp-compare-${optimizers}-torch.log"
+    2>&1 | tee "logs/mlp-compare-${optimizers}-torch.log"
 
   print_header "Train CIFAR10 using mlp.py"
   python3 -u mlp.py \
@@ -72,18 +70,16 @@ function train()
     --loss=$loss \
     --preprocessed=cifar$seed \
     --debug \
-    2>&1 | tee "mlp-compare-${optimizers}-python.log"
+    2>&1 | tee "logs/mlp-compare-${optimizers}-python.log"
 }
 
 optimizers="GradientDescent"
 train
 
 optimizers="Momentum(0.9)"
-lr="0.01"
 learning_rate="Constant(0.01)"
 train
 
-lr="0.01"
 learning_rate="Constant(0.01)"
 optimizers="Nesterov(0.9)"
 train

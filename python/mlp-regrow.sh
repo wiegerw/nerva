@@ -31,7 +31,7 @@ python3 -u mlp.py \
 	--grow=$grow \
 	--grow-weights=$grow_weights \
 	--datadir=./data \
-	2>&1 | tee mlp-regrow1.log
+	2>&1 | tee logs/mlp-regrow-python.log
 
 print_header "Nerva-python preprocessed with regrow"
 python3 -u mlp.py \
@@ -49,7 +49,7 @@ python3 -u mlp.py \
 	--grow=$grow \
 	--grow-weights=$grow_weights \
 	--preprocessed=./cifar1 \
-	2>&1 | tee mlp-regrow2.log
+	2>&1 | tee logs/mlp-regrow-python-preprocessed.log
 
 print_header "Nerva-c++ with regrow"
 ../tools/dist/mlp \
@@ -70,7 +70,7 @@ print_header "Nerva-c++ with regrow"
 	--threads=4 \
 	--no-shuffle \
 	--verbose \
-	2>&1 | tee mlp-regrow3.log
+	2>&1 | tee logs/mlp-regrow-cpp.log
 
 print_header "Nerva-c++ preprocessed with regrow"
 ../tools/dist/mlp \
@@ -91,4 +91,4 @@ print_header "Nerva-c++ preprocessed with regrow"
 	--threads=4 \
 	--no-shuffle \
 	--verbose \
-	2>&1 | tee mlp-regrow4.log
+	2>&1 | tee logs/mlp-regrow-cpp-preprocessed.log
