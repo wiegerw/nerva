@@ -76,8 +76,8 @@ struct dataset
     pybind11::dict data = pybind11::module::import("numpy").attr("load")(filename);
     Xtrain = eigen::extract_matrix<scalar>(data, "Xtrain").transpose();
     Xtest = eigen::extract_matrix<scalar>(data, "Xtest").transpose();
-    auto Ttrain_ = eigen::extract_vector<long>(data, "Ttrain");
-    auto Ttest_ = eigen::extract_vector<long>(data, "Ttest");
+    auto Ttrain_ = eigen::extract_column_vector<long>(data, "Ttrain");
+    auto Ttest_ = eigen::extract_column_vector<long>(data, "Ttest");
     long num_classes = Ttrain_.maxCoeff() + 1;
     Ttrain = eigen::to_one_hot(Ttrain_, num_classes);
     Ttest = eigen::to_one_hot(Ttest_, num_classes);
@@ -143,8 +143,8 @@ struct dataset_view
     pybind11::dict data = pybind11::module::import("numpy").attr("load")(filename);
     Xtrain = eigen::extract_matrix<scalar>(data, "Xtrain").transpose();
     Xtest = eigen::extract_matrix<scalar>(data, "Xtest").transpose();
-    auto Ttrain_ = eigen::extract_vector<long>(data, "Ttrain");
-    auto Ttest_ = eigen::extract_vector<long>(data, "Ttest");
+    auto Ttrain_ = eigen::extract_column_vector<long>(data, "Ttrain");
+    auto Ttest_ = eigen::extract_column_vector<long>(data, "Ttest");
     long num_classes = Ttrain_.maxCoeff() + 1;
     Ttrain = eigen::to_one_hot(Ttrain_, num_classes);
     Ttest = eigen::to_one_hot(Ttest_, num_classes);

@@ -41,10 +41,17 @@ Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> extract_matr
 }
 
 template <typename Scalar = scalar>
-Eigen::Matrix<Scalar, Eigen::Dynamic, 1> extract_vector(const py::dict& data, const std::string& key)
+Eigen::Matrix<Scalar, Eigen::Dynamic, 1> extract_column_vector(const py::dict& data, const std::string& key)
 {
   const auto& x = data[key.c_str()].cast<py::array_t<Scalar>>();
   return Eigen::Map<const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>>(x.data(), x.size());
+}
+
+template <typename Scalar = scalar>
+Eigen::Matrix<Scalar, Eigen::Dynamic, 1> extract_row_vector(const py::dict& data, const std::string& key)
+{
+  const auto& x = data[key.c_str()].cast<py::array_t<Scalar>>();
+  return Eigen::Map<const Eigen::Matrix<Scalar, 1, Eigen::Dynamic>>(x.data(), x.size());
 }
 
 inline
@@ -59,11 +66,11 @@ void print_dict(const py::dict& data)
     }
     else if (key[0] == 'b')
     {
-      eigen::print_numpy_vector(key, eigen::extract_vector<scalar>(data, key));
+      eigen::print_numpy_vector(key, eigen::extract_column_vector<scalar>(data, key));
     }
     else if (key == "Ttrain" || key == "Ttest")
     {
-      eigen::print_numpy_vector(key, eigen::extract_vector<long>(data, key));
+      eigen::print_numpy_vector(key, eigen::extract_column_vector<long>(data, key));
     }
   }
 }

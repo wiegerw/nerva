@@ -259,13 +259,13 @@ void load_weights_and_bias(multilayer_perceptron& M, const std::string& filename
     if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
       dlayer->load_weights(eigen::extract_matrix<scalar>(data, name("W")));
-      dlayer->b = eigen::extract_vector<scalar>(data, name("b")).transpose();
+      dlayer->b = eigen::extract_column_vector<scalar>(data, name("b"));
       index++;
     }
     else if (auto slayer = dynamic_cast<sparse_linear_layer*>(layer.get()))
     {
       slayer->load_weights(mkl::to_csr(eigen::extract_matrix<scalar>(data, name("W"))));
-      slayer->b = eigen::extract_vector<scalar>(data, name("b")).transpose();
+      slayer->b = eigen::extract_column_vector<scalar>(data, name("b"));
       index++;
     }
   }
