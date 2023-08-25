@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/functions.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_FUNCTIONS_H
-#define NERVA_NEURAL_NETWORKS_FUNCTIONS_H
+#pragma once
 
 #include <cmath>
 
@@ -155,4 +154,3 @@ struct zero
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_FUNCTIONS_H

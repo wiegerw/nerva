@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/scalar.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_SCALAR_H
-#define NERVA_NEURAL_NETWORKS_SCALAR_H
+#pragma once
 
 namespace nerva {
 
@@ -20,4 +19,3 @@ using scalar = float;
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_SCALAR_H

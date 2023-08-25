@@ -7,8 +7,7 @@
 /// \file nerva/snn/activation_functions.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_ACTIVATION_FUNCTIONS_H
-#define NERVA_NEURAL_NETWORKS_ACTIVATION_FUNCTIONS_H
+#pragma once
 
 #include "nerva/neural_networks/eigen.h"
 #include "fmt/format.h"
@@ -556,4 +555,3 @@ struct srelu_activation
 
 } // namespace eigen::nerva
 
-#endif // NERVA_NEURAL_NETWORKS_ACTIVATION_FUNCTIONS_H

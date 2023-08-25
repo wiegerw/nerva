@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/grow.h
 /// \brief Grow functions for sparse MKL matrices.
 
-#ifndef NERVA_NEURAL_NETWORKS_GROW_H
-#define NERVA_NEURAL_NETWORKS_GROW_H
+#pragma once
 
 #include <algorithm>
 #include <random>
@@ -112,4 +111,3 @@ std::shared_ptr<grow_function> parse_grow_function(const std::string& strategy, 
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_GROW_H

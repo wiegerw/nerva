@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/prune.h
 /// \brief Prune functions for sparse MKL matrices.
 
-#ifndef NERVA_NEURAL_NETWORKS_PRUNE_H
-#define NERVA_NEURAL_NETWORKS_PRUNE_H
+#pragma once
 
 #include <algorithm>
 #include <random>
@@ -342,4 +341,3 @@ std::shared_ptr<prune_function> parse_prune_function(const std::string& strategy
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_PRUNE_H

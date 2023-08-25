@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/layers_colwise.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_LAYERS_COLWISE_H
-#define NERVA_NEURAL_NETWORKS_LAYERS_COLWISE_H
+#pragma once
 
 #include "nerva/neural_networks/activation_functions.h"
 #include "nerva/neural_networks/layer_algorithms.h"
@@ -601,4 +600,3 @@ void set_srelu_layer_optimizer(Layer& layer, const std::string& text)
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_LAYERS_COLWISE_H

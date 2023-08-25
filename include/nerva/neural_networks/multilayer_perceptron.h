@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/multilayer_perceptron.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_MULTILAYER_PERCEPTRON_H
-#define NERVA_NEURAL_NETWORKS_MULTILAYER_PERCEPTRON_H
+#pragma once
 
 #include "nerva/neural_networks/check_gradients.h"
 #include "nerva/neural_networks/dropout_layers.h"
@@ -120,4 +119,3 @@ struct multilayer_perceptron
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_MULTILAYER_PERCEPTRON_H

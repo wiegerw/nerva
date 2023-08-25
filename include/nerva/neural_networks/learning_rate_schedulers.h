@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/learning_rate_schedulers.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_LEARNING_RATE_SCHEDULERS_H
-#define NERVA_NEURAL_NETWORKS_LEARNING_RATE_SCHEDULERS_H
+#pragma once
 
 #include <cmath>
 #include <iostream>
@@ -187,4 +186,3 @@ std::shared_ptr<learning_rate_scheduler> parse_learning_rate_scheduler(const std
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_LEARNING_RATE_SCHEDULERS_H

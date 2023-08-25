@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/numpy_eigen.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_NUMPY_EIGEN_H
-#define NERVA_NEURAL_NETWORKS_NUMPY_EIGEN_H
+#pragma once
 
 #include "nerva/neural_networks/eigen.h"
 #include <pybind11/eigen.h>
@@ -127,4 +126,3 @@ void save_npz(const std::string& filename, const std::map<std::string, Eigen::Ma
 
 } // namespace nerva::eigen
 
-#endif // NERVA_NEURAL_NETWORKS_NUMPY_EIGEN_H

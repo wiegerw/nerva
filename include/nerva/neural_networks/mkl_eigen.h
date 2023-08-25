@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/mkl_eigen.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_MKL_EIGEN_H
-#define NERVA_NEURAL_NETWORKS_MKL_EIGEN_H
+#pragma once
 
 #include <omp.h>
 #include "fmt/format.h"
@@ -430,4 +429,3 @@ void sss_sum(mkl::sparse_matrix_csr<Scalar>& A,
 
 } // namespace nerva::mkl
 
-#endif // NERVA_NEURAL_NETWORKS_MKL_EIGEN_H

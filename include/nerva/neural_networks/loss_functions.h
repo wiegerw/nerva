@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/loss_functions.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_LOSS_FUNCTIONS_H
-#define NERVA_NEURAL_NETWORKS_LOSS_FUNCTIONS_H
+#pragma once
 
 #include "nerva/neural_networks/matrix_operations.h"
 #include "nerva/neural_networks/softmax_functions.h"
@@ -420,4 +419,3 @@ auto Negative_log_likelihood_loss_rowwise_gradient(const Matrix1& Y, const Matri
 
 } // namespace nerva::eigen
 
-#endif // NERVA_NEURAL_NETWORKS_LOSS_FUNCTIONS_H

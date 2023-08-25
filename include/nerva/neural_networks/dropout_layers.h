@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/dropout_layers.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_DROPOUT_LAYERS_H
-#define NERVA_NEURAL_NETWORKS_DROPOUT_LAYERS_H
+#pragma once
 
 #include "nerva/neural_networks/layers.h"
 #include "fmt/format.h"
@@ -314,4 +313,3 @@ using dense_srelu_dropout_layer = srelu_dropout_layer<eigen::matrix>;
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_DROPOUT_LAYERS_H

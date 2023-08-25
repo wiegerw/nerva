@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/mkl_dense_matrix.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_MKL_DENSE_MATRIX_H
-#define NERVA_NEURAL_NETWORKS_MKL_DENSE_MATRIX_H
+#pragma once
 
 #include <mkl.h>
 #include <cassert>
@@ -276,4 +275,3 @@ dense_matrix<Scalar, MatrixLayout> ddd_product_manual_loops(const Matrix1<Scalar
 
 } // namespace nerva::mkl
 
-#endif // NERVA_NEURAL_NETWORKS_MKL_DENSE_MATRIX_H

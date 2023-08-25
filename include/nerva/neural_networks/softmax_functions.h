@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/softmax_functions.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_SOFTMAX_FUNCTIONS_H
-#define NERVA_NEURAL_NETWORKS_SOFTMAX_FUNCTIONS_H
+#pragma once
 
 #include "nerva/neural_networks/eigen.h"
 #include <cassert>
@@ -141,4 +140,3 @@ auto stable_log_softmax_rowwise_jacobian(const Vector& x)
 
 } // namespace nerva::eigen
 
-#endif // NERVA_NEURAL_NETWORKS_SOFTMAX_FUNCTIONS_H

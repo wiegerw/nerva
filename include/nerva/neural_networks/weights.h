@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/weights.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_WEIGHTS_H
-#define NERVA_NEURAL_NETWORKS_WEIGHTS_H
+#pragma once
 
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/neural_networks/matrix.h"
@@ -346,4 +345,3 @@ weight_initialization parse_weight_initialization(const std::string& text)
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_WEIGHTS_H

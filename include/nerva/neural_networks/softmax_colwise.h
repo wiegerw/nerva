@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/softmax_colwise.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_SOFTMAX_COLWISE_H
-#define NERVA_NEURAL_NETWORKS_SOFTMAX_COLWISE_H
+#pragma once
 
 #include "nerva/neural_networks/eigen.h"
 #include "fmt/format.h"
@@ -125,4 +124,3 @@ struct stable_log_softmax
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_SOFTMAX_COLWISE_H

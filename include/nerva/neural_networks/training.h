@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/training.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_TRAINING_H
-#define NERVA_NEURAL_NETWORKS_TRAINING_H
+#pragma once
 
 #include "nerva/neural_networks/check_gradients.h"
 #include "nerva/neural_networks/eigen.h"
@@ -292,4 +291,3 @@ class stochastic_gradient_descent_algorithm
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_TRAINING_H

@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/random.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_RANDOM_H
-#define NERVA_NEURAL_NETWORKS_RANDOM_H
+#pragma once
 
 #include <random>
 
@@ -24,4 +23,3 @@ void manual_seed(std::uint_fast32_t seed)
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_RANDOM_H

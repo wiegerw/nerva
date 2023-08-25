@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/grow_dense.h
 /// \brief Grow functions for dense Eigen matrices.
 
-#ifndef NERVA_NEURAL_NETWORKS_GROW_DENSE_H
-#define NERVA_NEURAL_NETWORKS_GROW_DENSE_H
+#pragma once
 
 #include <algorithm>
 #include <random>
@@ -90,4 +89,3 @@ void grow_random(Matrix& A, const std::shared_ptr<weight_initializer>& init, std
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_GROW_DENSE_H

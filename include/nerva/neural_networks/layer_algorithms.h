@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/layer_algorithms.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_LAYER_ALGORITHMS_H
-#define NERVA_NEURAL_NETWORKS_LAYER_ALGORITHMS_H
+#pragma once
 
 #include "nerva/neural_networks/mkl_eigen.h"
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
@@ -125,4 +124,3 @@ auto compute_sparse_layer_densities(double overall_density,
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_LAYER_ALGORITHMS_H

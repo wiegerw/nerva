@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/parse_layer.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_PARSE_LAYER_H
-#define NERVA_NEURAL_NETWORKS_PARSE_LAYER_H
+#pragma once
 
 #include "nerva/neural_networks/layers.h"
 #include "nerva/neural_networks/batch_normalization_layer_colwise.h"
@@ -564,4 +563,3 @@ std::shared_ptr<neural_network_layer> make_layer(const std::map<std::string, std
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_PARSE_LAYER_H

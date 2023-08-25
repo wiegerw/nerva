@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/prune_dense.h
 /// \brief Prune functions for dense Eigen matrices.
 
-#ifndef NERVA_NEURAL_NETWORKS_PRUNE_DENSE_H
-#define NERVA_NEURAL_NETWORKS_PRUNE_DENSE_H
+#pragma once
 
 #include <algorithm>
 #include <random>
@@ -104,4 +103,3 @@ std::size_t prune_negative_weights(Matrix& A, std::size_t count, T value = 0)
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_PRUNE_DENSE_H

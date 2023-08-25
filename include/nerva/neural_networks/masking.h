@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/masking.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_MASKING_H
-#define NERVA_NEURAL_NETWORKS_MASKING_H
+#pragma once
 
 #include "nerva/neural_networks/multilayer_perceptron.h"
 #include <Eigen/Dense>
@@ -86,4 +85,3 @@ class mlp_masking
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_MASKING_H

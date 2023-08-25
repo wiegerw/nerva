@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/matrix.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_MATRIX_H
-#define NERVA_NEURAL_NETWORKS_MATRIX_H
+#pragma once
 
 #include "nerva/neural_networks/mkl_eigen.h"
 
@@ -66,4 +65,3 @@ void print_numpy_matrix(const std::string& name, const Matrix& A)
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_MATRIX_H

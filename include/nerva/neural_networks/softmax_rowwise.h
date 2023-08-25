@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/softmax_rowwise.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_SOFTMAX_ROWWISE_H
-#define NERVA_NEURAL_NETWORKS_SOFTMAX_ROWWISE_H
+#pragma once
 
 #include "nerva/neural_networks/eigen.h"
 #include "fmt/format.h"
@@ -60,4 +59,3 @@ struct stable_log_softmax_rowwise
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_SOFTMAX_ROWWISE_H

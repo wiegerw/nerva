@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/batch_normalization_layer_colwise.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_BATCH_NORMALIZATION_LAYER_COLWISE_H
-#define NERVA_NEURAL_NETWORKS_BATCH_NORMALIZATION_LAYER_COLWISE_H
+#pragma once
 
 #include "nerva/neural_networks/layers_colwise.h"
 #include "fmt/format.h"
@@ -202,4 +201,3 @@ void set_batch_normalization_layer_optimizer(BatchNormalizationLayer& layer, con
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_BATCH_NORMALIZATION_LAYER_COLWISE_H

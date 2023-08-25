@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/global_timer.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_GLOBAL_TIMER_H
-#define NERVA_NEURAL_NETWORKS_GLOBAL_TIMER_H
+#pragma once
 
 #include "nerva/utilities/stopwatch.h"
 #include "fmt/format.h"
@@ -80,4 +79,3 @@ void global_timer_display(const std::string& msg)
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_GLOBAL_TIMER_H

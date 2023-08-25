@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/eigen.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_EIGEN_H
-#define NERVA_NEURAL_NETWORKS_EIGEN_H
+#pragma once
 
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
@@ -725,4 +724,3 @@ inline void read_dense_matrix(const std::string& filename, Matrix& A)
 
 } // namespace nerva::eigen
 
-#endif // NERVA_NEURAL_NETWORKS_EIGEN_H

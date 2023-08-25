@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/check_gradients.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_CHECK_GRADIENTS_H
-#define NERVA_NEURAL_NETWORKS_CHECK_GRADIENTS_H
+#pragma once
 
 #include <iostream>
 #include <iomanip>
@@ -185,4 +184,3 @@ bool check_gradient(const std::string& name, Function f, mkl::sparse_matrix_csr<
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_CHECK_GRADIENTS_H

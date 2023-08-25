@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/matrix_operations.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_MATRIX_OPERATIONS_H
-#define NERVA_NEURAL_NETWORKS_MATRIX_OPERATIONS_H
+#pragma once
 
 #include <cassert>
 #include <iostream>
@@ -208,4 +207,3 @@ auto power_minus_half(const Matrix& X)
 
 } // namespace nerva::eigen
 
-#endif // NERVA_NEURAL_NETWORKS_MATRIX_OPERATIONS_H

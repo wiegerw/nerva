@@ -7,8 +7,7 @@
 /// \file nerva/datasets/dataset.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_DATASET_H
-#define NERVA_NEURAL_NETWORKS_DATASET_H
+#pragma once
 
 #include "nerva/datasets/cifar10reader.h"
 #include "nerva/neural_networks/eigen.h"
@@ -188,4 +187,3 @@ inline dataset_view make_dataset_view(dataset& data)
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_DATASET_H

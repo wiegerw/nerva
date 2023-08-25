@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/regrow.h
 /// \brief Algorithms for pruning and growing sparse matrices.
 
-#ifndef NERVA_NEURAL_NETWORKS_REGROW_H
-#define NERVA_NEURAL_NETWORKS_REGROW_H
+#pragma once
 
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/neural_networks/functions.h"
@@ -175,4 +174,3 @@ struct prune_and_grow: public regrow_function
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_REGROW_H

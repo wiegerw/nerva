@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/sgd_options.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_MLP_OPTIONS_H
-#define NERVA_NEURAL_NETWORKS_MLP_OPTIONS_H
+#pragma once
 
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/utilities/print.h"
@@ -107,4 +106,3 @@ void mlp_options::info() const
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_MLP_OPTIONS_H

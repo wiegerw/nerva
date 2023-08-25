@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/mlp_algorithms.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_MLP_ALGORITHMS_H
-#define NERVA_NEURAL_NETWORKS_MLP_ALGORITHMS_H
+#pragma once
 
 #include "nerva/neural_networks/multilayer_perceptron.h"
 #include <pybind11/embed.h>
@@ -301,4 +300,3 @@ void save_model_weights_to_npy(const std::string& filename, const multilayer_per
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_MLP_ALGORITHMS_H

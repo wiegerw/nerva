@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/layers_rowwise.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_LAYERS_ROWWISE_H
-#define NERVA_NEURAL_NETWORKS_LAYERS_ROWWISE_H
+#pragma once
 
 #include "nerva/neural_networks/activation_functions.h"
 #include "nerva/neural_networks/layer_algorithms.h"
@@ -610,4 +609,3 @@ void set_optimizer(linear_layer<Matrix>& layer, const std::string& text)
 
 } // namespace nerva
 
-#endif // NERVA_NEURAL_NETWORKS_LAYERS_ROWWISE_H

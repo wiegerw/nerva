@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/mkl_sparse_matrix.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_MKL_SPARSE_MATRIX_H
-#define NERVA_NEURAL_NETWORKS_MKL_SPARSE_MATRIX_H
+#pragma once
 
 #include "nerva/neural_networks/functions.h"
 #include "nerva/neural_networks/mkl_dense_matrix.h"
@@ -518,4 +517,3 @@ bool has_nan(const sparse_matrix_csr<T>& A)
 
 } // namespace nerva::mkl
 
-#endif // NERVA_NEURAL_NETWORKS_MKL_SPARSE_MATRIX_H

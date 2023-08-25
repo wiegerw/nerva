@@ -7,8 +7,7 @@
 /// \file nerva/neural_networks/layers.h
 /// \brief add your file description here.
 
-#ifndef NERVA_NEURAL_NETWORKS_LAYERS_H
-#define NERVA_NEURAL_NETWORKS_LAYERS_H
+#pragma once
 
 #ifdef NERVA_ROWWISE
 #include"nerva/neural_networks/layers_rowwise.h"
@@ -16,4 +15,3 @@
 #include"nerva/neural_networks/layers_colwise.h"
 #endif
 
-#endif // NERVA_NEURAL_NETWORKS_LAYERS_H
