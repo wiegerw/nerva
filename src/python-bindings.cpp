@@ -26,7 +26,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <cmath>
-#include <sstream>
 
 namespace py = pybind11;
 using namespace nerva;
@@ -303,8 +302,9 @@ PYBIND11_MODULE(nervalib, m)
     {
       return prune_SET(layer.W, zeta, std::numeric_limits<scalar>::quiet_NaN());
     })
-    .def("grow_random", [](sparse_linear_layer& layer, weight_initialization w, std::size_t count)
+    .def("grow_random", [](sparse_linear_layer& layer, const std::string& init, std::size_t count)
     {
+      weight_initialization w = parse_weight_initialization(init);
       grow_random(layer.W, make_weight_initializer(w, layer.W, nerva_rng), count, nerva_rng);
       layer.reset_support();
     })

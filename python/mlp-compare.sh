@@ -19,7 +19,7 @@ optimizers="GradientDescent"
 
 function train()
 {
-  local weight_file="mlp-compare.npz"
+  local weight_file="data/mlp-compare.npz"
 
   print_header "Train CIFAR10 using mlptorch.py"
   python3 -u mlptorch.py \
