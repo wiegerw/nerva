@@ -9,8 +9,14 @@
 
 #pragma once
 
+#include "nerva/neural_networks/dropout_layers.h"
 #include "nerva/neural_networks/multilayer_perceptron.h"
+#include "nerva/neural_networks/numpy_eigen.h"
 #include <pybind11/embed.h>
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/eigen.h>
 #include <cmath>
 #include <functional>
 #include <memory>

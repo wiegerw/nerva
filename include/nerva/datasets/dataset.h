@@ -10,10 +10,12 @@
 #pragma once
 
 #include "nerva/datasets/cifar10reader.h"
+#include "nerva/datasets/dataset.h"
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/neural_networks/numpy_eigen.h"
 #include "nerva/utilities/random.h"
 #include <pybind11/embed.h>
+#include <pybind11/numpy.h>
 #include <algorithm>
 #include <cmath>
 #include <ctime>

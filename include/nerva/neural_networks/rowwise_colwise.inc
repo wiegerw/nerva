@@ -1,0 +1,18 @@
+// Copyright: Wieger Wesselink 2023
+//
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt)
+//
+/// \file nerva/neural_networks/rowwise_colwise.h
+/// \brief add your file description here.
+
+#if defined NERVA_COLWISE
+namespace nerva {
+  using namespace colwise;
+}
+#elif defined NERVA_ROWWISE
+namespace nerva {
+  using namespace rowwise;
+}
+#endif

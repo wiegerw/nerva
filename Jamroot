@@ -4,7 +4,7 @@ import os ;
 local MKLROOT = [ os.environ MKLROOT ] ;
 
 # Check if the EIGENROOT environment variable is set
-local EIGEN_INCLUDE_DIR = [ os.environ EIGENROOT ] ;
+local EIGEN_INCLUDE_DIR = [ os.environ EIGEN_INCLUDE_DIR ] ;
 EIGEN_INCLUDE_DIR ?= /usr/include/eigen3 ;
 
 ECHO "MKLROOT = $(MKLROOT)" ;

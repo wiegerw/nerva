@@ -4,7 +4,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-/// \file nerva/neural_networks/softmax_colwise.h
+/// \file nerva/neural_networks/softmax_functions_colwise.h
 /// \brief add your file description here.
 
 #pragma once
@@ -14,7 +14,7 @@
 #include <cmath>
 #include <ratio>
 
-namespace nerva {
+namespace nerva::colwise {
 
 // N.B. Numerically unstable!
 struct softmax
@@ -122,5 +122,6 @@ struct stable_log_softmax
   }
 };
 
-} // namespace nerva
+} // namespace nerva::colwise
 
+namespace nerva { using namespace colwise; }

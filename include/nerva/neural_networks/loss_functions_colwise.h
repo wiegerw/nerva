@@ -11,12 +11,12 @@
 
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/neural_networks/activation_functions.h"
-#include "nerva/neural_networks/softmax_colwise.h"
+#include "nerva/neural_networks/softmax_functions_colwise.h"
 #include "nerva/utilities/logger.h"
 #include <cmath>
 #include <memory>
 
-namespace nerva {
+namespace nerva::colwise {
 
 struct loss_function
 {
@@ -206,5 +206,6 @@ auto parse_loss_function(const std::string& text) -> std::shared_ptr<loss_functi
   }
 }
 
-} // namespace nerva
+} // namespace nerva::colwise
 
+#include "nerva/neural_networks/rowwise_colwise.inc"

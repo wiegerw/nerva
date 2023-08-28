@@ -10,14 +10,15 @@
 #ifndef NERVA_PARSE_NUMBERS_H
 #define NERVA_PARSE_NUMBERS_H
 
-#include <cctype>
-#include <cstddef>
-#include <stdexcept>
-#include <string>
-#include <vector>
 #include "nerva/utilities/logger.h"
 #include "nerva/neural_networks/scalar.h"
 #include "nerva/utilities/string_utility.h"
+#include <cctype>
+#include <cstddef>
+#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 namespace nerva {
 

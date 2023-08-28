@@ -14,16 +14,17 @@
 #include "nerva/neural_networks/mkl_eigen.h"
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/neural_networks/optimizers.h"
-#include "nerva/neural_networks/softmax_rowwise.h"
+#include "nerva/neural_networks/softmax_functions_rowwise.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
+#include "nerva/utilities/parse.h"
 #include "nerva/utilities/string_utility.h"
 #include "fmt/format.h"
 #include <iostream>
 #include <random>
 #include <type_traits>
 
-namespace nerva {
+namespace nerva::rowwise {
 
 struct neural_network_layer
 {
@@ -34,7 +35,7 @@ struct neural_network_layer
     : X(D, N), DX(D, N)
   {}
 
-  [[nodiscard]] virtual std::string to_string() const = 0;
+  [[nodiscard]] virtual auto to_string() const -> std::string = 0;
 
   virtual void optimize(scalar eta) = 0;
 
@@ -54,69 +55,71 @@ struct linear_layer: public neural_network_layer
   using super = neural_network_layer;
   using super::X;
   using super::DX;
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+  static const bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   Matrix W;
-  eigen::vector b;
+  eigen::matrix b;
   Matrix DW;
-  eigen::vector Db;
-  std::shared_ptr<layer_optimizer> optimizer;
+  eigen::matrix Db;
+  std::shared_ptr<optimizer_function> optimizer;
 
   explicit linear_layer(std::size_t D, std::size_t K, std::size_t N)
-    : super(D, N), W(K, D), b(K), DW(K, D), Db(K)
+    : super(D, N), W(K, D), b(1, K), DW(K, D), Db(1, K)
   {}
 
-  [[nodiscard]] std::size_t input_size() const
+  [[nodiscard]] auto input_size() const -> std::size_t
   {
     return W.cols();
   }
 
-  [[nodiscard]] std::size_t output_size() const
+  [[nodiscard]] auto output_size() const -> std::size_t
   {
     return W.rows();
   }
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     if constexpr (IsSparse)
     {
-      return fmt::format("Sparse(output_size={}, density={}, optimizer={}, activation=NoActivation())", output_size(), W.density(), optimizer->to_string());
+      return fmt::format("Sparse(input_size={}, output_size={}, density={}, optimizer={}, activation=NoActivation())", input_size(), output_size(), W.density(), optimizer->to_string());
     }
     else
     {
-      return fmt::format("Dense(output_size={}, optimizer={}, activation=NoActivation())", output_size(), optimizer->to_string());
+      return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation=NoActivation())", input_size(), output_size(), optimizer->to_string());
     }
   }
 
   void feedforward(eigen::matrix& result) override
   {
+    using eigen::column_repeat;
+
     if constexpr (IsSparse)
     {
       auto N = X.cols();
       mkl::dsd_product(result, W, X);
-      result += repeat_column(b, N);
+      result += column_repeat(b, N);
     }
     else
     {
       auto N = X.cols();
-      result = W * X + repeat_column(b, N);
+      result = W * X + column_repeat(b, N);
     }
   }
 
-  void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
+  void backpropagate(const eigen::matrix& /* Y */, const eigen::matrix& DY) override
   {
-    using eigen::sum_rows;
+    using eigen::rows_sum;
 
     if constexpr (IsSparse)
     {
       mkl::sdd_product_batch(DW, DY, X.transpose(), std::max(4L, static_cast<long>(DY.rows() / 10)));
-      Db = sum_rows(DY);
+      Db = rows_sum(DY);
       mkl::dsd_product(DX, W, DY, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
     else
     {
       DW = DY * X.transpose();
-      Db = sum_rows(DY);
+      Db = rows_sum(DY);
       DX = W.transpose() * DY;
     }
   }
@@ -191,8 +194,9 @@ struct sigmoid_layer : public linear_layer<Matrix>
   using super::X;
   using super::DX;
   using super::optimizer;
+  using super::input_size;
   using super::output_size;
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+  static const bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   eigen::matrix Z;
   eigen::matrix DZ;
@@ -201,52 +205,55 @@ struct sigmoid_layer : public linear_layer<Matrix>
     : super(D, K, N), Z(K, N), DZ(K, N)
   {}
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     if constexpr (IsSparse)
     {
-      return fmt::format("Sparse(output_size={}, density={}, optimizer={}, activation=Sigmoid())", output_size(), W.density(), optimizer->to_string());
+      return fmt::format("Sparse(input_size={}, output_size={}, density={}, optimizer={}, activation=Sigmoid())", input_size(), output_size(), W.density(), optimizer->to_string());
     }
     else
     {
-      return fmt::format("Dense(output_size={}, optimizer={}, activation=Sigmoid())", output_size(), optimizer->to_string());
+      return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation=Sigmoid())", input_size(), output_size(), optimizer->to_string());
     }
   }
 
   void feedforward(eigen::matrix& result) override
   {
+    using eigen::column_repeat;
+    using eigen::Sigmoid;
+
     if constexpr (IsSparse)
     {
       auto N = X.cols();
       mkl::dsd_product(Z, W, X);
-      Z += repeat_column(b, N);
-      result = sigmoid()(Z);
+      Z += column_repeat(b, N);
+      result = Sigmoid(Z);
     }
     else
     {
       auto N = X.cols();
-      Z = W * X + repeat_column(b, N);
-      result = sigmoid()(Z);
+      Z = W * X + column_repeat(b, N);
+      result = Sigmoid(Z);
     }
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
     using eigen::hadamard;
-    using eigen::sum_rows;
+    using eigen::rows_sum;
 
     if constexpr (IsSparse)
     {
       DZ = hadamard(DY, eigen::x_times_one_minus_x(Y));
       mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
-      Db = sum_rows(DZ);
+      Db = rows_sum(DZ);
       mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
     else
     {
       DZ = hadamard(DY, eigen::x_times_one_minus_x(Y));
       DW = DZ * X.transpose();
-      Db = sum_rows(DZ);
+      Db = rows_sum(DZ);
       DX = W.transpose() * DZ;
     }
   }
@@ -266,8 +273,9 @@ struct activation_layer : public linear_layer<Matrix>
   using super::X;
   using super::DX;
   using super::optimizer;
+  using super::input_size;
   using super::output_size;
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+  static const bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   ActivationFunction act;
   eigen::matrix Z;
@@ -277,31 +285,33 @@ struct activation_layer : public linear_layer<Matrix>
     : super(D, K, N), act(act_), Z(K, N), DZ(K, N)
   {}
 
-  [[nodiscard]] std::string to_string() const override
+  [[nodiscard]] auto to_string() const -> std::string override
   {
     if constexpr (IsSparse)
     {
-      return fmt::format("Sparse(output_size={}, density={}, optimizer={}, activation={})", output_size(), W.density(), optimizer->to_string(), act.to_string());
+      return fmt::format("Sparse(input_size={}, output_size={}, density={}, optimizer={}, activation={})", input_size(), output_size(), W.density(), optimizer->to_string(), act.to_string());
     }
     else
     {
-      return fmt::format("Dense(output_size={}, optimizer={}, activation={})", output_size(), optimizer->to_string(), act.to_string());
+      return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation={})", input_size(), output_size(), optimizer->to_string(), act.to_string());
     }
   }
 
   void feedforward(eigen::matrix& result) override
   {
+    using eigen::column_repeat;
+
     if constexpr (IsSparse)
     {
       auto N = X.cols();
       mkl::dsd_product(Z, W, X);
-      Z += repeat_column(b, N);
+      Z += column_repeat(b, N);
       result = act(Z);
     }
     else
     {
       auto N = X.cols();
-      Z = W * X + repeat_column(b, N);
+      Z = W * X + column_repeat(b, N);
       result = act(Z);
     }
   }
@@ -309,33 +319,33 @@ struct activation_layer : public linear_layer<Matrix>
   void backpropagate(const eigen::matrix& /* Y */, const eigen::matrix& DY) override
   {
     using eigen::hadamard;
-    using eigen::sum_rows;
+    using eigen::rows_sum;
 
     if constexpr (IsSparse)
     {
-      DZ = hadamard(DY, act.prime(Z));
+      DZ = hadamard(DY, act.gradient(Z));
       mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
       // mkl::sdd_product(DW, DZ, X.transpose());
-      Db = sum_rows(DZ);
+      Db = rows_sum(DZ);
       mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
     else
     {
-      DZ = hadamard(DY, act.prime(Z));
+      DZ = hadamard(DY, act.gradient(Z));
       DW = DZ * X.transpose();
-      Db = sum_rows(DZ);
+      Db = rows_sum(DZ);
       DX = W.transpose() * DZ;
     }
   }
 };
 
 template <typename Matrix>
-struct hyperbolic_tangent_layer : public activation_layer<Matrix, hyperbolic_tangent_activation>
+struct hyperbolic_tangent_layer : public activation_layer<Matrix, eigen::hyperbolic_tangent_activation>
 {
-  using super = activation_layer<Matrix, hyperbolic_tangent_activation>;
+  using super = activation_layer<Matrix, eigen::hyperbolic_tangent_activation>;
 
   explicit hyperbolic_tangent_layer(std::size_t D, std::size_t K, std::size_t N)
-    : super(D, K, N, hyperbolic_tangent_activation())
+   : super(D, K, N, eigen::hyperbolic_tangent_activation())
   {}
 };
 
@@ -343,12 +353,12 @@ using dense_hyperbolic_tangent_layer = hyperbolic_tangent_layer<eigen::matrix>;
 using sparse_hyperbolic_tangent_layer = hyperbolic_tangent_layer<mkl::sparse_matrix_csr<scalar>>;
 
 template <typename Matrix>
-struct relu_layer : public activation_layer<Matrix, relu_activation>
+struct relu_layer : public activation_layer<Matrix, eigen::relu_activation>
 {
-  using super = activation_layer<Matrix, relu_activation>;
+  using super = activation_layer<Matrix, eigen::relu_activation>;
 
   explicit relu_layer(std::size_t D, std::size_t K, std::size_t N)
-    : super(D, K, N, relu_activation())
+      : super(D, K, N, eigen::relu_activation())
   {}
 };
 
@@ -356,12 +366,12 @@ using dense_relu_layer = relu_layer<eigen::matrix>;
 using sparse_relu_layer = relu_layer<mkl::sparse_matrix_csr<scalar>>;
 
 template <typename Matrix>
-struct trelu_layer : public activation_layer<Matrix, trimmed_relu_activation>
+struct trelu_layer : public activation_layer<Matrix, eigen::trimmed_relu_activation>
 {
-  using super = activation_layer<Matrix, trimmed_relu_activation>;
+  using super = activation_layer<Matrix, eigen::trimmed_relu_activation>;
 
   explicit trelu_layer(std::size_t D, std::size_t K, std::size_t N, scalar epsilon)
-    : super(D, K, N, trimmed_relu_activation(epsilon))
+    : super(D, K, N, eigen::trimmed_relu_activation(epsilon))
   {}
 };
 
@@ -369,12 +379,12 @@ using dense_trelu_layer = trelu_layer<eigen::matrix>;
 using sparse_trelu_layer = trelu_layer<mkl::sparse_matrix_csr<scalar>>;
 
 template <typename Matrix>
-struct leaky_relu_layer : public activation_layer<Matrix, leaky_relu_activation>
+struct leaky_relu_layer : public activation_layer<Matrix, eigen::leaky_relu_activation>
 {
-  using super = activation_layer<Matrix, leaky_relu_activation>;
+  using super = activation_layer<Matrix, eigen::leaky_relu_activation>;
 
   explicit leaky_relu_layer(std::size_t D, std::size_t K, std::size_t N, scalar alpha)
-    : super(D, K, N, leaky_relu_activation(alpha))
+      : super(D, K, N, eigen::leaky_relu_activation(alpha))
   {}
 };
 
@@ -382,12 +392,12 @@ using dense_leaky_relu_layer = leaky_relu_layer<eigen::matrix>;
 using sparse_leaky_relu_layer = leaky_relu_layer<mkl::sparse_matrix_csr<scalar>>;
 
 template <typename Matrix>
-struct all_relu_layer : public activation_layer<Matrix, all_relu_activation>
+struct all_relu_layer : public activation_layer<Matrix, eigen::all_relu_activation>
 {
-  using super = activation_layer<Matrix, all_relu_activation>;
+  using super = activation_layer<Matrix, eigen::all_relu_activation>;
 
   explicit all_relu_layer(std::size_t D, std::size_t K, std::size_t N, scalar alpha)
-    : super(D, K, N, all_relu_activation(alpha))
+      : super(D, K, N, eigen::all_relu_activation(alpha))
   {}
 };
 
@@ -395,48 +405,42 @@ using dense_all_relu_layer = all_relu_layer<eigen::matrix>;
 using sparse_all_relu_layer = all_relu_layer<mkl::sparse_matrix_csr<scalar>>;
 
 template <typename Matrix>
-struct srelu_layer : public activation_layer<Matrix, srelu_activation>
+struct srelu_layer : public activation_layer<Matrix, eigen::srelu_activation>
 {
-  using super = activation_layer<Matrix, srelu_activation>;
+  using super = activation_layer<Matrix, eigen::srelu_activation>;
   using super::backpropagate;
   using super::optimize;
   using super::Z;
   using super::act;
 
-  scalar Dal = 0;
-  scalar Dtl = 0;
-  scalar Dar = 0;
-  scalar Dtr = 0;
-
   explicit srelu_layer(std::size_t D, std::size_t K, std::size_t N, scalar al = 1, scalar tl = 0, scalar ar = 1, scalar tr = 0)
-    : super(D, K, N, srelu_activation(al, tl, ar, tr))
+    : super(D, K, N, eigen::srelu_activation(al, tl, ar, tr))
   {}
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
+    using eigen::apply;
     using eigen::hadamard;
+    using eigen::elements_sum;
+
     super::backpropagate(Y, DY);
 
-    auto A_l = Z.unaryExpr([this](scalar x) { return std::min(x - act.tl, scalar(0)); });
-    Dal = sum_elements(hadamard(DY, A_l));
+    auto al = act.x(0);
+    auto tl = act.x(1);
+    auto ar = act.x(2);
+    auto tr = act.x(3);
 
-    auto A_r = Z.unaryExpr([this](scalar x) { return std::max(x - act.tr, scalar(0)); });
-    Dar = sum_elements(hadamard(DY, A_r));
+    auto Al = [tl](scalar x)     { return x <= tl ? x - tl : scalar(0); };
+    auto Ar = [tl, tr](scalar x) { return x <= tl || x < tr ? scalar(0) : x - tr; };
+    auto Tl = [tl, al](scalar x) { return x <= tl ? scalar(1) - al : scalar(0); };
+    auto Tr = [tr, ar](scalar x) { return x >= tr ? scalar(1) - ar : scalar(0); };
 
-    auto T_l = Z.unaryExpr([this](scalar x) { return x <= act.tl ? scalar(1) - act.al : scalar(0); });
-    Dtl = sum_elements(hadamard(DY, T_l));
+    auto Dal = elements_sum(hadamard(DY, apply(Al, Z)));
+    auto Dar = elements_sum(hadamard(DY, apply(Ar, Z)));
+    auto Dtl = elements_sum(hadamard(DY, apply(Tl, Z)));
+    auto Dtr = elements_sum(hadamard(DY, apply(Tr, Z)));
 
-    auto T_r = Z.unaryExpr([this](scalar x) { return x >= act.tr ? scalar(1) - act.ar : scalar(0); });
-    Dtr = sum_elements(hadamard(DY, T_r));
-  }
-
-  void optimize(scalar eta) override
-  {
-    super::optimize(eta);
-    act.al -= eta * Dal;
-    act.ar -= eta * Dar;
-    act.tl -= eta * Dtl;
-    act.tr -= eta * Dtr;
+    act.Dx = eigen::vector{{Dal, Dtl, Dar, Dtr}};
   }
 };
 
@@ -453,7 +457,7 @@ struct softmax_layer : public linear_layer<Matrix>
   using super::Db;
   using super::X;
   using super::DX;
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+  static const bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   eigen::matrix Z;
   eigen::matrix DZ;
@@ -464,18 +468,20 @@ struct softmax_layer : public linear_layer<Matrix>
 
   void feedforward(eigen::matrix& result) override
   {
+    using eigen::column_repeat;
+
     if constexpr (IsSparse)
     {
       auto N = X.cols();
       mkl::dsd_product(Z, W, X);
-      Z += repeat_column(b, N);
-      result = softmax_colwise()(Z);
+      Z += column_repeat(b, N);
+      result = stable_softmax()(Z);
     }
     else
     {
       auto N = X.cols();
-      Z = W * X + repeat_column(b, N);
-      result = softmax_colwise()(Z);
+      Z = W * X + column_repeat(b, N);
+      result = stable_softmax()(Z);
     }
   }
 
@@ -483,23 +489,23 @@ struct softmax_layer : public linear_layer<Matrix>
   {
     using eigen::diag;
     using eigen::hadamard;
-    using eigen::repeat_row;
-    using eigen::sum_rows;
+    using eigen::row_repeat;
+    using eigen::rows_sum;
 
     if constexpr (IsSparse)
     {
       auto K = Y.rows();
-      DZ = hadamard(Y, DY - repeat_row(diag(Y.transpose() * DY).transpose(), K));
+      DZ = eigen::hadamard(Y, DY - row_repeat(diag(Y.transpose() * DY).transpose(), K));
       mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
-      Db = sum_rows(DZ);
+      Db = rows_sum(DZ);
       mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
     else
     {
       auto K = Y.rows();
-      DZ = hadamard(Y, DY - repeat_row(diag(Y.transpose() * DY).transpose(), K));
+      DZ = eigen::hadamard(Y, DY - row_repeat(diag(Y.transpose() * DY).transpose(), K));
       DW = DZ * X.transpose();
-      Db = sum_rows(DZ);
+      Db = rows_sum(DZ);
       DX = W.transpose() * DZ;
     }
   }
@@ -518,7 +524,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
   using super::Db;
   using super::X;
   using super::DX;
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+  static const bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   eigen::matrix Z;
   eigen::matrix DZ;
@@ -529,41 +535,44 @@ struct log_softmax_layer : public linear_layer<Matrix>
 
   void feedforward(eigen::matrix& result) override
   {
+    using eigen::column_repeat;
+
     if constexpr (IsSparse)
     {
       auto N = X.cols();
       mkl::dsd_product(Z, W, X);
-      Z += repeat_column(b, N);
-      result = log_softmax_colwise()(Z);
+      Z += column_repeat(b, N);
+      result = stable_log_softmax()(Z);
     }
     else
     {
       auto N = X.cols();
-      Z = W * X + repeat_column(b, N);
-      result = log_softmax_colwise()(Z);
+      Z = W * X + column_repeat(b, N);
+      result = stable_log_softmax()(Z);
     }
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
-    using eigen::diag;
-    using eigen::repeat_row;
-    using eigen::sum_rows;
+    using eigen::hadamard;
+    using eigen::row_repeat;
+    using eigen::columns_sum;
+    using eigen::rows_sum;
 
     if constexpr (IsSparse)
     {
       auto K = Y.rows();
-      DZ = DY - repeat_row(diag(Y.transpose() * DY).transpose(), K);
+      DZ = DY - eigen::hadamard(stable_softmax()(Z), row_repeat(columns_sum(DY), K));
       mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
-      Db = sum_rows(DZ);
+      Db = rows_sum(DZ);
       mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
     }
     else
     {
       auto K = Y.rows();
-      DZ = DY - repeat_row(diag(Y.transpose() * DY), K);
+      DZ = DY - eigen::hadamard(stable_softmax()(Z), row_repeat(columns_sum(DY), K));
       DW = DZ * X.transpose();
-      Db = sum_rows(DZ);
+      Db = rows_sum(DZ);
       DX = W.transpose() * DZ;
     }
   }
@@ -572,40 +581,23 @@ struct log_softmax_layer : public linear_layer<Matrix>
 using dense_log_softmax_layer = log_softmax_layer<eigen::matrix>;
 using sparse_log_softmax_layer = log_softmax_layer<mkl::sparse_matrix_csr<scalar>>;
 
-// Sets the optimizer in a layer
 template <typename Matrix>
-void set_optimizer(linear_layer<Matrix>& layer, const std::string& text)
+void set_linear_layer_optimizer(linear_layer<Matrix>& layer, const std::string& text)
 {
-  auto parse_argument = [&text]()
-  {
-    auto startpos = text.find('(');
-    auto endpos = text.find(')');
-    if (startpos == std::string::npos || endpos == std::string::npos || endpos <= startpos)
-    {
-      throw std::runtime_error("could not parse optimizer '" + text + "'");
-    }
-    return parse_scalar(text.substr(startpos + 1, endpos - startpos - 1));
-  };
-
-  if (text == "GradientDescent")
-  {
-    layer.optimizer = std::make_shared<gradient_descent_optimizer<Matrix>>(layer.W, layer.DW, layer.b, layer.Db);
-  }
-  else if (utilities::starts_with(text, "Momentum"))  // e.g. "momentum(0.9)"
-  {
-    scalar mu = parse_argument();
-    layer.optimizer = std::make_shared<momentum_optimizer<Matrix>>(layer.W, layer.DW, layer.b, layer.Db, mu);
-  }
-  else if (utilities::starts_with(text, "Nesterov"))
-  {
-    scalar mu = parse_argument();
-    layer.optimizer = std::make_shared<nesterov_optimizer<Matrix>>(layer.W, layer.DW, layer.b, layer.Db, mu);
-  }
-  else
-  {
-    throw std::runtime_error("unknown optimizer '" + text + "'");
-  }
+  auto optimizer_W = parse_optimizer(text, layer.W, layer.DW);
+  auto optimizer_b = parse_optimizer(text, layer.b, layer.Db);
+  layer.optimizer = make_composite_optimizer(optimizer_W, optimizer_b);
 }
 
-} // namespace nerva
+template <typename Layer>
+void set_srelu_layer_optimizer(Layer& layer, const std::string& text)
+  {
+  auto optimizer_W = parse_optimizer(text, layer.W, layer.DW);
+  auto optimizer_b = parse_optimizer(text, layer.b, layer.Db);
+  auto optimizer_srelu = parse_optimizer(text, layer.act.x, layer.act.Dx);
+  layer.optimizer = make_composite_optimizer(optimizer_W, optimizer_b, optimizer_srelu);
+}
 
+} // namespace nerva::rowwise
+
+#include "nerva/neural_networks/rowwise_colwise.inc"

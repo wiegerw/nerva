@@ -10,6 +10,7 @@
 #pragma once
 
 #include "nerva/neural_networks/check_gradients.h"
+#include "nerva/datasets/dataset.h"
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/neural_networks/learning_rate_schedulers.h"
 #include "nerva/neural_networks/loss_functions_colwise.h"

@@ -10,16 +10,8 @@
 #pragma once
 
 #include "nerva/neural_networks/check_gradients.h"
-#include "nerva/neural_networks/dropout_layers.h"
-#include "nerva/neural_networks/eigen.h"
-#include "nerva/neural_networks/mkl_eigen.h"
-#include "nerva/neural_networks/numpy_eigen.h"
 #include "nerva/neural_networks/layers.h"
-#include "nerva/neural_networks/loss_functions_colwise.h"
-#include "nerva/neural_networks/weights.h"
-#include "nerva/utilities/logger.h"
 #include "nerva/neural_networks/global_timer.h"
-#include "fmt/format.h"
 
 namespace nerva {
 

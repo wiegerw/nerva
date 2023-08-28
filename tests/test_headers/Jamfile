@@ -16,7 +16,7 @@ project test : ;
 
 rule setup ( )
 {
-  for local file in [ path.glob-tree ../../include/uaitools : *.h ]
+  for local file in [ path.glob-tree ../../include/nerva : *.h ]
   {
     result += [ compile test.cpp : <define>BOOST_UNITS_HEADER_NAME=$(file) : [ regex.replace [ path.relative-to .. $(file) ] "/" "_" ] ] ;
   }

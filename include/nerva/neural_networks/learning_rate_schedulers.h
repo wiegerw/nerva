@@ -16,7 +16,9 @@
 #include <utility>
 #include "fmt/format.h"
 #include "nerva/neural_networks/eigen.h"
+#include "nerva/utilities/parse.h"
 #include "nerva/utilities/parse_numbers.h"
+#include "nerva/utilities/print.h"
 #include "nerva/utilities/string_utility.h"
 
 namespace nerva {

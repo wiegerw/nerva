@@ -14,7 +14,7 @@
 #include "nerva/neural_networks/mkl_eigen.h"
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/neural_networks/optimizers.h"
-#include "nerva/neural_networks/softmax_colwise.h"
+#include "nerva/neural_networks/softmax_functions_colwise.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
 #include "nerva/utilities/parse.h"
@@ -24,7 +24,7 @@
 #include <random>
 #include <type_traits>
 
-namespace nerva {
+namespace nerva::colwise {
 
 struct neural_network_layer
 {
@@ -598,5 +598,6 @@ void set_srelu_layer_optimizer(Layer& layer, const std::string& text)
   layer.optimizer = make_composite_optimizer(optimizer_W, optimizer_b, optimizer_srelu);
 }
 
-} // namespace nerva
+} // namespace nerva::colwise
 
+#include "nerva/neural_networks/rowwise_colwise.inc"
