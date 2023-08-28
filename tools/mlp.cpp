@@ -7,14 +7,13 @@
 /// \file nerva/tools/mlp.cpp
 /// \brief add your file description here.
 
-#include "nerva/neural_networks/multilayer_perceptron.h"
-#include "omp.h"
 #include "nerva/datasets/dataset.h"
 #include "nerva/datasets/make_dataset.h"
 #include "nerva/neural_networks/layers.h"
 #include "nerva/neural_networks/learning_rate_schedulers.h"
 #include "nerva/neural_networks/loss_functions_colwise.h"
 #include "nerva/neural_networks/mlp_algorithms.h"
+#include "nerva/neural_networks/multilayer_perceptron.h"
 #include "nerva/neural_networks/parse_layer.h"
 #include "nerva/neural_networks/regrow.h"
 #include "nerva/neural_networks/sgd_options.h"
@@ -23,6 +22,7 @@
 #include "nerva/utilities/command_line_tool.h"
 #include "nerva/utilities/parse_numbers.h"
 #include "nerva/utilities/string_utility.h"
+#include "omp.h"
 #include <iostream>
 #include <random>
 

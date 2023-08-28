@@ -4,7 +4,6 @@ project nerva/tests
    : requirements
        <library>/nerva//nervalib
        <linkflags>-lpython3.10  # TODO: find a better way to do this
-       <define>NERVA_COLWISE
    ;
 
 test-suite data : [ test_all r ] ;

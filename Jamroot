@@ -35,9 +35,10 @@ project nerva
        <toolset>clang:<cxxflags>-fopenmp=libomp         # TODO: is this needed?
        <toolset>clang:<cxxflags>-DMKL_ILP64
        <toolset>clang:<cxxflags>-Wno-writable-strings   # suppress MKL warnings
+       <toolset>clang:<cxxflags>-Wint-in-bool-context   # suppress Eigen warnings
        <toolset>clang:<cxxflags>-m64
 
-       <toolset>gcc:<cxxflags>-march=native             # TODO: is this needed?
+       <toolset>gcc:<cxxflags>-march=native             # TODO: is this needed / useful?
        <toolset>gcc:<cxxflags>-m64
        <toolset>gcc:<cxxflags>-DMKL_ILP64
        <toolset>gcc:<cxxflags>-Wno-unused-value

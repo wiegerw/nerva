@@ -151,33 +151,3 @@ TEST_CASE("test_softmax_cross_entropy")
   CHECK(std::abs(L - L_expected) < epsilon);
   CHECK((dy - dy_expected).squaredNorm() < epsilon);
 }
-
-TEST_CASE("test_softmax")
-{
-  std::cout << "\n=== test_softmax ===" << std::endl;
-
-  eigen::matrix X {
-    {1.0, 2.0, 7.0},
-    {3.0, 4.0, 9.0}
-  };
-
-  eigen::matrix Y = stable_softmax()(X);
-
-  eigen::matrix x1 = X.col(0);
-  eigen::matrix x2 = X.col(1);
-  eigen::matrix x3 = X.col(2);
-
-  eigen::matrix y1 = stable_softmax()(x1);
-  eigen::matrix y2 = stable_softmax()(x2);
-  eigen::matrix y3 = stable_softmax()(x3);
-
-  eigen::print_numpy_matrix("Y", Y);
-  eigen::print_numpy_matrix("y1", y1);
-  eigen::print_numpy_matrix("y2", y2);
-  eigen::print_numpy_matrix("y3", y3);
-
-  CHECK_EQ(y1, Y.col(0));
-  CHECK_EQ(y2, Y.col(1));
-  CHECK_EQ(y3, Y.col(2));
-}
-
