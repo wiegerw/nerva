@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "nerva/neural_networks/dropout_layers.h"
+#include "nerva/neural_networks/dropout_layers_colwise.h"
 #include "nerva/neural_networks/multilayer_perceptron.h"
 #include "nerva/neural_networks/numpy_eigen.h"
 #include <pybind11/embed.h>

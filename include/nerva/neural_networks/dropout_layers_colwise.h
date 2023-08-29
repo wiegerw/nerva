@@ -4,16 +4,17 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-/// \file nerva/neural_networks/dropout_layers.h
+/// \file nerva/neural_networks/dropout_layers_colwise.h
 /// \brief add your file description here.
 
 #pragma once
 
 #include "nerva/neural_networks/layers.h"
+#include "nerva/neural_networks/matrix_operations.h"
 #include "fmt/format.h"
 #include <random>
 
-namespace nerva {
+namespace nerva::colwise {
 
 template <typename Matrix>
 struct dropout_layer
@@ -59,8 +60,8 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
   {
     using eigen::column_repeat;
     using eigen::hadamard;
-
     auto N = X.cols();
+
     result = hadamard(W, R) * X + column_repeat(b, N);
   }
 
@@ -117,8 +118,8 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
     using eigen::column_repeat;
     using eigen::hadamard;
     using eigen::Sigmoid;
-
     auto N = X.cols();
+
     Z = hadamard(W, R) * X + column_repeat(b, N);
     result = Sigmoid(Z);
   }
@@ -127,8 +128,11 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
   {
     using eigen::hadamard;
     using eigen::rows_sum;
+    using eigen::ones;
+    auto K = Y.rows();
+    auto N = X.cols();
 
-    DZ = hadamard(DY, eigen::x_times_one_minus_x(Y));
+    DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(K, N) - Y));
     if constexpr (std::is_same<Matrix, eigen::matrix>::value)
     {
       DW = hadamard(DZ * X.transpose(), R);
@@ -177,8 +181,8 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
   {
     using eigen::column_repeat;
     using eigen::hadamard;
-
     auto N = X.cols();
+
     Z = hadamard(W, R) * X + column_repeat(b, N);
     result = act(Z);
   }
@@ -311,5 +315,6 @@ struct srelu_dropout_layer: public activation_dropout_layer<Matrix, eigen::srelu
 };
 using dense_srelu_dropout_layer = srelu_dropout_layer<eigen::matrix>;
 
-} // namespace nerva
+} // namespace nerva::colwise
 
+#include "nerva/neural_networks/rowwise_colwise.inc"

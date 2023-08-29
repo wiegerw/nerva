@@ -1,10 +1,10 @@
-// Copyright: Wieger Wesselink 2022
+// Copyright: Wieger Wesselink 2023
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-/// \file nerva/neural_networks/batch_normalization_layer_colwise.h
+/// \file nerva/neural_networks/batch_normalization_layer_rowwise.h
 /// \brief add your file description here.
 
 #pragma once
@@ -13,7 +13,7 @@
 #include "fmt/format.h"
 #include <random>
 
-namespace nerva::colwise {
+namespace nerva::rowwise {
 
 struct batch_normalization_layer: public neural_network_layer
 {
@@ -47,32 +47,32 @@ struct batch_normalization_layer: public neural_network_layer
     using eigen::diag;
     using eigen::hadamard;
     using eigen::power_minus_half;
-    using eigen::column_repeat;
-    using eigen::rows_mean;
+    using eigen::row_repeat;
+    using eigen::columns_mean;
     auto N = X.cols();
 
-    auto R = (X - column_repeat(rows_mean(X), N)).eval();
-    auto Sigma = diag(R * R.transpose()) / N;
+    auto R = (X - row_repeat(columns_mean(X), N)).eval();
+    auto Sigma = diag(R.transpose() * R).transpose() / N;
     power_minus_half_Sigma = power_minus_half(Sigma);
-    Z = hadamard(column_repeat(power_minus_half_Sigma, N), R);
-    result = hadamard(column_repeat(gamma, N), Z) + column_repeat(beta, N);
+    Z = hadamard(row_repeat(power_minus_half_Sigma, N), R);
+    result = hadamard(row_repeat(gamma, N), Z) + row_repeat(beta, N);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
     using eigen::diag;
     using eigen::hadamard;
-    using eigen::column_repeat;
-    using eigen::rows_sum;
+    using eigen::row_repeat;
+    using eigen::columns_sum;
     using eigen::identity;
     using eigen::ones;
     using eigen::power_minus_half;
     auto N = X.cols();
 
-    DZ = hadamard(column_repeat(gamma, N), DY);
-    Dbeta = rows_sum(DY);
-    Dgamma = rows_sum(hadamard(DY, Z));
-    DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Z, column_repeat(-diag(DZ * Z.transpose()), N)) + DZ * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
+    DZ = hadamard(row_repeat(gamma, N), DY);
+    Dbeta = columns_sum(DY);
+    Dgamma = columns_sum(hadamard(Z, DY));
+    DX = hadamard(row_repeat(power_minus_half_Sigma / N, N), (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)) * DZ - hadamard(Z, row_repeat(diag(Z.transpose() * DZ).transpose(), N)));
   }
 
   void optimize(scalar eta) override
@@ -107,14 +107,14 @@ struct simple_batch_normalization_layer: public neural_network_layer
     using eigen::diag;
     using eigen::hadamard;
     using eigen::power_minus_half;
-    using eigen::column_repeat;
-    using eigen::rows_mean;
+    using eigen::row_repeat;
+    using eigen::columns_mean;
     auto N = X.cols();
 
-    auto R = (X - column_repeat(rows_mean(X), N)).eval();
-    auto Sigma = diag(R * R.transpose()) / N;
+    auto R = (X - row_repeat(columns_mean(X), N)).eval();
+    auto Sigma = diag(R.transpose() * R).transpose() / N;
     power_minus_half_Sigma = power_minus_half(Sigma);
-    result = hadamard(column_repeat(power_minus_half_Sigma, N), R);
+    result = hadamard(row_repeat(power_minus_half_Sigma, N), R);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
@@ -125,8 +125,8 @@ struct simple_batch_normalization_layer: public neural_network_layer
     using eigen::ones;
     using eigen::power_minus_half;
     using eigen::column_repeat;
-    auto N = X.cols();
 
+    auto N = X.cols();
     DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Y, column_repeat(-diag(DY * Y.transpose()), N)) + DY * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
   }
 
@@ -165,22 +165,22 @@ struct affine_layer: public neural_network_layer
   void feedforward(eigen::matrix& result) override
   {
     using eigen::hadamard;
-    using eigen::column_repeat;
+    using eigen::row_repeat;
     auto N = X.cols();
 
-    result = hadamard(column_repeat(gamma, N), X) + column_repeat(beta, N);
+    result = hadamard(row_repeat(gamma, N), X) + row_repeat(beta, N);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
     using eigen::hadamard;
-    using eigen::column_repeat;
-    using eigen::rows_sum;
+    using eigen::row_repeat;
+    using eigen::columns_sum;
     auto N = X.cols();
 
-    DX = hadamard(column_repeat(gamma, N), DY);
-    Dbeta = rows_sum(DY);
-    Dgamma = rows_sum(hadamard(X, DY));
+    DX = hadamard(row_repeat(gamma, N), DY);
+    Dbeta = columns_sum(DY);
+    Dgamma = columns_sum(hadamard(X, DY));
   }
 
   void optimize(scalar eta) override
@@ -199,6 +199,6 @@ void set_batch_normalization_layer_optimizer(BatchNormalizationLayer& layer, con
   layer.optimizer = make_composite_optimizer(optimizer_beta, optimizer_gamma);
 }
 
-} // namespace nerva::colwise
+} // namespace nerva::rowwise
 
 #include "nerva/neural_networks/rowwise_colwise.inc"

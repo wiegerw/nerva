@@ -11,7 +11,7 @@
 
 #include "nerva/neural_networks/layers.h"
 #include "nerva/neural_networks/batch_normalization_layer_colwise.h"
-#include "nerva/neural_networks/dropout_layers.h"
+#include "nerva/neural_networks/dropout_layers_colwise.h"
 #include "nerva/neural_networks/sgd_options.h"
 #include "nerva/utilities/parse_numbers.h"
 #include "nerva/utilities/parse.h"
