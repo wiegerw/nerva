@@ -154,8 +154,8 @@ void test_case(const eigen::matrix& X,
   {
     for (long i = 0; i < N; i++)
     {
-      const auto& x = X.col(i);
-      const auto& t = T.col(i);
+      eigen::matrix x = X.col(i);
+      eigen::matrix t = T.col(i);
       M.feedforward(x, y);
       dy = loss.gradient(y, t);
       print_vector(out, " y", y);

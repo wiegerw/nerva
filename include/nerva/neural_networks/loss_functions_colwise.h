@@ -11,7 +11,7 @@
 
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/neural_networks/activation_functions.h"
-#include "nerva/neural_networks/softmax_functions_colwise.h"
+#include "nerva/neural_networks/loss_functions.h"
 #include "nerva/utilities/logger.h"
 #include <cmath>
 #include <memory>
@@ -34,23 +34,23 @@ struct squared_error_loss: public loss_function
   template <typename Target>
   auto operator()(const eigen::vector& y, const Target& t) const -> scalar
   {
-    return (y - t).squaredNorm() / scalar(2);
+    return nerva::eigen::squared_error_loss_colwise(y, t);
   }
 
   template <typename Target>
   auto operator()(const eigen::matrix& Y, const Target& T) const -> scalar
   {
-    return ((Y - T).colwise().squaredNorm() / scalar(2)).sum();
+    return nerva::eigen::Squared_error_loss_colwise(Y, T);
   }
 
   [[nodiscard]] auto value(const eigen::matrix& Y, const eigen::matrix& T) const -> scalar override
   {
-    return ((Y - T).colwise().squaredNorm() / scalar(2)).sum();
+    return nerva::eigen::Squared_error_loss_colwise(Y, T);
   }
 
   [[nodiscard]] auto gradient(const eigen::matrix& Y, const eigen::matrix& T) const -> eigen::matrix override
   {
-    return Y - T;
+    return nerva::eigen::Squared_error_loss_colwise_gradient(Y, T);
   }
 
   [[nodiscard]] auto to_string() const -> std::string override
@@ -64,33 +64,23 @@ struct cross_entropy_loss: public loss_function
   template <typename Target>
   auto operator()(const eigen::vector& y, const Target& t) const -> scalar
   {
-    auto log_y = y.unaryExpr([](scalar x) { return std::log(x); });
-    return -t.transpose() * log_y;
+    return nerva::eigen::cross_entropy_loss_colwise(y, t);
   }
 
   template <typename Target>
   auto operator()(const eigen::matrix& Y, const Target& T) const -> scalar
   {
-    using eigen::hadamard;
-    auto log_Y = Y.unaryExpr([](scalar x) { return std::log(x); });
-    return (hadamard(-T, log_Y).colwise().sum()).sum();
+    return nerva::eigen::Cross_entropy_loss_colwise(Y, T);
   }
 
   [[nodiscard]] auto value(const eigen::matrix& Y, const eigen::matrix& T) const -> scalar override
   {
-    using eigen::elements_sum;
-    using eigen::hadamard;
-    using eigen::log;
-
-    return elements_sum(hadamard(-T, log(Y)));
+    return nerva::eigen::Cross_entropy_loss_colwise(Y, T);
   }
 
   [[nodiscard]] auto gradient(const eigen::matrix& Y, const eigen::matrix& T) const -> eigen::matrix override
   {
-    using eigen::hadamard;
-    using eigen::inverse;
-
-    return hadamard(-T, inverse(Y));
+    return nerva::eigen::Cross_entropy_loss_colwise_gradient(Y, T);
   }
 
   [[nodiscard]] auto to_string() const -> std::string override
@@ -104,31 +94,23 @@ struct softmax_cross_entropy_loss: public loss_function
   template <typename Target>
   auto operator()(const eigen::vector& y, const Target& t) const -> scalar
   {
-    eigen::vector softmax_y = stable_softmax()(y);
-    auto log_softmax_y = softmax_y.unaryExpr([](scalar x) { return std::log(x); });
-    return -t.transpose() * log_softmax_y;
+    return nerva::eigen::softmax_cross_entropy_loss_colwise(y, t);
   }
 
   template <typename Target>
-  auto operator()(const eigen::matrix& Y, const Target& T) const -> scalar  // TODO: can the return type become auto?
+  auto operator()(const eigen::matrix& Y, const Target& T) const -> scalar
   {
-    using eigen::elements_sum;
-    using eigen::hadamard;
-
-    return elements_sum(hadamard(-T, stable_log_softmax()(Y)));
+    return nerva::eigen::Softmax_cross_entropy_loss_colwise(Y, T);
   }
 
   [[nodiscard]] auto value(const eigen::matrix& Y, const eigen::matrix& T) const -> scalar override
   {
-    using eigen::elements_sum;
-    using eigen::hadamard;
-
-    return elements_sum(hadamard(-T, stable_log_softmax()(Y)));
+    return nerva::eigen::Softmax_cross_entropy_loss_colwise(Y, T);
   }
 
   [[nodiscard]] auto gradient(const eigen::matrix& Y, const eigen::matrix& T) const -> eigen::matrix override
   {
-    return stable_softmax()(Y) - T;
+    return nerva::eigen::Softmax_cross_entropy_loss_colwise_gradient(Y, T);
   }
 
   [[nodiscard]] auto to_string() const -> std::string override
@@ -142,37 +124,53 @@ struct logistic_cross_entropy_loss: public loss_function
   template <typename Target>
   auto operator()(const eigen::vector& y, const Target& t) const -> scalar
   {
-    auto log_1_plus_exp_minus_y = y.unaryExpr([](scalar x) { return std::log1p(std::exp(-x)); });
-    return t.transpose() * log_1_plus_exp_minus_y;
+    return nerva::eigen::logistic_cross_entropy_loss_colwise(y, t);
   }
 
   template <typename Target>
   auto operator()(const eigen::matrix& Y, const Target& T) const -> scalar
   {
-    using eigen::hadamard;
-    using eigen::sigmoid;
-
-    auto log_sigmoid_Y = Y.unaryExpr([](scalar x) { return std::log(sigmoid(x)); });
-    return (hadamard(-T, log_sigmoid_Y).colwise().sum()).sum();
+    return nerva::eigen::Logistic_cross_entropy_loss_colwise(Y, T);
   }
 
   [[nodiscard]] auto value(const eigen::matrix& Y, const eigen::matrix& T) const -> scalar override
   {
-    using eigen::elements_sum;
-    using eigen::hadamard;
-    using eigen::sigmoid;
-
-    auto log_sigmoid_Y = Y.unaryExpr([](scalar x) { return std::log(sigmoid(x)); });
-    return elements_sum(hadamard(-T, log_sigmoid_Y));
+    return nerva::eigen::Logistic_cross_entropy_loss_colwise(Y, T);
   }
 
   [[nodiscard]] auto gradient(const eigen::matrix& Y, const eigen::matrix& T) const -> eigen::matrix override
   {
-    using eigen::hadamard;
-    using eigen::sigmoid;
+    return nerva::eigen::Logistic_cross_entropy_loss_colwise_gradient(Y, T);
+  }
 
-    auto one_minus_sigmoid_Y = Y.unaryExpr([](scalar x) { return scalar(1.0) - sigmoid(x); });
-    return hadamard(-T, one_minus_sigmoid_Y);
+  [[nodiscard]] auto to_string() const -> std::string override
+  {
+    return "LogisticCrossEntropyLoss()";
+  }
+};
+
+struct negative_log_likelihood_loss: public loss_function
+{
+  template <typename Target>
+  auto operator()(const eigen::vector& y, const Target& t) const -> scalar
+  {
+    return nerva::eigen::negative_log_likelihood_loss_colwise(y, t);
+  }
+
+  template <typename Target>
+  auto operator()(const eigen::matrix& Y, const Target& T) const -> scalar
+  {
+    return nerva::eigen::Negative_log_likelihood_loss_colwise(Y, T);
+  }
+
+  [[nodiscard]] auto value(const eigen::matrix& Y, const eigen::matrix& T) const -> scalar override
+  {
+    return nerva::eigen::Negative_log_likelihood_loss_colwise(Y, T);
+  }
+
+  [[nodiscard]] auto gradient(const eigen::matrix& Y, const eigen::matrix& T) const -> eigen::matrix override
+  {
+    return nerva::eigen::Negative_log_likelihood_loss_colwise_gradient(Y, T);
   }
 
   [[nodiscard]] auto to_string() const -> std::string override
@@ -199,6 +197,10 @@ auto parse_loss_function(const std::string& text) -> std::shared_ptr<loss_functi
   else if (text == "SoftmaxCrossEntropy")
   {
     return std::make_shared<softmax_cross_entropy_loss>();
+  }
+  else if (text == "NegativeLogLikelyhood")
+  {
+    return std::make_shared<negative_log_likelihood_loss>();
   }
   else
   {

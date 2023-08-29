@@ -56,16 +56,16 @@ auto mean_squared_error_loss_colwise_gradient(const Vector1& y, const Vector2& t
 template <typename Matrix1, typename Matrix2>
 auto Mean_squared_error_loss_colwise(const Matrix1& Y, const Matrix2& T)
 {
-  auto K = Y.cols();
-  auto N = Y.rows();
+  auto K = Y.rows();
+  auto N = Y.cols();
   return Squared_error_loss_colwise(Y, T) / (K * N);
 }
 
 template <typename Matrix1, typename Matrix2>
 auto Mean_squared_error_loss_colwise_gradient(const Matrix1& Y, const Matrix2& T)
 {
-  auto K = Y.cols();
-  auto N = Y.rows();
+  auto K = Y.rows();
+  auto N = Y.cols();
   return Squared_error_loss_colwise_gradient(Y, T) / (K * N);
 }
 
@@ -120,7 +120,7 @@ auto Softmax_cross_entropy_loss_colwise(const Matrix1& Y, const Matrix2& T)
 template <typename Matrix1, typename Matrix2>
 auto Softmax_cross_entropy_loss_colwise_gradient(const Matrix1& Y, const Matrix2& T)
 {
-  auto K = Y.cols();
+  auto K = Y.rows();
   return hadamard(softmax_colwise(Y), row_repeat(columns_sum(T), K)) - T;
 }
 
@@ -157,7 +157,7 @@ auto Stable_softmax_cross_entropy_loss_colwise(const Matrix1& Y, const Matrix2& 
 template <typename Matrix1, typename Matrix2>
 auto Stable_softmax_cross_entropy_loss_colwise_gradient(const Matrix1& Y, const Matrix2& T)
 {
-  auto K = Y.cols();
+  auto K = Y.rows();
   return hadamard(stable_softmax_colwise(Y), row_repeat(columns_sum(T), K)) - T;
 }
 
@@ -212,7 +212,7 @@ auto Negative_log_likelihood_loss_colwise(const Matrix1& Y, const Matrix2& T)
 template <typename Matrix1, typename Matrix2>
 auto Negative_log_likelihood_loss_colwise_gradient(const Matrix1& Y, const Matrix2& T)
 {
-  auto K = Y.cols();
+  auto K = Y.rows();
   return -hadamard(row_repeat(inverse(columns_sum(hadamard(Y, T))), K), T);
 }
 
@@ -257,16 +257,16 @@ auto mean_squared_error_loss_rowwise_gradient(const Vector1& y, const Vector2& t
 template <typename Matrix1, typename Matrix2>
 auto Mean_squared_error_loss_rowwise(const Matrix1& Y, const Matrix2& T)
 {
-  auto N = Y.cols();
-  auto K = Y.rows();
+  auto K = Y.cols();
+  auto N = Y.rows();
   return Squared_error_loss_rowwise(Y, T) / (K * N);
 }
 
 template <typename Matrix1, typename Matrix2>
 auto Mean_squared_error_loss_rowwise_gradient(const Matrix1& Y, const Matrix2& T)
 {
-  auto N = Y.cols();
-  auto K = Y.rows();
+  auto K = Y.cols();
+  auto N = Y.rows();
   return Squared_error_loss_rowwise_gradient(Y, T) / (K * N);
 }
 
@@ -321,7 +321,7 @@ auto Softmax_cross_entropy_loss_rowwise(const Matrix1& Y, const Matrix2& T)
 template <typename Matrix1, typename Matrix2>
 auto Softmax_cross_entropy_loss_rowwise_gradient(const Matrix1& Y, const Matrix2& T)
 {
-  auto K = Y.rows();
+  auto K = Y.cols();
   return hadamard(softmax_rowwise(Y), column_repeat(rows_sum(T), K)) - T;
 }
 
@@ -358,7 +358,7 @@ auto Stable_softmax_cross_entropy_loss_rowwise(const Matrix1& Y, const Matrix2& 
 template <typename Matrix1, typename Matrix2>
 auto Stable_softmax_cross_entropy_loss_rowwise_gradient(const Matrix1& Y, const Matrix2& T)
 {
-  auto K = Y.rows();
+  auto K = Y.cols();
   return hadamard(stable_softmax_rowwise(Y), column_repeat(rows_sum(T), K)) - T;
 }
 
@@ -413,7 +413,7 @@ auto Negative_log_likelihood_loss_rowwise(const Matrix1& Y, const Matrix2& T)
 template <typename Matrix1, typename Matrix2>
 auto Negative_log_likelihood_loss_rowwise_gradient(const Matrix1& Y, const Matrix2& T)
 {
-  auto K = Y.rows();
+  auto K = Y.cols();
   return -hadamard(column_repeat(inverse(rows_sum(hadamard(Y, T))), K), T);
 }
 

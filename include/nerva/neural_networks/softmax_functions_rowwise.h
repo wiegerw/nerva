@@ -29,7 +29,7 @@ struct softmax
 
   auto operator()(const eigen::matrix& X) const -> eigen::matrix
   {
-    return eigen::softmax_rowwise(X);
+    return nerva::eigen::softmax_rowwise(X);
   }
 };
 
@@ -47,7 +47,7 @@ struct stable_softmax
 
   auto operator()(const eigen::matrix& X) const -> eigen::matrix
   {
-    return eigen::stable_softmax_rowwise(X);
+    return nerva::eigen::stable_softmax_rowwise(X);
   }
 };
 
@@ -68,7 +68,7 @@ struct log_softmax
 
   auto operator()(const eigen::matrix& X) const -> eigen::matrix
   {
-    return eigen::log_softmax_rowwise(X);
+    return nerva::eigen::log_softmax_rowwise(X);
   }
 };
 
@@ -85,7 +85,7 @@ struct stable_log_softmax
 
   auto operator()(const eigen::matrix& X) const -> eigen::matrix
   {
-    return eigen::stable_log_softmax_rowwise(X);
+    return nerva::eigen::stable_log_softmax_rowwise(X);
   }
 };
 

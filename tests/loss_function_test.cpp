@@ -12,6 +12,7 @@
 #include "doctest/doctest.h"
 #include "nerva/neural_networks/check_gradients.h"
 #include "nerva/neural_networks/loss_functions_colwise.h"
+#include "nerva/neural_networks/loss_functions_rowwise.h"
 #include <iostream>
 #include <type_traits>
 
@@ -150,4 +151,48 @@ TEST_CASE("test_softmax_cross_entropy")
   scalar epsilon = std::is_same<scalar, double>::value ? scalar(0.0001) : scalar(0.01);
   CHECK(std::abs(L - L_expected) < epsilon);
   CHECK((dy - dy_expected).squaredNorm() < epsilon);
+}
+
+void check_close(scalar x, scalar y)
+{
+  scalar tolerance = std::is_same<scalar, double>::value ? scalar(1e-6) : scalar(1e-12);
+  REQUIRE(doctest::Approx(x).epsilon(tolerance) == y);
+}
+
+template <typename Matrix>
+void check_close(const Matrix& Xc, const Matrix& Xr)
+{
+  scalar tolerance = 1e-6;
+  Matrix Yc = Xr.transpose();
+  REQUIRE(Xc.isApprox(Yc, tolerance));
+}
+
+TEST_CASE("test_loss_rowwise_colwise")
+{
+  std::cout << "\n=== test_loss_rowwise_colwise ===" << std::endl;
+
+  eigen::matrix Yc {
+    {1.0, 2.0, 7.0},
+    {3.0, 4.0, 9.0}
+  };
+
+  eigen::matrix Tc {
+    {1.0, 0.0, 0.0},
+    {0.0, 1.0, 1.0}
+  };
+
+  eigen::matrix Yr = Yc.transpose();
+  eigen::matrix Tr = Tc.transpose();
+
+  check_close(colwise::squared_error_loss().value(Yc, Tc), rowwise::squared_error_loss().value(Yr, Tr));
+  check_close(colwise::cross_entropy_loss().value(Yc, Tc), rowwise::cross_entropy_loss().value(Yr, Tr));
+  // check_close(colwise::softmax_cross_entropy_loss().value(Yc, Tc), rowwise::softmax_cross_entropy_loss().value(Yr, Tr));
+  check_close(colwise::logistic_cross_entropy_loss().value(Yc, Tc), rowwise::logistic_cross_entropy_loss().value(Yr, Tr));
+  // check_close(colwise::negative_log_likelihood_loss().value(Yc, Tc), rowwise::negative_log_likelihood_loss().value(Yr, Tr));
+
+  check_close(colwise::squared_error_loss().gradient(Yc, Tc), rowwise::squared_error_loss().gradient(Yr, Tr));
+  check_close(colwise::cross_entropy_loss().gradient(Yc, Tc), rowwise::cross_entropy_loss().gradient(Yr, Tr));
+  // check_close(colwise::softmax_cross_entropy_loss().gradient(Yc, Tc), rowwise::softmax_cross_entropy_loss().gradient(Yr, Tr));
+  check_close(colwise::logistic_cross_entropy_loss().gradient(Yc, Tc), rowwise::logistic_cross_entropy_loss().gradient(Yr, Tr));
+  // check_close(colwise::negative_log_likelihood_loss().gradient(Yc, Tc), rowwise::negative_log_likelihood_loss().gradient(Yr, Tr));
 }
