@@ -186,13 +186,13 @@ TEST_CASE("test_loss_rowwise_colwise")
 
   check_close(colwise::squared_error_loss().value(Yc, Tc), rowwise::squared_error_loss().value(Yr, Tr));
   check_close(colwise::cross_entropy_loss().value(Yc, Tc), rowwise::cross_entropy_loss().value(Yr, Tr));
-  // check_close(colwise::softmax_cross_entropy_loss().value(Yc, Tc), rowwise::softmax_cross_entropy_loss().value(Yr, Tr));
+  check_close(colwise::softmax_cross_entropy_loss().value(Yc, Tc), rowwise::softmax_cross_entropy_loss().value(Yr, Tr));
   check_close(colwise::logistic_cross_entropy_loss().value(Yc, Tc), rowwise::logistic_cross_entropy_loss().value(Yr, Tr));
-  // check_close(colwise::negative_log_likelihood_loss().value(Yc, Tc), rowwise::negative_log_likelihood_loss().value(Yr, Tr));
+  check_close(colwise::negative_log_likelihood_loss().value(Yc, Tc), rowwise::negative_log_likelihood_loss().value(Yr, Tr));
 
   check_close(colwise::squared_error_loss().gradient(Yc, Tc), rowwise::squared_error_loss().gradient(Yr, Tr));
   check_close(colwise::cross_entropy_loss().gradient(Yc, Tc), rowwise::cross_entropy_loss().gradient(Yr, Tr));
-  // check_close(colwise::softmax_cross_entropy_loss().gradient(Yc, Tc), rowwise::softmax_cross_entropy_loss().gradient(Yr, Tr));
+  check_close(colwise::softmax_cross_entropy_loss().gradient(Yc, Tc), rowwise::softmax_cross_entropy_loss().gradient(Yr, Tr));
   check_close(colwise::logistic_cross_entropy_loss().gradient(Yc, Tc), rowwise::logistic_cross_entropy_loss().gradient(Yr, Tr));
-  // check_close(colwise::negative_log_likelihood_loss().gradient(Yc, Tc), rowwise::negative_log_likelihood_loss().gradient(Yr, Tr));
+  check_close(colwise::negative_log_likelihood_loss().gradient(Yc, Tc), rowwise::negative_log_likelihood_loss().gradient(Yr, Tr));
 }
