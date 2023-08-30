@@ -13,8 +13,10 @@
 #include "nerva/neural_networks/layers_colwise.h"
 #include "nerva/neural_networks/layers_rowwise.h"
 #include "nerva/neural_networks/loss_functions_colwise.h"
+#include "nerva/neural_networks/loss_functions_rowwise.h"
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
-#include "nerva/neural_networks/multilayer_perceptron.h"
+#include "nerva/neural_networks/multilayer_perceptron_colwise.h"
+#include "nerva/neural_networks/multilayer_perceptron_rowwise.h"
 #include "nerva/neural_networks/weights.h"
 #include <random>
 
@@ -485,4 +487,149 @@ TEST_CASE("test_mlp2")
   test_mlp(M1, M2, X, T, loss2);
   test_mlp(M1, M2, X, T, loss3);
   // test_mlp(M1, X, T, loss4); // TODO: this leads to numerical problems: log(0)
+}
+
+template <typename MLP1, typename MLP2, typename LossFunction1, typename LossFunction2>
+void test_mlp_rowwise_colwise(MLP1& M1,
+                              MLP2& M2,
+                              const eigen::matrix& X,
+                              const eigen::matrix& T,
+                              LossFunction1 loss1,
+                              LossFunction2 loss2
+                             )
+{
+  std::cout << "=================" << std::endl;
+  std::cout << "=== test_mlp_rowwise_colwise ===" << std::endl;
+  std::cout << "=================" << std::endl;
+
+  long K = T.rows();
+  long N = X.cols();
+
+  eigen::matrix Y1(K, N);
+  eigen::matrix X1 = X;
+  eigen::matrix T1 = T;
+  M1.layers.front()->X = X1;
+  M1.feedforward(Y1);
+  eigen::matrix DY1 = loss1.gradient(Y1, T1);
+  M1.backpropagate(Y1, DY1);
+
+
+  eigen::matrix Y2(N, K);
+  eigen::matrix X2 = X.transpose();
+  eigen::matrix T2 = T.transpose();
+  M2.layers.front()->X = X2;
+  M2.feedforward(Y2);
+  eigen::matrix DY2 = loss2.gradient(Y2, T2);
+  M2.backpropagate(Y2, DY2);
+
+  eigen::print_cpp_matrix("Y1", Y1);
+  eigen::print_cpp_matrix("Y2", Y2.transpose());
+  CHECK_EQ(Y1, Y2.transpose());
+
+  // optimize
+  scalar eta = 0.1;
+  M1.optimize(eta);
+  M2.optimize(eta);
+
+  // do another feedforward step
+  M1.feedforward(Y1);
+  M2.feedforward(Y2);
+
+  eigen::print_cpp_matrix("Y1", Y1);
+  eigen::print_cpp_matrix("Y2", Y2.transpose());
+  CHECK_EQ(Y1, Y2.transpose());
+}
+
+TEST_CASE("test_mlp_rowwise_colwise")
+{
+  eigen::matrix X {
+    {1, 2, 7, 8},
+    {3, 4, 5, 2}
+  };
+
+  eigen::matrix T {
+    {1, 1, 0, 1},
+    {0, 0, 1, 0}
+  };
+
+  eigen::matrix W1 {
+    {3, 4},
+    {0, 6}
+  };
+  eigen::vector b1 {{7, 2}};
+
+  eigen::matrix W2 {
+    {1, 0},
+    {2, 9}
+  };
+  eigen::vector b2 {{1, 4}};
+
+  eigen::matrix W3 {
+    {4, 1},
+    {2, 0}
+  };
+  eigen::vector b3 {{3, 2}};
+
+  long batch_size = X.cols();
+
+  // Create dense MLP M1
+  colwise::multilayer_perceptron M1;
+  {
+    auto layer1 = std::make_shared<colwise::relu_layer<eigen::matrix>>(2, 2, batch_size);
+    M1.layers.push_back(layer1);
+    layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
+    layer1->W = W1;
+    layer1->b = b1;
+
+    auto layer2 = std::make_shared<colwise::relu_layer<eigen::matrix>>(2, 2, batch_size);
+    M1.layers.push_back(layer2);
+    layer2->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer2->W, layer2->DW, layer2->b, layer2->Db);
+    layer2->W = W2;
+    layer2->b = b2;
+
+    auto layer3 = std::make_shared<colwise::linear_layer<eigen::matrix>>(2, 2, batch_size);
+    M1.layers.push_back(layer3);
+    layer3->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer3->W, layer3->DW, layer3->b, layer3->Db);
+    layer3->W = W3;
+    layer3->b = b3;
+  }
+
+  // Create dense MLP M2
+  rowwise::multilayer_perceptron M2;
+  {
+    auto layer1 = std::make_shared<rowwise::relu_layer<eigen::matrix>>(2, 2, batch_size);
+    M2.layers.push_back(layer1);
+    layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
+    layer1->W = W1;
+    layer1->b = b1.transpose();
+
+    auto layer2 = std::make_shared<rowwise::relu_layer<eigen::matrix>>(2, 2, batch_size);
+    M2.layers.push_back(layer2);
+    layer2->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer2->W, layer2->DW, layer2->b, layer2->Db);
+    layer2->W = W2;
+    layer2->b = b2.transpose();
+
+    auto layer3 = std::make_shared<rowwise::linear_layer<eigen::matrix>>(2, 2, batch_size);
+    M2.layers.push_back(layer3);
+    layer3->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer3->W, layer3->DW, layer3->b, layer3->Db);
+    layer3->W = W3;
+    layer3->b = b3.transpose();
+  }
+
+  colwise::squared_error_loss se_loss1;
+  rowwise::squared_error_loss se_loss2;
+
+  colwise::cross_entropy_loss ce_loss1;
+  rowwise::cross_entropy_loss ce_loss2;
+
+  colwise::logistic_cross_entropy_loss lc_loss1;
+  rowwise::logistic_cross_entropy_loss lc_loss2;
+
+  colwise::softmax_cross_entropy_loss sc_loss1;
+  rowwise::softmax_cross_entropy_loss sc_loss2;
+
+  test_mlp_rowwise_colwise(M1, M2, X, T, se_loss1, se_loss2);
+  test_mlp_rowwise_colwise(M1, M2, X, T, ce_loss1, ce_loss2);
+  test_mlp_rowwise_colwise(M1, M2, X, T, lc_loss1, lc_loss2);
+  test_mlp_rowwise_colwise(M1, M2, X, T, sc_loss1, sc_loss2);
 }
