@@ -59,7 +59,7 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
   {
     using eigen::row_repeat;
     using eigen::hadamard;
-    auto N = X.cols();
+    auto N = X.rows();
 
     result = X * hadamard(W.transpose(), R) + row_repeat(b, N);
   }
@@ -117,7 +117,7 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
     using eigen::row_repeat;
     using eigen::hadamard;
     using eigen::Sigmoid;
-    auto N = X.cols();
+    auto N = X.rows();
 
     Z = X * hadamard(W.transpose(), R) + row_repeat(b, N);
     result = Sigmoid(Z);
@@ -180,7 +180,7 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
   {
     using eigen::column_repeat;
     using eigen::hadamard;
-    auto N = X.cols();
+    auto N = X.rows();
 
     Z = X * hadamard(W.transpose(), R) + row_repeat(b, N);
     result = act(Z);
