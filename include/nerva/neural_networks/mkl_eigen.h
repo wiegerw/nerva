@@ -321,8 +321,8 @@ void sdd_product_forloop_omp(mkl::sparse_matrix_csr<Scalar>& A,
 //
 // Matrix C must have column major layout.
 // operation_B determines whether op(B) = B or op(B) = B^T
-template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
-void dsd_product(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A,
+template <typename DenseEigenMatrix, typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
+void dsd_product(DenseEigenMatrix& A,
                  const mkl::sparse_matrix_csr<Scalar>& B,
                  const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& C,
                  Scalar alpha = 0,
@@ -370,6 +370,27 @@ void dsd_product(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLay
 //  auto A_view = mkl::make_dense_matrix_view(A);
 //  auto C_view = mkl::make_dense_matrix_view(C);
 //  mkl::dsd_product(A_view, B, C_view, alpha, beta, operation_B);
+}
+
+// Does the assignment A := B * op(C) with C sparse and A, B dense
+// operation_C determines whether op(C) = C or op(C) = C^T
+// We use a more limited interface than in `dsd_product` due to limitations of the MKL library.
+template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
+void dds_product(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A,
+                 const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& B,
+                 const mkl::sparse_matrix_csr<Scalar>& C,
+                 sparse_operation_t operation_C = SPARSE_OPERATION_NON_TRANSPOSE
+)
+{
+  // The MKL library doesn't support this use case directly, hence we calculate the result using
+  // (op(C)^T * B^T)^T
+
+  // Create a transposed view `B_transposed` of matrix B
+  constexpr int MatrixLayoutInverse = (MatrixLayout == Eigen::ColMajor ? Eigen::RowMajor : Eigen::ColMajor);
+  Eigen::Map<const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutInverse>> B_transposed(B.data(), B.cols(), B.rows());
+
+  sparse_operation_t operation_inverse = (operation_C == SPARSE_OPERATION_NON_TRANSPOSE ? SPARSE_OPERATION_TRANSPOSE : SPARSE_OPERATION_NON_TRANSPOSE);
+  dsd_product(A, C, B_transposed, 0, 1, operation_inverse);
 }
 
 // returns the L2 norm of (B - A)
