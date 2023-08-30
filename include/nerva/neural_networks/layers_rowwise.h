@@ -441,10 +441,10 @@ struct srelu_layer : public activation_layer<Matrix, eigen::srelu_activation>
     auto Tl = [tl, al](scalar x) { return x <= tl ? scalar(1) - al : scalar(0); };
     auto Tr = [tr, ar](scalar x) { return x >= tr ? scalar(1) - ar : scalar(0); };
 
-    auto Dal = elements_sum(hadamard(DY, Al(Z)));
-    auto Dar = elements_sum(hadamard(DY, Ar(Z)));
-    auto Dtl = elements_sum(hadamard(DY, Tl(Z)));
-    auto Dtr = elements_sum(hadamard(DY, Tr(Z)));
+    auto Dal = elements_sum(hadamard(DY, apply(Al, Z)));
+    auto Dar = elements_sum(hadamard(DY, apply(Ar, Z)));
+    auto Dtl = elements_sum(hadamard(DY, apply(Tl, Z)));
+    auto Dtr = elements_sum(hadamard(DY, apply(Tr, Z)));
 
     act.Dx = eigen::vector{{Dal, Dtl, Dar, Dtr}};
   }
