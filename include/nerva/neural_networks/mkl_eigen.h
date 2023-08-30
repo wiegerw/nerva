@@ -321,15 +321,17 @@ void sdd_product_forloop_omp(mkl::sparse_matrix_csr<Scalar>& A,
 //
 // Matrix C must have column major layout.
 // operation_B determines whether op(B) = B or op(B) = B^T
-template <typename DenseEigenMatrix, typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
+template <typename DenseEigenMatrix, typename Derived, typename Scalar = scalar>
 void dsd_product(DenseEigenMatrix& A,
                  const mkl::sparse_matrix_csr<Scalar>& B,
-                 const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& C,
+                 const Eigen::MatrixBase<Derived>& C,
                  Scalar alpha = 0,
                  Scalar beta = 1,
                  sparse_operation_t operation_B = SPARSE_OPERATION_NON_TRANSPOSE
 )
 {
+  constexpr int MatrixLayout = Derived::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+
   if (A.rows() == 0)
   {
     A = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>(B.rows(), C.cols());
@@ -343,22 +345,22 @@ void dsd_product(DenseEigenMatrix& A,
   {
     if constexpr (MatrixLayout == Eigen::ColMajor)
     {
-      status = mkl_sparse_d_mm(operation_B, beta, B.csr(), B.descriptor(), SPARSE_LAYOUT_COLUMN_MAJOR, C.data(), A.cols(), C.rows(), alpha, A.data(), A.rows());
+      status = mkl_sparse_d_mm(operation_B, beta, B.csr(), B.descriptor(), SPARSE_LAYOUT_COLUMN_MAJOR, C.derived().data(), A.cols(), C.rows(), alpha, A.data(), A.rows());
     }
     else
     {
-      status = mkl_sparse_d_mm(operation_B, beta, B.csr(), B.descriptor(), SPARSE_LAYOUT_ROW_MAJOR, C.data(), A.cols(), C.cols(), alpha, A.data(), A.cols());
+      status = mkl_sparse_d_mm(operation_B, beta, B.csr(), B.descriptor(), SPARSE_LAYOUT_ROW_MAJOR, C.derived().data(), A.cols(), C.cols(), alpha, A.data(), A.cols());
     }
   }
   else
   {
     if constexpr (MatrixLayout == Eigen::ColMajor)
     {
-      status = mkl_sparse_s_mm(operation_B, beta, B.csr(), B.descriptor(), SPARSE_LAYOUT_COLUMN_MAJOR, C.data(), A.cols(), C.rows(), alpha, A.data(), A.rows());
+      status = mkl_sparse_s_mm(operation_B, beta, B.csr(), B.descriptor(), SPARSE_LAYOUT_COLUMN_MAJOR, C.derived().data(), A.cols(), C.rows(), alpha, A.data(), A.rows());
     }
     else
     {
-      status = mkl_sparse_s_mm(operation_B, beta, B.csr(), B.descriptor(), SPARSE_LAYOUT_ROW_MAJOR, C.data(), A.cols(), C.cols(), alpha, A.data(), A.cols());
+      status = mkl_sparse_s_mm(operation_B, beta, B.csr(), B.descriptor(), SPARSE_LAYOUT_ROW_MAJOR, C.derived().data(), A.cols(), C.cols(), alpha, A.data(), A.cols());
     }
   }
 
@@ -390,7 +392,17 @@ void dds_product(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLay
   Eigen::Map<const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutInverse>> B_transposed(B.data(), B.cols(), B.rows());
 
   sparse_operation_t operation_inverse = (operation_C == SPARSE_OPERATION_NON_TRANSPOSE ? SPARSE_OPERATION_TRANSPOSE : SPARSE_OPERATION_NON_TRANSPOSE);
-  dsd_product(A, C, B_transposed, 0, 1, operation_inverse);
+
+  Scalar alpha = 0;
+  Scalar beta = 1;
+
+  auto A_rows = operation_inverse == SPARSE_OPERATION_NON_TRANSPOSE ? C.rows() : C.cols();
+  auto A_cols = B_transposed.cols();
+
+  // Create a view of the result matrix A
+  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutInverse>> A_view(A.data(), A_rows, A_cols);
+
+  dsd_product(A_view, C, B_transposed, alpha, beta, operation_inverse);
 }
 
 // returns the L2 norm of (B - A)

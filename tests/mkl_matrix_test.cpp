@@ -301,3 +301,67 @@ TEST_CASE("test_sparse_dense")
   test_sparse_dense_multiplication(1, 8, 5);
   test_sparse_dense_multiplication(1, 8, 1);
 }
+
+// Test the computation C := A * op(B) with B sparse and A, C dense.
+template <int MatrixLayout>
+void test_dense_sparse_multiplication(const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A,
+                                      const matrix& B,
+                                      bool B_transposed)
+{
+  std::cout << "--- test_dense_sparse_multiplication ---" << std::endl;
+  using result_type = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>;
+
+  auto B0 = B_transposed ? B.transpose() : B;
+  eigen::print_numpy_matrix("A", A);
+  eigen::print_numpy_matrix("B0", B0);
+  matrix C = A * B0;
+
+  eigen::print_numpy_matrix("C", C);
+  std::cout << std::boolalpha << "B_transposed = " << B_transposed << std::endl;
+
+  mkl::sparse_matrix_csr<double> B1 = mkl::to_csr<double>(B);
+  result_type C1(C.rows(), C.cols());
+  sparse_operation_t operation_B = B_transposed ? SPARSE_OPERATION_TRANSPOSE : SPARSE_OPERATION_NON_TRANSPOSE;
+  mkl::dds_product(C1, A, B1, operation_B);
+
+  scalar epsilon = 1e-10;
+  eigen::print_numpy_matrix("C1", C1);
+
+  CHECK_LE((C - C1).squaredNorm(), epsilon);
+}
+
+void test_dense_sparse_multiplication(long m, long k, long n)
+{
+  using matrix1 = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>;
+  using matrix2 = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
+  matrix A = matrix::Random(m, k);
+
+  matrix1 B1 = matrix1::Random(k, n);
+  matrix1 B1_transposed = B1.transpose();
+
+  matrix2 B2 = matrix2::Random(k, n);
+  matrix2 B2_transposed = B2.transpose();
+
+  std::cout << "--- case 1 ---" << std::endl;
+  test_dense_sparse_multiplication(A, B1, false);
+
+  std::cout << "--- case 2 ---" << std::endl;
+  test_dense_sparse_multiplication(A, B1_transposed, true);
+
+  std::cout << "--- case 3 ---" << std::endl;
+  test_dense_sparse_multiplication(A, B2, false);
+
+  std::cout << "--- case 4 ---" << std::endl;
+  test_dense_sparse_multiplication(A, B2_transposed, true);
+}
+
+TEST_CASE("test_dense_sparse")
+{
+  test_dense_sparse_multiplication(2, 2, 2);
+  test_dense_sparse_multiplication(2, 3, 4);
+  test_dense_sparse_multiplication(7, 1, 10);
+  test_dense_sparse_multiplication(12, 8, 5);
+  test_dense_sparse_multiplication(1, 8, 5);
+  test_dense_sparse_multiplication(1, 8, 1);
+}
