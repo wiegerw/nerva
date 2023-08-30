@@ -9,9 +9,9 @@
 
 #pragma once
 
-#ifdef NERVA_ROWWISE
-#include"nerva/neural_networks/layers_rowwise.h"
-#else
+#ifdef NERVA_COLWISE
 #include"nerva/neural_networks/layers_colwise.h"
+#else
+#include"nerva/neural_networks/layers_rowwise.h"
 #endif
 

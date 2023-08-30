@@ -11,7 +11,7 @@
 namespace nerva {
   using namespace colwise;
 }
-#elif defined NERVA_ROWWISE
+#else
 namespace nerva {
   using namespace rowwise;
 }
