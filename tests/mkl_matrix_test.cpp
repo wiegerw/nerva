@@ -245,3 +245,59 @@ TEST_CASE("test_transposed_view")
   eigen::print_numpy_matrix("B3", B3);
   CHECK_EQ(B.transpose(), B3);
 }
+
+// Test the computation C := op(A) * B with A sparse and B, C dense.
+template <int MatrixLayout>
+void test_sparse_dense_multiplication(const matrix& A,
+                                      const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& B,
+                                      bool A_transposed)
+{
+  std::cout << "--- test_sparse_dense_multiplication ---" << std::endl;
+  using result_type = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>;
+
+  auto A0 = A_transposed ? A.transpose() : A;
+  matrix C = A0 * B;
+
+  eigen::print_numpy_matrix("A0", A0);
+  eigen::print_numpy_matrix("B", B);
+  eigen::print_numpy_matrix("C", C);
+
+  mkl::sparse_matrix_csr<double> A1 = mkl::to_csr<double>(A);
+  result_type C1(C.rows(), C.cols());
+  sparse_operation_t operation_A = A_transposed ? SPARSE_OPERATION_TRANSPOSE : SPARSE_OPERATION_NON_TRANSPOSE;
+  double alpha = 0;
+  double beta = 1;
+  mkl::dsd_product(C1, A1, B, alpha, beta, operation_A);
+
+  scalar epsilon = 1e-10;
+  eigen::print_numpy_matrix("C1", C1);
+
+  CHECK_LE((C - C1).squaredNorm(), epsilon);
+}
+
+void test_sparse_dense_multiplication(long m, long k, long n)
+{
+  using matrix1 = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>;
+  using matrix2 = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
+  matrix A = matrix::Random(m, k);
+  matrix A_transposed = matrix::Random(k, m);
+
+  matrix1 B1 = matrix1::Random(k, n);
+  test_sparse_dense_multiplication(A, B1, false);
+  test_sparse_dense_multiplication(A_transposed, B1, true);
+
+  matrix2 B2 = matrix2::Random(k, n);
+  test_sparse_dense_multiplication(A, B2, false);
+  test_sparse_dense_multiplication(A_transposed, B2, true);
+}
+
+TEST_CASE("test_sparse_dense")
+{
+  test_sparse_dense_multiplication(2, 2, 2);
+  test_sparse_dense_multiplication(2, 3, 4);
+  test_sparse_dense_multiplication(7, 1, 10);
+  test_sparse_dense_multiplication(12, 8, 5);
+  test_sparse_dense_multiplication(1, 8, 5);
+  test_sparse_dense_multiplication(1, 8, 1);
+}
