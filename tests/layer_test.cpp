@@ -572,7 +572,7 @@ TEST_CASE("test_mlp_rowwise_colwise")
 
   long batch_size = X.cols();
 
-  // Create dense MLP M1
+  // Create dense colwise MLP M1
   colwise::multilayer_perceptron M1;
   {
     auto layer1 = std::make_shared<colwise::relu_layer<eigen::matrix>>(2, 2, batch_size);
@@ -594,7 +594,7 @@ TEST_CASE("test_mlp_rowwise_colwise")
     layer3->b = b3;
   }
 
-  // Create dense MLP M2
+  // Create dense rowwise MLP M2
   rowwise::multilayer_perceptron M2;
   {
     auto layer1 = std::make_shared<rowwise::relu_layer<eigen::matrix>>(2, 2, batch_size);
@@ -616,6 +616,58 @@ TEST_CASE("test_mlp_rowwise_colwise")
     layer3->b = b3.transpose();
   }
 
+  // Create sparse colwise MLP M3
+  colwise::multilayer_perceptron M3;
+  {
+    using matrix_t = mkl::sparse_matrix_csr<scalar>;
+    auto layer1 = std::make_shared<colwise::relu_layer<matrix_t>>(2, 2, batch_size);
+    M3.layers.push_back(layer1);
+    layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<matrix_t>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
+    layer1->W = mkl::to_csr<scalar>(W1);
+    layer1->DW = layer1->W;
+    layer1->b = b1;
+
+    auto layer2 = std::make_shared<colwise::relu_layer<matrix_t>>(2, 2, batch_size);
+    M3.layers.push_back(layer2);
+    layer2->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<matrix_t>>(layer2->W, layer2->DW, layer2->b, layer2->Db);
+    layer2->W = mkl::to_csr<scalar>(W2);
+    layer2->DW = layer2->W;
+    layer2->b = b2;
+
+    auto layer3 = std::make_shared<colwise::linear_layer<matrix_t>>(2, 2, batch_size);
+    M3.layers.push_back(layer3);
+    layer3->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<matrix_t>>(layer3->W, layer3->DW, layer3->b, layer3->Db);
+    layer3->W = mkl::to_csr<scalar>(W3);
+    layer3->DW = layer3->W;
+    layer3->b = b3;
+  }
+
+  // Create sparse rowwise MLP M4
+  rowwise::multilayer_perceptron M4;
+  {
+    using matrix_t = mkl::sparse_matrix_csr<scalar>;
+    auto layer1 = std::make_shared<rowwise::relu_layer<matrix_t>>(2, 2, batch_size);
+    M4.layers.push_back(layer1);
+    layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<matrix_t>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
+    layer1->W = mkl::to_csr<scalar>(W1);
+    layer1->DW = layer1->W;
+    layer1->b = b1.transpose();
+
+    auto layer2 = std::make_shared<rowwise::relu_layer<matrix_t>>(2, 2, batch_size);
+    M4.layers.push_back(layer2);
+    layer2->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<matrix_t>>(layer2->W, layer2->DW, layer2->b, layer2->Db);
+    layer2->W = mkl::to_csr<scalar>(W2);
+    layer2->DW = layer2->W;
+    layer2->b = b2.transpose();
+
+    auto layer3 = std::make_shared<rowwise::linear_layer<matrix_t>>(2, 2, batch_size);
+    M4.layers.push_back(layer3);
+    layer3->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<matrix_t>>(layer3->W, layer3->DW, layer3->b, layer3->Db);
+    layer3->W = mkl::to_csr<scalar>(W3);
+    layer3->DW = layer3->W;
+    layer3->b = b3.transpose();
+  }
+
   colwise::squared_error_loss se_loss1;
   rowwise::squared_error_loss se_loss2;
 
@@ -632,4 +684,9 @@ TEST_CASE("test_mlp_rowwise_colwise")
   test_mlp_rowwise_colwise(M1, M2, X, T, ce_loss1, ce_loss2);
   test_mlp_rowwise_colwise(M1, M2, X, T, lc_loss1, lc_loss2);
   test_mlp_rowwise_colwise(M1, M2, X, T, sc_loss1, sc_loss2);
+
+  test_mlp_rowwise_colwise(M3, M4, X, T, se_loss1, se_loss2);
+  test_mlp_rowwise_colwise(M3, M4, X, T, ce_loss1, ce_loss2);
+  test_mlp_rowwise_colwise(M3, M4, X, T, lc_loss1, lc_loss2);
+  test_mlp_rowwise_colwise(M3, M4, X, T, sc_loss1, sc_loss2);
 }

@@ -32,7 +32,7 @@ struct neural_network_layer
   eigen::matrix DX; // the gradient of the input
 
   explicit neural_network_layer(std::size_t D, std::size_t N)
-    : X(D, N), DX(D, N)
+    : X(N, D), DX(N, D)
   {}
 
   [[nodiscard]] virtual auto to_string() const -> std::string = 0;
@@ -111,7 +111,7 @@ struct linear_layer: public neural_network_layer
 
     if constexpr (IsSparse)
     {
-      mkl::sdd_product_batch(DW, DY, X, std::max(4L, static_cast<long>(DY.rows() / 10)));
+      mkl::sdd_product_batch(DW, DY.transpose(), X, std::max(4L, static_cast<long>(DY.rows() / 10)));
       Db = columns_sum(DY);
       mkl::dds_product(DX, DY, W);
     }
@@ -201,7 +201,7 @@ struct sigmoid_layer : public linear_layer<Matrix>
   eigen::matrix DZ;
 
   sigmoid_layer(std::size_t D, std::size_t K, std::size_t N)
-    : super(D, K, N), Z(K, N), DZ(K, N)
+    : super(D, K, N), Z(N, K), DZ(N, K)
   {}
 
   [[nodiscard]] auto to_string() const -> std::string override
@@ -283,7 +283,7 @@ struct activation_layer : public linear_layer<Matrix>
   eigen::matrix DZ;
 
   explicit activation_layer(std::size_t D, std::size_t K, std::size_t N, ActivationFunction act_)
-    : super(D, K, N), act(act_), Z(K, N), DZ(K, N)
+    : super(D, K, N), act(act_), Z(N, K), DZ(N, K)
   {}
 
   [[nodiscard]] auto to_string() const -> std::string override
@@ -462,7 +462,7 @@ struct softmax_layer : public linear_layer<Matrix>
   eigen::matrix DZ;
 
   softmax_layer(std::size_t D, std::size_t K, std::size_t N)
-    : super(D, K, N), Z(K, N), DZ(K, N)
+    : super(D, K, N), Z(N, K), DZ(N, K)
   {}
 
   void feedforward(eigen::matrix& result) override
@@ -527,7 +527,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
   eigen::matrix DZ;
 
   log_softmax_layer(std::size_t D, std::size_t K, std::size_t N)
-    : super(D, K, N), Z(K, N), DZ(K, N)
+    : super(D, K, N), Z(N, K), DZ(N, K)
   {}
 
   void feedforward(eigen::matrix& result) override

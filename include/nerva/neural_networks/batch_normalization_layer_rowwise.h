@@ -31,7 +31,7 @@ struct batch_normalization_layer: public neural_network_layer
   std::shared_ptr<optimizer_function> optimizer;
 
   explicit batch_normalization_layer(std::size_t D, std::size_t N = 1)
-   : super(D, N), Z(D, N), DZ(D, N), gamma(D, 1), Dgamma(D, 1), beta(D, 1), Dbeta(D, 1), power_minus_half_Sigma(D, 1)
+   : super(D, N), Z(N, D), DZ(N, D), gamma(1, D), Dgamma(1, D), beta(1, D), Dbeta(1, D), power_minus_half_Sigma(1, D)
   {
     beta.array() = 0;
     gamma.array() = 1;
@@ -94,7 +94,7 @@ struct simple_batch_normalization_layer: public neural_network_layer
   std::shared_ptr<optimizer_function> optimizer;
 
   explicit simple_batch_normalization_layer(std::size_t D, std::size_t N = 1)
-    : super(D, N), power_minus_half_Sigma(D, 1)
+    : super(D, N), power_minus_half_Sigma(1, D)
   {}
 
   [[nodiscard]] std::string to_string() const override
@@ -151,7 +151,7 @@ struct affine_layer: public neural_network_layer
   std::shared_ptr<optimizer_function> optimizer;
 
   explicit affine_layer(std::size_t D, std::size_t N = 1)
-    : super(D, N), gamma(D, 1), Dgamma(D, 1), beta(D, 1), Dbeta(D, 1)
+    : super(D, N), gamma(1, D), Dgamma(1, D), beta(1, D), Dbeta(1, D)
   {
     beta.array() = 0;
     gamma.array() = 1;
