@@ -9,19 +9,28 @@
 
 #include "nerva/datasets/dataset.h"
 #include "nerva/datasets/make_dataset.h"
-#include "nerva/neural_networks/layers.h"
 #include "nerva/neural_networks/learning_rate_schedulers.h"
-#include "nerva/neural_networks/loss_functions_colwise.h"
 #include "nerva/neural_networks/mlp_algorithms.h"
-#include "nerva/neural_networks/multilayer_perceptron.h"
-#include "nerva/neural_networks/parse_layer.h"
 #include "nerva/neural_networks/regrow.h"
-#include "nerva/neural_networks/sgd_options.h"
 #include "nerva/neural_networks/training.h"
 #include "nerva/neural_networks/weights.h"
-#include "nerva/utilities/command_line_tool.h"
 #include "nerva/utilities/parse_numbers.h"
 #include "nerva/utilities/string_utility.h"
+#include "nerva/neural_networks/sgd_options.h"
+#include "nerva/utilities/command_line_tool.h"
+
+#ifdef NERVA_COLWISE
+#include "nerva/neural_networks/layers_colwise.h"
+#include "nerva/neural_networks/loss_functions_colwise.h"
+#include "nerva/neural_networks/multilayer_perceptron_colwise.h"
+#include "nerva/neural_networks/parse_layer_colwise.h"
+#else
+#include "nerva/neural_networks/layers_rowwise.h"
+#include "nerva/neural_networks/loss_functions_rowwise.h"
+#include "nerva/neural_networks/multilayer_perceptron_rowwise.h"
+#include "nerva/neural_networks/parse_layer_rowwise.h"
+#endif
+
 #include "omp.h"
 #include <iostream>
 #include <random>
@@ -385,9 +394,6 @@ class tool: public command_line_tool
 
       return true;
     }
-
-  public:
-    virtual ~tool() = default;
 };
 
 auto main(int argc, const char* argv[]) -> int

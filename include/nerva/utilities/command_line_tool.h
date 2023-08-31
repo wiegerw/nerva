@@ -114,6 +114,8 @@ class command_line_tool
     {
       return m_command_line_call;
     }
+
+    virtual ~command_line_tool() = default;
 };
 
 } // namespace nerva
