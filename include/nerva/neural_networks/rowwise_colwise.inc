@@ -7,12 +7,16 @@
 /// \file nerva/neural_networks/rowwise_colwise.h
 /// \brief add your file description here.
 
+#pragma once
+
 #if defined NERVA_COLWISE
 namespace nerva {
+  namespace colwise {}   // to avoid compilation errors
   using namespace colwise;
 }
 #else
 namespace nerva {
+  namespace rowwise {}   // to avoid compilation errors
   using namespace rowwise;
 }
 #endif

@@ -163,25 +163,6 @@ struct linear_layer: public neural_network_layer
 using dense_linear_layer = linear_layer<eigen::matrix>;
 using sparse_linear_layer = linear_layer<mkl::sparse_matrix_csr<scalar>>;
 
-template <typename Scalar>
-void set_support_random(linear_layer<mkl::sparse_matrix_csr<Scalar>>& layer, double density, std::mt19937& rng)
-{
-  auto rows = layer.W.rows();
-  auto columns = layer.W.cols();
-  std::size_t size = std::lround(density * rows * columns);
-  layer.W = mkl::make_random_matrix<Scalar>(rows, columns, size, rng);
-  layer.reset_support();
-}
-
-template <typename Matrix>
-void set_weights_and_bias(linear_layer<Matrix>& layer, weight_initialization w, std::mt19937& rng)
-{
-  auto& W = layer.W;
-  auto init = make_weight_initializer(w, W, rng);
-  set_weights(W, [&init]() { return (*init)(); });
-  init->initialize_bias(layer.b);
-}
-
 template <typename Matrix>
 struct sigmoid_layer : public linear_layer<Matrix>
 {
@@ -576,6 +557,25 @@ struct log_softmax_layer : public linear_layer<Matrix>
 
 using dense_log_softmax_layer = log_softmax_layer<eigen::matrix>;
 using sparse_log_softmax_layer = log_softmax_layer<mkl::sparse_matrix_csr<scalar>>;
+
+template <typename Scalar>
+void set_support_random(linear_layer<mkl::sparse_matrix_csr<Scalar>>& layer, double density, std::mt19937& rng)
+{
+  auto rows = layer.W.rows();
+  auto columns = layer.W.cols();
+  std::size_t size = std::lround(density * rows * columns);
+  layer.W = mkl::make_random_matrix<Scalar>(rows, columns, size, rng);
+  layer.reset_support();
+}
+
+template <typename Matrix>
+void set_weights_and_bias(linear_layer<Matrix>& layer, weight_initialization w, std::mt19937& rng)
+{
+  auto& W = layer.W;
+  auto init = make_weight_initializer(w, W, rng);
+  set_weights(W, [&init]() { return (*init)(); });
+  init->initialize_bias(layer.b);
+}
 
 template <typename Matrix>
 void set_linear_layer_optimizer(linear_layer<Matrix>& layer, const std::string& text)

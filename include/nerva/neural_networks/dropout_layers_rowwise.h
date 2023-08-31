@@ -10,6 +10,7 @@
 #pragma once
 
 #include "nerva/neural_networks/layers.h"
+#include "nerva/neural_networks/matrix_operations.h"
 #include "fmt/format.h"
 #include <random>
 
@@ -178,7 +179,7 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
 
   void feedforward(eigen::matrix& result) override
   {
-    using eigen::column_repeat;
+    using eigen::row_repeat;
     using eigen::hadamard;
     auto N = X.rows();
 
@@ -191,7 +192,7 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
     using eigen::hadamard;
     using eigen::columns_sum;
 
-    DZ = hadamard(DY, act_gradient(Z));
+    DZ = hadamard(DY, act.gradient(Z));
     if constexpr (std::is_same<Matrix, eigen::matrix>::value)
     {
       DW = hadamard(DZ.transpose() * X, R.transpose());

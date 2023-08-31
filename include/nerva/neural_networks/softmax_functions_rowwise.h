@@ -10,6 +10,7 @@
 #pragma once
 
 #include "nerva/neural_networks/eigen.h"
+#include "nerva/neural_networks/softmax_functions.h"
 #include "fmt/format.h"
 #include <cmath>
 #include <ratio>
