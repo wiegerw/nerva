@@ -26,7 +26,7 @@
 #include <algorithm>
 #include <iomanip>
 
-namespace nerva {
+namespace nerva::NERVA_ORIENTATION {
 
 template <typename EigenMatrix>
 auto compute_accuracy(multilayer_perceptron& M, const EigenMatrix& Xtest, const EigenMatrix& Ttest, long Q) -> double
@@ -290,5 +290,4 @@ class stochastic_gradient_descent_algorithm
     }
 };
 
-} // namespace nerva
-
+} // namespace nerva::NERVA_ORIENTATION

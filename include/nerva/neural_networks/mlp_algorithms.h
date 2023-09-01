@@ -22,7 +22,7 @@
 #include <memory>
 #include <sstream>
 
-namespace nerva {
+namespace nerva::NERVA_ORIENTATION {
 
 inline
 void print_model_info(const multilayer_perceptron& M)
@@ -304,5 +304,4 @@ void save_model_weights_to_npy(const std::string& filename, const multilayer_per
   }
 }
 
-} // namespace nerva
-
+} // namespace nerva::NERVA_ORIENTATION

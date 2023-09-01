@@ -34,25 +34,41 @@ using matrix_ref = eigen::matrix_ref<scalar>;
 
 struct dataset
 {
+  enum orientation_type {
+      colwise,
+      rowwise
+  };
+
   using long_vector = Eigen::Matrix<long, Eigen::Dynamic, 1>;
 
   eigen::matrix Xtrain;
   eigen::matrix Ttrain;
   eigen::matrix Xtest;
   eigen::matrix Ttest;
+  orientation_type orientation;
 
   dataset() = default;
 
   dataset(eigen::matrix  Xtrain_,
           const long_vector& Ttrain_,
           eigen::matrix  Xtest_,
-          const long_vector& Ttest_
+          const long_vector& Ttest_,
+          orientation_type orientation_=colwise
+
   )
-   : Xtrain(std::move(Xtrain_)), Xtest(std::move(Xtest_))
+   : Xtrain(std::move(Xtrain_)), Xtest(std::move(Xtest_)), orientation(orientation_)
   {
     long num_classes = Ttrain_.maxCoeff() + 1;
-    Ttrain = eigen::to_one_hot(Ttrain_, num_classes);
-    Ttest = eigen::to_one_hot(Ttest_, num_classes);
+    if (orientation_ == colwise)
+    {
+      Ttrain = eigen::to_one_hot_colwise(Ttrain_, num_classes);
+      Ttest = eigen::to_one_hot_colwise(Ttest_, num_classes);
+    }
+    else
+    {
+      Ttrain = eigen::to_one_hot_rowwise(Ttrain_, num_classes);
+      Ttest = eigen::to_one_hot_rowwise(Ttest_, num_classes);
+    }
   }
 
   void info() const
@@ -80,8 +96,16 @@ struct dataset
     auto Ttrain_ = eigen::extract_column_vector<long>(data, "Ttrain");
     auto Ttest_ = eigen::extract_column_vector<long>(data, "Ttest");
     long num_classes = Ttrain_.maxCoeff() + 1;
-    Ttrain = eigen::to_one_hot(Ttrain_, num_classes);
-    Ttest = eigen::to_one_hot(Ttest_, num_classes);
+    if (orientation == colwise)
+    {
+      Ttrain = eigen::to_one_hot_colwise(Ttrain_, num_classes);
+      Ttest = eigen::to_one_hot_colwise(Ttest_, num_classes);
+    }
+    else
+    {
+      Ttrain = eigen::to_one_hot_rowwise(Ttrain_, num_classes);
+      Ttest = eigen::to_one_hot_rowwise(Ttest_, num_classes);
+    }
   }
 
   void save(const std::string& filename) const
@@ -90,8 +114,9 @@ struct dataset
 
     eigen::matrix Xtrain_ = Xtrain.transpose();
     eigen::matrix Xtest_ = Xtest.transpose();
-    long_vector Ttrain_ = eigen::from_one_hot(Ttrain);
-    long_vector Ttest_ = eigen::from_one_hot(Ttest);
+
+    long_vector Ttrain_ = eigen::from_one_hot_colwise(Ttrain);
+    long_vector Ttest_ = eigen::from_one_hot_colwise(Ttest);
 
     pybind11::dict data;
     data["Xtrain"] = pybind11::array_t<scalar, pybind11::array::f_style>({Xtrain_.rows(), Xtrain_.cols()}, Xtrain_.data());
@@ -147,8 +172,8 @@ struct dataset_view
     auto Ttrain_ = eigen::extract_column_vector<long>(data, "Ttrain");
     auto Ttest_ = eigen::extract_column_vector<long>(data, "Ttest");
     long num_classes = Ttrain_.maxCoeff() + 1;
-    Ttrain = eigen::to_one_hot(Ttrain_, num_classes);
-    Ttest = eigen::to_one_hot(Ttest_, num_classes);
+    Ttrain = eigen::to_one_hot_colwise(Ttrain_, num_classes);
+    Ttest = eigen::to_one_hot_colwise(Ttest_, num_classes);
   }
 
   void save(const std::string& filename) const
@@ -159,8 +184,8 @@ struct dataset_view
 
     eigen::matrix Xtrain_ = Xtrain.transpose();
     eigen::matrix Xtest_ = Xtest.transpose();
-    long_vector Ttrain_ = eigen::from_one_hot(Ttrain);
-    long_vector Ttest_ = eigen::from_one_hot(Ttest);
+    long_vector Ttrain_ = eigen::from_one_hot_colwise(Ttrain);
+    long_vector Ttest_ = eigen::from_one_hot_colwise(Ttest);
 
     pybind11::dict data;
     data["Xtrain"] = pybind11::array_t<scalar, pybind11::array::f_style>({Xtrain_.rows(), Xtrain_.cols()}, Xtrain_.data());

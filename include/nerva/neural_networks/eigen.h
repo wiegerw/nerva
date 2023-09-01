@@ -645,10 +645,10 @@ scalar l2_distance(const sparse_matrix& A, const Eigen::Matrix<Scalar, Eigen::Dy
   return (B - A).squaredNorm();
 }
 
-// Converts a target vector of longs into a one hot matrix.
+// Converts a target vector of integers into a one hot matrix.
 // Every column will contain exactly one value 1.
-inline
-eigen::matrix to_one_hot(const Eigen::Matrix<long, Eigen::Dynamic, 1>& T, long classes)
+template <typename Vector>
+eigen::matrix to_one_hot_colwise(const Vector& T, long classes)
 {
   long n = T.size();
   eigen::matrix result = eigen::matrix::Zero(classes, n);
@@ -659,10 +659,24 @@ eigen::matrix to_one_hot(const Eigen::Matrix<long, Eigen::Dynamic, 1>& T, long c
   return result;
 }
 
+// Converts a target vector of integers into a one hot matrix.
+// Every row will contain exactly one value 1.
+template <typename Vector>
+eigen::matrix to_one_hot_rowwise(const Vector& T, long classes)
+{
+  long n = T.size();
+  eigen::matrix result = eigen::matrix::Zero(n, classes);
+  for (long i = 0; i < n; i++)
+  {
+    result(i, T(i)) = scalar(1);
+  }
+  return result;
+}
+
 // Converts a one hot encoding X that was obtained from a long vector T to the original vector T.
 // Every column of X should contain exactly one times the value 1.
 inline
-Eigen::Matrix<long, Eigen::Dynamic, 1> from_one_hot(const Eigen::Matrix<scalar, Eigen::Dynamic, Eigen::Dynamic>& X)
+Eigen::Matrix<long, Eigen::Dynamic, 1> from_one_hot_colwise(const Eigen::Matrix<scalar, Eigen::Dynamic, Eigen::Dynamic>& X)
 {
   auto m = X.rows();
   auto n = X.cols();
@@ -675,6 +689,30 @@ Eigen::Matrix<long, Eigen::Dynamic, 1> from_one_hot(const Eigen::Matrix<scalar, 
       if (X(i, j) == 1)
       {
         T(j) = i;
+        break;
+      }
+    }
+  }
+
+  return T;
+}
+
+// Converts a one hot encoding X that was obtained from a long vector T to the original vector T.
+// Every row of X should contain exactly one times the value 1.
+inline
+Eigen::Matrix<long, 1, Eigen::Dynamic> from_one_hot_rowwise(const Eigen::Matrix<scalar, Eigen::Dynamic, Eigen::Dynamic>& X)
+{
+  auto m = X.rows();
+  auto n = X.cols();
+  Eigen::Matrix<long, 1, Eigen::Dynamic> T(n);
+
+  for (auto i = 0; i < m; ++i)
+  {
+    for (auto j = 0; j < n; ++j)
+    {
+      if (X(i, j) == 1)
+      {
+        T(i) = j;
         break;
       }
     }

@@ -13,10 +13,12 @@
 namespace nerva {
   namespace colwise {}   // to avoid compilation errors
   using namespace colwise;
+#define NERVA_ORIENTATION colwise
 }
 #else
 namespace nerva {
   namespace rowwise {}   // to avoid compilation errors
   using namespace rowwise;
+#define NERVA_ORIENTATION rowwise
 }
 #endif
