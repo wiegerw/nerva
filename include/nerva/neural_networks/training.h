@@ -13,7 +13,7 @@
 #include "nerva/datasets/dataset.h"
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/neural_networks/learning_rate_schedulers.h"
-#include "nerva/neural_networks/loss_functions_colwise.h"
+#include "nerva/neural_networks/loss_function.h"
 #include "nerva/neural_networks/mlp_algorithms.h"
 #include "nerva/neural_networks/regrow.h"
 #include "nerva/neural_networks/sgd_options.h"

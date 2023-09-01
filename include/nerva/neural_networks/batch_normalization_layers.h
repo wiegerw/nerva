@@ -4,13 +4,13 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-/// \file nerva/neural_networks/layers.h
+/// \file nerva/neural_networks/batch_normalization_layers.h
 /// \brief add your file description here.
 
 #pragma once
 
 #ifdef NERVA_COLWISE
-#include"nerva/neural_networks/layers_colwise.h"
+#include "nerva/neural_networks/batch_normalization_layers_colwise.h"
 #else
-#include"nerva/neural_networks/layers_rowwise.h"
+#include "nerva/neural_networks/batch_normalization_layers_rowwise.h"
 #endif
