@@ -39,7 +39,12 @@ namespace nerva::eigen {
 // the default storage format for many numerical libraries, including LAPACK
 // and BLAS, as well as many high-level languages like Fortran.
 
+#ifdef NERVA_COLWISE
 static constexpr Eigen::StorageOptions default_matrix_layout = Eigen::ColMajor;
+#else
+static constexpr Eigen::StorageOptions default_matrix_layout = Eigen::RowMajor;
+#endif
+
 using vector = Eigen::Matrix<scalar, Eigen::Dynamic, 1>;
 using matrix = Eigen::Matrix<scalar, Eigen::Dynamic, Eigen::Dynamic, default_matrix_layout>;
 

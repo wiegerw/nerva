@@ -45,7 +45,7 @@ auto compute_accuracy(multilayer_perceptron& M, const EigenMatrix& Xtest, const 
 {
   global_timer_suspend();
 
-  auto is_correct = [](const eigen::vector& y, const eigen::vector& t)
+  auto is_correct = [](const auto& y, const auto& t)
   {
     auto i = std::max_element(y.begin(), y.end()) - y.begin(); // i is the index of the largest element
     return t[i] == 1;
