@@ -311,12 +311,17 @@ class tool: public command_line_tool
       }
 
       std::mt19937 rng{options.seed};
+#ifdef NERVA_COLWISE
+      auto orientation = datasets::dataset::colwise;
+#else
+      auto orientation = datasets::dataset::rowwise;
+#endif
+      datasets::dataset dataset(orientation);
 
-      datasets::dataset dataset;
       if (!options.dataset.empty())
       {
         NERVA_LOG(log::verbose) << "Loading dataset " << options.dataset << '\n';
-        dataset = datasets::make_dataset(options.dataset, options.dataset_size, rng);
+        dataset = datasets::make_dataset(options.dataset, options.dataset_size, rng, orientation);
         if (!save_dataset_file.empty())
         {
           dataset.save(save_dataset_file);

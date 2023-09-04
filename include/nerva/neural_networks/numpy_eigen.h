@@ -47,7 +47,7 @@ Eigen::Matrix<Scalar, Eigen::Dynamic, 1> extract_column_vector(const py::dict& d
 }
 
 template <typename Scalar = scalar>
-Eigen::Matrix<Scalar, Eigen::Dynamic, 1> extract_row_vector(const py::dict& data, const std::string& key)
+Eigen::Matrix<Scalar, 1, Eigen::Dynamic> extract_row_vector(const py::dict& data, const std::string& key)
 {
   const auto& x = data[key.c_str()].cast<py::array_t<Scalar>>();
   return Eigen::Map<const Eigen::Matrix<Scalar, 1, Eigen::Dynamic>>(x.data(), x.size());

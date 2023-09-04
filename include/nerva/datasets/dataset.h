@@ -45,9 +45,11 @@ struct dataset
   eigen::matrix Ttrain;
   eigen::matrix Xtest;
   eigen::matrix Ttest;
-  orientation_type orientation;
+  orientation_type orientation = colwise;
 
-  dataset() = default;
+  explicit dataset(orientation_type orientation_=colwise)
+   : orientation(orientation_)
+  {}
 
   dataset(eigen::matrix  Xtrain_,
           const long_vector& Ttrain_,
@@ -73,10 +75,21 @@ struct dataset
 
   void info() const
   {
-    eigen::print_numpy_matrix("Xtrain", Xtrain.transpose());
-    eigen::print_numpy_matrix("Ttrain", Ttrain.transpose());
-    eigen::print_numpy_matrix("Xtest", Xtest.transpose());
-    eigen::print_numpy_matrix("Ttest", Ttest.transpose());
+    std::cout << "dataset orientation = " << (orientation == colwise ? "colwise" : "rowwise") << std::endl;
+    if (orientation == colwise)
+    {
+      eigen::print_numpy_matrix("Xtrain", Xtrain.transpose());
+      eigen::print_numpy_matrix("Ttrain", Ttrain.transpose());
+      eigen::print_numpy_matrix("Xtest", Xtest.transpose());
+      eigen::print_numpy_matrix("Ttest", Ttest.transpose());
+    }
+    else
+    {
+      eigen::print_numpy_matrix("Xtrain", Xtrain);
+      eigen::print_numpy_matrix("Ttrain", Ttrain);
+      eigen::print_numpy_matrix("Xtest", Xtest);
+      eigen::print_numpy_matrix("Ttest", Ttest);
+    }
   }
 
   // Precondition: the python interpreter must be running.
@@ -91,21 +104,28 @@ struct dataset
     }
 
     pybind11::dict data = pybind11::module::import("numpy").attr("load")(filename);
-    Xtrain = eigen::extract_matrix<scalar>(data, "Xtrain").transpose();
-    Xtest = eigen::extract_matrix<scalar>(data, "Xtest").transpose();
-    auto Ttrain_ = eigen::extract_column_vector<long>(data, "Ttrain");
-    auto Ttest_ = eigen::extract_column_vector<long>(data, "Ttest");
-    long num_classes = Ttrain_.maxCoeff() + 1;
+
     if (orientation == colwise)
     {
+      Xtrain = eigen::extract_matrix<scalar>(data, "Xtrain").transpose();
+      Xtest = eigen::extract_matrix<scalar>(data, "Xtest").transpose();
+      auto Ttrain_ = eigen::extract_column_vector<long>(data, "Ttrain");
+      auto Ttest_ = eigen::extract_column_vector<long>(data, "Ttest");
+      long num_classes = Ttrain_.maxCoeff() + 1;
       Ttrain = eigen::to_one_hot_colwise(Ttrain_, num_classes);
       Ttest = eigen::to_one_hot_colwise(Ttest_, num_classes);
     }
     else
     {
+      Xtrain = eigen::extract_matrix<scalar>(data, "Xtrain");
+      Xtest = eigen::extract_matrix<scalar>(data, "Xtest");
+      auto Ttrain_ = eigen::extract_row_vector<long>(data, "Ttrain");
+      auto Ttest_ = eigen::extract_row_vector<long>(data, "Ttest");
+      long num_classes = Ttrain_.maxCoeff() + 1;
       Ttrain = eigen::to_one_hot_rowwise(Ttrain_, num_classes);
       Ttest = eigen::to_one_hot_rowwise(Ttest_, num_classes);
     }
+    info();
   }
 
   void save(const std::string& filename) const
@@ -125,6 +145,14 @@ struct dataset
     data["Ttest"] = pybind11::array_t<long, pybind11::array::f_style>(Ttest_.size(), Ttest_.data());
 
     pybind11::module::import("numpy").attr("savez_compressed")(filename, **data);
+  }
+
+  void transpose()
+  {
+    Xtrain.transposeInPlace();
+    Xtest.transposeInPlace();
+    Ttrain.transposeInPlace();
+    Ttest.transposeInPlace();
   }
 };
 
