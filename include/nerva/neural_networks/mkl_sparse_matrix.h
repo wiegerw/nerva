@@ -13,6 +13,7 @@
 #include "nerva/neural_networks/mkl_dense_matrix.h"
 #include "nerva/utilities/print.h"
 #include "nerva/utilities/random.h"
+#include "nerva/utilities/stopwatch.h"
 #include <mkl.h>
 #include <mkl_spblas.h>
 #include <algorithm>
@@ -386,6 +387,143 @@ void dsd_product(dense_matrix_view<Scalar, MatrixLayout>& A,
     std::string error_message = "mkl_sparse_?_mm: " + sparse_status_message(status);
     throw std::runtime_error(error_message);
   }
+}
+
+// Does the assignment A := B * op(C) with C sparse and A, B dense
+// operation_C determines whether op(C) = C or op(C) = C^T
+// We use a more limited interface than in `dsd_product` due to limitations of the MKL library.
+template <typename Scalar, int MatrixLayout>
+void dds_product(dense_matrix_view<Scalar, MatrixLayout>& A,
+                 const dense_matrix_view<Scalar, MatrixLayout>& B,
+                 const mkl::sparse_matrix_csr<Scalar>& C,
+                 sparse_operation_t operation_C = SPARSE_OPERATION_NON_TRANSPOSE
+)
+{
+  // The MKL library doesn't support this use case directly, hence we calculate the result using
+  // (op(C)^T * B^T)^T
+  //
+  // N.B. The transpose operations are not performed explicitly. It is sufficient to create
+  // transposed views.
+
+  // Create a transposed view of matrix B
+  constexpr int MatrixLayoutInverse = (MatrixLayout == Eigen::ColMajor ? Eigen::RowMajor : Eigen::ColMajor);
+  Eigen::Map<const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutInverse>> B_transposed(B.data(), B.cols(), B.rows());
+
+  // Create a transposed view of the result matrix A
+  sparse_operation_t operation_C_inverse = (operation_C == SPARSE_OPERATION_NON_TRANSPOSE ? SPARSE_OPERATION_TRANSPOSE : SPARSE_OPERATION_NON_TRANSPOSE);
+  auto A_rows = operation_C_inverse == SPARSE_OPERATION_NON_TRANSPOSE ? C.rows() : C.cols();
+  auto A_cols = B_transposed.cols();
+  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutInverse>> A_view(A.data(), A_rows, A_cols);
+
+  Scalar alpha = 0;
+  Scalar beta = 1;
+
+  dsd_product(A_view, C, B_transposed, alpha, beta, operation_C_inverse);
+}
+
+// Performs the assignment A := B * C, with A sparse and B, C dense.
+// N.B. Only the existing entries of A are changed.
+// Use a sequential computation to copy values to A
+template <typename Scalar, int MatrixLayout>
+void sdd_product(mkl::sparse_matrix_csr<Scalar>& A,
+                 const dense_matrix_view<Scalar, MatrixLayout>& B,
+                 const dense_matrix_view<Scalar, MatrixLayout>& C
+)
+{
+  assert(A.rows() == B.rows());
+  assert(A.cols() == C.cols());
+  assert(B.cols() == C.rows());
+
+  long m = A.rows();
+  dense_matrix<Scalar, MatrixLayout> BC = B * C;
+  Scalar* values = A.values().data();
+  const auto& A_col_index = A.col_index();
+  const auto& A_row_index = A.row_index();
+
+  for (long i = 0; i < m; i++)
+  {
+    for (long k = A_row_index[i]; k < A_row_index[i + 1]; k++)
+    {
+      long j = A_col_index[k];
+      *values++ = BC(i, j);
+    }
+  }
+
+  A.construct_csr();
+}
+
+// Performs the assignment A := B * C, with A sparse and B, C dense.
+// N.B. Only the existing entries of A are changed.
+// Note that this implementation is very slow.
+template <typename Scalar, int MatrixLayout>
+void sdd_product_forloop_eigen(mkl::sparse_matrix_csr<Scalar>& A,
+                               const dense_matrix_view<Scalar, MatrixLayout>& B,
+                               const dense_matrix_view<Scalar, MatrixLayout>& C
+)
+{
+  assert(A.rows() == B.rows());
+  assert(A.cols() == C.cols());
+  assert(B.cols() == C.rows());
+
+  auto m = A.rows();
+  auto A_values = const_cast<Scalar*>(A.values().data());
+  const auto& A_col_index = A.col_index();
+  const auto& A_row_index = A.row_index();
+
+#pragma omp parallel for
+  for (long i = 0; i < m; i++)
+  {
+    for (long k = A_row_index[i]; k < A_row_index[i + 1]; k++)
+    {
+      long j = A_col_index[k];
+      *A_values++ = B.row(i).dot(C.col(j));
+    }
+  }
+  A.construct_csr();
+}
+
+// Performs the assignment A := B * C, with A sparse and B, C dense.
+// N.B. Only the existing entries of A are changed.
+template <typename Scalar, int MatrixLayout>
+void sdd_product_forloop_mkl(mkl::sparse_matrix_csr<Scalar>& A,
+                             const dense_matrix_view<Scalar, MatrixLayout>& B,
+                             const dense_matrix_view<Scalar, MatrixLayout>& C
+)
+{
+  assert(A.rows() == B.rows());
+  assert(A.cols() == C.cols());
+  assert(B.cols() == C.rows());
+
+  auto m = B.rows();
+  auto p = B.cols();
+  auto n = C.cols();
+  auto A_values = const_cast<Scalar*>(A.values().data());
+  auto B_values = const_cast<Scalar*>(B.data());
+  auto C_values = const_cast<Scalar*>(C.data());
+  const auto& A_col_index = A.col_index();
+  const auto& A_row_index = A.row_index();
+
+  MKL_INT incx = 1;
+  MKL_INT incy = n;
+  MKL_INT N = p;
+
+#pragma omp parallel for
+  for (long i = 0; i < m; i++)
+  {
+    for (long k = A_row_index[i]; k < A_row_index[i + 1]; k++)
+    {
+      long j = A_col_index[k];
+      if constexpr (std::is_same<Scalar, float>::value)
+      {
+        *A_values++ = cblas_sdot(N, B_values + i * p, incx, C_values + j, incy);
+      }
+      else
+      {
+        *A_values++ = cblas_ddot(N, B_values + i * p, incx, C_values + j, incy);
+      }
+    }
+  }
+  A.construct_csr();
 }
 
 // Performs the assignment A := B, with A, B sparse. A and B must have the same support.

@@ -128,32 +128,18 @@ mkl::sparse_matrix_csr<Scalar> to_csr(const Eigen::Matrix<Scalar, Eigen::Dynamic
 // Performs the assignment A := B * C, with A sparse and B, C dense.
 // N.B. Only the existing entries of A are changed.
 // Use a sequential computation to copy values to A
-template <typename EigenMatrix1, typename EigenMatrix2, typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
+template <typename Scalar, typename DerivedB, typename DerivedC>
 void sdd_product(mkl::sparse_matrix_csr<Scalar>& A,
-                 const EigenMatrix1& B,
-                 const EigenMatrix2& C
+                 const Eigen::MatrixBase<DerivedB>& B,
+                 const Eigen::MatrixBase<DerivedC>& C
 )
 {
-  assert(A.rows() == B.rows());
-  assert(A.cols() == C.cols());
-  assert(B.cols() == C.rows());
-
-  long m = A.rows();
-  Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> BC = B * C;
-  scalar* values = A.values().data();
-  const auto& A_col_index = A.col_index();
-  const auto& A_row_index = A.row_index();
-
-  for (long i = 0; i < m; i++)
-  {
-    for (long k = A_row_index[i]; k < A_row_index[i + 1]; k++)
-    {
-      long j = A_col_index[k];
-      *values++ = BC(i, j);
-    }
-  }
-
-  A.construct_csr();
+  constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  static_assert(MatrixLayoutB == MatrixLayoutC, "sdd_product: the matrix layout does not match");
+  dense_matrix_view<Scalar, MatrixLayoutB> B_view = mkl::make_dense_matrix_view(B);
+  dense_matrix_view<Scalar, MatrixLayoutC> C_view = mkl::make_dense_matrix_view(C);
+  sdd_product(A, B_view, C_view);
 }
 
 // Performs the assignment A := B * C, with A sparse and B, C dense.
@@ -339,32 +325,17 @@ void dsd_product(DenseEigenMatrix& A,
 // Does the assignment A := B * op(C) with C sparse and A, B dense
 // operation_C determines whether op(C) = C or op(C) = C^T
 // We use a more limited interface than in `dsd_product` due to limitations of the MKL library.
-template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
-void dds_product(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A,
-                 const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& B,
+template <typename DenseEigenMatrix, typename Derived, typename Scalar = scalar>
+void dds_product(DenseEigenMatrix& A,
+                 const Eigen::MatrixBase<Derived>& B,
                  const mkl::sparse_matrix_csr<Scalar>& C,
                  sparse_operation_t operation_C = SPARSE_OPERATION_NON_TRANSPOSE
 )
 {
-  // The MKL library doesn't support this use case directly, hence we calculate the result using
-  // (op(C)^T * B^T)^T
-
-  // Create a transposed view `B_transposed` of matrix B
-  constexpr int MatrixLayoutInverse = (MatrixLayout == Eigen::ColMajor ? Eigen::RowMajor : Eigen::ColMajor);
-  Eigen::Map<const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutInverse>> B_transposed(B.data(), B.cols(), B.rows());
-
-  sparse_operation_t operation_inverse = (operation_C == SPARSE_OPERATION_NON_TRANSPOSE ? SPARSE_OPERATION_TRANSPOSE : SPARSE_OPERATION_NON_TRANSPOSE);
-
-  Scalar alpha = 0;
-  Scalar beta = 1;
-
-  auto A_rows = operation_inverse == SPARSE_OPERATION_NON_TRANSPOSE ? C.rows() : C.cols();
-  auto A_cols = B_transposed.cols();
-
-  // Create a view of the result matrix A
-  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutInverse>> A_view(A.data(), A_rows, A_cols);
-
-  dsd_product(A_view, C, B_transposed, alpha, beta, operation_inverse);
+  constexpr int MatrixLayout = Derived::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  dense_matrix_view<Scalar, MatrixLayout> A_view = mkl::make_dense_matrix_view(A);
+  dense_matrix_view<Scalar, MatrixLayout> B_view = mkl::make_dense_matrix_view(B);
+  dds_product(A_view, B_view, C, operation_C);
 }
 
 // returns the L2 norm of (B - A)
