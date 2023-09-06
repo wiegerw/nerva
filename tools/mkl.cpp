@@ -37,13 +37,13 @@ void test_mult1(long m, long k, long n, const std::vector<float>& densities)
     float a = -10;
     float b = 10;
 
-    eigen::matrix A(m, n);
+    Eigen::MatrixXf A(m, n);
     eigen::fill_matrix_random(A, density, a, b, rng);
 
-    eigen::matrix B(m, k);
+    Eigen::MatrixXf B(m, k);
     eigen::fill_matrix_random(B, 0, a, b, rng);
 
-    eigen::matrix C(k, n);
+    Eigen::MatrixXf C(k, n);
     eigen::fill_matrix_random(C, 0, a, b, rng);
 
     mkl::sparse_matrix_csr<float> A1 = mkl::to_csr<float>(A);
@@ -100,12 +100,12 @@ void test_mult2(long m, long k, long n, const std::vector<float>& densities)
     float a = -10;
     float b = 10;
 
-    eigen::matrix A(m, n);
+    Eigen::MatrixXf A(m, n);
 
-    eigen::matrix B(m, k);
+    Eigen::MatrixXf B(m, k);
     eigen::fill_matrix_random(B, density, a, b, rng);
 
-    eigen::matrix C(k, n);
+    Eigen::MatrixXf C(k, n);
     eigen::fill_matrix_random(C, float(0), a, b, rng);
 
     mkl::sparse_matrix_csr<float> B1 = mkl::to_csr<float>(B);
@@ -138,12 +138,12 @@ void test_mult3(long m, long k, long n, const std::vector<float>& densities)
     float a = -10;
     float b = 10;
 
-    eigen::matrix A(m, n);
+    Eigen::MatrixXf A(m, n);
 
-    eigen::matrix B(k, m);
+    Eigen::MatrixXf B(k, m);
     eigen::fill_matrix_random(B, density, a, b, rng);
 
-    eigen::matrix C(k, n);
+    Eigen::MatrixXf C(k, n);
     eigen::fill_matrix_random(C, 0, a, b, rng);
 
     mkl::sparse_matrix_csr<float> B1 = mkl::to_csr<float>(B);

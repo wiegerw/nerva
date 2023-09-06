@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "Eigen/Dense"
 #include <mkl.h>
 #include <cassert>
 #include <stdexcept>
@@ -157,9 +158,17 @@ class dense_matrix
 };
 
 template <typename Scalar, int MatrixLayout, template <typename, int> class Matrix>
-dense_matrix_view<Scalar, MatrixLayout> make_dense_matrix_view(const Matrix<Scalar, MatrixLayout>& A)
+dense_matrix_view<Scalar, MatrixLayout> make_dense_matrix_view(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A)
 {
   return dense_matrix_view<Scalar, MatrixLayout>(const_cast<Scalar*>(A.data()), A.cols(), A.rows());
+}
+
+template <typename Derived>
+auto make_dense_matrix_view(const Eigen::MatrixBase<Derived>& A)
+{
+  constexpr int MatrixLayout = Derived::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  using Scalar = typename Derived::Scalar;
+  return dense_matrix_view<Scalar, MatrixLayout>(const_cast<Scalar*>(A.derived().data()), A.rows(), A.cols());
 }
 
 template <typename Scalar, int MatrixLayout, template <typename, int> class Matrix>
