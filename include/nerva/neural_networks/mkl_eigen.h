@@ -145,19 +145,24 @@ void sdd_product(mkl::sparse_matrix_csr<Scalar>& A,
 // Performs the assignment A := B * C, with A sparse and B, C dense.
 // N.B. Only the existing entries of A are changed.
 // Use a sequential computation to copy values to A
-template <typename EigenMatrix1, typename EigenMatrix2, typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
+template <typename Scalar, typename DerivedB, typename DerivedC>
 void sdd_product_batch(mkl::sparse_matrix_csr<Scalar>& A,
-                       const EigenMatrix1& B,
-                       const EigenMatrix2& C,
+                       const Eigen::MatrixBase<DerivedB>& B,
+                       const Eigen::MatrixBase<DerivedC>& C,
                        long batch_size
 )
 {
+  constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  // constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  // static_assert(MatrixLayoutB == MatrixLayoutC, "sdd_product_forloop_omp: the matrix layout does not match");
+  // TODO: adjust the implementation for the matrix layout(?)
+
   assert(A.rows() == B.rows());
   assert(A.cols() == C.cols());
   assert(B.cols() == C.rows());
 
   long m = A.rows();
-  Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> BC(batch_size, C.cols());
+  Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutB> BC(batch_size, C.cols());
   scalar* values = A.values().data();
   const auto& A_col_index = A.col_index();
   const auto& A_row_index = A.row_index();
@@ -185,12 +190,16 @@ void sdd_product_batch(mkl::sparse_matrix_csr<Scalar>& A,
 // Performs the assignment A := B * C, with A sparse and B, C dense.
 // N.B. Only the existing entries of A are changed.
 // Note that this implementation is very slow.
-template <typename EigenMatrix1, typename EigenMatrix2, typename Scalar = scalar>
+template <typename Scalar, typename DerivedB, typename DerivedC>
 void sdd_product_forloop_eigen(mkl::sparse_matrix_csr<Scalar>& A,
-                               const EigenMatrix1& B,
-                               const EigenMatrix2& C
+                               const Eigen::MatrixBase<DerivedB>& B,
+                               const Eigen::MatrixBase<DerivedC>& C
 )
 {
+  constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  static_assert(MatrixLayoutB == MatrixLayoutC, "sdd_product_forloop_omp: the matrix layout does not match");
+
   assert(A.rows() == B.rows());
   assert(A.cols() == C.cols());
   assert(B.cols() == C.rows());
@@ -214,12 +223,16 @@ void sdd_product_forloop_eigen(mkl::sparse_matrix_csr<Scalar>& A,
 
 // Performs the assignment A := B * C, with A sparse and B, C dense.
 // N.B. Only the existing entries of A are changed.
-template <typename EigenMatrix1, typename EigenMatrix2, typename Scalar = scalar>
+template <typename Scalar, typename DerivedB, typename DerivedC>
 void sdd_product_forloop_mkl(mkl::sparse_matrix_csr<Scalar>& A,
-                             const EigenMatrix1& B,
-                             const EigenMatrix2& C
+                             const Eigen::MatrixBase<DerivedB>& B,
+                             const Eigen::MatrixBase<DerivedC>& C
 )
 {
+  constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  static_assert(MatrixLayoutB == MatrixLayoutC, "sdd_product_forloop_omp: the matrix layout does not match");
+
   assert(A.rows() == B.rows());
   assert(A.cols() == C.cols());
   assert(B.cols() == C.rows());
@@ -228,8 +241,8 @@ void sdd_product_forloop_mkl(mkl::sparse_matrix_csr<Scalar>& A,
   auto p = B.cols();
   auto n = C.cols();
   auto A_values = const_cast<Scalar*>(A.values().data());
-  auto B_values = const_cast<Scalar*>(B.data());
-  auto C_values = const_cast<Scalar*>(C.data());
+  auto B_values = const_cast<Scalar*>(B.derived().data());
+  auto C_values = const_cast<Scalar*>(C.derived().data());
   const auto& A_col_index = A.col_index();
   const auto& A_row_index = A.row_index();
 
@@ -260,19 +273,23 @@ void sdd_product_forloop_mkl(mkl::sparse_matrix_csr<Scalar>& A,
 // N.B. Only the existing entries of A are changed.
 // Use a parallel computation to copy values to A
 // N.B. This doesn't seem to work!
-template <typename EigenMatrix1, typename EigenMatrix2, typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
+template <typename Scalar, typename DerivedB, typename DerivedC>
 void sdd_product_forloop_omp(mkl::sparse_matrix_csr<Scalar>& A,
-                             const EigenMatrix1& B,
-                             const EigenMatrix2& C,
+                             const Eigen::MatrixBase<DerivedB>& B,
+                             const Eigen::MatrixBase<DerivedC>& C,
                              long batch_size
 )
 {
+  constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  static_assert(MatrixLayoutB == MatrixLayoutC, "sdd_product_forloop_omp: the matrix layout does not match");
+
   assert(A.rows() == B.rows());
   assert(A.cols() == C.cols());
   assert(B.cols() == C.rows());
 
   long m = A.rows();
-  Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> BC;
+  Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutB> BC;
   auto A_values = const_cast<Scalar*>(A.values().data());
   const auto& A_col_index = A.col_index();
   const auto& A_row_index = A.row_index();
