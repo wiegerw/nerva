@@ -7,75 +7,120 @@
 /// \file mkl.cpp
 /// \brief add your file description here.
 
-#include <iostream>
-#include <random>
 #include <lyra/lyra.hpp>
 #include "fmt/format.h"
 #include "omp.h"
-// #include "mkl_omp_offload.h"
-#include "nerva/utilities/stopwatch.h"
 #include "nerva/utilities/command_line_tool.h"
+#include "nerva/utilities/stopwatch.h"
 #include "nerva/neural_networks/mkl_eigen.h"
+#include <iostream>
+#include <random>
+#include <sstream>
 
 using namespace nerva;
 
-// A = B * C
-void test_mult1(long m, long k, long n, const std::vector<float>& densities)
+enum orientation
 {
-  std::cout << "--- test mult1 ---" << std::endl;
-  std::cout << fmt::format("A = {:2d}x{:2d}\n", m, n);
-  std::cout << fmt::format("B = {:2d}x{:2d}\n", m, k);
-  std::cout << fmt::format("C = {:2d}x{:2d}\n\n", k, n);
+  colwise = 0,
+  rowwise = 1
+};
+
+enum class layouts
+{
+  colwise_colwise,
+  colwise_rowwise,
+  rowwise_colwise,
+  rowwise_rowwise
+};
+
+inline
+std::string layout_string(int layout)
+{
+  return layout == colwise ? "colwise" : "rowwise";
+}
+
+inline
+std::string layout_char(int layout)
+{
+  return layout == colwise ? "C" : "R";
+}
+
+template <typename Scalar>
+std::string matrix_parameters(const std::string& name, const mkl::sparse_matrix_csr<Scalar>& A)
+{
+  return fmt::format("density({})={}", name, A.density());
+}
+
+template <typename Derived>
+std::string matrix_parameters(const std::string& name, const Eigen::MatrixBase<Derived>& A)
+{
+  constexpr int MatrixLayout = Derived::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  return fmt::format("{}={}", name, layout_string(MatrixLayout));
+}
+
+template <typename MatrixA, typename MatrixB, typename MatrixC>
+std::string pp(const MatrixA& A, const MatrixB& B, const MatrixC& C)
+{
+  std::ostringstream out;
+  out << matrix_parameters("A", A) << ", " << matrix_parameters("B", B) << ", " << matrix_parameters("C", C);
+  return out.str();
+}
+
+// A = B * C
+template <int MatrixLayoutB = colwise, int MatrixLayoutC = colwise>
+void test_sdd_product(long m, long k, long n, const std::vector<float>& densities)
+{
+  std::cout << "--- testing A = B * C (sdd_product) ---" << std::endl;
+  std::cout << fmt::format("A = {:2d}x{:2d} sparse\n", m, n);
+  std::cout << fmt::format("B = {:2d}x{:2d} dense  layout={}\n", m, k, layout_string(MatrixLayoutB));
+  std::cout << fmt::format("C = {:2d}x{:2d} dense  layout={}\n\n", k, n, layout_string(MatrixLayoutC));
 
   auto seed = std::random_device{}();
   std::mt19937 rng{seed};
 
   for (float density: densities)
   {
-    std::cout << fmt::format("density = {}\n", density);
+    std::cout << fmt::format("density(A) = {}\n", density);
 
     float a = -10;
     float b = 10;
 
-    Eigen::MatrixXf A(m, n);
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, colwise> A(m, n);
     eigen::fill_matrix_random(A, density, a, b, rng);
-
-    Eigen::MatrixXf B(m, k);
-    eigen::fill_matrix_random(B, 0, a, b, rng);
-
-    Eigen::MatrixXf C(k, n);
-    eigen::fill_matrix_random(C, 0, a, b, rng);
-
     mkl::sparse_matrix_csr<float> A1 = mkl::to_csr<float>(A);
 
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutB> B(m, k);
+    eigen::fill_matrix_random(B, 0, a, b, rng);
+
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutC> C(k, n);
+    eigen::fill_matrix_random(C, 0, a, b, rng);
+
+    // dense product
     utilities::stopwatch watch;
     A = B * C;
-    std::cout << fmt::format("A = B * C {:7.5f}s\n", watch.seconds());
+    auto seconds = watch.seconds();
+    std::cout << fmt::format("{:8.5f}s ddd_product {}\n", seconds, pp(A, B, C));
 
-    watch.reset();
-    long batch_size = 100;
-    mkl::sdd_product_batch(A1, B, C, batch_size);
-    std::cout << fmt::format("A = B * C {:7.5f}s A sparse (batch size {:3d})\n", watch.seconds(), batch_size);
+    // sdd_product_batch
+    for (long batch_size: {5, 10, 100})
+    {
+      watch.reset();
+      mkl::sdd_product_batch(A1, B, C, batch_size);
+      seconds = watch.seconds();
+      std::cout << fmt::format("{:8.5f}s sdd_product(batchsize={}, {})\n", seconds, batch_size, pp(A1, B, C));
+    }
 
-    watch.reset();
-    batch_size = 10;
-    mkl::sdd_product_batch(A1, B, C, batch_size);
-    std::cout << fmt::format("A = B * C {:7.5f}s A sparse (batch size {:3d})\n", watch.seconds(), batch_size);
-
-    watch.reset();
-    batch_size = 5;
-    mkl::sdd_product_batch(A1, B, C, batch_size);
-    std::cout << fmt::format("A = B * C {:7.5f}s A sparse (batch size {:3d})\n", watch.seconds(), batch_size);
-
-    if ((1 - density) * m <= 2000)
+    if (density * m <= 2000)
     {
       watch.reset();
       mkl::sdd_product_forloop_eigen(A1, B, C);
-      std::cout << fmt::format("A = B * C {:7.5f}s A sparse (for-loop eigen dot product)\n", watch.seconds(), batch_size);
+      seconds = watch.seconds();
+      std::cout << fmt::format("{:8.5f}s sdd_product_forloop_eigen({})\n", seconds, pp(A1, B, C));
 
       watch.reset();
       mkl::sdd_product_forloop_mkl(A1, B, C);
-      std::cout << fmt::format("A = B * C {:7.5f}s A sparse (for-loop mkl dot product)\n", watch.seconds(), batch_size);
+      seconds = watch.seconds();
+      std::cout << fmt::format("{:8.5f}s sdd_product_forloop_mkl()\n", seconds, pp(A1, B, C));
     }
 
     std::cout << std::endl;
@@ -83,50 +128,53 @@ void test_mult1(long m, long k, long n, const std::vector<float>& densities)
 }
 
 // A = B * C
-void test_mult2(long m, long k, long n, const std::vector<float>& densities)
+template <int MatrixLayoutA = colwise, int MatrixLayoutC = colwise>
+void test_dsd_product(long m, long k, long n, const std::vector<float>& densities)
 {
-  std::cout << "--- test mult2 ---" << std::endl;
-  std::cout << fmt::format("A = {:2d}x{:2d}\n", m, n);
-  std::cout << fmt::format("B = {:2d}x{:2d}\n", m, k);
-  std::cout << fmt::format("C = {:2d}x{:2d}\n\n", k, n);
+  std::cout << "--- testing A = B * C (dsd_product) ---" << std::endl;
+  std::cout << fmt::format("A = {:2d}x{:2d} dense  layout={}\n", m, k, layout_string(MatrixLayoutA));
+  std::cout << fmt::format("B = {:2d}x{:2d} sparse\n", m, n);
+  std::cout << fmt::format("C = {:2d}x{:2d} dense  layout={}\n\n", k, n, layout_string(MatrixLayoutC));
 
   auto seed = std::random_device{}();
   std::mt19937 rng{seed};
 
   for (float density: densities)
   {
-    std::cout << fmt::format("density = {}\n", density);
+    std::cout << fmt::format("density(B) = {}\n", density);
 
     float a = -10;
     float b = 10;
 
-    Eigen::MatrixXf A(m, n);
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutA> A(m, n);
 
-    Eigen::MatrixXf B(m, k);
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, colwise> B(m, k);
     eigen::fill_matrix_random(B, density, a, b, rng);
-
-    Eigen::MatrixXf C(k, n);
-    eigen::fill_matrix_random(C, float(0), a, b, rng);
-
     mkl::sparse_matrix_csr<float> B1 = mkl::to_csr<float>(B);
+
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutC> C(k, n);
+    eigen::fill_matrix_random(C, float(0), a, b, rng);
 
     utilities::stopwatch watch;
     A = B * C;
-    std::cout << fmt::format("A = B * C {:7.5f}s\n", watch.seconds());
+    auto seconds = watch.seconds();
+    std::cout << fmt::format("{:8.5f}s ddd_product({})\n", seconds, pp(A, B, C));
 
     watch.reset();
     mkl::dsd_product(A, B1, C);
-    std::cout << fmt::format("A = B * C {:7.5f}s B sparse\n\n", watch.seconds());
+    seconds = watch.seconds();
+    std::cout << fmt::format("{:8.5f}s dsd_product({})\n\n", seconds, pp(A, B1, C));
   }
 }
 
 // A = B^T * C
-void test_mult3(long m, long k, long n, const std::vector<float>& densities)
+template <int MatrixLayoutA = colwise, int MatrixLayoutC = colwise>
+void test_dsd_transpose_product(long m, long k, long n, const std::vector<float>& densities)
 {
-  std::cout << "--- test mult3 ---" << std::endl;
-  std::cout << fmt::format("A = {:2d}x{:2d}\n", m, n);
-  std::cout << fmt::format("B = {:2d}x{:2d}\n", k, m);
-  std::cout << fmt::format("C = {:2d}x{:2d}\n\n", k, n);
+  std::cout << "--- testing A = B^T * C (dsd_product) ---" << std::endl;
+  std::cout << fmt::format("A = {:2d}x{:2d} dense  layout={}\n", m, k, layout_string(MatrixLayoutA));
+  std::cout << fmt::format("B = {:2d}x{:2d} sparse\n", m, n);
+  std::cout << fmt::format("C = {:2d}x{:2d} dense  layout={}\n\n", k, n, layout_string(MatrixLayoutC));
 
   auto seed = std::random_device{}();
   std::mt19937 rng{seed};
@@ -138,24 +186,47 @@ void test_mult3(long m, long k, long n, const std::vector<float>& densities)
     float a = -10;
     float b = 10;
 
-    Eigen::MatrixXf A(m, n);
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutA> A(m, n);
 
-    Eigen::MatrixXf B(k, m);
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, colwise> B(k, m);
     eigen::fill_matrix_random(B, density, a, b, rng);
-
-    Eigen::MatrixXf C(k, n);
-    eigen::fill_matrix_random(C, 0, a, b, rng);
-
     mkl::sparse_matrix_csr<float> B1 = mkl::to_csr<float>(B);
+
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutC> C(k, n);
+    eigen::fill_matrix_random(C, 0, a, b, rng);
 
     utilities::stopwatch watch;
     A = B.transpose() * C;
-    std::cout << fmt::format("A = B^T * C {:7.5f}s\n", watch.seconds());
+    auto seconds = watch.seconds();
+    std::cout << fmt::format("{:8.5f}s ddd_product({})\n", seconds, pp(A, B, C));
 
     watch.reset();
     mkl::dsd_product(A, B1, C, float(0), float(1), SPARSE_OPERATION_TRANSPOSE);
-    std::cout << fmt::format("A = B^T * C {:7.5f}s B sparse\n\n", watch.seconds());
+    seconds = watch.seconds();
+    std::cout << fmt::format("{:8.5f}s dsd_product({})\n\n", seconds, pp(A, B1, C));
   }
+}
+
+inline
+layouts parse_layouts(const std::string& text)
+{
+  if (text == "cc")
+  {
+    return layouts::colwise_colwise;
+  }
+  else if (text == "cr")
+  {
+    return layouts::colwise_rowwise;
+  }
+  else if (text == "rc")
+  {
+    return layouts::rowwise_colwise;
+  }
+  else if (text == "rr")
+  {
+    return layouts::rowwise_rowwise;
+  }
+  throw std::runtime_error(fmt::format("unsupported layout {}", text));
 }
 
 class tool: public command_line_tool
@@ -166,17 +237,17 @@ class tool: public command_line_tool
     int n = 100;
     float alpha = 1.0;
     float beta = 0.0;
-    std::string algorithm = "multiply";
+    std::string algorithm;
+    std::string layouts;
     int threads = 1;
     // bool gpu = false;
 
     void add_options(lyra::cli& cli) override
     {
-      cli |= lyra::opt(algorithm, "algorithm")["--algorithm"]["-a"]("The algorithm (mult1, add1, add2)");
+      cli |= lyra::opt(algorithm, "algorithm")["--algorithm"]["-a"]("The algorithm (sdd, dsd, dsdt)");
       cli |= lyra::opt(m, "m")["--arows"]["-m"]("The number of rows of matrix A");
       cli |= lyra::opt(k, "k")["--acols"]["-k"]("The number of columns of matrix A");
       cli |= lyra::opt(n, "n")["--brows"]["-n"]("The number of rows of matrix B");
-      cli |= lyra::opt(alpha, "alpha")["--alpha"]("The value alpha");
       cli |= lyra::opt(threads, "value")["--threads"]("The number of threads.");
       // cli |= lyra::opt(gpu)["--gpu"]("Use the GPU ");
     }
@@ -193,20 +264,27 @@ class tool: public command_line_tool
         omp_set_num_threads(threads);
       }
 
-      // mkl_set_interface_layer(MKL_INTERFACE_LP64); // TODO: is this needed?
-
       std::vector<float> densities = {1.0, 0.5, 0.1, 0.05, 0.01, 0.001};
-      if (algorithm == "mult1")
+      if (algorithm == "sdd")
       {
-        test_mult1(m, k, n, densities);
+        test_sdd_product<colwise, colwise>(m, k, n, densities);
+        test_sdd_product<colwise, rowwise>(m, k, n, densities);
+        test_sdd_product<rowwise, colwise>(m, k, n, densities);
+        test_sdd_product<rowwise, rowwise>(m, k, n, densities);
       }
-      else if (algorithm == "mult2")
+      else if (algorithm == "dsd")
       {
-        test_mult2(m, k, n, densities);
+        test_dsd_product<colwise, colwise>(m, k, n, densities);
+//        test_dsd_product<colwise, rowwise>(m, k, n, densities);
+//        test_dsd_product<rowwise, colwise>(m, k, n, densities);
+        test_dsd_product<rowwise, rowwise>(m, k, n, densities);
       }
-      else if (algorithm == "mult3")
+      else if (algorithm == "dsdt")
       {
-        test_mult3(m, k, n, densities);
+        test_dsd_transpose_product<colwise, colwise>(m, k, n, densities);
+//        test_dsd_transpose_product<colwise, rowwise>(m, k, n, densities);
+//        test_dsd_transpose_product<rowwise, colwise>(m, k, n, densities);
+        test_dsd_transpose_product<rowwise, rowwise>(m, k, n, densities);
       }
       return true;
     }
