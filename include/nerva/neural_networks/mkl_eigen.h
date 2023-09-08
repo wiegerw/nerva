@@ -196,10 +196,9 @@ void sdd_product_forloop_eigen(mkl::sparse_matrix_csr<Scalar>& A,
                                const Eigen::MatrixBase<DerivedC>& C
 )
 {
-  constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
-  constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
-  static_assert(MatrixLayoutB == MatrixLayoutC, "sdd_product_forloop_omp: the matrix layout does not match");
-
+//  constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+//  constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+//  static_assert(MatrixLayoutB == MatrixLayoutC, "sdd_product_forloop_omp: the matrix layout does not match");
   assert(A.rows() == B.rows());
   assert(A.cols() == C.cols());
   assert(B.cols() == C.rows());
@@ -229,10 +228,9 @@ void sdd_product_forloop_mkl(mkl::sparse_matrix_csr<Scalar>& A,
                              const Eigen::MatrixBase<DerivedC>& C
 )
 {
-  constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
-  constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
-  static_assert(MatrixLayoutB == MatrixLayoutC, "sdd_product_forloop_omp: the matrix layout does not match");
-
+//  constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+//  constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+//  static_assert(MatrixLayoutB == MatrixLayoutC, "sdd_product_forloop_omp: the matrix layout does not match");
   assert(A.rows() == B.rows());
   assert(A.cols() == C.cols());
   assert(B.cols() == C.rows());
@@ -281,8 +279,8 @@ void sdd_product_forloop_omp(mkl::sparse_matrix_csr<Scalar>& A,
 )
 {
   constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
-  constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
-  static_assert(MatrixLayoutB == MatrixLayoutC, "sdd_product_forloop_omp: the matrix layout does not match");
+//  constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+//  static_assert(MatrixLayoutB == MatrixLayoutC, "sdd_product_forloop_omp: the matrix layout does not match");
 
   assert(A.rows() == B.rows());
   assert(A.cols() == C.cols());
@@ -324,34 +322,36 @@ void sdd_product_forloop_omp(mkl::sparse_matrix_csr<Scalar>& A,
 //
 // Matrix C must have column major layout.
 // operation_B determines whether op(B) = B or op(B) = B^T
-template <typename DenseEigenMatrix, typename Derived, typename Scalar = scalar>
-void dsd_product(DenseEigenMatrix& A,
+template <typename DerivedA, typename DerivedC, typename Scalar = scalar>
+void dsd_product(const Eigen::MatrixBase<DerivedA>& A,
                  const mkl::sparse_matrix_csr<Scalar>& B,
-                 const Eigen::MatrixBase<Derived>& C,
+                 const Eigen::MatrixBase<DerivedC>& C,
                  Scalar alpha = 0,
                  Scalar beta = 1,
                  sparse_operation_t operation_B = SPARSE_OPERATION_NON_TRANSPOSE
 )
 {
-  constexpr int MatrixLayout = Derived::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
-  dense_matrix_view<Scalar, MatrixLayout> A_view = mkl::make_dense_matrix_view(A);
-  dense_matrix_view<Scalar, MatrixLayout> C_view = mkl::make_dense_matrix_view(C);
+  constexpr int MatrixLayoutA = DerivedA::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  dense_matrix_view<Scalar, MatrixLayoutA> A_view = mkl::make_dense_matrix_view(A);
+  dense_matrix_view<Scalar, MatrixLayoutC> C_view = mkl::make_dense_matrix_view(C);
   dsd_product(A_view, B, C_view, alpha, beta, operation_B);
 }
 
 // Does the assignment A := B * op(C) with C sparse and A, B dense
 // operation_C determines whether op(C) = C or op(C) = C^T
 // We use a more limited interface than in `dsd_product` due to limitations of the MKL library.
-template <typename DenseEigenMatrix, typename Derived, typename Scalar = scalar>
-void dds_product(DenseEigenMatrix& A,
-                 const Eigen::MatrixBase<Derived>& B,
+template <typename DerivedA, typename DerivedB, typename Scalar = scalar>
+void dds_product(const Eigen::MatrixBase<DerivedA>& A,
+                 const Eigen::MatrixBase<DerivedB>& B,
                  const mkl::sparse_matrix_csr<Scalar>& C,
                  sparse_operation_t operation_C = SPARSE_OPERATION_NON_TRANSPOSE
 )
 {
-  constexpr int MatrixLayout = Derived::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
-  dense_matrix_view<Scalar, MatrixLayout> A_view = mkl::make_dense_matrix_view(A);
-  dense_matrix_view<Scalar, MatrixLayout> B_view = mkl::make_dense_matrix_view(B);
+  constexpr int MatrixLayoutA = DerivedA::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  dense_matrix_view<Scalar, MatrixLayoutA> A_view = mkl::make_dense_matrix_view(A);
+  dense_matrix_view<Scalar, MatrixLayoutB> B_view = mkl::make_dense_matrix_view(B);
   dds_product(A_view, B_view, C, operation_C);
 }
 

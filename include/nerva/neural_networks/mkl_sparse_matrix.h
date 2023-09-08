@@ -342,8 +342,8 @@ std::size_t count_negative_elements(const sparse_matrix_csr<T>& A)
   return std::count_if(values.begin(), values.end(), [](auto x) { return x < 0; });
 }
 
-// Does the assignment A := alpha * A + beta * op(B) * C with B sparse and A, C dense
-//
+// Does the assignment A := alpha * A + beta * op(B) * C with B sparse and A, C dense.
+// The matrices A and C must have the same layout (column major or row major).
 // operation_B determines whether op(B) = B or op(B) = B^T
 template <typename Scalar, int MatrixLayout>
 void dsd_product(dense_matrix_view<Scalar, MatrixLayout>& A,
