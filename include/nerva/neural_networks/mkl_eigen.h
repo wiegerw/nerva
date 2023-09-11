@@ -144,6 +144,7 @@ void sdd_product(mkl::sparse_matrix_csr<Scalar>& A,
 
 // Performs the assignment A := B * C, with A sparse and B, C dense.
 // N.B. Only the existing entries of A are changed.
+// N.B. This function is inefficient if B has column major and C has row major layout.
 // Use a sequential computation to copy values to A
 template <typename Scalar, typename DerivedB, typename DerivedC>
 void sdd_product_batch(mkl::sparse_matrix_csr<Scalar>& A,
@@ -152,17 +153,19 @@ void sdd_product_batch(mkl::sparse_matrix_csr<Scalar>& A,
                        long batch_size
 )
 {
-  constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  // constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
   // constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
-  // static_assert(MatrixLayoutB == MatrixLayoutC, "sdd_product_forloop_omp: the matrix layout does not match");
-  // TODO: adjust the implementation for the matrix layout(?)
+  // if constexpr (MatrixLayoutB == Eigen::ColMajor && MatrixLayoutC == Eigen::RowMajor)
+  // {
+  //   static_assert(false, "Error: sdd_product_batch is inefficient for the combination colwise/rowwise!");
+  // }
 
   assert(A.rows() == B.rows());
   assert(A.cols() == C.cols());
   assert(B.cols() == C.rows());
 
   long m = A.rows();
-  Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutB> BC(batch_size, C.cols());
+  Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> BC(batch_size, C.cols());
   scalar* values = A.values().data();
   const auto& A_col_index = A.col_index();
   const auto& A_row_index = A.row_index();

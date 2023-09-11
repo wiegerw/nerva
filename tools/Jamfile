@@ -5,12 +5,14 @@ project nerva_tools
    ;
 
 exe mlpd : mlp.cpp : <scalar>double ;
-exe mlp  : mlp.cpp : <scalar>float ;
+exe mlpcolwise : mlp.cpp : <scalar>float <orientation>colwise ;
+exe mlprowwise : mlp.cpp : <scalar>float <orientation>rowwise ;
 exe mkl  : mkl.cpp : <scalar>float ;
 
 install dist
   :
     mkl
-    mlp
+    mlpcolwise
+    mlprowwise
     mlpd
   ;

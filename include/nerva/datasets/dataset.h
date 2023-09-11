@@ -125,7 +125,6 @@ struct dataset
       Ttrain = eigen::to_one_hot_rowwise(Ttrain_, num_classes);
       Ttest = eigen::to_one_hot_rowwise(Ttest_, num_classes);
     }
-    info();
   }
 
   void save(const std::string& filename) const

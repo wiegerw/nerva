@@ -73,7 +73,7 @@ void global_timer_display(const std::string& msg)
   if (global_timer_status == timer_status::active)
   {
     auto s = global_timer.seconds();
-    std::cout << fmt::format("{}-{} {:.6f}s", msg, global_timer_index++, s) << std::endl;
+    std::cout << fmt::format("{:>15}-{:<4} {:.6f}s", msg, global_timer_index++, s) << std::endl;
   }
 }
 
