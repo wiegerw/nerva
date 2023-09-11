@@ -185,46 +185,44 @@ dense_matrix<Scalar, MatrixLayout> ddd_product(const Matrix1<Scalar, MatrixLayou
   long A_cols = A_transposed ? A.rows() : A.cols();
   long B_rows = B_transposed ? B.cols() : B.rows();
   long B_cols = B_transposed ? B.rows() : B.cols();
+  const long C_rows = A_rows;
+  const long C_cols = B_cols;
 
   assert(A_cols == B_rows);
 
-  dense_matrix<Scalar, MatrixLayout> C(A_rows, B_cols);
+  dense_matrix<Scalar, MatrixLayout> C(C_rows, C_cols);
+  double alpha = 1.0;
+  double beta = 0.0;
+  long lda;
+  long ldb;
+  long ldc;
 
   CBLAS_TRANSPOSE transA = A_transposed ? CblasTrans : CblasNoTrans;
   CBLAS_TRANSPOSE transB = B_transposed ? CblasTrans : CblasNoTrans;
+  constexpr CBLAS_LAYOUT cblas_layout = MatrixLayout == column_major ? CblasColMajor : CblasRowMajor;
 
   if constexpr (MatrixLayout == column_major)
   {
-    long lda = A_transposed ? A_cols : A_rows;
-    long ldb = B_transposed ? B_cols : B_rows;
-    long ldc = C.rows();
-    double alpha = 1.0;
-    double beta = 0.0;
-    if constexpr (std::is_same<Scalar, double>::value)
-    {
-      cblas_dgemm(CblasColMajor, transA, transB, C.rows(), C.cols(), A_cols, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
-    }
-    else
-    {
-      cblas_sgemm(CblasColMajor, transA, transB, C.rows(), C.cols(), A_cols, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
-    }
+    lda = A_transposed ? A_cols : A_rows;
+    ldb = B_transposed ? B_cols : B_rows;
+    ldc = C.rows();
   }
   else
   {
-    long lda = A_transposed ? A_rows : A_cols;
-    long ldb = B_transposed ? B_rows : B_cols;
-    long ldc = C.cols();
-    double alpha = 1.0;
-    double beta = 0.0;
-    if constexpr (std::is_same<Scalar, double>::value)
-    {
-      cblas_dgemm(CblasRowMajor, transA, transB, C.rows(), C.cols(), A_cols, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
-    }
-    else
-    {
-      cblas_sgemm(CblasRowMajor, transA, transB, C.rows(), C.cols(), A_cols, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
-    }
+    lda = A_transposed ? A_rows : A_cols;
+    ldb = B_transposed ? B_rows : B_cols;
+    ldc = C.cols();
   }
+
+  if constexpr (std::is_same<Scalar, double>::value)
+  {
+    cblas_dgemm(cblas_layout, transA, transB, C.rows(), C.cols(), A_cols, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
+  }
+  else
+  {
+    cblas_sgemm(cblas_layout, transA, transB, C.rows(), C.cols(), A_cols, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
+  }
+
   return C;
 }
 
