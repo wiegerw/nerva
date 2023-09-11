@@ -27,21 +27,21 @@ long nonzero_count(const matrix& A)
   return (A.array() == 0.0).count();
 }
 
-template <int MatrixLayout = Eigen::ColMajor, typename Scalar>
+template <typename Scalar, int MatrixLayout = Eigen::ColMajor>
 Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>> to_eigen(mkl::dense_matrix<Scalar, MatrixLayout>& A)
 {
-  return { A.data(), A.rows(), A.cols() };
+  return Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>>(A.data(), A.rows(), A.cols());
 }
 
-template <typename Scalar, int MatrixLayout>
-void test_dense_dense_multiplication(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A,
-                                     const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& B,
+template <typename Scalar, int MatrixLayoutA, int MatrixLayoutB>
+void test_dense_dense_multiplication(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutA>& A,
+                                     const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutB>& B,
                                      bool A_transposed,
                                      bool B_transposed)
 {
   auto A0 = A_transposed ? A.transpose() : A;
   auto B0 = B_transposed ? B.transpose() : B;
-  Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> C = A0 * B0;
+  auto C = A0 * B0;
 
   auto A1 = mkl::make_dense_matrix_view(A);
   auto B1 = mkl::make_dense_matrix_view(B);
@@ -52,10 +52,10 @@ void test_dense_dense_multiplication(const Eigen::Matrix<Scalar, Eigen::Dynamic,
 
   std::cout << "--- test_dense_dense_multiplication ---" << std::endl;
   eigen::print_numpy_matrix("C", C);
-  eigen::print_numpy_matrix("C1", mkl::to_eigen(C1));
-  eigen::print_numpy_matrix("C2", mkl::to_eigen(C2));
-  CHECK_LE((C - to_eigen<MatrixLayout>(C1)).squaredNorm(), epsilon);
-  CHECK_LE((C - to_eigen<MatrixLayout>(C2)).squaredNorm(), epsilon);
+  eigen::print_numpy_matrix("C1", to_eigen(C1));
+  eigen::print_numpy_matrix("C2", to_eigen(C2));
+  CHECK_LE((C - to_eigen(C1)).squaredNorm(), epsilon);
+  CHECK_LE((C - to_eigen(C2)).squaredNorm(), epsilon);
 }
 
 void test_dense_dense_multiplication(long m, long k, long n)
@@ -69,8 +69,8 @@ void test_dense_dense_multiplication(long m, long k, long n)
   matrix1 B1 = matrix1::Random(k, n);
   test_dense_dense_multiplication(A1, B1, false, false);
 
-  matrix1 A2 = matrix2::Random(m, k);
-  matrix1 B2 = matrix2::Random(k, n);
+  matrix2 A2 = matrix2::Random(m, k);
+  matrix2 B2 = matrix2::Random(k, n);
   test_dense_dense_multiplication(A2, B2, false, false);
 
   matrix3 A3 = matrix3::Random(m, k);

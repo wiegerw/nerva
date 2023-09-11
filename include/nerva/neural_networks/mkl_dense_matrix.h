@@ -228,8 +228,8 @@ dense_matrix<Scalar, MatrixLayout> ddd_product(const Matrix1<Scalar, MatrixLayou
   return C;
 }
 
-template <int MatrixLayout, typename Scalar, int MatrixLayout1, template <typename, int> class Matrix1, int MatrixLayout2, template <typename, int> class Matrix2>
-dense_matrix<Scalar, MatrixLayout> ddd_product_manual_loops(const Matrix1<Scalar, MatrixLayout1>& A, const Matrix2<Scalar, MatrixLayout2>& B)
+template <typename Scalar, int MatrixLayoutA, template <typename, int> class MatrixA, int MatrixLayoutB, template <typename, int> class MatrixB>
+dense_matrix<Scalar, column_major> ddd_product_manual_loops(const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, MatrixLayoutB>& B)
 {
   assert(A.cols() == B.rows());
 
@@ -248,7 +248,7 @@ dense_matrix<Scalar, MatrixLayout> ddd_product_manual_loops(const Matrix1<Scalar
     return result;
   };
 
-  dense_matrix<Scalar, MatrixLayout> C(m, n);
+  dense_matrix<Scalar, column_major> C(m, n);
   for (long i = 0; i < m; i++)
   {
     for (long j = 0; j < n; j++)
@@ -261,24 +261,24 @@ dense_matrix<Scalar, MatrixLayout> ddd_product_manual_loops(const Matrix1<Scalar
 }
 
 // Computes the matrix product C = A * B
-template <int MatrixLayout, typename Scalar, template <typename, int> class Matrix1, template <typename, int> class Matrix2>
-dense_matrix<Scalar, MatrixLayout> ddd_product_manual_loops(const Matrix1<Scalar, MatrixLayout>& A, const Matrix2<Scalar, MatrixLayout>& B, bool A_transposed, bool B_transposed)
+template <int MatrixLayoutA, typename Scalar, template <typename, int> class MatrixA, int MatrixLayoutB, template <typename, int> class MatrixB>
+auto ddd_product_manual_loops(const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, MatrixLayoutB>& B, bool A_transposed, bool B_transposed)
 {
   if (!A_transposed && !B_transposed)
   {
-    return ddd_product_manual_loops<MatrixLayout>(A, B);
+    return ddd_product_manual_loops(A, B);
   }
   else if (!A_transposed && B_transposed)
   {
-    return ddd_product_manual_loops<MatrixLayout>(A, make_transposed_dense_matrix_view(B));
+    return ddd_product_manual_loops(A, make_transposed_dense_matrix_view(B));
   }
   else if (A_transposed && !B_transposed)
   {
-    return ddd_product_manual_loops<MatrixLayout>(make_transposed_dense_matrix_view(A), B);
+    return ddd_product_manual_loops(make_transposed_dense_matrix_view(A), B);
   }
   else
   {
-    return ddd_product_manual_loops<MatrixLayout>(make_transposed_dense_matrix_view(A), make_transposed_dense_matrix_view(B));
+    return ddd_product_manual_loops(make_transposed_dense_matrix_view(A), make_transposed_dense_matrix_view(B));
   }
 }
 
