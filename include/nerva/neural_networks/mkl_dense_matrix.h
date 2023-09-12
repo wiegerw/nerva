@@ -178,49 +178,60 @@ dense_matrix_view<Scalar, 1 - MatrixLayout> make_transposed_dense_matrix_view(co
 }
 
 // Computes the matrix product C = A * B
-template <typename Scalar, int MatrixLayout, template <typename, int> class Matrix1, template <typename, int> class Matrix2>
-dense_matrix<Scalar, MatrixLayout> ddd_product(const Matrix1<Scalar, MatrixLayout>& A, const Matrix2<Scalar, MatrixLayout>& B, bool A_transposed = false, bool B_transposed = false)
+template <typename Scalar, int MatrixLayoutA, template <typename, int> class MatrixA, int MatrixLayoutB, template <typename, int> class MatrixB>
+auto ddd_product(const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, MatrixLayoutB>& B, bool A_transposed = false, bool B_transposed = false)
 {
   long A_rows = A_transposed ? A.cols() : A.rows();
   long A_cols = A_transposed ? A.rows() : A.cols();
   long B_rows = B_transposed ? B.cols() : B.rows();
   long B_cols = B_transposed ? B.rows() : B.cols();
-  const long C_rows = A_rows;
-  const long C_cols = B_cols;
+  long C_rows = A_rows;
+  long C_cols = B_cols;
 
   assert(A_cols == B_rows);
 
-  dense_matrix<Scalar, MatrixLayout> C(C_rows, C_cols);
+  constexpr int MatrixLayoutC = (MatrixLayoutA == row_major && MatrixLayoutB == row_major) ? row_major : column_major;
+  constexpr CBLAS_LAYOUT cblas_layout = MatrixLayoutC == column_major ? CblasColMajor : CblasRowMajor;
+  dense_matrix<Scalar, MatrixLayoutC> C(C_rows, C_cols);
   double alpha = 1.0;
   double beta = 0.0;
   long lda;
   long ldb;
   long ldc;
 
-  CBLAS_TRANSPOSE transA = A_transposed ? CblasTrans : CblasNoTrans;
-  CBLAS_TRANSPOSE transB = B_transposed ? CblasTrans : CblasNoTrans;
-  constexpr CBLAS_LAYOUT cblas_layout = MatrixLayout == column_major ? CblasColMajor : CblasRowMajor;
-
-  if constexpr (MatrixLayout == column_major)
+  if constexpr (MatrixLayoutA == column_major && MatrixLayoutB == column_major)
   {
     lda = A_transposed ? A_cols : A_rows;
     ldb = B_transposed ? B_cols : B_rows;
-    ldc = C.rows();
+    ldc = C_rows;
   }
-  else
+  else if constexpr (MatrixLayoutA == row_major && MatrixLayoutB == row_major)
   {
     lda = A_transposed ? A_rows : A_cols;
     ldb = B_transposed ? B_rows : B_cols;
-    ldc = C.cols();
+    ldc = C_cols;
   }
+  else if constexpr (MatrixLayoutA == column_major && MatrixLayoutB == row_major)
+  {
+    auto B_T = make_transposed_dense_matrix_view(B);
+    return ddd_product(A, B_T, A_transposed, !B_transposed);
+  }
+  else if constexpr (MatrixLayoutA == row_major && MatrixLayoutB == column_major)
+  {
+    auto A_T = make_transposed_dense_matrix_view(A);
+    return ddd_product(A_T, B, !A_transposed, B_transposed);
+  }
+
+  CBLAS_TRANSPOSE transA = A_transposed ? CblasTrans : CblasNoTrans;
+  CBLAS_TRANSPOSE transB = B_transposed ? CblasTrans : CblasNoTrans;
 
   if constexpr (std::is_same<Scalar, double>::value)
   {
-    cblas_dgemm(cblas_layout, transA, transB, C.rows(), C.cols(), A_cols, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
+    cblas_dgemm(cblas_layout, transA, transB, C_rows, C_cols, A_cols, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
   }
   else
   {
-    cblas_sgemm(cblas_layout, transA, transB, C.rows(), C.cols(), A_cols, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
+    cblas_sgemm(cblas_layout, transA, transB, C_rows, C_cols, A_cols, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
   }
 
   return C;

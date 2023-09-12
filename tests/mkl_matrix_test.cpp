@@ -39,6 +39,8 @@ void test_dense_dense_multiplication(const Eigen::Matrix<Scalar, Eigen::Dynamic,
                                      bool A_transposed,
                                      bool B_transposed)
 {
+  std::cout << "--- test_dense_dense_multiplication ---" << std::endl;
+
   auto A0 = A_transposed ? A.transpose() : A;
   auto B0 = B_transposed ? B.transpose() : B;
   auto C = A0 * B0;
@@ -50,7 +52,6 @@ void test_dense_dense_multiplication(const Eigen::Matrix<Scalar, Eigen::Dynamic,
 
   scalar epsilon = std::is_same<Scalar, double>::value ? 1e-10 : 1e-5;
 
-  std::cout << "--- test_dense_dense_multiplication ---" << std::endl;
   eigen::print_numpy_matrix("C", C);
   eigen::print_numpy_matrix("C1", to_eigen(C1));
   eigen::print_numpy_matrix("C2", to_eigen(C2));
@@ -58,12 +59,11 @@ void test_dense_dense_multiplication(const Eigen::Matrix<Scalar, Eigen::Dynamic,
   CHECK_LE((C - to_eigen(C2)).squaredNorm(), epsilon);
 }
 
+template <typename Scalar=float>
 void test_dense_dense_multiplication(long m, long k, long n)
 {
-  using matrix1 = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>;
-  using matrix2 = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-  using matrix3 = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>;
-  using matrix4 = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+  using matrix1 = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>;
+  using matrix2 = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
   matrix1 A1 = matrix1::Random(m, k);
   matrix1 B1 = matrix1::Random(k, n);
@@ -73,12 +73,12 @@ void test_dense_dense_multiplication(long m, long k, long n)
   matrix2 B2 = matrix2::Random(k, n);
   test_dense_dense_multiplication(A2, B2, false, false);
 
-  matrix3 A3 = matrix3::Random(m, k);
-  matrix3 B3 = matrix3::Random(k, n);
+  matrix1 A3 = matrix1::Random(m, k);
+  matrix2 B3 = matrix2::Random(k, n);
   test_dense_dense_multiplication(A3, B3, false, false);
 
-  matrix4 A4 = matrix4::Random(m, k);
-  matrix4 B4 = matrix4::Random(k, n);
+  matrix2 A4 = matrix2::Random(m, k);
+  matrix1 B4 = matrix1::Random(k, n);
   test_dense_dense_multiplication(A4, B4, false, false);
 
   A1 = matrix1::Random(m, k);
@@ -89,12 +89,12 @@ void test_dense_dense_multiplication(long m, long k, long n)
   B2 = matrix2::Random(n, k);
   test_dense_dense_multiplication(A2, B2, false, true);
 
-  A3 = matrix3::Random(m, k);
-  B3 = matrix3::Random(n, k);
+  A3 = matrix1::Random(m, k);
+  B3 = matrix2::Random(n, k);
   test_dense_dense_multiplication(A3, B3, false, true);
 
-  A4 = matrix4::Random(m, k);
-  B4 = matrix4::Random(n, k);
+  A4 = matrix2::Random(m, k);
+  B4 = matrix1::Random(n, k);
   test_dense_dense_multiplication(A4, B4, false, true);
 
   A1 = matrix1::Random(k, m);
@@ -105,12 +105,12 @@ void test_dense_dense_multiplication(long m, long k, long n)
   B2 = matrix2::Random(k, n);
   test_dense_dense_multiplication(A2, B2, true, false);
 
-  A3 = matrix3::Random(k, m);
-  B3 = matrix3::Random(k, n);
+  A3 = matrix1::Random(k, m);
+  B3 = matrix2::Random(k, n);
   test_dense_dense_multiplication(A3, B3, true, false);
 
-  A4 = matrix4::Random(k, m);
-  B4 = matrix4::Random(k, n);
+  A4 = matrix2::Random(k, m);
+  B4 = matrix1::Random(k, n);
   test_dense_dense_multiplication(A4, B4, true, false);
 
   A1 = matrix1::Random(k, m);
@@ -121,12 +121,12 @@ void test_dense_dense_multiplication(long m, long k, long n)
   B2 = matrix2::Random(n, k);
   test_dense_dense_multiplication(A2, B2, true, true);
 
-  A3 = matrix3::Random(k, m);
-  B3 = matrix3::Random(n, k);
+  A3 = matrix1::Random(k, m);
+  B3 = matrix2::Random(n, k);
   test_dense_dense_multiplication(A3, B3, true, true);
 
-  A4 = matrix4::Random(k, m);
-  B4 = matrix4::Random(n, k);
+  A4 = matrix2::Random(k, m);
+  B4 = matrix1::Random(n, k);
   test_dense_dense_multiplication(A4, B4, true, true);
 }
 
@@ -165,11 +165,17 @@ TEST_CASE("test_mkl2")
 
 TEST_CASE("test_mkl3")
 {
-  test_dense_dense_multiplication(2, 3, 4);
-  test_dense_dense_multiplication(7, 1, 10);
-  test_dense_dense_multiplication(12, 8, 5);
-  test_dense_dense_multiplication(1, 8, 5);
-  test_dense_dense_multiplication(1, 8, 1);
+  test_dense_dense_multiplication<float>(2, 3, 4);
+  test_dense_dense_multiplication<float>(7, 1, 10);
+  test_dense_dense_multiplication<float>(12, 8, 5);
+  test_dense_dense_multiplication<float>(1, 8, 5);
+  test_dense_dense_multiplication<float>(1, 8, 1);
+
+  test_dense_dense_multiplication<double>(2, 3, 4);
+  test_dense_dense_multiplication<double>(7, 1, 10);
+  test_dense_dense_multiplication<double>(12, 8, 5);
+  test_dense_dense_multiplication<double>(1, 8, 5);
+  test_dense_dense_multiplication<double>(1, 8, 1);
 }
 
 TEST_CASE("test_empty_support")
