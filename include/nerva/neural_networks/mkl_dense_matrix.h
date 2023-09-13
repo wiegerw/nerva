@@ -90,6 +90,11 @@ class dense_matrix_view
       return m_data;
     }
 
+    [[nodiscard]] constexpr long offset() const
+    {
+      return 0;
+    }
+
     Scalar operator()(long i, long j) const
     {
       if constexpr (MatrixLayout == column_major)
@@ -163,6 +168,11 @@ class dense_matrix
       return m_data.data();
     }
 
+    [[nodiscard]] constexpr long offset() const
+    {
+      return 0;
+    }
+
     Scalar operator()(long i, long j) const
     {
       if constexpr (MatrixLayout == column_major)
@@ -198,23 +208,35 @@ class dense_submatrix_view
   protected:
     dense_matrix_view<Scalar, MatrixLayout> A;
     long m_first_row;
-    long m_row_count;
     long m_first_column;
-    long m_column_count;
+    long m_rows;
+    long m_columns;
 
   public:
-    dense_submatrix_view(Scalar* data, long rows, long columns, long first_row, long row_count, long first_column, long column_count)
-      : A(data, rows, columns), m_first_row(first_row), m_row_count(row_count), m_first_column(first_column), m_column_count(column_count)
-    {}
+    dense_submatrix_view(Scalar* A_data, long A_rows, long A_columns, long first_row, long first_column, long rows, long columns)
+      : A(A_data, A_rows, A_columns), m_first_row(first_row), m_first_column(first_column), m_rows(rows), m_columns(columns)
+    {
+      assert(A(first_row, first_column) == *(data() + offset()));
+    }
 
     [[nodiscard]] long rows() const
     {
-      return m_row_count;
+      return m_rows;
     }
 
     [[nodiscard]] long cols() const
     {
-      return m_column_count;
+      return m_columns;
+    }
+
+    [[nodiscard]] long first_row() const
+    {
+      return m_first_row;
+    }
+
+    [[nodiscard]] long first_column() const
+    {
+      return m_first_column;
     }
 
     [[nodiscard]] long leading_dimension() const
@@ -239,6 +261,18 @@ class dense_submatrix_view
       return A.data();
     }
 
+    [[nodiscard]] long offset() const
+    {
+      if constexpr (MatrixLayout == column_major)
+      {
+        return m_first_row + m_first_column * A.rows();
+      }
+      else
+      {
+        return m_first_column + m_first_row * A.cols();
+      }
+    }
+
     Scalar operator()(long i, long j) const
     {
       return A(i + m_first_row, j + m_first_column);
@@ -253,13 +287,13 @@ class dense_submatrix_view
 template <typename Scalar, int MatrixLayout>
 dense_submatrix_view<Scalar, MatrixLayout> make_dense_matrix_rows_view(dense_matrix_view<Scalar, MatrixLayout>& A, long minrow, long maxrow)
 {
-  return dense_submatrix_view<Scalar, MatrixLayout>(A.data(), A.rows(), A.cols(), minrow, maxrow - minrow, 0, A.cols());
+  return dense_submatrix_view<Scalar, MatrixLayout>(A.data(), A.rows(), A.cols(), minrow, 0, maxrow - minrow, A.cols());
 }
 
 template <typename Scalar, int MatrixLayout>
 dense_submatrix_view<Scalar, MatrixLayout> make_dense_matrix_columns_view(dense_matrix_view<Scalar, MatrixLayout>& A, long mincol, long maxcol)
 {
-  return dense_submatrix_view<Scalar, MatrixLayout>(A.data(), A.rows(), A.cols(), A.rows(), mincol, maxcol - mincol, 0);
+  return dense_submatrix_view<Scalar, MatrixLayout>(A.data(), A.rows(), A.cols(), 0, mincol, A.rows(), maxcol - mincol);
 }
 
 template <typename Scalar, int MatrixLayout, template <typename, int> class Matrix>
@@ -297,18 +331,21 @@ auto ddd_product(const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, 
     return ddd_product(A_T, B, !A_transposed, B_transposed);
   }
 
-  long A_rows = A_transposed ? A.cols() : A.rows();
-  long A_cols = A_transposed ? A.rows() : A.cols();
+  [[maybe_unused]] long A_rows = A_transposed ? A.cols() : A.rows();
+  [[maybe_unused]] long A_cols = A_transposed ? A.rows() : A.cols();
   [[maybe_unused]] long B_rows = B_transposed ? B.cols() : B.rows();
-  long B_cols = B_transposed ? B.rows() : B.cols();
-  long C_rows = A_rows;
-  long C_cols = B_cols;
-
+  [[maybe_unused]] long B_cols = B_transposed ? B.rows() : B.cols();
+  [[maybe_unused]] long C_rows = A_rows;
+  [[maybe_unused]] long C_cols = B_cols;
   assert(A_cols == B_rows);
+
+  long m = A_transposed ? A.cols() : A.rows();
+  long n = B_transposed ? B.rows() : B.cols();
+  long k = A_transposed ? A.rows() : A.cols();
 
   constexpr int MatrixLayoutC = (MatrixLayoutA == row_major && MatrixLayoutB == row_major) ? row_major : column_major;
   constexpr CBLAS_LAYOUT cblas_layout = MatrixLayoutC == column_major ? CblasColMajor : CblasRowMajor;
-  dense_matrix<Scalar, MatrixLayoutC> C(C_rows, C_cols);
+  dense_matrix<Scalar, MatrixLayoutC> C(m, n);
   double alpha = 1.0;
   double beta = 0.0;
   long lda = A.leading_dimension();
@@ -320,11 +357,11 @@ auto ddd_product(const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, 
 
   if constexpr (std::is_same<Scalar, double>::value)
   {
-    cblas_dgemm(cblas_layout, transA, transB, C_rows, C_cols, A_cols, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
+    cblas_dgemm(cblas_layout, transA, transB, m, n, k, alpha, A.data() + A.offset(), lda, B.data() + B.offset(), ldb, beta, C.data() + C.offset(), ldc);
   }
   else
   {
-    cblas_sgemm(cblas_layout, transA, transB, C_rows, C_cols, A_cols, alpha, A.data(), lda, B.data(), ldb, beta, C.data(), ldc);
+    cblas_sgemm(cblas_layout, transA, transB, m, n, k, alpha, A.data() + A.offset(), lda, B.data() + B.offset(), ldb, beta, C.data() + C.offset(), ldc);
   }
 
   return C;
