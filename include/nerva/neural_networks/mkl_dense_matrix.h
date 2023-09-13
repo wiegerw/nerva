@@ -68,14 +68,16 @@ class dense_matrix_view
       return m_columns;
     }
 
-    [[nodiscard]] long row_dimension() const
+    [[nodiscard]] long leading_dimension() const
     {
-      return m_rows;
-    }
-
-    [[nodiscard]] long column_dimension() const
-    {
-      return m_columns;
+      if constexpr (MatrixLayout == column_major)
+      {
+        return m_rows;
+      }
+      else
+      {
+        return m_columns;
+      }
     }
 
     Scalar* data()
@@ -139,14 +141,16 @@ class dense_matrix
       return m_columns;
     }
 
-    [[nodiscard]] long row_dimension() const
+    [[nodiscard]] long leading_dimension() const
     {
-      return m_rows;
-    }
-
-    [[nodiscard]] long column_dimension() const
-    {
-      return m_columns;
+      if constexpr (MatrixLayout == column_major)
+      {
+        return m_rows;
+      }
+      else
+      {
+        return m_columns;
+      }
     }
 
     Scalar* data()
@@ -213,14 +217,16 @@ class dense_submatrix_view
       return m_column_count;
     }
 
-    [[nodiscard]] long row_dimension() const
+    [[nodiscard]] long leading_dimension() const
     {
-      return A.rows();
-    }
-
-    [[nodiscard]] long column_dimension() const
-    {
-      return A.cols();
+      if constexpr (MatrixLayout == column_major)
+      {
+        return A.rows();
+      }
+      else
+      {
+        return A.cols();
+      }
     }
 
     Scalar* data()
@@ -280,6 +286,17 @@ dense_matrix_view<Scalar, 1 - MatrixLayout> make_transposed_dense_matrix_view(co
 template <typename Scalar, int MatrixLayoutA, template <typename, int> class MatrixA, int MatrixLayoutB, template <typename, int> class MatrixB>
 auto ddd_product(const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, MatrixLayoutB>& B, bool A_transposed = false, bool B_transposed = false)
 {
+  if constexpr (MatrixLayoutA == column_major && MatrixLayoutB == row_major)
+  {
+    auto B_T = make_transposed_dense_matrix_view(B);
+    return ddd_product(A, B_T, A_transposed, !B_transposed);
+  }
+  else if constexpr (MatrixLayoutA == row_major && MatrixLayoutB == column_major)
+  {
+    auto A_T = make_transposed_dense_matrix_view(A);
+    return ddd_product(A_T, B, !A_transposed, B_transposed);
+  }
+
   long A_rows = A_transposed ? A.cols() : A.rows();
   long A_cols = A_transposed ? A.rows() : A.cols();
   [[maybe_unused]] long B_rows = B_transposed ? B.cols() : B.rows();
@@ -294,32 +311,9 @@ auto ddd_product(const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, 
   dense_matrix<Scalar, MatrixLayoutC> C(C_rows, C_cols);
   double alpha = 1.0;
   double beta = 0.0;
-  long lda;
-  long ldb;
-  long ldc;
-
-  if constexpr (MatrixLayoutA == column_major && MatrixLayoutB == column_major)
-  {
-    lda = A.row_dimension();
-    ldb = B.row_dimension();
-    ldc = C_rows;
-  }
-  else if constexpr (MatrixLayoutA == row_major && MatrixLayoutB == row_major)
-  {
-    lda = A.column_dimension();
-    ldb = B.column_dimension();
-    ldc = C_cols;
-  }
-  else if constexpr (MatrixLayoutA == column_major && MatrixLayoutB == row_major)
-  {
-    auto B_T = make_transposed_dense_matrix_view(B);
-    return ddd_product(A, B_T, A_transposed, !B_transposed);
-  }
-  else if constexpr (MatrixLayoutA == row_major && MatrixLayoutB == column_major)
-  {
-    auto A_T = make_transposed_dense_matrix_view(A);
-    return ddd_product(A_T, B, !A_transposed, B_transposed);
-  }
+  long lda = A.leading_dimension();
+  long ldb = B.leading_dimension();
+  long ldc = C.leading_dimension();
 
   CBLAS_TRANSPOSE transA = A_transposed ? CblasTrans : CblasNoTrans;
   CBLAS_TRANSPOSE transB = B_transposed ? CblasTrans : CblasNoTrans;
