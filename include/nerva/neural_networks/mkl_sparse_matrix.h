@@ -454,6 +454,45 @@ void sdd_product(mkl::sparse_matrix_csr<Scalar>& A,
 
 // Performs the assignment A := B * C, with A sparse and B, C dense.
 // N.B. Only the existing entries of A are changed.
+// Use a sequential computation to copy values to A
+template <typename Scalar, int MatrixLayoutB, int MatrixLayoutC>
+void sdd_product_batch(mkl::sparse_matrix_csr<Scalar>& A,
+                       const dense_matrix_view<Scalar, MatrixLayoutB>& B,
+                       const dense_matrix_view<Scalar, MatrixLayoutC>& C,
+                       long batch_size
+)
+{
+  assert(A.rows() == B.rows());
+  assert(A.cols() == C.cols());
+  assert(B.cols() == C.rows());
+
+  long m = A.rows();
+  dense_matrix<Scalar, MatrixLayoutB> BC(batch_size, C.cols());
+  Scalar* values = A.values().data();
+  const auto& A_col_index = A.col_index();
+  const auto& A_row_index = A.row_index();
+
+  long i_first = 0;
+  while (i_first < m)
+  {
+    long i_last = std::min(i_first + batch_size, m);
+    dense_submatrix_view<Scalar, MatrixLayoutB> Bbatch(const_cast<Scalar*>(B.data()), B.rows(), B.cols(), i_first, 0, i_last - i_first, B.cols());
+    ddd_product_inplace(BC, Bbatch, C);
+    for (long i = i_first; i < i_last; i++)
+    {
+      for (long k = A_row_index[i]; k < A_row_index[i + 1]; k++)
+      {
+        long j = A_col_index[k];
+        *values++ = BC(i - i_first, j);
+      }
+    }
+    i_first = i_last;
+  }
+  A.construct_csr();
+}
+
+// Performs the assignment A := B * C, with A sparse and B, C dense.
+// N.B. Only the existing entries of A are changed.
 // Note that this implementation is very slow.
 template <typename Scalar, int MatrixLayout>
 void sdd_product_forloop_eigen(mkl::sparse_matrix_csr<Scalar>& A,

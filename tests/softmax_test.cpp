@@ -11,7 +11,6 @@
 
 #include "doctest/doctest.h"
 #include "nerva/neural_networks/eigen.h"
-#include "nerva/neural_networks/matrix.h"
 #include "nerva/neural_networks/softmax_functions_colwise.h"
 #include "nerva/neural_networks/softmax_functions_rowwise.h"
 #include <iostream>

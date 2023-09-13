@@ -316,19 +316,28 @@ dense_matrix_view<Scalar, 1 - MatrixLayout> make_transposed_dense_matrix_view(co
   return dense_matrix_view<Scalar, 1 - MatrixLayout>(const_cast<Scalar*>(A.data()), A.cols(), A.rows());
 }
 
-// Computes the matrix product C = A * B
-template <typename Scalar, int MatrixLayoutA, template <typename, int> class MatrixA, int MatrixLayoutB, template <typename, int> class MatrixB>
-auto ddd_product(const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, MatrixLayoutB>& B, bool A_transposed = false, bool B_transposed = false)
+// Computes the matrix product C := A * B
+template <typename Scalar, int MatrixLayoutC, template <typename, int> class MatrixC, int MatrixLayoutA, template <typename, int> class MatrixA, int MatrixLayoutB, template <typename, int> class MatrixB>
+void ddd_product_inplace(MatrixC<Scalar, MatrixLayoutC>& C, const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, MatrixLayoutB>& B, bool A_transposed = false, bool B_transposed = false)
 {
-  if constexpr (MatrixLayoutA == column_major && MatrixLayoutB == row_major)
-  {
-    auto B_T = make_transposed_dense_matrix_view(B);
-    return ddd_product(A, B_T, A_transposed, !B_transposed);
-  }
-  else if constexpr (MatrixLayoutA == row_major && MatrixLayoutB == column_major)
+  if constexpr (MatrixLayoutA != MatrixLayoutC && MatrixLayoutB != MatrixLayoutC)
   {
     auto A_T = make_transposed_dense_matrix_view(A);
-    return ddd_product(A_T, B, !A_transposed, B_transposed);
+    auto B_T = make_transposed_dense_matrix_view(B);
+    ddd_product_inplace(C, A_T, B_T, !A_transposed, !B_transposed);
+    return;
+  }
+  else if constexpr (MatrixLayoutA != MatrixLayoutC)
+  {
+    auto A_T = make_transposed_dense_matrix_view(A);
+    ddd_product_inplace(C, A_T, B, !A_transposed, B_transposed);
+    return;
+  }
+  else if constexpr (MatrixLayoutB != MatrixLayoutC)
+  {
+    auto B_T = make_transposed_dense_matrix_view(B);
+    ddd_product_inplace(C, A, B_T, A_transposed, !B_transposed);
+    return;
   }
 
   [[maybe_unused]] long A_rows = A_transposed ? A.cols() : A.rows();
@@ -343,9 +352,10 @@ auto ddd_product(const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, 
   long n = B_transposed ? B.rows() : B.cols();
   long k = A_transposed ? A.rows() : A.cols();
 
-  constexpr int MatrixLayoutC = (MatrixLayoutA == row_major && MatrixLayoutB == row_major) ? row_major : column_major;
+  assert(C.rows() >= m);
+  assert(C.cols() >= n);
+
   constexpr CBLAS_LAYOUT cblas_layout = MatrixLayoutC == column_major ? CblasColMajor : CblasRowMajor;
-  dense_matrix<Scalar, MatrixLayoutC> C(m, n);
   double alpha = 1.0;
   double beta = 0.0;
   long lda = A.leading_dimension();
@@ -363,7 +373,17 @@ auto ddd_product(const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, 
   {
     cblas_sgemm(cblas_layout, transA, transB, m, n, k, alpha, A.data() + A.offset(), lda, B.data() + B.offset(), ldb, beta, C.data() + C.offset(), ldc);
   }
+}
 
+// Computes the matrix product C = A * B
+template <typename Scalar, int MatrixLayoutA, template <typename, int> class MatrixA, int MatrixLayoutB, template <typename, int> class MatrixB>
+auto ddd_product(const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, MatrixLayoutB>& B, bool A_transposed = false, bool B_transposed = false)
+{
+  constexpr int MatrixLayoutC = MatrixLayoutA;
+  long C_rows = A_transposed ? A.cols() : A.rows();
+  long C_cols = B_transposed ? B.rows() : B.cols();
+  dense_matrix<Scalar, MatrixLayoutC> C(C_rows, C_cols);
+  ddd_product_inplace(C, A, B, A_transposed, B_transposed);
   return C;
 }
 
