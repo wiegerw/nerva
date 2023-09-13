@@ -10,11 +10,26 @@
 #pragma once
 
 #include "nerva/neural_networks/eigen.h"
-#include "nerva/neural_networks/matrix.h"
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include <random>
 
 namespace nerva {
+
+// Use the generator f to assign values to the coefficients of the matrix A.
+template <typename Matrix, typename Function>
+void initialize_matrix(Matrix& A, Function f)
+{
+  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+
+  if constexpr (IsSparse)
+  {
+    mkl::initialize_matrix(A, f);
+  }
+  else
+  {
+    eigen::initialize_matrix(A, f);
+  }
+}
 
 struct weight_initializer
 {
