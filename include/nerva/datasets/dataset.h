@@ -78,17 +78,17 @@ struct dataset
     std::cout << "dataset orientation = " << (orientation == colwise ? "colwise" : "rowwise") << std::endl;
     if (orientation == colwise)
     {
-      eigen::print_numpy_matrix("Xtrain", Xtrain.transpose());
-      eigen::print_numpy_matrix("Ttrain", Ttrain.transpose());
-      eigen::print_numpy_matrix("Xtest", Xtest.transpose());
-      eigen::print_numpy_matrix("Ttest", Ttest.transpose());
+      print_numpy_matrix("Xtrain", Xtrain.transpose());
+      print_numpy_matrix("Ttrain", Ttrain.transpose());
+      print_numpy_matrix("Xtest", Xtest.transpose());
+      print_numpy_matrix("Ttest", Ttest.transpose());
     }
     else
     {
-      eigen::print_numpy_matrix("Xtrain", Xtrain);
-      eigen::print_numpy_matrix("Ttrain", Ttrain);
-      eigen::print_numpy_matrix("Xtest", Xtest);
-      eigen::print_numpy_matrix("Ttest", Ttest);
+      print_numpy_matrix("Xtrain", Xtrain);
+      print_numpy_matrix("Ttrain", Ttrain);
+      print_numpy_matrix("Xtest", Xtest);
+      print_numpy_matrix("Ttest", Ttest);
     }
   }
 
@@ -176,10 +176,10 @@ struct dataset_view
 
   void info() const
   {
-    eigen::print_numpy_matrix("Xtrain", Xtrain.transpose());
-    eigen::print_numpy_matrix("Ttrain", Ttrain.transpose());
-    eigen::print_numpy_matrix("Xtest", Xtest.transpose());
-    eigen::print_numpy_matrix("Ttest", Ttest.transpose());
+    print_numpy_matrix("Xtrain", Xtrain.transpose());
+    print_numpy_matrix("Ttrain", Ttrain.transpose());
+    print_numpy_matrix("Xtest", Xtest.transpose());
+    print_numpy_matrix("Ttest", Ttest.transpose());
   }
 
   // Precondition: the python interpreter must be running.

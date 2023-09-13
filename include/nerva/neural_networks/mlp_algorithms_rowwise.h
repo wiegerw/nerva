@@ -163,7 +163,7 @@ bool has_nan(const multilayer_perceptron& M)
   {
     if (auto dlayer = dynamic_cast<dense_linear_layer*>(layer.get()))
     {
-      if (eigen::has_nan(dlayer->W))
+      if (nerva::has_nan(dlayer->W))
       {
         return true;
       }

@@ -63,6 +63,12 @@ Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> to_eigen(con
   return Eigen::Map<matrix>(const_cast<Scalar*>(A.data()), A.rows(), A.cols());
 }
 
+template <typename Scalar>
+void print_numpy_matrix(const std::string& name, const sparse_matrix_csr<Scalar>& A, long edgeitems=3)
+{
+  nerva::print_numpy_matrix(name, to_eigen(A), edgeitems);
+}
+
 // returns a boolean matrix with the non-zero entries of A
 template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
 Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> support(const mkl::sparse_matrix_csr<Scalar>& A)
@@ -166,7 +172,7 @@ void sdd_product_batch(mkl::sparse_matrix_csr<Scalar>& A,
 
   long m = A.rows();
   Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> BC(batch_size, C.cols());
-  scalar* values = A.values().data();
+  Scalar* values = A.values().data();
   const auto& A_col_index = A.col_index();
   const auto& A_row_index = A.row_index();
 

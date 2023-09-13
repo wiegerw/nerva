@@ -255,20 +255,20 @@ class stochastic_gradient_descent_algorithm
           {
             std::cout << "epoch: " << epoch << " batch: " << k << '\n';
             print_model_info(M);
-            eigen::print_numpy_matrix("X", X);
-            eigen::print_numpy_matrix("Y", Y);
-            eigen::print_numpy_matrix("DY", DY);
+            print_numpy_matrix("X", X);
+            print_numpy_matrix("Y", Y);
+            print_numpy_matrix("DY", DY);
           }
 
-          if (eigen::has_nan(Y))
+          if (nerva::has_nan(Y))
           {
-            eigen::print_numpy_matrix("Y", Y);
+            print_numpy_matrix("Y", Y);
             throw std::runtime_error("the output Y contains NaN values");
           }
 
-          if (eigen::has_nan(DY))
+          if (nerva::has_nan(DY))
           {
-            eigen::print_numpy_matrix("DY", DY);
+            print_numpy_matrix("DY", DY);
             throw std::runtime_error("the gradient DY contains NaN values");
           }
 

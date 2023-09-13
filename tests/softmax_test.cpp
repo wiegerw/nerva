@@ -37,10 +37,10 @@ TEST_CASE("test_softmax")
   eigen::matrix y2 = stable_softmax()(x2);
   eigen::matrix y3 = stable_softmax()(x3);
 
-  eigen::print_numpy_matrix("Y", Y);
-  eigen::print_numpy_matrix("y1", y1);
-  eigen::print_numpy_matrix("y2", y2);
-  eigen::print_numpy_matrix("y3", y3);
+  print_numpy_matrix("Y", Y);
+  print_numpy_matrix("y1", y1);
+  print_numpy_matrix("y2", y2);
+  print_numpy_matrix("y3", y3);
 
   CHECK_EQ(y1, Y.col(0));
   CHECK_EQ(y2, Y.col(1));

@@ -61,15 +61,15 @@ void print_dict(const py::dict& data)
     std::string key = item.first.cast<std::string>();
     if (key[0] == 'W' || key == "Xtrain" || key == "Xtest")
     {
-      eigen::print_numpy_matrix(key, eigen::extract_matrix<scalar>(data, key));
+      print_numpy_matrix(key, eigen::extract_matrix<scalar>(data, key));
     }
     else if (key[0] == 'b')
     {
-      eigen::print_numpy_vector(key, eigen::extract_column_vector<scalar>(data, key));
+      print_numpy_vector(key, eigen::extract_column_vector<scalar>(data, key));
     }
     else if (key == "Ttrain" || key == "Ttest")
     {
-      eigen::print_numpy_vector(key, eigen::extract_column_vector<long>(data, key));
+      print_numpy_vector(key, eigen::extract_column_vector<long>(data, key));
     }
   }
 }

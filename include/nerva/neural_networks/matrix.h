@@ -30,38 +30,38 @@ void initialize_matrix(Matrix& A, Function f)
 }
 
 // Print the matrix A to standard output.
-template <typename Matrix>
-void print_cpp_matrix(const std::string& name, const Matrix& A)
-{
-  using Scalar = typename Matrix::Scalar;
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<Scalar>>::value;
-
-  if constexpr (IsSparse)
-  {
-    eigen::print_cpp_matrix(name, mkl::to_eigen<Scalar>(A));
-  }
-  else
-  {
-    eigen::print_cpp_matrix(name, A);
-  }
-}
+//template <typename Matrix>
+//void print_cpp_matrix(const std::string& name, const Matrix& A)
+//{
+//  using Scalar = typename Matrix::Scalar;
+//  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<Scalar>>::value;
+//
+//  if constexpr (IsSparse)
+//  {
+//    print_cpp_matrix(name, mkl::to_eigen<Scalar>(A));
+//  }
+//  else
+//  {
+//    print_cpp_matrix(name, A);
+//  }
+//}
 
 // Print the matrix A to standard output similar to numpy output.
-template <typename Matrix>
-void print_numpy_matrix(const std::string& name, const Matrix& A)
-{
-  using Scalar = typename Matrix::Scalar;
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<Scalar>>::value;
-
-  if constexpr (IsSparse)
-  {
-    eigen::print_numpy_matrix(name, mkl::to_eigen<Scalar>(A));
-  }
-  else
-  {
-    eigen::print_numpy_matrix(name, A);
-  }
-}
+//template <typename Matrix>
+//void print_numpy_matrix(const std::string& name, const Matrix& A)
+//{
+//  using Scalar = typename Matrix::Scalar;
+//  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<Scalar>>::value;
+//
+//  if constexpr (IsSparse)
+//  {
+//    eigen::print_numpy_matrix(name, mkl::to_eigen<Scalar>(A));
+//  }
+//  else
+//  {
+//    eigen::print_numpy_matrix(name, A);
+//  }
+//}
 
 } // namespace nerva
 

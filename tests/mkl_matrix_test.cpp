@@ -11,6 +11,7 @@
 
 #include "doctest/doctest.h"
 #include <Eigen/Dense>
+#include "nerva/neural_networks/mkl_dense_matrix.h"
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
 #include "nerva/neural_networks/mkl_eigen.h"
 #include <iostream>
@@ -52,9 +53,9 @@ void test_dense_dense_multiplication(const Eigen::Matrix<Scalar, Eigen::Dynamic,
 
   scalar epsilon = std::is_same<Scalar, double>::value ? 1e-10 : 1e-5;
 
-  eigen::print_numpy_matrix("C", C);
-  eigen::print_numpy_matrix("C1", to_eigen(C1));
-  eigen::print_numpy_matrix("C2", to_eigen(C2));
+  print_numpy_matrix("C", C);
+  print_numpy_matrix("C1", to_eigen(C1));
+  print_numpy_matrix("C2", to_eigen(C2));
   CHECK_LE((C - to_eigen(C1)).squaredNorm(), epsilon);
   CHECK_LE((C - to_eigen(C2)).squaredNorm(), epsilon);
 }
@@ -236,19 +237,19 @@ TEST_CASE("test_transposed_view")
   auto A1 = mkl::make_dense_matrix_view(A);
   auto A2 = mkl::make_transposed_dense_matrix_view(A1);
   auto A3 = mkl::to_eigen(A2);
-  eigen::print_numpy_matrix("A", A);
-  eigen::print_numpy_matrix("A1", mkl::to_eigen(A1));
-  eigen::print_numpy_matrix("A2", mkl::to_eigen(A2));
-  eigen::print_numpy_matrix("A3", A3);
+  print_numpy_matrix("A", A);
+  print_numpy_matrix("A1", mkl::to_eigen(A1));
+  print_numpy_matrix("A2", mkl::to_eigen(A2));
+  print_numpy_matrix("A3", A3);
   CHECK_EQ(A.transpose(), A3);
 
   auto B1 = mkl::make_dense_matrix_view(B);
   auto B2 = mkl::make_transposed_dense_matrix_view(B1);
   auto B3 = mkl::to_eigen(B2);
-  eigen::print_numpy_matrix("B", B);
-  eigen::print_numpy_matrix("B1", mkl::to_eigen(B1));
-  eigen::print_numpy_matrix("B2", mkl::to_eigen(B2));
-  eigen::print_numpy_matrix("B3", B3);
+  print_numpy_matrix("B", B);
+  print_numpy_matrix("B1", mkl::to_eigen(B1));
+  print_numpy_matrix("B2", mkl::to_eigen(B2));
+  print_numpy_matrix("B3", B3);
   CHECK_EQ(B.transpose(), B3);
 }
 
@@ -264,9 +265,9 @@ void test_sparse_dense_multiplication(const matrix& A,
   auto A0 = A_transposed ? A.transpose() : A;
   matrix C = A0 * B;
 
-  eigen::print_numpy_matrix("A0", A0);
-  eigen::print_numpy_matrix("B", B);
-  eigen::print_numpy_matrix("C", C);
+  print_numpy_matrix("A0", A0);
+  print_numpy_matrix("B", B);
+  print_numpy_matrix("C", C);
 
   mkl::sparse_matrix_csr<double> A1 = mkl::to_csr<double>(A);
   result_type C1(C.rows(), C.cols());
@@ -276,7 +277,7 @@ void test_sparse_dense_multiplication(const matrix& A,
   mkl::dsd_product(C1, A1, B, alpha, beta, operation_A);
 
   scalar epsilon = 1e-10;
-  eigen::print_numpy_matrix("C1", C1);
+  print_numpy_matrix("C1", C1);
 
   CHECK_LE((C - C1).squaredNorm(), epsilon);
 }
@@ -318,11 +319,11 @@ void test_dense_sparse_multiplication(const Eigen::Matrix<double, Eigen::Dynamic
   using result_type = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>;
 
   auto B0 = B_transposed ? B.transpose() : B;
-  eigen::print_numpy_matrix("A", A);
-  eigen::print_numpy_matrix("B0", B0);
+  print_numpy_matrix("A", A);
+  print_numpy_matrix("B0", B0);
   matrix C = A * B0;
 
-  eigen::print_numpy_matrix("C", C);
+  print_numpy_matrix("C", C);
   std::cout << std::boolalpha << "B_transposed = " << B_transposed << std::endl;
 
   mkl::sparse_matrix_csr<double> B1 = mkl::to_csr<double>(B);
@@ -331,7 +332,7 @@ void test_dense_sparse_multiplication(const Eigen::Matrix<double, Eigen::Dynamic
   mkl::dds_product(C1, A, B1, operation_B);
 
   scalar epsilon = 1e-10;
-  eigen::print_numpy_matrix("C1", C1);
+  print_numpy_matrix("C1", C1);
 
   CHECK_LE((C - C1).squaredNorm(), epsilon);
 }
@@ -370,4 +371,34 @@ TEST_CASE("test_dense_sparse")
   test_dense_sparse_multiplication(12, 8, 5);
   test_dense_sparse_multiplication(1, 8, 5);
   test_dense_sparse_multiplication(1, 8, 1);
+}
+
+TEST_CASE("test_rows_view")
+{
+  using namespace mkl;
+
+  matrix A {
+    {2, 3, 9},
+    {7, 4, 1},
+    {1, 8, 3},
+  };
+
+  matrix B {
+    {1, 4},
+    {2, 5},
+    {3, 6}
+  };
+
+  auto A0 = A(Eigen::seqN(1, 2), Eigen::indexing::all);
+  auto C0 = A0 * B;
+
+  dense_matrix_view<double, column_major> A_ = make_dense_matrix_view(A);
+  dense_submatrix_view<double, column_major> A1 = make_dense_matrix_rows_view(A_, 1, 3);
+  dense_matrix_view<double, column_major> B1 = make_dense_matrix_view(B);
+  auto C1 = ddd_product(A1, B1);
+
+  print_numpy_matrix("A0", A0);
+  print_numpy_matrix("A1", A1);
+  print_numpy_matrix("C0", C0);
+  print_numpy_matrix("C1", C1);
 }

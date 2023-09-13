@@ -92,10 +92,10 @@ void test_mlp(multilayer_perceptron& M, const eigen::matrix& X, const eigen::mat
 
   if (false)
   {
-    eigen::print_cpp_matrix("X", X);
-    eigen::print_cpp_matrix("T", T);
-    eigen::print_cpp_matrix("Y", Y);
-    eigen::print_cpp_matrix("dY", dY);
+    print_cpp_matrix("X", X);
+    print_cpp_matrix("T", T);
+    print_cpp_matrix("Y", Y);
+    print_cpp_matrix("dY", dY);
   }
 
   auto f = [&]()
@@ -918,14 +918,14 @@ TEST_CASE("test_derivatives2")
 
   eigen::matrix DY1 = approximate_derivative([&]() { return fY(Y); }, Y, h);
   eigen::matrix DY2 = dfY(Y);
-  eigen::print_cpp_matrix("DY1", DY1);
-  eigen::print_cpp_matrix("DY2", DY2);
+  print_cpp_matrix("DY1", DY1);
+  print_cpp_matrix("DY2", DY2);
   CHECK_LE((DY1 - DY2).squaredNorm(), 1e-8);
 
   eigen::matrix DR1 = approximate_derivative([&]() { return fR(R); }, R, h);
   eigen::matrix DR2 = dfR(R);
-  eigen::print_cpp_matrix("DR1", DR1);
-  eigen::print_cpp_matrix("DR2", DR2);
+  print_cpp_matrix("DR1", DR1);
+  print_cpp_matrix("DR2", DR2);
   CHECK_LE((DR1 - DR2).squaredNorm(), 1e-8);
 }
 

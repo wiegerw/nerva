@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "nerva/neural_networks/print_matrix.h"
 #include "Eigen/Dense"
 #include <mkl.h>
 #include <cassert>
@@ -41,9 +42,12 @@ long row_major_index([[maybe_unused]] long rows, long columns, long i, long j)
 }
 
 // This class can be used to wrap an Eigen matrix (or NumPy etc.)
-template <typename Scalar, int MatrixLayout>
+template <typename Scalar_, int MatrixLayout>
 class dense_matrix_view
 {
+  public:
+    using Scalar = Scalar_;
+
   protected:
     Scalar* m_data;
     long m_rows;
@@ -64,6 +68,16 @@ class dense_matrix_view
       return m_columns;
     }
 
+    [[nodiscard]] long row_dimension() const
+    {
+      return m_rows;
+    }
+
+    [[nodiscard]] long column_dimension() const
+    {
+      return m_columns;
+    }
+
     Scalar* data()
     {
       return m_data;
@@ -99,9 +113,12 @@ class dense_matrix_view
     }
 };
 
-template <typename Scalar, int MatrixLayout>
+template <typename Scalar_, int MatrixLayout>
 class dense_matrix
 {
+  public:
+    using Scalar = Scalar_;
+
   protected:
     std::vector<Scalar> m_data;
     long m_rows;
@@ -118,6 +135,16 @@ class dense_matrix
     }
 
     [[nodiscard]] long cols() const
+    {
+      return m_columns;
+    }
+
+    [[nodiscard]] long row_dimension() const
+    {
+      return m_rows;
+    }
+
+    [[nodiscard]] long column_dimension() const
     {
       return m_columns;
     }
@@ -156,6 +183,78 @@ class dense_matrix
       }
     }
 };
+
+// Represents the submatrix with row indices in the interval [rowmin, ..., rowmax)
+template <typename Scalar_, int MatrixLayout>
+class dense_submatrix_view
+{
+  public:
+    using Scalar = Scalar_;
+
+  protected:
+    dense_matrix_view<Scalar, MatrixLayout> A;
+    long m_first_row;
+    long m_row_count;
+    long m_first_column;
+    long m_column_count;
+
+  public:
+    dense_submatrix_view(Scalar* data, long rows, long columns, long first_row, long row_count, long first_column, long column_count)
+      : A(data, rows, columns), m_first_row(first_row), m_row_count(row_count), m_first_column(first_column), m_column_count(column_count)
+    {}
+
+    [[nodiscard]] long rows() const
+    {
+      return m_row_count;
+    }
+
+    [[nodiscard]] long cols() const
+    {
+      return m_column_count;
+    }
+
+    [[nodiscard]] long row_dimension() const
+    {
+      return A.rows();
+    }
+
+    [[nodiscard]] long column_dimension() const
+    {
+      return A.cols();
+    }
+
+    Scalar* data()
+    {
+      return A.data();
+    }
+
+    const Scalar* data() const
+    {
+      return A.data();
+    }
+
+    Scalar operator()(long i, long j) const
+    {
+      return A(i + m_first_row, j + m_first_column);
+    }
+
+    Scalar& operator()(long i, long j)
+    {
+      return A(i + m_first_row, j + m_first_column);
+    }
+};
+
+template <typename Scalar, int MatrixLayout>
+dense_submatrix_view<Scalar, MatrixLayout> make_dense_matrix_rows_view(dense_matrix_view<Scalar, MatrixLayout>& A, long minrow, long maxrow)
+{
+  return dense_submatrix_view<Scalar, MatrixLayout>(A.data(), A.rows(), A.cols(), minrow, maxrow - minrow, 0, A.cols());
+}
+
+template <typename Scalar, int MatrixLayout>
+dense_submatrix_view<Scalar, MatrixLayout> make_dense_matrix_columns_view(dense_matrix_view<Scalar, MatrixLayout>& A, long mincol, long maxcol)
+{
+  return dense_submatrix_view<Scalar, MatrixLayout>(A.data(), A.rows(), A.cols(), A.rows(), mincol, maxcol - mincol, 0);
+}
 
 template <typename Scalar, int MatrixLayout, template <typename, int> class Matrix>
 dense_matrix_view<Scalar, MatrixLayout> make_dense_matrix_view(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A)
@@ -183,7 +282,7 @@ auto ddd_product(const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, 
 {
   long A_rows = A_transposed ? A.cols() : A.rows();
   long A_cols = A_transposed ? A.rows() : A.cols();
-  long B_rows = B_transposed ? B.cols() : B.rows();
+  [[maybe_unused]] long B_rows = B_transposed ? B.cols() : B.rows();
   long B_cols = B_transposed ? B.rows() : B.cols();
   long C_rows = A_rows;
   long C_cols = B_cols;
@@ -201,14 +300,14 @@ auto ddd_product(const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, 
 
   if constexpr (MatrixLayoutA == column_major && MatrixLayoutB == column_major)
   {
-    lda = A_transposed ? A_cols : A_rows;
-    ldb = B_transposed ? B_cols : B_rows;
+    lda = A.row_dimension();
+    ldb = B.row_dimension();
     ldc = C_rows;
   }
   else if constexpr (MatrixLayoutA == row_major && MatrixLayoutB == row_major)
   {
-    lda = A_transposed ? A_rows : A_cols;
-    ldb = B_transposed ? B_rows : B_cols;
+    lda = A.column_dimension();
+    ldb = B.column_dimension();
     ldc = C_cols;
   }
   else if constexpr (MatrixLayoutA == column_major && MatrixLayoutB == row_major)

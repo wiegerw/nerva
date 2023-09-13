@@ -73,7 +73,7 @@ TEST_CASE("test_linear_layer1")
     {3, 4}
   };
   eigen::matrix W1 = mkl::to_eigen(layer.W);
-  eigen::print_cpp_matrix("W1", W1);
+  print_cpp_matrix("W1", W1);
   CHECK_EQ(W1_expected, W1);
 
   layer.W = mkl::to_csr<scalar>(W1_expected);
@@ -122,8 +122,8 @@ void test_feedforward(Layer1& layer1, Layer2& layer2, const eigen::matrix& X)
   layer2.X = X;
   layer2.feedforward(Y2);
 
-  eigen::print_cpp_matrix("Y1", Y1);
-  eigen::print_cpp_matrix("Y2", Y2);
+  print_cpp_matrix("Y1", Y1);
+  print_cpp_matrix("Y2", Y2);
 
   CHECK_EQ(Y1, Y2);
 }
@@ -137,8 +137,8 @@ void test_backpropagate(Layer1& layer1, Layer2& layer2, const eigen::matrix& Y, 
   eigen::matrix W1 = mkl::to_eigen(layer1.W);
   eigen::matrix W2 = layer2.W;
 
-  eigen::print_cpp_matrix("W1", W1);
-  eigen::print_cpp_matrix("W2", W2);
+  print_cpp_matrix("W1", W1);
+  print_cpp_matrix("W2", W2);
 
   CHECK_EQ(W1, W2);
 }
@@ -233,8 +233,8 @@ void test_mlp(multilayer_perceptron& M1, multilayer_perceptron& M2, const eigen:
   eigen::matrix DY2 = loss.gradient(Y2, T);
   M2.backpropagate(Y2, DY2);
 
-  eigen::print_cpp_matrix("Y1", Y1);
-  eigen::print_cpp_matrix("Y2", Y2);
+  print_cpp_matrix("Y1", Y1);
+  print_cpp_matrix("Y2", Y2);
 
   CHECK_EQ(Y1, Y2);
 
@@ -247,8 +247,8 @@ void test_mlp(multilayer_perceptron& M1, multilayer_perceptron& M2, const eigen:
   M1.feedforward(Y1);
   M2.feedforward(Y2);
 
-  eigen::print_cpp_matrix("Y1", Y1);
-  eigen::print_cpp_matrix("Y2", Y2);
+  print_cpp_matrix("Y1", Y1);
+  print_cpp_matrix("Y2", Y2);
 
   CHECK_EQ(Y1, Y2);
 }
@@ -522,8 +522,8 @@ void test_mlp_rowwise_colwise(MLP1& M1,
   eigen::matrix DY2 = loss2.gradient(Y2, T2);
   M2.backpropagate(Y2, DY2);
 
-  eigen::print_cpp_matrix("Y1", Y1);
-  eigen::print_cpp_matrix("Y2", Y2.transpose());
+  print_cpp_matrix("Y1", Y1);
+  print_cpp_matrix("Y2", Y2.transpose());
   CHECK_EQ(Y1, Y2.transpose());
 
   // optimize
@@ -535,8 +535,8 @@ void test_mlp_rowwise_colwise(MLP1& M1,
   M1.feedforward(Y1);
   M2.feedforward(Y2);
 
-  eigen::print_cpp_matrix("Y1", Y1);
-  eigen::print_cpp_matrix("Y2", Y2.transpose());
+  print_cpp_matrix("Y1", Y1);
+  print_cpp_matrix("Y2", Y2.transpose());
   CHECK_EQ(Y1, Y2.transpose());
 }
 

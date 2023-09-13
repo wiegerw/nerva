@@ -25,8 +25,8 @@ void compare_sizes(const eigen::matrix& W1, const eigen::matrix& W2)
 {
   if (W1.rows() != W2.rows() || W1.cols() != W2.cols())
   {
-    eigen::print_numpy_matrix("W", W1);
-    eigen::print_numpy_matrix("W", W2);
+    print_numpy_matrix("W", W1);
+    print_numpy_matrix("W", W2);
     throw std::runtime_error("matrix sizes do not match");
   }
 }
@@ -36,8 +36,8 @@ void compare_sizes(const mkl::sparse_matrix_csr<scalar>& W1, const eigen::matrix
 {
   if (W1.rows() != W2.rows() || W1.cols() != W2.cols())
   {
-    eigen::print_numpy_matrix("W", mkl::to_eigen(W1));
-    eigen::print_numpy_matrix("W", W2);
+    print_numpy_matrix("W", mkl::to_eigen(W1));
+    print_numpy_matrix("W", W2);
     throw std::runtime_error("matrix sizes do not match");
   }
 }

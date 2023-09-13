@@ -80,7 +80,7 @@ void check_prune_weights(const eigen::matrix& A,
                          std::size_t expected_threshold_count)
 {
   std::cout << "--- check_prune_count ---\n";
-  eigen::print_matrix("A", A);
+  print_numpy_matrix("A", A);
 
   scalar threshold;
   unsigned int threshold_count;
@@ -91,7 +91,7 @@ void check_prune_weights(const eigen::matrix& A,
   CHECK_EQ(expected_threshold_count, threshold_count);
   auto A_pruned = A;
   auto prune_count = prune_magnitude(A_pruned, count);
-  eigen::print_matrix("A_pruned", A_pruned);
+  print_numpy_matrix("A_pruned", A_pruned);
   CHECK_EQ(prune_count, count);
   CHECK_EQ(A_pruned, expected);
 
@@ -102,7 +102,7 @@ void check_prune_weights(const eigen::matrix& A,
   CHECK_EQ(expected_threshold_count, threshold_count);
   auto A1_pruned = A1;
   prune_count = prune_magnitude(A1_pruned, count);
-  eigen::print_matrix("A1_pruned", mkl::to_eigen(A1_pruned));
+  print_numpy_matrix("A1_pruned", mkl::to_eigen(A1_pruned));
   CHECK_EQ(prune_count, count);
   CHECK_EQ(mkl::to_eigen(A1_pruned), expected);
 }
@@ -148,7 +148,7 @@ TEST_CASE("test_regrow")
     {0, 8, 0, 0, -5}
   };
 
-  eigen::print_matrix("A", A);
+  print_numpy_matrix("A", A);
 
   std::mt19937 rng{std::random_device{}()};
   auto init = std::make_shared<ten_weight_initializer>(rng);
@@ -163,13 +163,13 @@ TEST_CASE("test_regrow")
   auto A_pruned = A;
   auto accept = [threshold](scalar x) { return x != 0 && std::fabs(x) <= threshold; };
   auto prune_count = detail::prune(A_pruned, accept);
-  eigen::print_matrix("A_pruned", A_pruned);
+  print_numpy_matrix("A_pruned", A_pruned);
   CHECK_EQ(A_pruned_expected, A_pruned);
   CHECK_EQ(5, prune_count);
 
   auto A_grow = A_pruned;
   grow_random(A_grow, init, prune_count, rng);
-  eigen::print_matrix("A_grow", A_grow);
+  print_numpy_matrix("A_grow", A_grow);
 
   long m = A.rows();
   long n = A.cols();
@@ -198,9 +198,9 @@ TEST_CASE("test_regrow")
     }
     std::cout << "=== regrow_threshold count = " << count << " ===" << std::endl;
     auto B = A;
-    eigen::print_matrix("A", A);
+    print_numpy_matrix("A", A);
     regrow_magnitude(B, init, count, rng);
-    eigen::print_matrix("B", B);
+    print_numpy_matrix("B", B);
     CHECK_EQ((B.array() == 10).count(), count);
     CHECK_EQ((B.array() == 0).count(), (A.array() == 0).count());
   }
@@ -226,7 +226,7 @@ TEST_CASE("test2")
     {0, 8, 0, 0, -5}
   };
 
-  eigen::print_matrix("A", A);
+  print_numpy_matrix("A", A);
 
   auto A_pruned = A;
   float negative_threshold = -2;
@@ -236,7 +236,7 @@ TEST_CASE("test2")
     return (negative_threshold <= x && x < 0) || (0 < x && x <= positive_threshold);
   };
   auto prune_count = detail::prune(A_pruned, accept);
-  eigen::print_matrix("A_pruned_expected", A_pruned_expected);
+  print_numpy_matrix("A_pruned_expected", A_pruned_expected);
   CHECK_EQ(A_pruned_expected, A_pruned);
   CHECK_EQ(7, prune_count);
 
@@ -254,14 +254,14 @@ TEST_CASE("test2")
         continue;
       }
       std::cout << "=== regrow_interval negative_count = " << negative_count << " positive_count = " << positive_count << " ===" << std::endl;
-      eigen::print_matrix("A", A);
+      print_numpy_matrix("A", A);
 
       // dense matrices
       std::cout << "--- dense ---" << std::endl;
       auto B = A;
       auto init = std::make_shared<ten_weight_initializer>(rng);
       regrow_interval(B, init, negative_count, positive_count, rng);
-      eigen::print_matrix("B", B);
+      print_numpy_matrix("B", B);
       CHECK_EQ((B.array() == 10).count(), negative_count + positive_count);
       CHECK_EQ((B.array() == 0).count(), (A.array() == 0).count());
 
@@ -269,7 +269,7 @@ TEST_CASE("test2")
       std::cout << "--- sparse ---" << std::endl;
       auto B1 = mkl::to_csr(A);
       regrow_interval<mkl::sparse_matrix_csr<scalar>, scalar, false>(B1, init, negative_count, positive_count, rng);
-      eigen::print_matrix("B1", mkl::to_eigen(B1));
+      print_numpy_matrix("B1", mkl::to_eigen(B1));
       auto B2 = mkl::to_eigen(B1);
       CHECK_EQ((B2.array() == 10).count(), negative_count + positive_count);
       CHECK_EQ((B2.array() == 0).count(), (A.array() == 0).count());

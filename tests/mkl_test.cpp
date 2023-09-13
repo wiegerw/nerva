@@ -859,7 +859,7 @@ TEST_CASE("test_assign_values")
   std::cout << "A1.values = " << print_list(A1.values()) << std::endl;
   CHECK_EQ(A_values, A1.values());
   eigen::matrix A2 = mkl::to_eigen(A1);
-  eigen::print_cpp_matrix("A2", A2);
+  print_cpp_matrix("A2", A2);
   CHECK_EQ(A, A2);
 
   eigen::matrix B {
@@ -868,7 +868,7 @@ TEST_CASE("test_assign_values")
   };
   mkl::initialize_matrix(A1, counter());
   A2 = mkl::to_eigen(A1);
-  eigen::print_cpp_matrix("A2", A2);
+  print_cpp_matrix("A2", A2);
   CHECK_EQ(B, A2);
 }
 
@@ -922,7 +922,7 @@ TEST_CASE("test_assign_matrix_product")
   mkl::sparse_matrix_csr<scalar> A1 = make_csr_matrix(m, n, density, rng, scalar(0));
   mkl::sdd_product_batch(A1, B, C, 2);
 
-  eigen::print_cpp_matrix("A", A);
-  eigen::print_cpp_matrix("A1", mkl::to_eigen(A1));
+  print_cpp_matrix("A", A);
+  print_cpp_matrix("A1", mkl::to_eigen(A1));
   CHECK_EQ(A, mkl::to_eigen(A1));
 }
