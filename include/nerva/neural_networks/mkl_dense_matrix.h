@@ -26,6 +26,18 @@ enum matrix_layout
 };
 
 inline
+std::string matrix_layout_string(int layout)
+{
+  return layout == column_major ? "C" : "R";
+}
+
+inline
+std::string matrix_layout_string(int layout1, int layout2)
+{
+  return matrix_layout_string(layout1) + matrix_layout_string(layout2);
+}
+
+inline
 long column_major_index(long rows, [[maybe_unused]] long columns, long i, long j)
 {
   assert(0 <= i && i < rows);

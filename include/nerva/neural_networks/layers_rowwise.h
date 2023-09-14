@@ -112,7 +112,7 @@ struct linear_layer: public neural_network_layer
 
     if constexpr (IsSparse)
     {
-      mkl::sdd_product_batch(DW, DY.transpose(), X, std::max(4L, static_cast<long>(DY.rows() / 10)));
+      mkl::sdd_product_batch(DW, DY.transpose(), X, std::max(4L, static_cast<long>(DY.cols() / 10)));
       Db = columns_sum(DY);
       mkl::dds_product(DX, DY, W);
     }
@@ -229,7 +229,7 @@ struct sigmoid_layer : public linear_layer<Matrix>
     if constexpr (IsSparse)
     {
       DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(K, N) - Y));
-      mkl::sdd_product_batch(DW, DZ.transpose(), X, std::max(4L, static_cast<long>(DZ.rows() / 10)));
+      mkl::sdd_product_batch(DW, DZ.transpose(), X, std::max(4L, static_cast<long>(DZ.cols() / 10)));
       Db = columns_sum(DZ);
       mkl::dds_product(DX, DZ, W);
     }
@@ -308,7 +308,7 @@ struct activation_layer : public linear_layer<Matrix>
     if constexpr (IsSparse)
     {
       DZ = hadamard(DY, act.gradient(Z));
-      mkl::sdd_product_batch(DW, DZ.transpose(), X, std::max(4L, static_cast<long>(DZ.rows() / 10)));
+      mkl::sdd_product_batch(DW, DZ.transpose(), X, std::max(4L, static_cast<long>(DZ.cols() / 10)));
       Db = columns_sum(DZ);
       mkl::dds_product(DX, DZ, W);
     }
@@ -479,7 +479,7 @@ struct softmax_layer : public linear_layer<Matrix>
     if constexpr (IsSparse)
     {
       DZ = hadamard(Y, DY - column_repeat(diag(DY * Y.transpose()), N));
-      mkl::sdd_product_batch(DW, DZ.transpose(), X, std::max(4L, static_cast<long>(DZ.rows() / 10)));
+      mkl::sdd_product_batch(DW, DZ.transpose(), X, std::max(4L, static_cast<long>(DZ.cols() / 10)));
       Db = columns_sum(DZ);
       mkl::dds_product(DX, DZ, W);
     }
@@ -545,7 +545,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
     if constexpr (IsSparse)
     {
       DZ = DY - hadamard(stable_softmax()(Z), column_repeat(rows_sum(DY), N));
-      mkl::sdd_product_batch(DW, DZ.transpose(), X, std::max(4L, static_cast<long>(DZ.rows() / 10)));
+      mkl::sdd_product_batch(DW, DZ.transpose(), X, std::max(4L, static_cast<long>(DZ.cols() / 10)));
       Db = columns_sum(DZ);
       mkl::dds_product(DX, DZ, W);
     }
