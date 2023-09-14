@@ -399,26 +399,13 @@ void dds_product(dense_matrix_view<Scalar, MatrixLayout>& A,
                  sparse_operation_t operation_C = SPARSE_OPERATION_NON_TRANSPOSE
 )
 {
-  // The MKL library doesn't support this use case directly, hence we calculate the result using
-  // (op(C)^T * B^T)^T
-  //
-  // N.B. The transpose operations are not performed explicitly. It is sufficient to create
-  // transposed views.
-
-  // Create a transposed view of matrix B
-  constexpr int MatrixLayoutInverse = (MatrixLayout == Eigen::ColMajor ? Eigen::RowMajor : Eigen::ColMajor);
-  Eigen::Map<const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutInverse>> B_transposed(B.data(), B.cols(), B.rows());
-
-  // Create a transposed view of the result matrix A
+  // The MKL library doesn't support this use case directly, hence we calculate the result using A^T := op(C)^T * B^T
+  auto A_T = make_transposed_dense_matrix_view(A);
+  auto B_T = make_transposed_dense_matrix_view(B);
   sparse_operation_t operation_C_inverse = (operation_C == SPARSE_OPERATION_NON_TRANSPOSE ? SPARSE_OPERATION_TRANSPOSE : SPARSE_OPERATION_NON_TRANSPOSE);
-  auto A_rows = operation_C_inverse == SPARSE_OPERATION_NON_TRANSPOSE ? C.rows() : C.cols();
-  auto A_cols = B_transposed.cols();
-  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutInverse>> A_view(A.data(), A_rows, A_cols);
-
   Scalar alpha = 0;
   Scalar beta = 1;
-
-  dsd_product(A_view, C, B_transposed, alpha, beta, operation_C_inverse);
+  dsd_product(A_T, C, B_T, alpha, beta, operation_C_inverse);
 }
 
 // Performs the assignment A := B * C, with A sparse and B, C dense.
