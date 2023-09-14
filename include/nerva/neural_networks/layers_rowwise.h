@@ -96,7 +96,8 @@ struct linear_layer: public neural_network_layer
 
     if constexpr (IsSparse)
     {
-      mkl::dds_product(result, X, W, SPARSE_OPERATION_TRANSPOSE);
+      bool W_transposed = true;
+      mkl::dds_product(result, X, W, W_transposed);
       result += row_repeat(b, N);
     }
     else
@@ -205,7 +206,8 @@ struct sigmoid_layer : public linear_layer<Matrix>
 
     if constexpr (IsSparse)
     {
-      mkl::dds_product(Z, X, W, SPARSE_OPERATION_TRANSPOSE);
+      bool W_transposed = true;
+      mkl::dds_product(Z, X, W, W_transposed);
       Z += row_repeat(b, N);
       result = Sigmoid(Z);
     }
@@ -286,7 +288,8 @@ struct activation_layer : public linear_layer<Matrix>
 
     if constexpr (IsSparse)
     {
-      mkl::dds_product(Z, X, W, SPARSE_OPERATION_TRANSPOSE);
+      bool W_transposed = true;
+      mkl::dds_product(Z, X, W, W_transposed);
       Z += row_repeat(b, N);
       result = act(Z);
     }
@@ -453,7 +456,8 @@ struct softmax_layer : public linear_layer<Matrix>
 
     if constexpr (IsSparse)
     {
-      mkl::dds_product(Z, X, W, SPARSE_OPERATION_TRANSPOSE);
+      bool W_transposed = true;
+      mkl::dds_product(Z, X, W, W_transposed);
       Z += row_repeat(b, N);
       result = stable_softmax()(Z);
     }
@@ -518,7 +522,8 @@ struct log_softmax_layer : public linear_layer<Matrix>
 
     if constexpr (IsSparse)
     {
-      mkl::dds_product(Z, X, W, SPARSE_OPERATION_TRANSPOSE);
+      bool W_transposed = true;
+      mkl::dds_product(Z, X, W, W_transposed);
       Z += row_repeat(b, N);
       result = stable_log_softmax()(Z);
     }

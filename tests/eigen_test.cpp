@@ -66,7 +66,7 @@ TEST_CASE("test_slice1")
   B << 2, 6,
        2, 7;
 
-  matrix C = A(Eigen::all, Eigen::seqN(1, 2));
+  matrix C = A(Eigen::placeholders::all, Eigen::seqN(1, 2));
 
   DOCTEST_CHECK_EQ(B, C);
 }
@@ -104,7 +104,7 @@ TEST_CASE("test_slice2")
        2, 2, 3;
 
   std::vector<long> I = {1, 3, 0, 2};
-  matrix C = A(Eigen::all, slice(I.begin(), 3));
+  matrix C = A(Eigen::placeholders::all, slice(I.begin(), 3));
 
   DOCTEST_CHECK_EQ(B, C);
 }

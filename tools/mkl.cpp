@@ -201,7 +201,8 @@ void test_dsd_transpose_product(long m, long k, long n, const std::vector<float>
     std::cout << fmt::format("{:8.5f}s ddd_product({})\n", seconds, pp(A, B, C));
 
     watch.reset();
-    mkl::dsd_product(A, B1, C, float(0), float(1), SPARSE_OPERATION_TRANSPOSE);
+    bool B1_transposed = true;
+    mkl::dsd_product(A, B1, C, float(0), float(1), B1_transposed);
     seconds = watch.seconds();
     std::cout << fmt::format("{:8.5f}s dsd_product({})\n\n", seconds, pp(A, B1, C));
   }

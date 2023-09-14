@@ -271,10 +271,9 @@ void test_sparse_dense_multiplication(const matrix& A,
 
   mkl::sparse_matrix_csr<double> A1 = mkl::to_csr<double>(A);
   result_type C1(C.rows(), C.cols());
-  sparse_operation_t operation_A = A_transposed ? SPARSE_OPERATION_TRANSPOSE : SPARSE_OPERATION_NON_TRANSPOSE;
   double alpha = 0;
   double beta = 1;
-  mkl::dsd_product(C1, A1, B, alpha, beta, operation_A);
+  mkl::dsd_product(C1, A1, B, alpha, beta, A_transposed);
 
   scalar epsilon = 1e-10;
   print_numpy_matrix("C1", C1);
@@ -328,8 +327,7 @@ void test_dense_sparse_multiplication(const Eigen::Matrix<double, Eigen::Dynamic
 
   mkl::sparse_matrix_csr<double> B1 = mkl::to_csr<double>(B);
   result_type C1(C.rows(), C.cols());
-  sparse_operation_t operation_B = B_transposed ? SPARSE_OPERATION_TRANSPOSE : SPARSE_OPERATION_NON_TRANSPOSE;
-  mkl::dds_product(C1, A, B1, operation_B);
+  mkl::dds_product(C1, A, B1, B_transposed);
 
   scalar epsilon = 1e-10;
   print_numpy_matrix("C1", C1);

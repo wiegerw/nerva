@@ -113,7 +113,8 @@ struct linear_layer: public neural_network_layer
     {
       mkl::sdd_product_batch(DW, DY, X.transpose(), std::max(4L, static_cast<long>(DY.rows() / 10)));
       Db = rows_sum(DY);
-      mkl::dsd_product(DX, W, DY, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
+      bool W_transposed = true;
+      mkl::dsd_product(DX, W, DY, scalar(0), scalar(1), W_transposed);
     }
     else
     {
@@ -229,7 +230,8 @@ struct sigmoid_layer : public linear_layer<Matrix>
       DZ = hadamard(DY, eigen::x_times_one_minus_x(Y));
       mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
       Db = rows_sum(DZ);
-      mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
+      bool W_transposed = true;
+      mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), W_transposed);
     }
     else
     {
@@ -306,9 +308,9 @@ struct activation_layer : public linear_layer<Matrix>
     {
       DZ = hadamard(DY, act.gradient(Z));
       mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
-      // mkl::sdd_product(DW, DZ, X.transpose());
       Db = rows_sum(DZ);
-      mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
+      bool W_transposed = true;
+      mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), W_transposed);
     }
     else
     {
@@ -478,7 +480,8 @@ struct softmax_layer : public linear_layer<Matrix>
       DZ = hadamard(Y, DY - row_repeat(diag(Y.transpose() * DY).transpose(), K));
       mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
       Db = rows_sum(DZ);
-      mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
+      bool W_transposed = true;
+      mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), W_transposed);
     }
     else
     {
@@ -543,7 +546,8 @@ struct log_softmax_layer : public linear_layer<Matrix>
       DZ = DY - hadamard(stable_softmax()(Z), row_repeat(columns_sum(DY), K));
       mkl::sdd_product_batch(DW, DZ, X.transpose(), std::max(4L, static_cast<long>(DZ.rows() / 10)));
       Db = rows_sum(DZ);
-      mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), SPARSE_OPERATION_TRANSPOSE);
+      bool W_transposed = true;
+      mkl::dsd_product(DX, W, DZ, scalar(0), scalar(1), W_transposed);
     }
     else
     {

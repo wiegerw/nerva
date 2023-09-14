@@ -347,14 +347,14 @@ void dsd_product(const Eigen::MatrixBase<DerivedA>& A,
                  const Eigen::MatrixBase<DerivedC>& C,
                  Scalar alpha = 0,
                  Scalar beta = 1,
-                 sparse_operation_t operation_B = SPARSE_OPERATION_NON_TRANSPOSE
+                 bool B_transposed = false
 )
 {
   constexpr int MatrixLayoutA = DerivedA::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
   constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
   dense_matrix_view<Scalar, MatrixLayoutA> A_view = mkl::make_dense_matrix_view(A);
   dense_matrix_view<Scalar, MatrixLayoutC> C_view = mkl::make_dense_matrix_view(C);
-  dsd_product(A_view, B, C_view, alpha, beta, operation_B);
+  dsd_product(A_view, B, C_view, alpha, beta, B_transposed);
 }
 
 // Does the assignment A := B * op(C) with C sparse and A, B dense
@@ -364,14 +364,14 @@ template <typename DerivedA, typename DerivedB, typename Scalar = scalar>
 void dds_product(const Eigen::MatrixBase<DerivedA>& A,
                  const Eigen::MatrixBase<DerivedB>& B,
                  const mkl::sparse_matrix_csr<Scalar>& C,
-                 sparse_operation_t operation_C = SPARSE_OPERATION_NON_TRANSPOSE
+                 bool C_transposed = false
 )
 {
   constexpr int MatrixLayoutA = DerivedA::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
   constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
   dense_matrix_view<Scalar, MatrixLayoutA> A_view = mkl::make_dense_matrix_view(A);
   dense_matrix_view<Scalar, MatrixLayoutB> B_view = mkl::make_dense_matrix_view(B);
-  dds_product(A_view, B_view, C, operation_C);
+  dds_product(A_view, B_view, C, C_transposed);
 }
 
 // returns the L2 norm of (B - A)

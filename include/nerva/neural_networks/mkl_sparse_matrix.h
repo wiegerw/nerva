@@ -347,18 +347,20 @@ std::size_t count_negative_elements(const sparse_matrix_csr<T>& A)
 // operation_B determines whether op(B) = B or op(B) = B^T
 template <typename Scalar, int MatrixLayout>
 void dsd_product(dense_matrix_view<Scalar, MatrixLayout>& A,
-                 const mkl::sparse_matrix_csr<Scalar>& B,
+                 const sparse_matrix_csr<Scalar>& B,
                  const dense_matrix_view<Scalar, MatrixLayout>& C,
                  Scalar alpha = 0,
                  Scalar beta = 1,
-                 sparse_operation_t operation_B = SPARSE_OPERATION_NON_TRANSPOSE
+                 bool B_transposed = false
 )
 {
-  assert(A.rows() == (operation_B == SPARSE_OPERATION_NON_TRANSPOSE ? B.rows() : B.cols()));
+  assert(A.rows() == (!B_transposed ? B.rows() : B.cols()));
   assert(A.cols() == C.cols());
-  assert((operation_B == SPARSE_OPERATION_NON_TRANSPOSE ? B.cols() : B.rows()) == C.rows());
+  assert((!B_transposed ? B.cols() : B.rows()) == C.rows());
 
   sparse_status_t status;
+  sparse_operation_t operation_B = B_transposed ? SPARSE_OPERATION_TRANSPOSE : SPARSE_OPERATION_NON_TRANSPOSE;
+
   if constexpr (std::is_same<Scalar, double>::value)
   {
     if constexpr (MatrixLayout == matrix_layout::column_major)
@@ -396,16 +398,15 @@ template <typename Scalar, int MatrixLayout>
 void dds_product(dense_matrix_view<Scalar, MatrixLayout>& A,
                  const dense_matrix_view<Scalar, MatrixLayout>& B,
                  const mkl::sparse_matrix_csr<Scalar>& C,
-                 sparse_operation_t operation_C = SPARSE_OPERATION_NON_TRANSPOSE
+                 bool C_transposed = false
 )
 {
   // The MKL library doesn't support this use case directly, hence we calculate the result using A^T := op(C)^T * B^T
   auto A_T = make_transposed_dense_matrix_view(A);
   auto B_T = make_transposed_dense_matrix_view(B);
-  sparse_operation_t operation_C_inverse = (operation_C == SPARSE_OPERATION_NON_TRANSPOSE ? SPARSE_OPERATION_TRANSPOSE : SPARSE_OPERATION_NON_TRANSPOSE);
   Scalar alpha = 0;
   Scalar beta = 1;
-  dsd_product(A_T, C, B_T, alpha, beta, operation_C_inverse);
+  dsd_product(A_T, C, B_T, alpha, beta, !C_transposed);
 }
 
 // Performs the assignment A := B * C, with A sparse and B, C dense.
