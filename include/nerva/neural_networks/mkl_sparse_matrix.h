@@ -412,10 +412,10 @@ void dds_product(dense_matrix_view<Scalar, MatrixLayout>& A,
 // Performs the assignment A := B * C, with A sparse and B, C dense.
 // N.B. Only the existing entries of A are changed.
 // Use a sequential computation to copy values to A
-template <typename Scalar, int MatrixLayout>
+template <typename Scalar, int MatrixLayoutB, int MatrixLayoutC>
 void sdd_product(mkl::sparse_matrix_csr<Scalar>& A,
-                 const dense_matrix_view<Scalar, MatrixLayout>& B,
-                 const dense_matrix_view<Scalar, MatrixLayout>& C
+                 const dense_matrix_view<Scalar, MatrixLayoutB>& B,
+                 const dense_matrix_view<Scalar, MatrixLayoutC>& C
 )
 {
   assert(A.rows() == B.rows());
@@ -423,7 +423,7 @@ void sdd_product(mkl::sparse_matrix_csr<Scalar>& A,
   assert(B.cols() == C.rows());
 
   long m = A.rows();
-  dense_matrix<Scalar, MatrixLayout> BC = B * C;
+  dense_matrix<Scalar, MatrixLayoutB> BC = B * C;
   Scalar* values = A.values().data();
   const auto& A_col_index = A.col_index();
   const auto& A_row_index = A.row_index();
