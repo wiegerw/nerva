@@ -10,11 +10,13 @@
 #ifndef NERVA_UTILITIES_COMMAND_LINE_TOOL_H
 #define NERVA_UTILITIES_COMMAND_LINE_TOOL_H
 
+#include "nerva/utilities/logger.h"
+#include "nerva/utilities/string_utility.h"
+#include <lyra/lyra.hpp>
 #include <cstdlib>
 #include <iostream>
+#include <regex>
 #include <string>
-#include <lyra/lyra.hpp>
-#include "nerva/utilities/logger.h"
 
 namespace nerva {
 
@@ -37,6 +39,34 @@ class command_line_tool
       return "";
     }
 
+    static std::string quote(const std::string& text)
+    {
+      std::regex unsafe_characters("[^\\w@%+=:,./-]");
+
+      auto contains_special_characters = [](const std::string& str)
+      {
+        const std::string special_characters = "^@%+=:;,./-\"'";
+        return std::any_of(special_characters.begin(), special_characters.end(), [&str](char c) { return str.find(c) != std::string::npos; });
+      };
+
+      if (contains_special_characters(text))
+      {
+        if (text.find('"') == std::string::npos)
+        {
+          return "\"" + text + "\"";
+        }
+        else if (text.find('\'') == std::string::npos)
+        {
+          return "'" + text + "'";
+        }
+        else
+        {
+          return "'" + std::regex_replace(text, unsafe_characters, "'\"'\"'") + "'";
+        }
+      }
+      return text;
+    }
+
     // Does an attempt to print the original command line call.
     // TODO: handle nested quotes
     std::string reconstruct_command_line_call(int argc, const char** argv)
@@ -44,13 +74,14 @@ class command_line_tool
       std::ostringstream out;
       for (int i = 0; i < argc; i++)
       {
-        if (std::string(argv[i]).find_first_of(" ();") != std::string::npos)
+        std::vector<std::string> words = utilities::regex_split(argv[i], "=");
+        if (words.size() == 1)
         {
-          out << "\"" << argv[i] << "\"";
+          out << words[0];
         }
         else
         {
-          out << argv[i];
+          out << words[0] << '=' << quote(words[1]);
         }
         if (i < argc - 1)
         {

@@ -76,10 +76,10 @@ function train()
 optimizers="GradientDescent"
 train
 
-optimizers="Momentum(0.9)"
-learning_rate="Constant(0.01)"
-train
+#optimizers="Momentum(0.9)"
+#learning_rate="Constant(0.01)"
+#train
 
-learning_rate="Constant(0.01)"
-optimizers="Nesterov(0.9)"
-train
+#learning_rate="Constant(0.01)"
+#optimizers="Nesterov(0.9)"
+#train

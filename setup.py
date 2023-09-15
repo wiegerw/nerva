@@ -51,7 +51,7 @@ else:
         MKL_LIB_DIR = f'{MKLROOT}/lib/intel64'
 
     include_dirs += [MKL_INCLUDE_DIR]
-    extra_compile_args += ['-march=native', '-DMKL_ILP64', '-m64']
+    extra_compile_args += ['-march=native', '-DMKL_ILP64', '-m64', '-fopenmp']
     extra_link_args += ['-Wl,--start-group',
                         f'{MKL_LIB_DIR}/libmkl_intel_ilp64.a',
                         f'{MKL_LIB_DIR}/libmkl_intel_thread.a',

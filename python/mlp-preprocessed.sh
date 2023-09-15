@@ -14,6 +14,42 @@ loss=SoftmaxCrossEntropy
 batch_size=100
 epochs=5
 
+print_header "Train CIFAR10 using mlprowwise.cpp with preprocessed data"
+../tools/dist/mlprowwise \
+	--seed=$seed \
+	--overall-density=$density \
+	--batch-size=$batch_size \
+	--epochs=$epochs \
+	--sizes=$sizes \
+	--layers=$layers \
+	--optimizers=$optimizers \
+	--init-weights=$init_weights \
+	--learning-rate=$learning_rate \
+	--loss=$loss \
+	--preprocessed=cifar$seed \
+	--threads=4 \
+	--no-shuffle \
+	--verbose \
+	2>&1 | tee logs/mlprowwise-preprocessed-cpp.log
+
+print_header "Train CIFAR10 using mlpcolwise.cpp with preprocessed data"
+../tools/dist/mlpcolwise \
+        --seed=$seed \
+        --overall-density=$density \
+        --batch-size=$batch_size \
+        --epochs=$epochs \
+        --sizes=$sizes \
+        --layers=$layers \
+        --optimizers=$optimizers \
+        --init-weights=$init_weights \
+        --learning-rate=$learning_rate \
+        --loss=$loss \
+        --preprocessed=cifar$seed \
+        --threads=4 \
+        --no-shuffle \
+        --verbose \
+        2>&1 | tee logs/mlpcolwise-preprocessed-cpp.log
+
 print_header "Train CIFAR10 using mlp.py with preprocessed data"
 python3 -u mlp.py \
 	--seed=$seed \
@@ -29,20 +65,3 @@ python3 -u mlp.py \
 	--preprocessed=cifar$seed \
 	2>&1 | tee logs/mlp-preprocessed-python.log
 
-print_header "Train CIFAR10 using mlp.cpp with preprocessed data"
-../tools/dist/mlp \
-	--seed=$seed \
-	--overall-density=$density \
-	--batch-size=$batch_size \
-	--epochs=$epochs \
-	--sizes=$sizes \
-	--layers=$layers \
-	--optimizers=$optimizers \
-	--init-weights=$init_weights \
-	--learning-rate=$learning_rate \
-	--loss=$loss \
-	--preprocessed=cifar$seed \
-	--threads=4 \
-	--no-shuffle \
-	--verbose \
-	2>&1 | tee logs/mlp-preprocessed-cpp.log

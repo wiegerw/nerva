@@ -423,7 +423,7 @@ void sdd_product(mkl::sparse_matrix_csr<Scalar>& A,
   assert(B.cols() == C.rows());
 
   long m = A.rows();
-  dense_matrix<Scalar, MatrixLayoutB> BC = B * C;
+  auto BC = ddd_product(B, C);
   Scalar* values = A.values().data();
   const auto& A_col_index = A.col_index();
   const auto& A_row_index = A.row_index();
