@@ -6,9 +6,10 @@ import sys
 
 __version__ = "0.2"
 
+
 define_macros = [('VERSION_INFO', __version__)]
 include_dirs = ['include']
-extra_compile_args = ['-DFMT_HEADER_ONLY', '-DNERVA_ROWWISE']
+extra_compile_args = ['-DFMT_HEADER_ONLY']
 extra_link_args = []
 
 # set up Eigen
@@ -64,10 +65,18 @@ else:
                        ]
 
 ext_modules = [
-    Pybind11Extension("nervalib",
+    Pybind11Extension('nervalibcolwise',
         [ "src/logger.cpp", "src/python-bindings.cpp", "src/utilities.cpp" ],
         define_macros=define_macros,
-        extra_compile_args=extra_compile_args,
+        extra_compile_args=extra_compile_args + ['-DNERVA_COLWISE'],
+        extra_link_args=extra_link_args,
+        include_dirs=include_dirs,
+        cxx_std=17
+    ),
+    Pybind11Extension('nervalibrowwise',
+        [ "src/logger.cpp", "src/python-bindings.cpp", "src/utilities.cpp" ],
+        define_macros=define_macros,
+        extra_compile_args=extra_compile_args + ['-DNERVA_ROWWISE'],
         extra_link_args=extra_link_args,
         include_dirs=include_dirs,
         cxx_std=17

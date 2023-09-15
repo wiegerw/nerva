@@ -68,8 +68,7 @@ class command_line_tool
     }
 
     // Does an attempt to print the original command line call.
-    // TODO: handle nested quotes
-    std::string reconstruct_command_line_call(int argc, const char** argv)
+    static std::string reconstruct_command_line_call(int argc, const char** argv)
     {
       std::ostringstream out;
       for (int i = 0; i < argc; i++)

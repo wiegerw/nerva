@@ -36,7 +36,7 @@ def inspect_data(outputdir, epochs):
 # check if the data is stored correctly
 def check(datadir):
     import tempfile
-    from nervalib import data_set
+    from nervalibcolwise import data_set
 
     Xtrain, Ttrain, Xtest, Ttest = custom_load_cifar10_data(datadir)
     pp('Xtrain', Xtrain)

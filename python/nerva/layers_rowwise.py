@@ -7,7 +7,7 @@ from typing import Optional, List, Union, Tuple
 from nerva.activation import Activation, NoActivation
 from nerva.optimizers import Optimizer, GradientDescent
 from nerva.weights import WeightInitializer, Xavier
-import nervalib
+import nervalibrowwise
 
 
 class Layer(object):
@@ -66,9 +66,9 @@ class Dense(Layer):
         """
         activation = print_activation(self.activation)
         if self.dropout_rate == 0.0:
-            layer = nervalib.make_dense_linear_layer(self.input_size, self.output_size, batch_size, activation, self.weight_initializer.compile(), self.optimizer.compile())
+            layer = nervalibrowwise.make_dense_linear_layer(self.input_size, self.output_size, batch_size, activation, self.weight_initializer.compile(), self.optimizer.compile())
         else:
-            layer = nervalib.make_dense_linear_dropout_layer(self.input_size, self.output_size, batch_size, self.dropout_rate, activation, self.weight_initializer.compile(), self.optimizer.compile())
+            layer = nervalibrowwise.make_dense_linear_dropout_layer(self.input_size, self.output_size, batch_size, self.dropout_rate, activation, self.weight_initializer.compile(), self.optimizer.compile())
         self._layer = layer
         return layer
 
@@ -115,7 +115,7 @@ class Sparse(Layer):
         :return:
         """
         activation = print_activation(self.activation)
-        layer = nervalib.make_sparse_linear_layer(self.input_size, self.output_size, batch_size, self.density, activation, self.weight_initializer.compile(), self.optimizer.compile())
+        layer = nervalibrowwise.make_sparse_linear_layer(self.input_size, self.output_size, batch_size, self.density, activation, self.weight_initializer.compile(), self.optimizer.compile())
         self._layer = layer
         return layer
 
@@ -160,7 +160,7 @@ class BatchNormalization(Layer):
         self.output_size = output_size
 
     def compile(self, batch_size: int):
-        return nervalib.batch_normalization_layer(self.input_size, batch_size)
+        return nervalibrowwise.batch_normalization_layer(self.input_size, batch_size)
 
     def __str__(self):
         return 'BatchNormalization()'
@@ -176,7 +176,7 @@ class SimpleBatchNormalization(Layer):
         self.output_size = output_size
 
     def compile(self, batch_size: int):
-        return nervalib.simple_batch_normalization_layer(self.input_size, batch_size)
+        return nervalibrowwise.simple_batch_normalization_layer(self.input_size, batch_size)
 
     def __str__(self):
         return 'SimpleBatchNormalization()'
@@ -192,7 +192,7 @@ class AffineTransform(Layer):
         self.output_size = output_size
 
     def compile(self, batch_size: int):
-        return nervalib.affine_layer(self.input_size, batch_size)
+        return nervalibrowwise.affine_layer(self.input_size, batch_size)
 
     def __str__(self):
         return 'AffineTransform()'
@@ -223,7 +223,7 @@ class Sequential(object):
     def compile(self, batch_size: int) -> None:
         self._check_layers()
 
-        M = nervalib.MLP()
+        M = nervalibrowwise.MLP()
 
         # add layers
         for i, layer in enumerate(self.layers):
@@ -278,7 +278,7 @@ class Sequential(object):
 
 
 def compute_sparse_layer_densities(overall_density: float, layer_sizes: List[int], erk_power_scale: float=1) -> List[float]:
-    return nervalib.compute_sparse_layer_densities(overall_density, layer_sizes, erk_power_scale)
+    return nervalibrowwise.compute_sparse_layer_densities(overall_density, layer_sizes, erk_power_scale)
 
 
 def print_model_info(M: Sequential) -> None:
@@ -286,4 +286,4 @@ def print_model_info(M: Sequential) -> None:
     Prints detailed information about a multilayer perceptron
     :param M: a multilayer perceptron
     """
-    nervalib.print_model_info(M.compiled_model)
+    nervalibrowwise.print_model_info(M.compiled_model)

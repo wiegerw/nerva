@@ -48,8 +48,8 @@ print_header "Train CIFAR10 using mlpcolwise.cpp"
         --verbose \
         2>&1 | tee logs/mlpcolwise-cpp.log
 
-print_header "Train CIFAR10 using mlp.py"
-python3 -u mlp.py \
+print_header "Train CIFAR10 using mlpcolwise.py"
+python3 -u mlpcolwise.py \
 	--seed=$seed \
 	--overall-density=$density \
 	--batch-size=$batch_size \
@@ -61,4 +61,19 @@ python3 -u mlp.py \
 	--learning-rate=$learning_rate \
 	--loss=$loss \
 	--datadir=./data \
-	2>&1 | tee logs/mlp-python.log
+	2>&1 | tee logs/mlpcolwise-python.log
+
+print_header "Train CIFAR10 using mlprowwise.py"
+python3 -u mlprowwise.py \
+	--seed=$seed \
+	--overall-density=$density \
+	--batch-size=$batch_size \
+	--epochs=$epochs \
+	--sizes=$sizes \
+	--layers=$layers \
+	--optimizers=$optimizers \
+	--init-weights=$init_weights \
+	--learning-rate=$learning_rate \
+	--loss=$loss \
+	--datadir=./data \
+	2>&1 | tee logs/mlprowwise-python.log

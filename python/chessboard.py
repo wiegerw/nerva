@@ -17,9 +17,8 @@ from nerva.layers import Sequential, Dense, Sparse
 from nerva.learning_rate import ConstantScheduler
 from nerva.loss import SquaredErrorLoss
 from nerva.optimizers import GradientDescent
-from nerva.random import manual_seed
 from nerva.training import compute_accuracy, compute_statistics, compute_sparse_layer_densities
-from nerva.utilities import StopWatch
+from nerva.utilities import StopWatch, manual_seed
 from nerva.weights import Xavier
 
 

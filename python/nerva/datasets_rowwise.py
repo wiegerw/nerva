@@ -12,11 +12,11 @@ import torchvision
 from torch.nn import functional as F
 from torchvision import transforms, datasets
 
-import nervalib
+import nervalibrowwise
 from nerva.utilities import flatten_numpy
 
 
-class DataSet(nervalib.DataSetView):
+class DataSet(nervalibrowwise.DataSetView):
     def __init__(self, Xtrain, Ttrain, Xtest, Ttest):
         super().__init__(Xtrain.T, Ttrain.T, Xtest.T, Ttest.T)
         # store references to the original data to make sure it is not destroyed

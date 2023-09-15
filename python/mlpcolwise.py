@@ -13,21 +13,20 @@ from typing import List, Union
 import torch
 
 import nerva.activation
-import nerva.layers
-import nerva.learning_rate
-import nerva.loss
 import nerva.optimizers
-import nerva.random
 import nerva.utilities
 import nerva.weights
-import nervalib
+import nervalibcolwise
 from nerva.activation import parse_activation, Activation
 from nerva.optimizers import Optimizer
-from nerva.pruning import PruneFunction, GrowFunction, PruneGrow, parse_prune_function, parse_grow_function
-from nerva.training import StochasticGradientDescentAlgorithm, SGDOptions, compute_sparse_layer_densities
-from nerva.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, create_npz_dataloaders
-from nerva.layers import print_model_info, BatchNormalization, Dense, Sparse, Layer
+from nerva.pruning_colwise import PruneFunction, GrowFunction, PruneGrow, parse_prune_function, parse_grow_function
+from nerva.training_colwise import StochasticGradientDescentAlgorithm, SGDOptions, compute_sparse_layer_densities
+from nerva.datasets_colwise import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, create_npz_dataloaders
+from nerva.layers_colwise import print_model_info, BatchNormalization, Dense, Sparse, Layer, Sequential
 from nerva.weights import WeightInitializer
+from nerva.utilities_colwise import manual_seed, global_timer_enable
+from nerva.loss_colwise import LossFunction, parse_loss_function
+from nerva.learning_rate_colwise import LearningRateScheduler, parse_learning_rate
 
 
 def make_batch_normalization_layer(input_size: int, output_size: int, optimizer: Optimizer) -> BatchNormalization:
@@ -100,7 +99,7 @@ def make_layers(layer_specifications: list[str],
     return result
 
 
-class MLPNerva(nerva.layers.Sequential):
+class MLPNerva(Sequential):
     """ Nerva Multilayer perceptron
     """
     def __init__(self,
@@ -267,10 +266,10 @@ def print_command_line_arguments(args):
 
 def initialize_frameworks(args):
     if args.seed:
-        nerva.random.manual_seed(args.seed)
+        manual_seed(args.seed)
 
     if args.timer:
-        nerva.utilities.global_timer_enable()
+        global_timer_enable()
 
     torch.set_printoptions(precision=args.precision, edgeitems=args.edgeitems, threshold=5, sci_mode=False, linewidth=160)
 
@@ -280,12 +279,12 @@ def initialize_frameworks(args):
 
 class SGD(StochasticGradientDescentAlgorithm):
     def __init__(self,
-                 M: nerva.layers.Sequential,
+                 M: Sequential,
                  train_loader,
                  test_loader,
                  options: SGDOptions,
-                 loss: nerva.loss.LossFunction,
-                 learning_rate: nerva.learning_rate.LearningRateScheduler,
+                 loss: LossFunction,
+                 learning_rate: LearningRateScheduler,
                  preprocessed_dir: str,
                  prune: PruneFunction,
                  grow: GrowFunction
@@ -342,12 +341,12 @@ def main():
         linear_layer_densities = [1.0] * (len(linear_layer_sizes) - 1)
 
     layer_specifications = args.layers.split(';')
-    linear_layer_specifications = [spec for spec in layer_specifications if nervalib.is_linear_layer(spec)]
+    linear_layer_specifications = [spec for spec in layer_specifications if nervalibcolwise.is_linear_layer(spec)]
     linear_layer_weights = parse_init_weights(args.init_weights, linear_layer_count)
     layer_optimizers = parse_optimizers(args.optimizers, linear_layer_count)
     linear_layer_dropouts = parse_dropouts(args.dropouts, linear_layer_count)
-    loss = nerva.loss.parse_loss_function(args.loss)
-    learning_rate = nerva.learning_rate.parse_learning_rate(args.learning_rate)
+    loss = parse_loss_function(args.loss)
+    learning_rate = parse_learning_rate(args.learning_rate)
 
     M = MLPNerva(linear_layer_sizes,
                  linear_layer_densities,

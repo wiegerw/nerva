@@ -30,7 +30,13 @@
 namespace py = pybind11;
 using namespace nerva;
 
-PYBIND11_MODULE(nervalib, m)
+#ifdef NERVA_COLWISE
+#define NERVALIB nervalibcolwise
+#else
+#define NERVALIB nervalibrowwise
+#endif
+
+PYBIND11_MODULE(NERVALIB, m)
 {
   m.doc() = R"pbdoc(
         Pybind11 example plugin
@@ -627,5 +633,5 @@ PYBIND11_MODULE(nervalib, m)
   //                       version
   /////////////////////////////////////////////////////////////////////////
 
-  m.attr("__version__") = "0.12";
+  m.attr("__version__") = "0.20";
 }

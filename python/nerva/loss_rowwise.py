@@ -2,29 +2,29 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-import nervalib
+import nervalibrowwise
 
-class LossFunction(nervalib.loss_function):
+class LossFunction(nervalibrowwise.loss_function):
     def __str__(self):
         return 'LossFunction()'
 
 
-class SquaredErrorLoss(nervalib.squared_error_loss):
+class SquaredErrorLoss(nervalibrowwise.squared_error_loss):
     def __str__(self):
         return 'SquaredErrorLoss()'
 
 
-class CrossEntropyLoss(nervalib.cross_entropy_loss):
+class CrossEntropyLoss(nervalibrowwise.cross_entropy_loss):
     def __str__(self):
         return 'CrossEntropyLoss()'
 
 
-class LogisticCrossEntropyLoss(nervalib.logistic_cross_entropy_loss):
+class LogisticCrossEntropyLoss(nervalibrowwise.logistic_cross_entropy_loss):
     def __str__(self):
         return 'LogisticCrossEntropyLoss()'
 
 
-class SoftmaxCrossEntropyLoss(nervalib.softmax_cross_entropy_loss):
+class SoftmaxCrossEntropyLoss(nervalibrowwise.softmax_cross_entropy_loss):
     def __str__(self):
         return 'SoftmaxCrossEntropyLoss()'
 

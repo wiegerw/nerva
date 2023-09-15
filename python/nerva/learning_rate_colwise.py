@@ -3,16 +3,16 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from typing import List
-import nervalib
+import nervalibcolwise
 
 from nerva.utilities import parse_function_call
 
 
-class LearningRateScheduler(nervalib.learning_rate_scheduler):
+class LearningRateScheduler(nervalibcolwise.learning_rate_scheduler):
     pass
 
 
-class ConstantScheduler(nervalib.constant_scheduler):
+class ConstantScheduler(nervalibcolwise.constant_scheduler):
     def __init__(self, lr: float):
         super().__init__(lr)
 
@@ -20,7 +20,7 @@ class ConstantScheduler(nervalib.constant_scheduler):
         return f'ConstantScheduler(lr={self.lr})'
 
 
-class TimeBasedScheduler(nervalib.time_based_scheduler):
+class TimeBasedScheduler(nervalibcolwise.time_based_scheduler):
     def __init__(self, lr: float, decay: float):
         super().__init__(lr, decay)
 
@@ -28,7 +28,7 @@ class TimeBasedScheduler(nervalib.time_based_scheduler):
         return f'TimeBasedScheduler(lr={self.lr}, decay={self.decay})'
 
 
-class StepBasedScheduler(nervalib.step_based_scheduler):
+class StepBasedScheduler(nervalibcolwise.step_based_scheduler):
     def __init__(self, lr: float, drop_rate: float, change_rate: float):
         super().__init__(lr, drop_rate, change_rate)
 
@@ -36,7 +36,7 @@ class StepBasedScheduler(nervalib.step_based_scheduler):
         return f'StepBasedScheduler(lr={self.lr}, drop_rate={self.drop_rate}, change_rate={self.change_rate})'
 
 
-class MultiStepLRScheduler(nervalib.multi_step_lr_scheduler):
+class MultiStepLRScheduler(nervalibcolwise.multi_step_lr_scheduler):
     def __init__(self, lr: float, milestones: List[int], gamma: float):
         super().__init__(lr, milestones, gamma)
 
@@ -44,7 +44,7 @@ class MultiStepLRScheduler(nervalib.multi_step_lr_scheduler):
         return f'MultiStepLRScheduler(lr={self.lr}, milestones={self.milestones}, gamma={self.gamma})'
 
 
-class ExponentialScheduler(nervalib.exponential_scheduler):
+class ExponentialScheduler(nervalibcolwise.exponential_scheduler):
     def __init__(self, lr: float, change_rate: float):
         super().__init__(lr, change_rate)
 

@@ -7,7 +7,7 @@
 import re
 from typing import List
 from nerva.weights import WeightInitializer
-from nerva.layers import Sparse, Sequential
+from nerva.layers_colwise import Sparse, Sequential
 
 
 def parse_arguments(text: str, name: str, n: int) -> List[str]:

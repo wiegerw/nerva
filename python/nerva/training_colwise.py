@@ -6,17 +6,17 @@ from typing import List
 
 import torch
 
-from nerva.datasets import DataLoader
-from nerva.learning_rate import LearningRateScheduler
-from nerva.loss import LossFunction
-from nerva.layers import Sequential, print_model_info
+from nerva.datasets_colwise import DataLoader
+from nerva.learning_rate_colwise import LearningRateScheduler
+from nerva.loss_colwise import LossFunction
+from nerva.layers_colwise import Sequential, print_model_info
 from nerva.utilities import MapTimer, pp
-import nervalib
+import nervalibcolwise
 
 
-def to_one_hot(x: torch.LongTensor, num_classes: int):
-    one_hot = torch.zeros(len(x), num_classes, dtype=torch.float)
-    one_hot.scatter_(1, x.unsqueeze(1), 1)
+def to_one_hot(x: torch.LongTensor, n_classes: int):
+    one_hot = torch.zeros(n_classes, len(x), dtype=torch.float)
+    one_hot.scatter_(0, x.unsqueeze(0), 1)
     return one_hot
 
 
@@ -31,20 +31,20 @@ def print_epoch(epoch, lr, loss, train_accuracy, test_accuracy, elapsed):
 
 
 def compute_accuracy(M, data_loader: DataLoader):
-    nervalib.global_timer_suspend()
+    nervalibcolwise.global_timer_suspend()
     N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
     for X, T in data_loader:
         Y = torch.Tensor(M.feedforward(X))  # TODO: this conversion should be eliminated
-        predicted = Y.argmax(dim=1)  # the predicted classes for the batch
+        predicted = Y.argmax(dim=0)  # the predicted classes for the batch
         total_correct += (predicted == T).sum().item()
 
-    nervalib.global_timer_resume()
+    nervalibcolwise.global_timer_resume()
     return total_correct / N
 
 
 def compute_loss(M, data_loader: DataLoader, loss: LossFunction):
-    nervalib.global_timer_suspend()
+    nervalibcolwise.global_timer_suspend()
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
     num_classes = M.layers[-1].output_size
@@ -53,7 +53,7 @@ def compute_loss(M, data_loader: DataLoader, loss: LossFunction):
         Y = M.feedforward(X)
         total_loss += loss.value(Y, T)
 
-    nervalib.global_timer_resume()
+    nervalibcolwise.global_timer_resume()
     return total_loss / N
 
 
@@ -74,10 +74,10 @@ def compute_sparse_layer_densities(overall_density: float, sizes: List[int], erk
     :param sizes: the input and output sizes of  the layers
     :param erk_power_scale:
     """
-    return nervalib.compute_sparse_layer_densities(overall_density, sizes, erk_power_scale)
+    return nervalibcolwise.compute_sparse_layer_densities(overall_density, sizes, erk_power_scale)
 
 
-class SGDOptions(nervalib.sgd_options):
+class SGDOptions(nervalibcolwise.sgd_options):
     def __init__(self):
         super().__init__()
         self.epochs = 100

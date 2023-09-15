@@ -312,9 +312,9 @@ class tool: public command_line_tool
 
       std::mt19937 rng{options.seed};
 #ifdef NERVA_COLWISE
-      auto orientation = datasets::dataset::colwise;
+      auto orientation = datasets::dataset_orientation::colwise;
 #else
-      auto orientation = datasets::dataset::rowwise;
+      auto orientation = datasets::dataset_orientation::rowwise;
 #endif
       datasets::dataset dataset(orientation);
 

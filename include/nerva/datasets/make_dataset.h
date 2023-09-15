@@ -68,7 +68,7 @@ std::pair<eigen::matrix, eigen::matrix> make_dataset_mini(long n, RandomNumberGe
 }
 
 template<typename RandomNumberGenerator>
-dataset make_dataset(const std::string& name, std::size_t n, RandomNumberGenerator rng, dataset::orientation_type orientation)
+dataset make_dataset(const std::string& name, std::size_t n, RandomNumberGenerator rng, dataset_orientation orientation)
 {
   dataset result(orientation);
   auto n_train = n;
@@ -95,7 +95,7 @@ dataset make_dataset(const std::string& name, std::size_t n, RandomNumberGenerat
   {
     throw std::runtime_error("unknown dataset " + name);
   }
-  if (orientation == dataset::rowwise)
+  if (orientation == dataset_orientation::rowwise)
   {
     result.transpose();
   }
