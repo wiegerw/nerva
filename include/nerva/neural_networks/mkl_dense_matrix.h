@@ -311,7 +311,7 @@ dense_submatrix_view<Scalar, MatrixLayout> make_dense_matrix_columns_view(dense_
 template <typename Scalar, int MatrixLayout, template <typename, int> class Matrix>
 dense_matrix_view<Scalar, MatrixLayout> make_dense_matrix_view(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A)
 {
-  return dense_matrix_view<Scalar, MatrixLayout>(const_cast<Scalar*>(A.data()), A.cols(), A.rows());
+  return dense_matrix_view<Scalar, MatrixLayout>(const_cast<Scalar*>(A.data()), A.rows(), A.cols());
 }
 
 template <typename Derived>
