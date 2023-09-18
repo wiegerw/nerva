@@ -136,7 +136,7 @@ void compute_statistics(multilayer_perceptron& M,
   std::cout << '\n';
 }
 
-template <typename DataSet = datasets::dataset>
+template <typename DataSet = datasets::dataset<datasets::dataset_orientation::rowwise>>
 class stochastic_gradient_descent_algorithm
 {
   protected:

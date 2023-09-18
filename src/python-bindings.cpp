@@ -32,9 +32,12 @@ using namespace nerva;
 
 #ifdef NERVA_COLWISE
 #define NERVALIB nervalibcolwise
+constexpr datasets::dataset_orientation Orientation = datasets::dataset_orientation::colwise;
 #else
 #define NERVALIB nervalibrowwise
+constexpr datasets::dataset_orientation Orientation = datasets::dataset_orientation::rowwise;
 #endif
+
 
 PYBIND11_MODULE(NERVALIB, m)
 {
@@ -63,21 +66,21 @@ PYBIND11_MODULE(NERVALIB, m)
   //                       datasets
   /////////////////////////////////////////////////////////////////////////
 
-  py::class_<datasets::dataset, std::shared_ptr<datasets::dataset>>(m, "data_set")
+  py::class_<datasets::dataset<Orientation>, std::shared_ptr<datasets::dataset<Orientation>>>(m, "data_set")
     .def(py::init<>(), py::return_value_policy::copy)
-    .def("info", &datasets::dataset::info)
-    .def("load", &datasets::dataset::load)
-    .def("save", &datasets::dataset::save)
+    .def("info", &datasets::dataset<Orientation>::info)
+    .def("load", &datasets::dataset<Orientation>::load)
+    .def("save", &datasets::dataset<Orientation>::save)
     ;
 
-  py::class_<datasets::dataset_view, std::shared_ptr<datasets::dataset_view>>(m, "DataSetView")
+  py::class_<datasets::dataset_view<Orientation>, std::shared_ptr<datasets::dataset_view<Orientation>>>(m, "DataSetView")
     .def(py::init<datasets::matrix_ref, datasets::matrix_ref, datasets::matrix_ref, datasets::matrix_ref>(), py::return_value_policy::copy)
-    .def("info", &datasets::dataset_view::info)
-    .def("save", &datasets::dataset_view::save)
-    .def_readwrite("Xtrain", &datasets::dataset_view::Xtrain, py::return_value_policy::reference_internal)
-    .def_readwrite("Ttrain", &datasets::dataset_view::Ttrain, py::return_value_policy::reference_internal)
-    .def_readwrite("Xtest", &datasets::dataset_view::Xtest, py::return_value_policy::reference_internal)
-    .def_readwrite("Ttest", &datasets::dataset_view::Ttest, py::return_value_policy::reference_internal)
+    .def("info", &datasets::dataset_view<Orientation>::info)
+    .def("save", &datasets::dataset_view<Orientation>::save)
+    .def_readwrite("Xtrain", &datasets::dataset_view<Orientation>::Xtrain, py::return_value_policy::reference_internal)
+    .def_readwrite("Ttrain", &datasets::dataset_view<Orientation>::Ttrain, py::return_value_policy::reference_internal)
+    .def_readwrite("Xtest", &datasets::dataset_view<Orientation>::Xtest, py::return_value_policy::reference_internal)
+    .def_readwrite("Ttest", &datasets::dataset_view<Orientation>::Ttest, py::return_value_policy::reference_internal)
     ;
 
   /////////////////////////////////////////////////////////////////////////
@@ -455,24 +458,24 @@ PYBIND11_MODULE(NERVALIB, m)
     .def("info", &sgd_options::info)
     ;
 
-  py::class_<stochastic_gradient_descent_algorithm<datasets::dataset_view>>(m, "stochastic_gradient_descent_algorithm")
+  py::class_<stochastic_gradient_descent_algorithm<datasets::dataset_view<Orientation>>>(m, "stochastic_gradient_descent_algorithm")
     .def(py::init(
          [](multilayer_perceptron& M,
-            datasets::dataset_view& data,
+            datasets::dataset_view<Orientation>& data,
             const sgd_options& options,
             const std::shared_ptr<loss_function>& loss,
             const std::shared_ptr<learning_rate_scheduler>& learning_rate
          )
          {
-           return new stochastic_gradient_descent_algorithm<datasets::dataset_view>(M, data, options, loss, learning_rate, nerva_rng);
+           return new stochastic_gradient_descent_algorithm<datasets::dataset_view<Orientation>>(M, data, options, loss, learning_rate, nerva_rng);
          }
         ))
-    .def("run", &stochastic_gradient_descent_algorithm<datasets::dataset_view>::run)
+    .def("run", &stochastic_gradient_descent_algorithm<datasets::dataset_view<Orientation>>::run)
     ;
 
   m.def("compute_loss", compute_loss);
   m.def("compute_accuracy", compute_accuracy<datasets::matrix_ref>);
-  m.def("compute_statistics", compute_statistics<datasets::dataset_view>);
+  m.def("compute_statistics", compute_statistics<datasets::dataset_view<Orientation>>);
   m.def("set_num_threads", mkl_set_num_threads);
 
   /////////////////////////////////////////////////////////////////////////

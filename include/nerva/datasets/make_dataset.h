@@ -67,10 +67,10 @@ std::pair<eigen::matrix, eigen::matrix> make_dataset_mini(long n, RandomNumberGe
   return {X, T};
 }
 
-template<typename RandomNumberGenerator>
-dataset make_dataset(const std::string& name, std::size_t n, RandomNumberGenerator rng, dataset_orientation orientation)
+template<dataset_orientation Orientation=dataset_orientation::colwise, typename RandomNumberGenerator>
+dataset<Orientation> make_dataset(const std::string& name, std::size_t n, RandomNumberGenerator rng)
 {
-  dataset result(orientation);
+  dataset<Orientation> result;
   auto n_train = n;
   auto n_test = n / 5;
 
@@ -95,21 +95,25 @@ dataset make_dataset(const std::string& name, std::size_t n, RandomNumberGenerat
   {
     throw std::runtime_error("unknown dataset " + name);
   }
-  if (orientation == dataset_orientation::rowwise)
+  if (Orientation == dataset_orientation::rowwise)
   {
     result.transpose();
   }
   return result;
 }
 
-inline
-dataset load_cifar10_dataset(const std::string& directory)
+template <dataset_orientation Orientation=dataset_orientation::colwise>
+dataset<Orientation> load_cifar10_dataset(const std::string& directory)
 {
-  dataset result;
+  dataset<Orientation> result;
   cifar10reader reader;
   reader.read(directory);
   reader.normalize_data();
   std::tie(result.Xtrain, result.Ttrain, result.Xtest, result.Ttest) = reader.data();
+  if (Orientation == dataset_orientation::rowwise)
+  {
+    result.transpose();
+  }
   return result;
 }
 

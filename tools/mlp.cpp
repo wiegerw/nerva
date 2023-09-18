@@ -33,6 +33,13 @@
 
 using namespace nerva;
 
+#ifdef NERVA_COLWISE
+constexpr datasets::dataset_orientation Orientation = datasets::dataset_orientation::colwise;
+#else
+constexpr datasets::dataset_orientation Orientation = datasets::dataset_orientation::rowwise;
+#endif
+datasets::dataset<Orientation> dataset;
+
 inline
 auto parse_linear_layer_densities(const std::string& densities_text,
                                   double overall_density,
@@ -134,13 +141,13 @@ void set_optimizers(multilayer_perceptron& M, const std::string& optimizer)
   }
 }
 
-class sgd_algorithm: public stochastic_gradient_descent_algorithm<datasets::dataset>
+class sgd_algorithm: public stochastic_gradient_descent_algorithm<datasets::dataset<Orientation>>
 {
   protected:
     std::filesystem::path preprocessed_dir;
     std::shared_ptr<prune_and_grow> regrow;
 
-    using super = stochastic_gradient_descent_algorithm<datasets::dataset>;
+    using super = stochastic_gradient_descent_algorithm<datasets::dataset<Orientation>>;
     using super::data;
     using super::M;
     using super::rng;
@@ -148,7 +155,7 @@ class sgd_algorithm: public stochastic_gradient_descent_algorithm<datasets::data
 
   public:
     sgd_algorithm(multilayer_perceptron& M,
-                  datasets::dataset& data,
+                  datasets::dataset<Orientation>& data,
                   const sgd_options& options,
                   const std::shared_ptr<loss_function>& loss,
                   const std::shared_ptr<learning_rate_scheduler>& learning_rate,
@@ -311,17 +318,11 @@ class tool: public command_line_tool
       }
 
       std::mt19937 rng{options.seed};
-#ifdef NERVA_COLWISE
-      auto orientation = datasets::dataset_orientation::colwise;
-#else
-      auto orientation = datasets::dataset_orientation::rowwise;
-#endif
-      datasets::dataset dataset(orientation);
 
       if (!options.dataset.empty())
       {
         NERVA_LOG(log::verbose) << "Loading dataset " << options.dataset << '\n';
-        dataset = datasets::make_dataset(options.dataset, options.dataset_size, rng, orientation);
+        dataset = datasets::make_dataset<Orientation>(options.dataset, options.dataset_size, rng);
         if (!save_dataset_file.empty())
         {
           dataset.save(save_dataset_file);
