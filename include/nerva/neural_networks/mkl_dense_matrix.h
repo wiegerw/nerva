@@ -12,6 +12,7 @@
 #include "nerva/neural_networks/print_matrix.h"
 #include "Eigen/Dense"
 #include <mkl.h>
+#include <algorithm>
 #include <cassert>
 #include <stdexcept>
 #include <vector>
@@ -68,7 +69,8 @@ class dense_matrix_view
   public:
     dense_matrix_view(Scalar* data, long rows, long columns)
       : m_data(data), m_rows(rows), m_columns(columns)
-    {}
+    {
+    }
 
     [[nodiscard]] long rows() const
     {
@@ -129,6 +131,30 @@ class dense_matrix_view
       {
         return m_data[row_major_index(m_rows, m_columns, i, j)];
       }
+    }
+
+    void transpose_in_place()
+    {
+      constexpr char ordering = (MatrixLayout == column_major ? 'c' : 'r');
+      long lda = (MatrixLayout == column_major ? m_rows : m_columns);
+      long ldb = (MatrixLayout == column_major ? m_columns : m_rows);
+      if constexpr (std::is_same_v<Scalar, double>)
+      {
+        mkl_dimatcopy(ordering, 't', m_rows, m_columns, 1.0, m_data, lda, ldb);
+      }
+      else
+      {
+        mkl_simatcopy(ordering, 't', m_rows, m_columns, 1.0, m_data, lda, ldb);
+      }
+      std::swap(m_rows, m_columns);
+    }
+
+    bool operator==(const dense_matrix_view<Scalar, MatrixLayout>& other) const
+    {
+      auto size = m_rows * m_columns;
+      return m_rows == other.m_rows &&
+             m_columns == other.m_columns &&
+             std::equal(m_data, m_data + size, other.m_data, other.m_data + size);
     }
 };
 
@@ -207,6 +233,22 @@ class dense_matrix
       {
         return m_data[row_major_index(m_rows, m_columns, i, j)];
       }
+    }
+
+    void transpose_in_place()
+    {
+      constexpr char ordering = (MatrixLayout == column_major ? 'c' : 'r');
+      long lda = (MatrixLayout == column_major ? m_rows : m_columns);
+      long ldb = (MatrixLayout == column_major ? m_columns : m_rows);
+      if constexpr (std::is_same_v<Scalar, double>)
+      {
+        mkl_dimatcopy(ordering, 't', m_rows, m_columns, 1.0, m_data, lda, ldb);
+      }
+      else
+      {
+        mkl_simatcopy(ordering, 't', m_rows, m_columns, 1.0, m_data, lda, ldb);
+      }
+      std::swap(m_rows, m_columns);
     }
 };
 

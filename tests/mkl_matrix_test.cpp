@@ -400,3 +400,34 @@ TEST_CASE("test_rows_view")
   print_numpy_matrix("C0", C0);
   print_numpy_matrix("C1", C1);
 }
+
+TEST_CASE("test_transpose_in_place")
+{
+  Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> A {
+    {2, 3},
+    {7, 4},
+    {1, 8},
+  };
+  Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> A_T = A.transpose();
+
+  Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> B {
+    {2, 3},
+    {7, 4},
+    {1, 8},
+  };
+  Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> B_T = B.transpose();
+
+  print_numpy_matrix("A", A);
+  auto A1 = mkl::make_dense_matrix_view(A);
+  A1.transpose_in_place();
+  print_numpy_matrix("A1", A1);
+  auto A2 = mkl::make_dense_matrix_view(A_T);
+  CHECK(A1 == A2);
+
+  print_numpy_matrix("B", B);
+  auto B1 = mkl::make_dense_matrix_view(B);
+  B1.transpose_in_place();
+  print_numpy_matrix("B1", B1);
+  auto B2 = mkl::make_dense_matrix_view(B_T);
+  CHECK(B1 == B2);
+}
