@@ -4,6 +4,7 @@
 
 from typing import List
 
+import numpy as np
 import torch
 
 from nerva.datasets_colwise import DataLoader
@@ -12,6 +13,10 @@ from nerva.loss_colwise import LossFunction
 from nerva.layers_colwise import Sequential, print_model_info
 from nerva.utilities import MapTimer, pp
 import nervalibcolwise
+
+
+def to_numpy(x: torch.Tensor) -> np.ndarray:
+    return np.asfortranarray(x.detach().numpy().T)
 
 
 def to_one_hot(x: torch.LongTensor, n_classes: int):
@@ -35,6 +40,7 @@ def compute_accuracy(M, data_loader: DataLoader):
     N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
     for X, T in data_loader:
+        X = to_numpy(X)
         Y = torch.Tensor(M.feedforward(X))  # TODO: this conversion should be eliminated
         predicted = Y.argmax(dim=0)  # the predicted classes for the batch
         total_correct += (predicted == T).sum().item()
@@ -49,6 +55,7 @@ def compute_loss(M, data_loader: DataLoader, loss: LossFunction):
     total_loss = 0.0
     num_classes = M.layers[-1].output_size
     for X, T in data_loader:
+        X = to_numpy(X)
         T = to_one_hot(T, num_classes)
         Y = M.feedforward(X)
         total_loss += loss.value(Y, T)
@@ -172,6 +179,7 @@ class StochasticGradientDescentAlgorithm(object):
 
             for k, (X, T) in enumerate(self.train_loader):
                 self.on_start_batch()
+                X = to_numpy(X)
                 T = to_one_hot(T, num_classes)
                 Y = M.feedforward(X)
                 DY = self.loss.gradient(Y, T) / options.batch_size

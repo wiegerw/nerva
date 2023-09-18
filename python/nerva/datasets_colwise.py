@@ -20,7 +20,7 @@ class DataSet(nervalibcolwise.DataSetView):
     def __init__(self, Xtrain, Ttrain, Xtest, Ttest):
         super().__init__(Xtrain.T, Ttrain.T, Xtest.T, Ttest.T)
         # store references to the original data to make sure it is not destroyed
-        self.keep_alive = [Xtrain, Ttrain, Xtest, Ttest]
+        self._keep_alive = [Xtrain, Ttrain, Xtest, Ttest]
 
 
 def create_cifar10_augmented_datasets(datadir='./data'):
@@ -141,7 +141,7 @@ class TorchDataLoader(object):
     A data loader with an interface similar to torch.utils.data.DataLoader.
     """
 
-    def __init__(self, Xdata: torch.Tensor, Tdata: torch.IntTensor, batch_size: int):
+    def __init__(self, Xdata: torch.Tensor, Tdata: torch.LongTensor, batch_size: int):
         """
         :param Xdata: a dataset
         :param Tdata: the targets for the dataset

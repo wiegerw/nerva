@@ -178,9 +178,9 @@ class StochasticGradientDescentAlgorithm(object):
                 if options.debug:
                     print(f'epoch: {epoch} batch: {k}')
                     print_model_info(M)
-                    pp("X", X.T)
-                    pp("Y", Y.T)
-                    pp("DY", DY.T)
+                    pp("X", X)
+                    pp("Y", Y)
+                    pp("DY", DY)
 
                 M.backpropagate(Y, DY)
                 M.optimize(lr)

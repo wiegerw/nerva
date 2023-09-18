@@ -17,9 +17,9 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.nn import Linear
 
-from nerva.datasets import create_npz_dataloaders, create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, \
+from nerva.datasets_rowwise import create_npz_dataloaders, create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, \
     save_dict_to_npz, load_dict_from_npz
-from nerva.training import compute_sparse_layer_densities, print_epoch
+from nerva.training_rowwise import compute_sparse_layer_densities, print_epoch
 from nerva.utilities import StopWatch, pp, parse_function_call
 
 
@@ -283,9 +283,9 @@ def train_torch(M, train_loader, test_loader, epochs, device, debug=False):
                 print(f'epoch: {epoch} batch: {k}')
                 M.info()
                 DY = Y.grad.detach()
-                pp("X", X.T)
-                pp("Y", Y.T)
-                pp("DY", DY.T)
+                pp("X", X)
+                pp("Y", Y)
+                pp("DY", DY)
 
             M.optimize()
             elapsed += watch.seconds()

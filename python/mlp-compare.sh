@@ -35,10 +35,10 @@ function train()
     --loss=$loss \
     --preprocessed=cifar$seed \
     --debug \
-    2>&1 | tee "logs/mlp-compare-${optimizers}-torch.log"
+    2>&1 | tee "logs/compare-${optimizers}-mlptorch.py.log"
 
-  print_header "Train CIFAR10 using mlp.cpp"
-  ../tools/dist/mlp \
+  print_header "Train CIFAR10 using mlpcolwise.cpp"
+  ../tools/dist/mlpcolwise \
     --seed=$seed \
     --overall-density=$density \
     --batch-size=$batch_size \
@@ -54,10 +54,29 @@ function train()
     --threads=4 \
     --no-shuffle \
     --debug \
-    2>&1 | tee "logs/mlp-compare-${optimizers}-cpp.log"
+    2>&1 | tee "logs/compare-${optimizers}-mlpcolwise.cpp.log"
 
-  print_header "Train CIFAR10 using mlp.py"
-  python3 -u mlp.py \
+  print_header "Train CIFAR10 using mlprowwise.cpp"
+  ../tools/dist/mlprowwise \
+    --seed=$seed \
+    --overall-density=$density \
+    --batch-size=$batch_size \
+    --epochs=$epochs \
+    --sizes=$sizes \
+    --layers=$layers \
+    --optimizers=$optimizers \
+    --init-weights=$init_weights \
+    --load-weights=$weight_file \
+    --learning-rate=$learning_rate \
+    --loss=$loss \
+    --preprocessed=cifar$seed \
+    --threads=4 \
+    --no-shuffle \
+    --debug \
+    2>&1 | tee "logs/compare-${optimizers}-mlprowwise.cpp.log"
+
+  print_header "Train CIFAR10 using mlpcolwise.py"
+  python3 -u mlpcolwise.py \
     --seed=$seed \
     --overall-density=$density \
     --batch-size=$batch_size \
@@ -70,7 +89,23 @@ function train()
     --loss=$loss \
     --preprocessed=cifar$seed \
     --debug \
-    2>&1 | tee "logs/mlp-compare-${optimizers}-python.log"
+    2>&1 | tee "logs/compare-${optimizers}-mlpcolwise.py.log"
+
+  print_header "Train CIFAR10 using mlprowwise.py"
+  python3 -u mlprowwise.py \
+    --seed=$seed \
+    --overall-density=$density \
+    --batch-size=$batch_size \
+    --epochs=$epochs \
+    --sizes=$sizes \
+    --layers=$layers \
+    --optimizers=$optimizers \
+    --load-weights=$weight_file \
+    --learning-rate=$learning_rate \
+    --loss=$loss \
+    --preprocessed=cifar$seed \
+    --debug \
+    2>&1 | tee "logs/compare-${optimizers}-mlprowwise.py.log"
 }
 
 optimizers="GradientDescent"

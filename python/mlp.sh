@@ -28,7 +28,7 @@ print_header "Train CIFAR10 using mlprowwise.cpp"
 	--threads=4 \
 	--no-shuffle \
 	--verbose \
-	2>&1 | tee logs/mlprowwise-cpp.log
+	2>&1 | tee logs/mlprowwise.cpp.log
 
 print_header "Train CIFAR10 using mlpcolwise.cpp"
 ../tools/dist/mlpcolwise \
@@ -46,7 +46,7 @@ print_header "Train CIFAR10 using mlpcolwise.cpp"
         --threads=4 \
         --no-shuffle \
         --verbose \
-        2>&1 | tee logs/mlpcolwise-cpp.log
+        2>&1 | tee logs/mlpcolwise.cpp.log
 
 print_header "Train CIFAR10 using mlpcolwise.py"
 python3 -u mlpcolwise.py \
@@ -61,7 +61,7 @@ python3 -u mlpcolwise.py \
 	--learning-rate=$learning_rate \
 	--loss=$loss \
 	--datadir=./data \
-	2>&1 | tee logs/mlpcolwise-python.log
+	2>&1 | tee logs/mlpcolwise.py.log
 
 print_header "Train CIFAR10 using mlprowwise.py"
 python3 -u mlprowwise.py \
@@ -76,4 +76,4 @@ python3 -u mlprowwise.py \
 	--learning-rate=$learning_rate \
 	--loss=$loss \
 	--datadir=./data \
-	2>&1 | tee logs/mlprowwise-python.log
+	2>&1 | tee logs/mlprowwise.py.log
