@@ -454,6 +454,18 @@ void sdd_product_batch(mkl::sparse_matrix_csr<Scalar>& A,
   assert(A.cols() == C.cols());
   assert(B.cols() == C.rows());
 
+#ifdef NERVA_DENSE_PRODUCT1
+  if constexpr (MatrixLayoutB == column_major && MatrixLayoutC == row_major)
+  {
+    static std::vector<Scalar> values;
+    values.resize(B.rows() * B.cols());
+    dense_matrix_view<Scalar, row_major> B1(values.data(), B.rows(), B.cols());
+    change_matrix_layout(B, B1);
+    sdd_product_batch(A, B1, C, batch_size);
+    return;
+  }
+#endif
+
   long m = A.rows();
   dense_matrix<Scalar, MatrixLayoutB> BC(batch_size, C.cols());
   Scalar* values = A.values().data();

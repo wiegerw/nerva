@@ -160,6 +160,16 @@ void sdd_product_batch(mkl::sparse_matrix_csr<Scalar>& A,
 {
   constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
   constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+
+#ifdef NERVA_DENSE_PRODUCT2
+  if constexpr (MatrixLayoutB == Eigen::ColMajor && MatrixLayoutC == Eigen::RowMajor)
+  {
+    Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> B1 = B;
+    sdd_product_batch(A, B1, C, batch_size);
+    return;
+  }
+#endif
+
   dense_matrix_view<Scalar, MatrixLayoutB> B_view = mkl::make_dense_matrix_view(B);
   dense_matrix_view<Scalar, MatrixLayoutC> C_view = mkl::make_dense_matrix_view(C);
   sdd_product_batch(A, B_view, C_view, batch_size);

@@ -133,6 +133,8 @@ class dense_matrix_view
       }
     }
 
+    // N.B. It turns out that `mkl_?imatcopy` is extremely inefficient.
+    // See also https://softwarerecs.stackexchange.com/questions/69323/fast-inplace-matrix-transpose-library
     void transpose_in_place()
     {
       constexpr char ordering = (MatrixLayout == column_major ? 'c' : 'r');
@@ -235,6 +237,8 @@ class dense_matrix
       }
     }
 
+    // N.B. It turns out that `mkl_?imatcopy` is extremely inefficient.
+    // See also https://softwarerecs.stackexchange.com/questions/69323/fast-inplace-matrix-transpose-library
     void transpose_in_place()
     {
       constexpr char ordering = (MatrixLayout == column_major ? 'c' : 'r');
@@ -368,6 +372,37 @@ template <typename Scalar, int MatrixLayout, template <typename, int> class Matr
 dense_matrix_view<Scalar, 1 - MatrixLayout> make_transposed_dense_matrix_view(const Matrix<Scalar, MatrixLayout>& A)
 {
   return dense_matrix_view<Scalar, 1 - MatrixLayout>(const_cast<Scalar*>(A.data()), A.cols(), A.rows());
+}
+
+// Computes `B := alpha * op(A)`. This function can for example be used to change the layout of a matrix.
+// N.B. A and B should be different!
+// The rows and columns of A are not being set.
+// The operation op can take the value `n` (unchanged) or `t` (transposed).
+// See also https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2023-2/mkl-omatcopy.html
+template <typename Scalar, int MatrixLayout, template <typename, int> class MatrixA, template <typename, int> class MatrixB>
+void matrix_copy(const MatrixA<Scalar, MatrixLayout>& A, MatrixB<Scalar, MatrixLayout>& B, Scalar alpha, char op)
+{
+  constexpr char ordering = (MatrixLayout == column_major ? 'c' : 'r');
+  long lda = A.leading_dimension(); // (MatrixLayout == column_major ? m_rows : m_columns);
+  long ldb = B.leading_dimension(); // (MatrixLayout == column_major ? m_columns : m_rows);
+  if constexpr (std::is_same_v<Scalar, double>)
+  {
+    mkl_domatcopy(ordering, op, A.rows(), A.cols(), alpha, A.data(), lda, B.data(), ldb);
+  }
+  else
+  {
+    mkl_somatcopy(ordering, op, A.rows(), A.cols(), alpha, A.data(), lda, B.data(), ldb);
+  }
+}
+
+// Computes B := A, such that B is a copy of A, but with different layout.
+template <typename Scalar, int MatrixLayout, template <typename, int> class MatrixA, template <typename, int> class MatrixB>
+void change_matrix_layout(const MatrixA<Scalar, MatrixLayout>& A, MatrixB<Scalar, 1 - MatrixLayout>& B)
+{
+  assert(A.rows() == B.rows());
+  assert(A.cols() == B.cols());
+  dense_matrix_view<Scalar, MatrixLayout> B1(B.data(), B.cols(), B.rows());
+  matrix_copy(A, B1, Scalar(1), 't');
 }
 
 // Computes the matrix product C := A * B

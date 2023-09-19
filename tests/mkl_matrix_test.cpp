@@ -431,3 +431,40 @@ TEST_CASE("test_transpose_in_place")
   auto B2 = mkl::make_dense_matrix_view(B_T);
   CHECK(B1 == B2);
 }
+
+TEST_CASE("test_efficient_product")
+{
+  using namespace mkl;
+
+  Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> A {
+    {2, 3, 4},
+    {7, 4, 1},
+  };
+
+  Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> B {
+    {9, 5},
+    {1, 2},
+    {6, 8},
+  };
+
+  auto C = A * B;
+
+  print_numpy_matrix("A", A);
+  print_numpy_matrix("B", B);
+  print_numpy_matrix("C", C);
+
+  auto size = B.rows() * B.cols();
+  std::vector<float> B1_values(size);
+  dense_matrix_view<float, row_major> B1(B1_values.data(), B.cols(), B.rows());
+  auto B_ = mkl::make_dense_matrix_view(B);
+  matrix_copy(B_, B1, float(1), 't');
+  dense_matrix_view<float, column_major> B2(B1_values.data(), B.rows(), B.cols());
+  print_numpy_matrix("B2", B2);
+
+  std::vector<float> B3_values(size);
+  dense_matrix_view<float, column_major> B3(B3_values.data(), B.rows(), B.cols());
+  change_matrix_layout(B_, B3);
+  print_numpy_matrix("B3", B3);
+
+  // TODO: add a comparison function for matrices with different layout
+}
