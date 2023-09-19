@@ -30,7 +30,7 @@ print_header "Train CIFAR10 using mlprowwise.cpp with preprocessed data"
 	--threads=4 \
 	--no-shuffle \
 	--verbose \
-	2>&1 | tee logs/mlprowwise-preprocessed-cpp.log
+	2>&1 | tee logs/preprocessed-mlprowwise.cpp.log
 
 print_header "Train CIFAR10 using mlpcolwise.cpp with preprocessed data"
 ../tools/dist/mlpcolwise \
@@ -48,10 +48,10 @@ print_header "Train CIFAR10 using mlpcolwise.cpp with preprocessed data"
         --threads=4 \
         --no-shuffle \
         --verbose \
-        2>&1 | tee logs/mlpcolwise-preprocessed-cpp.log
+        2>&1 | tee logs/preprocessed-mlpcolwise.cpp.log
 
-print_header "Train CIFAR10 using mlp.py with preprocessed data"
-python3 -u mlp.py \
+print_header "Train CIFAR10 using mlprowwise.py with preprocessed data"
+python3 -u mlprowwise.py \
 	--seed=$seed \
 	--overall-density=$density \
 	--batch-size=$batch_size \
@@ -62,6 +62,23 @@ python3 -u mlp.py \
 	--init-weights=$init_weights \
 	--learning-rate=$learning_rate \
 	--loss=$loss \
+	--manual \
 	--preprocessed=cifar$seed \
-	2>&1 | tee logs/mlp-preprocessed-python.log
+	2>&1 | tee logs/preprocessed-mlprowwise.py.log
+
+print_header "Train CIFAR10 using mlpcolwise.py with preprocessed data"
+python3 -u mlpcolwise.py \
+	--seed=$seed \
+	--overall-density=$density \
+	--batch-size=$batch_size \
+	--epochs=$epochs \
+	--sizes=$sizes \
+	--layers=$layers \
+	--optimizers=$optimizers \
+	--init-weights=$init_weights \
+	--learning-rate=$learning_rate \
+	--loss=$loss \
+	--manual \
+	--preprocessed=cifar$seed \
+	2>&1 | tee logs/preprocessed-mlpcolwise.py.log
 

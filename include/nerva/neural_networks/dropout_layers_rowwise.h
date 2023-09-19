@@ -62,7 +62,7 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
     using eigen::hadamard;
     auto N = X.rows();
 
-    result = X * hadamard(W.transpose(), R) + row_repeat(b, N);
+    result = X * hadamard(W, R).transpose() + row_repeat(b, N);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
@@ -72,14 +72,14 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
 
     if constexpr (std::is_same<Matrix, eigen::matrix>::value)
     {
-      DW = hadamard(DY.transpose() * X, R.transpose());
+      DW = hadamard(DY.transpose() * X, R);
     }
     else
     {
       // TODO
     }
     Db = columns_sum(DY);
-    DX = DY * hadamard(W, R.transpose());
+    DX = DY * hadamard(W, R);
   }
 
   [[nodiscard]] std::string to_string() const override
@@ -120,7 +120,7 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
     using eigen::Sigmoid;
     auto N = X.rows();
 
-    Z = X * hadamard(W.transpose(), R) + row_repeat(b, N);
+    Z = X * hadamard(W, R).transpose() + row_repeat(b, N);
     result = Sigmoid(Z);
   }
 
@@ -135,14 +135,14 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
     DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(N, K) - Y));
     if constexpr (std::is_same<Matrix, eigen::matrix>::value)
     {
-      DW = hadamard(DZ.transpose() * X, R.transpose());
+      DW = hadamard(DZ.transpose() * X, R);
     }
     else
     {
       // TODO
     }
     Db = columns_sum(DZ);
-    DX = DZ * hadamard(W, R.transpose());
+    DX = DZ * hadamard(W, R);
   }
 
   [[nodiscard]] std::string to_string() const override
@@ -183,7 +183,7 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
     using eigen::hadamard;
     auto N = X.rows();
 
-    Z = X * hadamard(W.transpose(), R) + row_repeat(b, N);
+    Z = X * hadamard(W, R).transpose() + row_repeat(b, N);
     result = act(Z);
   }
 
@@ -195,14 +195,14 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
     DZ = hadamard(DY, act.gradient(Z));
     if constexpr (std::is_same<Matrix, eigen::matrix>::value)
     {
-      DW = hadamard(DZ.transpose() * X, R.transpose());
+      DW = hadamard(DZ.transpose() * X, R);
     }
     else
     {
       // TODO
     }
     Db = columns_sum(DZ);
-    DX = DZ * hadamard(W, R.transpose());
+    DX = DZ * hadamard(W, R);
   }
 
   [[nodiscard]] std::string to_string() const override

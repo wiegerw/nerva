@@ -15,8 +15,8 @@ prune="Magnitude(0.2)"
 grow=Random
 grow_weights=XavierNormalized
 
-print_header "Nerva-python with regrow"
-python3 -u mlp.py \
+print_header "mlprowwise.py with regrow"
+python3 -u mlprowwise.py \
 	--seed=$seed \
 	--overall-density=$density \
 	--batch-size=$batch_size \
@@ -31,10 +31,10 @@ python3 -u mlp.py \
 	--grow=$grow \
 	--grow-weights=$grow_weights \
 	--datadir=./data \
-	2>&1 | tee logs/mlp-regrow-python.log
+	2>&1 | tee logs/regrow-mlprowwise.py.log
 
-print_header "Nerva-python preprocessed with regrow"
-python3 -u mlp.py \
+print_header "mlpcolwise.py with regrow"
+python3 -u mlpcolwise.py \
 	--seed=$seed \
 	--overall-density=$density \
 	--batch-size=$batch_size \
@@ -49,10 +49,10 @@ python3 -u mlp.py \
 	--grow=$grow \
 	--grow-weights=$grow_weights \
 	--preprocessed=./cifar1 \
-	2>&1 | tee logs/mlp-regrow-python-preprocessed.log
+	2>&1 | tee logs/regrow-mlpcolwise.py.log
 
-print_header "Nerva-c++ with regrow"
-../tools/dist/mlp \
+print_header "mlprowwise.cpp with regrow"
+../tools/dist/mlprowwise \
 	--seed=$seed \
 	--overall-density=$density \
 	--batch-size=$batch_size \
@@ -70,10 +70,10 @@ print_header "Nerva-c++ with regrow"
 	--threads=4 \
 	--no-shuffle \
 	--verbose \
-	2>&1 | tee logs/mlp-regrow-cpp.log
+	2>&1 | tee logs/regrow-mlprowwise.cpp.log
 
-print_header "Nerva-c++ preprocessed with regrow"
-../tools/dist/mlp \
+print_header "mlpcolwise.cpp with regrow"
+../tools/dist/mlpcolwise \
 	--seed=$seed \
 	--overall-density=$density \
 	--batch-size=$batch_size \
@@ -91,4 +91,4 @@ print_header "Nerva-c++ preprocessed with regrow"
 	--threads=4 \
 	--no-shuffle \
 	--verbose \
-	2>&1 | tee logs/mlp-regrow-cpp-preprocessed.log
+	2>&1 | tee logs/regrow-mlpcolwise.cpp-preprocessed.log
