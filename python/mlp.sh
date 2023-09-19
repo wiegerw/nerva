@@ -60,6 +60,7 @@ python3 -u mlpcolwise.py \
 	--init-weights=$init_weights \
 	--learning-rate=$learning_rate \
 	--loss=$loss \
+	--manual \
 	--datadir=./data \
 	2>&1 | tee logs/mlpcolwise.py.log
 
@@ -75,5 +76,6 @@ python3 -u mlprowwise.py \
 	--init-weights=$init_weights \
 	--learning-rate=$learning_rate \
 	--loss=$loss \
+	--manual \
 	--datadir=./data \
 	2>&1 | tee logs/mlprowwise.py.log

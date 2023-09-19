@@ -20,10 +20,13 @@ import nervalibrowwise
 from nerva.activation import parse_activation, Activation
 from nerva.optimizers import Optimizer
 from nerva.pruning_rowwise import PruneFunction, GrowFunction, PruneGrow, parse_prune_function, parse_grow_function
-from nerva.training_rowwise import StochasticGradientDescentAlgorithm, SGDOptions, compute_sparse_layer_densities
-from nerva.datasets_rowwise import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, create_npz_dataloaders
+from nerva.training_rowwise import StochasticGradientDescentAlgorithm, SGDOptions, compute_sparse_layer_densities, \
+    to_one_hot, compute_statistics
+from nerva.datasets_rowwise import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, \
+    create_npz_dataloaders, extract_tensors_from_dataloader
 from nerva.layers_rowwise import print_model_info, BatchNormalization, Dense, Sparse, Layer, Sequential
 from nerva.weights import WeightInitializer
+from nerva.utilities import pp
 from nerva.utilities_rowwise import manual_seed, global_timer_enable
 from nerva.loss_rowwise import LossFunction, parse_loss_function
 from nerva.learning_rate_rowwise import LearningRateScheduler, parse_learning_rate
@@ -197,6 +200,7 @@ def make_argument_parser():
     # training
     cmdline_parser.add_argument("--epochs", help="The number of epochs", type=int, default=100)
     cmdline_parser.add_argument("--batch-size", help="The batch size", type=int, default=1)
+    cmdline_parser.add_argument("--manual", help="Do not use the DataLoader interface", action="store_true")
 
     # optimizer
     cmdline_parser.add_argument("--optimizers", type=str, help="The optimizer (GradientDescent, Momentum(<mu>), Nesterov(<mu>))", default="GradientDescent")
@@ -313,6 +317,65 @@ class SGD(StochasticGradientDescentAlgorithm):
 
         # TODO: renew dropout masks
 
+    # This is faster than using the DataLoader interface
+    def run_manual(self):
+        M = self.M
+        options = self.options
+        num_classes = M.layers[-1].output_size
+
+        dataset = self.train_loader.dataset
+        batch_size = len(dataset) // len(self.train_loader)
+        Xtrain, Ttrain = extract_tensors_from_dataloader(self.train_loader)
+        Xtest, Ttest = extract_tensors_from_dataloader(self.test_loader)
+        N = Xtrain.shape[0]  # the number of examples
+        I = list(range(N))
+        K = N // batch_size  # the number of batches
+
+        self.on_start_training()
+
+        lr = self.learning_rate(0)
+        compute_statistics(M, lr, self.loss, self.train_loader, self.test_loader, 0, 0.0, options.statistics)
+
+        for epoch in range(self.options.epochs):
+            self.on_start_epoch(epoch)
+            epoch_label = "epoch{}".format(epoch)
+            self.timer.start(epoch_label)
+
+            lr = self.learning_rate(epoch)  # update the learning at the start of each epoch
+
+            for k in range(K):
+                batch = I[k * batch_size: (k + 1) * batch_size]
+                X = Xtrain[batch, :]
+                T = Ttrain[batch]
+
+                self.on_start_batch()
+                T = to_one_hot(T, num_classes)
+                Y = M.feedforward(X)
+                DY = self.loss.gradient(Y, T) / options.batch_size
+
+                if options.debug:
+                    print(f'epoch: {epoch} batch: {k}')
+                    print_model_info(M)
+                    pp("X", X)
+                    pp("Y", Y)
+                    pp("DY", DY)
+
+                M.backpropagate(Y, DY)
+                M.optimize(lr)
+
+                self.on_end_batch()
+
+            self.timer.stop(epoch_label)
+            seconds = self.timer.seconds(epoch_label)
+            compute_statistics(M, lr, self.loss, self.train_loader, self.test_loader, epoch + 1, seconds, options.statistics)
+
+            self.on_end_epoch(epoch)
+
+        training_time = self.compute_training_time()
+        print(f'Total training time for the {options.epochs} epochs: {training_time:.8f}s\n')
+
+        self.on_end_training()
+
 
 def main():
     cmdline_parser = make_argument_parser()
@@ -383,7 +446,10 @@ def main():
         prune = parse_prune_function(args.prune) if args.prune else None
         grow = parse_grow_function(args.grow, nerva.weights.parse_weight_initializer(args.grow_weights)) if args.grow else None
         algorithm = SGD(M, train_loader, test_loader, options, M.loss, M.learning_rate, args.preprocessed, prune, grow)
-        algorithm.run()
+        if args.manual:
+            algorithm.run_manual()
+        else:
+            algorithm.run()
 
 
 if __name__ == '__main__':

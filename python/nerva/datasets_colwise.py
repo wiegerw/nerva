@@ -184,7 +184,7 @@ def extract_tensors_from_dataloader(dataloader: DataLoader) -> Tuple[torch.Tenso
         Xdata[i * batch_size: (i + 1) * batch_size] = X
         Tdata[i * batch_size: (i + 1) * batch_size] = T
 
-    return Xdata, Tdata
+    return Xdata.T, Tdata
 
 
 def create_npz_dataloaders(filename: str, batch_size: int) -> Tuple[TorchDataLoader, TorchDataLoader]:
