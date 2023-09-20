@@ -2,10 +2,12 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from symbolic.optimizers import Optimizer, CompositeOptimizer, GradientDescentOptimizer
-from symbolic.sympy.activation_functions import ActivationFunction, ReLUActivation, HyperbolicTangentActivation, \
-    AllReLUActivation, LeakyReLUActivation, SReLUActivation
-from symbolic.sympy.optimizers import MomentumOptimizer, NesterovOptimizer
+from typing import Callable, Any
+
+from symbolic.numpy.activation_functions import SReLUActivation, ActivationFunction, ReLUActivation, \
+    HyperbolicTangentActivation, AllReLUActivation, LeakyReLUActivation, SigmoidActivation
+from symbolic.numpy.optimizers import MomentumOptimizer, NesterovOptimizer
+from symbolic.optimizers import Optimizer, GradientDescentOptimizer
 from symbolic.utilities import parse_function_call
 
 
@@ -35,17 +37,17 @@ def parse_activation(text: str) -> ActivationFunction:
     raise RuntimeError(f'Could not parse activation "{text}"')
 
 
-def parse_optimizer(text: str, layer) -> Optimizer:
+def parse_optimizer(text: str) -> Callable[[Any, Any], Optimizer]:
     try:
         name, args = parse_function_call(text)
         if name == 'GradientDescent':
-            return CompositeOptimizer([GradientDescentOptimizer(layer.W, layer.DW), GradientDescentOptimizer(layer.b, layer.Db)])
+            return lambda x, Dx: GradientDescentOptimizer(x, Dx)
         elif name == 'Momentum':
             mu = float(args['mu'])
-            return CompositeOptimizer([MomentumOptimizer(layer.W, layer.DW, mu), MomentumOptimizer(layer.b, layer.Db, mu)])
+            return lambda x, Dx: MomentumOptimizer(x, Dx, mu)
         elif name == 'Nesterov':
             mu = float(args['mu'])
-            return CompositeOptimizer([NesterovOptimizer(layer.W, layer.DW, mu), NesterovOptimizer(layer.b, layer.Db, mu)])
+            return lambda x, Dx: NesterovOptimizer(x, Dx, mu)
     except:
         pass
     raise RuntimeError(f'Could not parse optimizer "{text}"')

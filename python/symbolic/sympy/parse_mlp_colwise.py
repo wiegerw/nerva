@@ -10,7 +10,7 @@ from symbolic.sympy.loss_functions_colwise import LossFunction, SquaredErrorLoss
     CrossEntropyLossFunction, StableSoftmaxCrossEntropyLossFunction, LogisticCrossEntropyLossFunction, \
     NegativeLogLikelihoodLossFunction
 from symbolic.sympy.multilayer_perceptron_colwise import MultilayerPerceptron
-from symbolic.sympy.parse_mlp import parse_optimizer, parse_activation
+from symbolic.sympy.parse_mlp import parse_activation
 
 
 def parse_multilayer_perceptron(layer_specifications: List[str],
@@ -64,7 +64,7 @@ def parse_linear_layer(text: str,
     else:
         act = parse_activation(text)
         layer = ActivationLayer(D, K, act)
-    layer.optimizer = parse_optimizer(optimizer, layer)
+    layer.set_optimizer(optimizer)
     layer.set_weights(weight_initializer)
     return layer
 

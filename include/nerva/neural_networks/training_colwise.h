@@ -188,20 +188,6 @@ class stochastic_gradient_descent_algorithm
     virtual void on_end_batch()
     {}
 
-    /// \brief Returns the sum of the measured times for the epochs
-    [[nodiscard]] auto compute_training_time() const -> double
-    {
-      double result = 0;
-      for (const auto& [key, value]: timer.values())
-      {
-        if (utilities::starts_with(key, "epoch"))
-        {
-          result += timer.seconds(key);
-        }
-      }
-      return result;
-    }
-
     auto run() -> std::pair<double, double>
     {
       on_start_training();
@@ -219,8 +205,7 @@ class stochastic_gradient_descent_algorithm
       for (unsigned int epoch = 0; epoch < options.epochs; ++epoch)
       {
         on_start_epoch(epoch);
-        std::string epoch_label = fmt::format("epoch{}", epoch);
-        timer.start(epoch_label);
+        timer.start("epoch");
 
         if (options.shuffle)
         {
@@ -284,16 +269,14 @@ class stochastic_gradient_descent_algorithm
           on_end_batch();
         }
 
-        timer.stop(epoch_label);
-        double seconds = timer.seconds(epoch_label);
+        double seconds = timer.stop("epoch");
         compute_statistics(M, eta, loss, data, options.batch_size, epoch, options.statistics, seconds);
 
         on_end_epoch(epoch);
       }
 
       double test_accuracy = compute_accuracy(M, data.Xtest, data.Ttest, options.batch_size);
-      double training_time = compute_training_time();
-      // std::cout << fmt::format("Accuracy of the network on the {} test examples: {:.2f}%", data.Xtest.cols(), test_accuracy * 100.0) << std::endl;
+      double training_time = timer.total_seconds("epoch");
       std::cout << fmt::format("Total training time for the {} epochs: {:.8f}s\n", options.epochs, training_time);
 
       on_end_training();

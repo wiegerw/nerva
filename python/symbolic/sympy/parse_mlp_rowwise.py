@@ -64,7 +64,7 @@ def parse_linear_layer(text: str,
     else:
         act = parse_activation(text)
         layer = ActivationLayer(D, K, act)
-    layer.optimizer = parse_optimizer(optimizer, layer)
+    layer.set_optimizer(optimizer)
     layer.set_weights(weight_initializer)
     return layer
 

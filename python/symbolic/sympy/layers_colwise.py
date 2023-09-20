@@ -1,6 +1,7 @@
 # Copyright 2023 Wieger Wesselink.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
+
 from symbolic.optimizers import CompositeOptimizer
 from symbolic.sympy.activation_functions import *
 from symbolic.sympy.parse_mlp import parse_optimizer
@@ -282,6 +283,7 @@ class BatchNormalizationLayer(Layer):
         self.beta = zeros(D, 1)
         self.Dbeta = zeros(D, 1)
         self.power_minus_half_Sigma = zeros(D, 1)
+        self.optimizer = None
 
     def feedforward(self, X: Matrix) -> Matrix:
         self.X = X

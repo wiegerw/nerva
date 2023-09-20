@@ -5,7 +5,7 @@
 from typing import Callable, Any
 
 from symbolic.numpy.activation_functions import SReLUActivation, ActivationFunction, ReLUActivation, \
-    HyperbolicTangentActivation, AllReLUActivation, LeakyReLUActivation
+    HyperbolicTangentActivation, AllReLUActivation, LeakyReLUActivation, SigmoidActivation
 from symbolic.numpy.optimizers import MomentumOptimizer, NesterovOptimizer
 from symbolic.optimizers import Optimizer, GradientDescentOptimizer
 from symbolic.utilities import parse_function_call

@@ -12,24 +12,8 @@ loss=SoftmaxCrossEntropy
 batch_size=100
 epochs=5
 
-print_header "Train CIFAR10 using mlp.py"
-python3 -u mlp.py \
-	--seed=$seed \
-	--overall-density=$density \
-	--batch-size=$batch_size \
-	--epochs=$epochs \
-	--sizes=$sizes \
-	--layers=$layers \
-	--optimizers=$optimizers \
-	--init-weights=$init_weights \
-	--learning-rate=$learning_rate \
-	--loss=$loss \
-	--preprocessed=./cifar$seed \
-	--timer \
-	2>&1 | tee logs/mlp-timer-python.log
-
-print_header "Train CIFAR10 using mlp.cpp"
-../tools/dist/mlp \
+print_header "Train CIFAR10 using mlpcolwise.cpp"
+../tools/dist/mlpcolwise \
 	--seed=$seed \
 	--overall-density=$density \
 	--batch-size=$batch_size \
@@ -45,4 +29,55 @@ print_header "Train CIFAR10 using mlp.cpp"
 	--no-shuffle \
 	--verbose \
 	--timer \
-	2>&1 | tee logs/mlp-timer-cpp.log
+	2>&1 | tee logs/timer-mlpcolwise.cpp.log
+
+print_header "Train CIFAR10 using mlprowwise.cpp"
+../tools/dist/mlprowwise \
+	--seed=$seed \
+	--overall-density=$density \
+	--batch-size=$batch_size \
+	--epochs=$epochs \
+	--sizes=$sizes \
+	--layers=$layers \
+	--optimizers=$optimizers \
+	--init-weights=$init_weights \
+	--learning-rate=$learning_rate \
+	--loss=$loss \
+	--preprocessed=./cifar$seed \
+	--threads=4 \
+	--no-shuffle \
+	--verbose \
+	--timer \
+	2>&1 | tee logs/timer-mlprowwise.cpp.log
+
+print_header "Train CIFAR10 using mlpcolwise.py"
+python3 -u mlpcolwise.py \
+	--seed=$seed \
+	--overall-density=$density \
+	--batch-size=$batch_size \
+	--epochs=$epochs \
+	--sizes=$sizes \
+	--layers=$layers \
+	--optimizers=$optimizers \
+	--init-weights=$init_weights \
+	--learning-rate=$learning_rate \
+	--loss=$loss \
+	--preprocessed=./cifar$seed \
+	--timer \
+	2>&1 | tee logs/timer-mlpcolwise.py.log
+
+print_header "Train CIFAR10 using mlprowwise.py"
+python3 -u mlprowwise.py \
+        --seed=$seed \
+        --overall-density=$density \
+        --batch-size=$batch_size \
+        --epochs=$epochs \
+        --sizes=$sizes \
+        --layers=$layers \
+        --optimizers=$optimizers \
+        --init-weights=$init_weights \
+        --learning-rate=$learning_rate \
+        --loss=$loss \
+        --preprocessed=./cifar$seed \
+        --timer \
+        2>&1 | tee logs/timer-mlprowwise.py.log

@@ -9,7 +9,7 @@ from symbolic.numpy.activation_functions import *
 from symbolic.numpy.parse_mlp import parse_optimizer
 from symbolic.numpy.softmax_functions import *
 from symbolic.numpy.weight_initializers import set_layer_weights
-from symbolic.optimizers import CompositeOptimizer, Optimizer
+from symbolic.optimizers import CompositeOptimizer
 
 Matrix = np.ndarray
 

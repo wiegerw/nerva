@@ -31,13 +31,13 @@ struct multilayer_perceptron
 
   void feedforward(eigen::matrix& result)
   {
-    global_timer_reset();
+    GLOBAL_TIMER_START("feedforward");
     for (std::size_t i = 0; i < layers.size() - 1; i++)
     {
       layers[i]->feedforward(layers[i+1]->X);
     }
     layers.back()->feedforward(result);
-    global_timer_display("feedforward");
+    GLOBAL_TIMER_STOP("feedforward");
   }
 
   void feedforward(const eigen::matrix& X, eigen::matrix& result)
@@ -48,13 +48,13 @@ struct multilayer_perceptron
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY)
   {
-    global_timer_reset();
+    GLOBAL_TIMER_START("backpropagate");
     layers.back()->backpropagate(Y, DY);
     for (auto i = layers.size() - 1; i > 0; i--)
     {
       layers[i - 1]->backpropagate(layers[i]->X, layers[i]->DX);
     }
-    global_timer_display("backpropagate");
+    GLOBAL_TIMER_STOP("backpropagate");
   }
 
   void optimize(scalar eta)

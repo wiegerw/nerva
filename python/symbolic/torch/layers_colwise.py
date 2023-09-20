@@ -9,7 +9,7 @@ from symbolic.torch.activation_functions import *
 from symbolic.torch.parse_mlp import parse_optimizer
 from symbolic.torch.softmax_functions import *
 from symbolic.torch.weight_initializers import set_layer_weights
-from symbolic.optimizers import CompositeOptimizer, Optimizer
+from symbolic.optimizers import CompositeOptimizer
 
 Matrix = torch.Tensor
 

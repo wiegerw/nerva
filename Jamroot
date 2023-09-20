@@ -25,6 +25,7 @@ project nerva
        <include>/usr/include/python3.10  # TODO: find a better way for this
        <cxxflags>-std=c++17
        <define>FMT_HEADER_ONLY
+       <define>NERVA_TIMING
 
        <define>EIGEN_USE_MKL_ALL
        <include>$(MKLROOT)/include

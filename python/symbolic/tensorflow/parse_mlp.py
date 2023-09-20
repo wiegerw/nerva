@@ -6,7 +6,7 @@ from typing import Callable, Any
 
 from symbolic.optimizers import Optimizer, GradientDescentOptimizer
 from symbolic.tensorflow.activation_functions import ActivationFunction, ReLUActivation, HyperbolicTangentActivation, \
-    AllReLUActivation, LeakyReLUActivation, SReLUActivation
+    AllReLUActivation, LeakyReLUActivation, SReLUActivation, SigmoidActivation
 from symbolic.tensorflow.optimizers import MomentumOptimizer, NesterovOptimizer
 from symbolic.utilities import parse_function_call
 

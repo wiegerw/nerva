@@ -20,51 +20,59 @@ namespace nerva::utilities {
 /// \brief Timer class with a map interface. For each key a start and stop value is stored.
 class map_timer
 {
-    using time = std::chrono::time_point<std::chrono::steady_clock>;
+  using time = std::chrono::time_point<std::chrono::steady_clock>;
 
   protected:
-    std::map<std::string, std::pair<time, time>> m_values;
+    std::map<std::string, std::vector<std::pair<time, time>>> m_values;
 
   public:
     /// \brief Sets the start value for the given key to the current time
     void start(const std::string& key)
     {
-      auto& [t1, t2] = m_values[key];
+      auto& values = m_values[key];
+      auto& [t1, t2] = values.emplace_back();
       t1 = std::chrono::steady_clock::now();
     }
 
     /// \brief Sets the stop value for the given key to the current time
-    void stop(const std::string& key)
+    /// \return The time difference in seconds
+    double stop(const std::string& key)
     {
       auto t = std::chrono::steady_clock::now();
-      auto& [t1, t2] = m_values[key];
+      auto& [t1, t2] = m_values[key].back();
       t2 = t;
+      return std::chrono::duration<double>(t2 - t1).count();
     }
 
     /// \returns The time difference for the given key in milliseconds
     [[nodiscard]] long long milliseconds(const std::string& key) const
     {
-      const auto& [t1, t2] = m_values.at(key);
+      const auto& [t1, t2] = m_values.at(key).back();
       return std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
     }
 
     /// \returns The time difference for the given key in seconds
     [[nodiscard]] double seconds(const std::string& key) const
     {
-      const auto& [t1, t2] = m_values.at(key);
+      const auto& [t1, t2] = m_values.at(key).back();
       return std::chrono::duration<double>(t2 - t1).count();
     }
 
-    /// \brief Returns the mapping with timer values
-    [[nodiscard]] const std::map<std::string, std::pair<time, time>>& values() const
+    /// \returns The time difference for the given key in seconds
+    [[nodiscard]] double total_seconds(const std::string& key) const
     {
-      return m_values;
+      double result = 0;
+      for (const auto& [t1, t2]: m_values.at("epoch"))
+      {
+        result += std::chrono::duration<double>(t2 - t1).count();
+      }
+      return result;
     }
 
     /// \brief Returns the mapping with timer values
-    std::map<std::string, std::pair<time, time>>& values()
+    [[nodiscard]] const std::vector<std::pair<time, time>>& values(const std::string& key) const
     {
-      return m_values;
+      return m_values.at(key);
     }
 };
 
