@@ -10,6 +10,7 @@
 #pragma once
 
 #include "nerva/neural_networks/activation_functions.h"
+#include "nerva/neural_networks/global_timer.h"
 #include "nerva/neural_networks/layer_algorithms.h"
 #include "nerva/neural_networks/mkl_eigen.h"
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
@@ -315,7 +316,8 @@ struct activation_layer : public linear_layer<Matrix>
     else
     {
       DZ = hadamard(DY, act.gradient(Z));
-      DW = DZ.transpose() * X;
+      // DW = DZ.transpose() * X;
+      mkl::ddd_product(DW, DZ.transpose(), X);
       Db = columns_sum(DZ);
       DX = DZ * W;
     }

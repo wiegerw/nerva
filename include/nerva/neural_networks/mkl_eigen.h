@@ -134,6 +134,25 @@ mkl::sparse_matrix_csr<Scalar> to_csr(const Eigen::Matrix<Scalar, Eigen::Dynamic
 // Performs the assignment A := B * C, with A sparse and B, C dense.
 // N.B. Only the existing entries of A are changed.
 // Use a sequential computation to copy values to A
+template <typename DerivedA, typename DerivedB, typename DerivedC>
+void ddd_product(const Eigen::MatrixBase<DerivedA>& A,
+                 const Eigen::MatrixBase<DerivedB>& B,
+                 const Eigen::MatrixBase<DerivedC>& C
+)
+{
+  using Scalar = typename DerivedA::Scalar;
+  constexpr int MatrixLayoutA = DerivedA::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  dense_matrix_view<Scalar, MatrixLayoutA> A_view = mkl::make_dense_matrix_view(A);
+  dense_matrix_view<Scalar, MatrixLayoutB> B_view = mkl::make_dense_matrix_view(B);
+  dense_matrix_view<Scalar, MatrixLayoutC> C_view = mkl::make_dense_matrix_view(C);
+  ddd_product_inplace(A_view, B_view, C_view);
+}
+
+// Performs the assignment A := B * C, with A sparse and B, C dense.
+// N.B. Only the existing entries of A are changed.
+// Use a sequential computation to copy values to A
 template <typename Scalar, typename DerivedB, typename DerivedC>
 void sdd_product(mkl::sparse_matrix_csr<Scalar>& A,
                  const Eigen::MatrixBase<DerivedB>& B,
