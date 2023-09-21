@@ -19,7 +19,7 @@ namespace nerva {
 template <typename Matrix, typename Function>
 void initialize_matrix(Matrix& A, Function f)
 {
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
+  static constexpr bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<scalar>>::value;
 
   if constexpr (IsSparse)
   {

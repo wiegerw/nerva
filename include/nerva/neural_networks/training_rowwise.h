@@ -133,7 +133,7 @@ void compute_statistics(multilayer_perceptron& M,
   {
     std::cout << fmt::format(" time: {:.8f}s", elapsed_seconds);
   }
-  std::cout << '\n';
+  std::cout << std::endl;
 }
 
 template <typename DataSet = datasets::dataset<datasets::dataset_orientation::rowwise>>

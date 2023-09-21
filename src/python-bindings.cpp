@@ -629,8 +629,8 @@ PYBIND11_MODULE(NERVALIB, m)
   m.def("global_timer_disable", global_timer_disable);
   m.def("global_timer_suspend", global_timer_suspend);
   m.def("global_timer_resume", global_timer_resume);
-  m.def("global_timer_reset", global_timer_reset);
-  m.def("global_timer_display", global_timer_display);
+  m.def("global_timer_start", global_timer_start);
+  m.def("global_timer_stop", global_timer_stop);
 
   /////////////////////////////////////////////////////////////////////////
   //                       version

@@ -66,7 +66,7 @@ struct momentum_optimizer: public gradient_descent_optimizer<T>
   using super::x;
   using super::Dx;
   using super::reset_support;
-  static const bool IsSparse = std::is_same_v<T, mkl::sparse_matrix_csr<scalar>>;
+  static constexpr bool IsSparse = std::is_same_v<T, mkl::sparse_matrix_csr<scalar>>;
 
   T delta_x;
   scalar mu;
@@ -120,7 +120,7 @@ struct nesterov_optimizer: public gradient_descent_optimizer<T>
   using super = gradient_descent_optimizer<T>;
   using super::x;
   using super::Dx;
-  static const bool IsSparse = std::is_same_v<T, mkl::sparse_matrix_csr<scalar>>;
+  static constexpr bool IsSparse = std::is_same_v<T, mkl::sparse_matrix_csr<scalar>>;
 
   T delta_x;
   T delta_x_prev;

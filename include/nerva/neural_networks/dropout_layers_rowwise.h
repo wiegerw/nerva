@@ -51,6 +51,7 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
   using super::output_size;
   using dropout_layer<Matrix>::p;
   using dropout_layer<Matrix>::R;
+  static constexpr bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   linear_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
    : super(D, K, N), dropout_layer<Matrix>(D, K, p)
@@ -70,16 +71,16 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
     using eigen::hadamard;
     using eigen::columns_sum;
 
-    if constexpr (std::is_same<Matrix, eigen::matrix>::value)
-    {
-      DW = hadamard(DY.transpose() * X, R);
-    }
-    else
+    if constexpr (IsSparse)
     {
       // TODO
     }
-    Db = columns_sum(DY);
-    DX = DY * hadamard(W, R);
+    else
+    {
+      DW = hadamard(DY.transpose() * X, R);
+      Db = columns_sum(DY);
+      DX = DY * hadamard(W, R);
+    }
   }
 
   [[nodiscard]] std::string to_string() const override
@@ -108,6 +109,7 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
   using super::to_string;
   using dropout_layer<Matrix>::p;
   using dropout_layer<Matrix>::R;
+  static constexpr bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   sigmoid_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
       : super(D, K, N), dropout_layer<Matrix>(D, K, p)
@@ -132,17 +134,17 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
     auto K = Y.cols();
     auto N = X.rows();
 
-    DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(N, K) - Y));
-    if constexpr (std::is_same<Matrix, eigen::matrix>::value)
-    {
-      DW = hadamard(DZ.transpose() * X, R);
-    }
-    else
+    if constexpr (IsSparse)
     {
       // TODO
     }
-    Db = columns_sum(DZ);
-    DX = DZ * hadamard(W, R);
+    else
+    {
+      DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(N, K) - Y));
+      DW = hadamard(DZ.transpose() * X, R);
+      Db = columns_sum(DZ);
+      DX = DZ * hadamard(W, R);
+    }
   }
 
   [[nodiscard]] std::string to_string() const override
@@ -172,6 +174,7 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
   using dropout_layer<Matrix>::p;
   using dropout_layer<Matrix>::R;
   using super::act;
+  static constexpr bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   activation_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, ActivationFunction act)
       : super(D, K, N, act), dropout_layer<Matrix>(D, K, p)
@@ -192,17 +195,17 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
     using eigen::hadamard;
     using eigen::columns_sum;
 
-    DZ = hadamard(DY, act.gradient(Z));
-    if constexpr (std::is_same<Matrix, eigen::matrix>::value)
-    {
-      DW = hadamard(DZ.transpose() * X, R);
-    }
-    else
+    if constexpr (IsSparse)
     {
       // TODO
     }
-    Db = columns_sum(DZ);
-    DX = DZ * hadamard(W, R);
+    else
+    {
+      DZ = hadamard(DY, act.gradient(Z));
+      DW = hadamard(DZ.transpose() * X, R);
+      Db = columns_sum(DZ);
+      DX = DZ * hadamard(W, R);
+    }
   }
 
   [[nodiscard]] std::string to_string() const override

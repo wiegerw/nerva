@@ -55,7 +55,7 @@ struct linear_layer: public neural_network_layer
   using super = neural_network_layer;
   using super::X;
   using super::DX;
-  static const bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
+  static constexpr bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   Matrix W;
   eigen::matrix b;
@@ -101,7 +101,15 @@ struct linear_layer: public neural_network_layer
     }
     else
     {
-      result = W * X + column_repeat(b, N);
+      if constexpr (NERVA_USE_EIGEN_PRODUCT)
+      {
+        result = W * X + column_repeat(b, N);
+      }
+      else
+      {
+        mkl::ddd_product(result, W, X);
+        result += column_repeat(b, N);
+      }
     }
   }
 
@@ -118,9 +126,18 @@ struct linear_layer: public neural_network_layer
     }
     else
     {
-      DW = DY * X.transpose();
-      Db = rows_sum(DY);
-      DX = W.transpose() * DY;
+      if constexpr (NERVA_USE_EIGEN_PRODUCT)
+      {
+        DW = DY * X.transpose();
+        Db = rows_sum(DY);
+        DX = W.transpose() * DY;
+      }
+      else
+      {
+        mkl::ddd_product(DW, DY, X.transpose());
+        Db = rows_sum(DY);
+        mkl::ddd_product(DX, W.transpose(), DY);
+      }
     }
   }
 
@@ -177,7 +194,7 @@ struct sigmoid_layer : public linear_layer<Matrix>
   using super::optimizer;
   using super::input_size;
   using super::output_size;
-  static const bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
+  static constexpr bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   eigen::matrix Z;
   eigen::matrix DZ;
@@ -212,8 +229,16 @@ struct sigmoid_layer : public linear_layer<Matrix>
     }
     else
     {
-      Z = W * X + column_repeat(b, N);
-      result = Sigmoid(Z);
+      if constexpr (NERVA_USE_EIGEN_PRODUCT)
+      {
+        Z = W * X + column_repeat(b, N);
+        result = Sigmoid(Z);
+      }
+      else
+      {
+        mkl::ddd_product(Z, W, X);
+        result = Sigmoid(Z + column_repeat(b, N));
+      }
     }
   }
 
@@ -235,10 +260,20 @@ struct sigmoid_layer : public linear_layer<Matrix>
     }
     else
     {
-      DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(K, N) - Y));
-      DW = DZ * X.transpose();
-      Db = rows_sum(DZ);
-      DX = W.transpose() * DZ;
+      if constexpr (NERVA_USE_EIGEN_PRODUCT)
+      {
+        DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(K, N) - Y));
+        DW = DZ * X.transpose();
+        Db = rows_sum(DZ);
+        DX = W.transpose() * DZ;
+      }
+      else
+      {
+        DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(K, N) - Y));
+        mkl::ddd_product(DW, DZ, X.transpose());
+        Db = rows_sum(DZ);
+        mkl::ddd_product(DX, W.transpose(), DZ);
+      }
     }
   }
 };
@@ -259,7 +294,7 @@ struct activation_layer : public linear_layer<Matrix>
   using super::optimizer;
   using super::input_size;
   using super::output_size;
-  static const bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
+  static constexpr bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   ActivationFunction act;
   eigen::matrix Z;
@@ -294,8 +329,16 @@ struct activation_layer : public linear_layer<Matrix>
     }
     else
     {
-      Z = W * X + column_repeat(b, N);
-      result = act(Z);
+      if constexpr (NERVA_USE_EIGEN_PRODUCT)
+      {
+        Z = W * X + column_repeat(b, N);
+        result = act(Z);
+      }
+      else
+      {
+        mkl::ddd_product(Z, W, X);
+        result = act(Z + column_repeat(b, N));
+      }
     }
   }
 
@@ -314,10 +357,20 @@ struct activation_layer : public linear_layer<Matrix>
     }
     else
     {
-      DZ = hadamard(DY, act.gradient(Z));
-      DW = DZ * X.transpose();
-      Db = rows_sum(DZ);
-      DX = W.transpose() * DZ;
+      if constexpr (NERVA_USE_EIGEN_PRODUCT)
+      {
+        DZ = hadamard(DY, act.gradient(Z));
+        DW = DZ * X.transpose();
+        Db = rows_sum(DZ);
+        DX = W.transpose() * DZ;
+      }
+      else
+      {
+        DZ = hadamard(DY, act.gradient(Z));
+        mkl::ddd_product(DW, DZ, X.transpose());
+        Db = rows_sum(DZ);
+        mkl::ddd_product(DX, W.transpose(), DZ);
+      }
     }
   }
 };
@@ -440,7 +493,7 @@ struct softmax_layer : public linear_layer<Matrix>
   using super::Db;
   using super::X;
   using super::DX;
-  static const bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
+  static constexpr bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   eigen::matrix Z;
   eigen::matrix DZ;
@@ -462,8 +515,16 @@ struct softmax_layer : public linear_layer<Matrix>
     }
     else
     {
-      Z = W * X + column_repeat(b, N);
-      result = stable_softmax()(Z);
+      if constexpr (NERVA_USE_EIGEN_PRODUCT)
+      {
+        Z = W * X + column_repeat(b, N);
+        result = stable_softmax()(Z);
+      }
+      else
+      {
+        mkl::ddd_product(Z, W, X);
+        result = stable_softmax()(Z + column_repeat(b, N));
+      }
     }
   }
 
@@ -485,10 +546,20 @@ struct softmax_layer : public linear_layer<Matrix>
     }
     else
     {
-      DZ = hadamard(Y, DY - row_repeat(diag(Y.transpose() * DY).transpose(), K));
-      DW = DZ * X.transpose();
-      Db = rows_sum(DZ);
-      DX = W.transpose() * DZ;
+      if constexpr (NERVA_USE_EIGEN_PRODUCT)
+      {
+        DZ = hadamard(Y, DY - row_repeat(diag(Y.transpose() * DY).transpose(), K));
+        DW = DZ * X.transpose();
+        Db = rows_sum(DZ);
+        DX = W.transpose() * DZ;
+      }
+      else
+      {
+        DZ = hadamard(Y, DY - row_repeat(diag(Y.transpose() * DY).transpose(), K));
+        mkl::ddd_product(DW, DZ, X.transpose());
+        Db = rows_sum(DZ);
+        mkl::ddd_product(DX, W.transpose(), DZ);
+      }
     }
   }
 };
@@ -506,7 +577,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
   using super::Db;
   using super::X;
   using super::DX;
-  static const bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
+  static constexpr bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   eigen::matrix Z;
   eigen::matrix DZ;
@@ -528,8 +599,16 @@ struct log_softmax_layer : public linear_layer<Matrix>
     }
     else
     {
-      Z = W * X + column_repeat(b, N);
-      result = stable_log_softmax()(Z);
+      if constexpr (NERVA_USE_EIGEN_PRODUCT)
+      {
+        Z = W * X + column_repeat(b, N);
+        result = stable_log_softmax()(Z);
+      }
+      else
+      {
+        mkl::ddd_product(Z, W, X);
+        result = stable_log_softmax()(Z + column_repeat(b, N));
+      }
     }
   }
 
@@ -551,10 +630,20 @@ struct log_softmax_layer : public linear_layer<Matrix>
     }
     else
     {
-      DZ = DY - hadamard(stable_softmax()(Z), row_repeat(columns_sum(DY), K));
-      DW = DZ * X.transpose();
-      Db = rows_sum(DZ);
-      DX = W.transpose() * DZ;
+      if constexpr (NERVA_USE_EIGEN_PRODUCT)
+      {
+        DZ = DY - hadamard(stable_softmax()(Z), row_repeat(columns_sum(DY), K));
+        DW = DZ * X.transpose();
+        Db = rows_sum(DZ);
+        DX = W.transpose() * DZ;
+      }
+      else
+      {
+        DZ = DY - hadamard(stable_softmax()(Z), row_repeat(columns_sum(DY), K));
+        mkl::ddd_product(DW, DZ, X.transpose());
+        Db = rows_sum(DZ);
+        mkl::ddd_product(DX, W.transpose(), DZ);
+      }
     }
   }
 };

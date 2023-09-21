@@ -100,7 +100,7 @@ template <typename Matrix, typename Scalar = scalar, bool LimitPruneCount = true
 void regrow_interval(Matrix& W, const std::shared_ptr<weight_initializer>& init, std::size_t negative_count, std::size_t positive_count, std::mt19937& rng)
 {
   using eigen::support_size;
-  static const bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<Scalar>>::value;
+  static constexpr bool IsSparse = std::is_same<Matrix, mkl::sparse_matrix_csr<Scalar>>::value;
 
   // prune elements by giving them the value NaN
   auto nan = std::numeric_limits<Scalar>::quiet_NaN();

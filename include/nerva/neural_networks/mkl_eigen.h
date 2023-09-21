@@ -135,7 +135,7 @@ mkl::sparse_matrix_csr<Scalar> to_csr(const Eigen::Matrix<Scalar, Eigen::Dynamic
 // N.B. Only the existing entries of A are changed.
 // Use a sequential computation to copy values to A
 template <typename DerivedA, typename DerivedB, typename DerivedC>
-void ddd_product(const Eigen::MatrixBase<DerivedA>& A,
+void ddd_product(Eigen::MatrixBase<DerivedA>& A,
                  const Eigen::MatrixBase<DerivedB>& B,
                  const Eigen::MatrixBase<DerivedC>& C
 )
