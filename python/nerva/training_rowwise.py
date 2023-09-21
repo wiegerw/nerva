@@ -30,7 +30,7 @@ def print_epoch(epoch, lr, loss, train_accuracy, test_accuracy, elapsed):
 
 
 def compute_accuracy(M, data_loader: DataLoader):
-    nervalibrowwise.global_timer_suspend()
+    nervalibrowwise.nerva_timer_suspend()
     N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
     for X, T in data_loader:
@@ -38,12 +38,12 @@ def compute_accuracy(M, data_loader: DataLoader):
         predicted = Y.argmax(dim=1)  # the predicted classes for the batch
         total_correct += (predicted == T).sum().item()
 
-    nervalibrowwise.global_timer_resume()
+    nervalibrowwise.nerva_timer_resume()
     return total_correct / N
 
 
 def compute_loss(M, data_loader: DataLoader, loss: LossFunction):
-    nervalibrowwise.global_timer_suspend()
+    nervalibrowwise.nerva_timer_suspend()
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
     num_classes = M.layers[-1].output_size
@@ -52,7 +52,7 @@ def compute_loss(M, data_loader: DataLoader, loss: LossFunction):
         Y = M.feedforward(X)
         total_loss += loss.value(Y, T)
 
-    nervalibrowwise.global_timer_resume()
+    nervalibrowwise.nerva_timer_resume()
     return total_loss / N
 
 

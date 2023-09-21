@@ -48,7 +48,7 @@ void test_dense_dense_multiplication(const Eigen::Matrix<Scalar, Eigen::Dynamic,
 
   auto A1 = mkl::make_dense_matrix_view(A);
   auto B1 = mkl::make_dense_matrix_view(B);
-  auto C1 = mkl::ddd_product(A1, B1, A_transposed, B_transposed);
+  auto C1 = mkl::ddd_product_copy(A1, B1, A_transposed, B_transposed);
   auto C2 = mkl::ddd_product_manual_loops(A1, B1, A_transposed, B_transposed);
 
   scalar epsilon = std::is_same<Scalar, double>::value ? 1e-10 : 1e-5;
@@ -393,7 +393,7 @@ TEST_CASE("test_rows_view")
   dense_matrix_view<double, column_major> A_ = make_dense_matrix_view(A);
   dense_submatrix_view<double, column_major> A1 = make_dense_matrix_rows_view(A_, 1, 3);
   dense_matrix_view<double, column_major> B1 = make_dense_matrix_view(B);
-  auto C1 = ddd_product(A1, B1);
+  auto C1 = ddd_product_copy(A1, B1);
 
   print_numpy_matrix("A0", A0);
   print_numpy_matrix("A1", A1);

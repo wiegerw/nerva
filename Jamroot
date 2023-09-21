@@ -24,10 +24,11 @@ project nerva
        <include>$(EIGEN_INCLUDE_DIR)
        <include>/usr/include/python3.10  # TODO: find a better way for this
        <cxxflags>-std=c++17
-       <define>FMT_HEADER_ONLY
-       <define>NERVA_TIMING
 
+       <define>FMT_HEADER_ONLY
+       <define>NERVA_TIMER
        <define>EIGEN_USE_MKL_ALL
+
        <include>$(MKLROOT)/include
        <linkflags>-L$(MKLROOT)/lib/intel64
        <linkflags>"-Wl,--start-group -lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -Wl,--end-group"

@@ -27,7 +27,7 @@ from nerva.datasets_colwise import create_cifar10_augmented_dataloaders, create_
 from nerva.layers_colwise import print_model_info, BatchNormalization, Dense, Sparse, Layer, Sequential
 from nerva.weights import WeightInitializer
 from nerva.utilities import pp
-from nerva.utilities_colwise import manual_seed, global_timer_enable
+from nerva.utilities_colwise import manual_seed, nerva_timer_enable
 from nerva.loss_colwise import LossFunction, parse_loss_function
 from nerva.learning_rate_colwise import LearningRateScheduler, parse_learning_rate
 
@@ -273,7 +273,7 @@ def initialize_frameworks(args):
         manual_seed(args.seed)
 
     if args.timer:
-        global_timer_enable()
+        nerva_timer_enable()
 
     torch.set_printoptions(precision=args.precision, edgeitems=args.edgeitems, threshold=5, sci_mode=False, linewidth=160)
 

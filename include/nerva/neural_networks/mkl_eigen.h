@@ -147,7 +147,7 @@ void ddd_product(Eigen::MatrixBase<DerivedA>& A,
   dense_matrix_view<Scalar, MatrixLayoutA> A_view = mkl::make_dense_matrix_view(A);
   dense_matrix_view<Scalar, MatrixLayoutB> B_view = mkl::make_dense_matrix_view(B);
   dense_matrix_view<Scalar, MatrixLayoutC> C_view = mkl::make_dense_matrix_view(C);
-  ddd_product_inplace(A_view, B_view, C_view);
+  ddd_product(A_view, B_view, C_view);
 }
 
 // Performs the assignment A := B * C, with A sparse and B, C dense.

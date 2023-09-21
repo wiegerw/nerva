@@ -17,7 +17,11 @@ using scalar = double;
 using scalar = float;
 #endif
 
-constexpr bool NERVA_USE_EIGEN_PRODUCT = false;
+#ifdef NERVA_USE_EIGEN_PRODUCT
+constexpr bool NervaUseEigenProduct = true;
+#else
+constexpr bool NervaUseEigenProduct = false;
+#endif
 
 } // namespace nerva
 

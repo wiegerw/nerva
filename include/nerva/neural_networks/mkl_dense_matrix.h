@@ -407,25 +407,25 @@ void change_matrix_layout(const MatrixA<Scalar, MatrixLayout>& A, MatrixB<Scalar
 
 // Computes the matrix product C := A * B
 template <typename Scalar, int MatrixLayoutC, template <typename, int> class MatrixC, int MatrixLayoutA, template <typename, int> class MatrixA, int MatrixLayoutB, template <typename, int> class MatrixB>
-void ddd_product_inplace(MatrixC<Scalar, MatrixLayoutC>& C, const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, MatrixLayoutB>& B, bool A_transposed = false, bool B_transposed = false)
+void ddd_product(MatrixC<Scalar, MatrixLayoutC>& C, const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, MatrixLayoutB>& B, bool A_transposed = false, bool B_transposed = false)
 {
   if constexpr (MatrixLayoutA != MatrixLayoutC && MatrixLayoutB != MatrixLayoutC)
   {
     auto A_T = make_transposed_dense_matrix_view(A);
     auto B_T = make_transposed_dense_matrix_view(B);
-    ddd_product_inplace(C, A_T, B_T, !A_transposed, !B_transposed);
+    ddd_product(C, A_T, B_T, !A_transposed, !B_transposed);
     return;
   }
   else if constexpr (MatrixLayoutA != MatrixLayoutC)
   {
     auto A_T = make_transposed_dense_matrix_view(A);
-    ddd_product_inplace(C, A_T, B, !A_transposed, B_transposed);
+    ddd_product(C, A_T, B, !A_transposed, B_transposed);
     return;
   }
   else if constexpr (MatrixLayoutB != MatrixLayoutC)
   {
     auto B_T = make_transposed_dense_matrix_view(B);
-    ddd_product_inplace(C, A, B_T, A_transposed, !B_transposed);
+    ddd_product(C, A, B_T, A_transposed, !B_transposed);
     return;
   }
 
@@ -466,13 +466,13 @@ void ddd_product_inplace(MatrixC<Scalar, MatrixLayoutC>& C, const MatrixA<Scalar
 
 // Computes the matrix product C = A * B
 template <typename Scalar, int MatrixLayoutA, template <typename, int> class MatrixA, int MatrixLayoutB, template <typename, int> class MatrixB>
-auto ddd_product(const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, MatrixLayoutB>& B, bool A_transposed = false, bool B_transposed = false)
+auto ddd_product_copy(const MatrixA<Scalar, MatrixLayoutA>& A, const MatrixB<Scalar, MatrixLayoutB>& B, bool A_transposed = false, bool B_transposed = false)
 {
   constexpr int MatrixLayoutC = MatrixLayoutA;
   long C_rows = A_transposed ? A.cols() : A.rows();
   long C_cols = B_transposed ? B.rows() : B.cols();
   dense_matrix<Scalar, MatrixLayoutC> C(C_rows, C_cols);
-  ddd_product_inplace(C, A, B, A_transposed, B_transposed);
+  ddd_product(C, A, B, A_transposed, B_transposed);
   return C;
 }
 

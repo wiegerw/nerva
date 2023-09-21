@@ -423,7 +423,7 @@ void sdd_product(mkl::sparse_matrix_csr<Scalar>& A,
   assert(B.cols() == C.rows());
 
   long m = A.rows();
-  auto BC = ddd_product(B, C);
+  auto BC = ddd_product_copy(B, C);
   Scalar* values = A.values().data();
   const auto& A_col_index = A.col_index();
   const auto& A_row_index = A.row_index();
@@ -477,7 +477,7 @@ void sdd_product_batch(mkl::sparse_matrix_csr<Scalar>& A,
   {
     long i_last = std::min(i_first + batch_size, m);
     dense_submatrix_view<Scalar, MatrixLayoutB> Bbatch(const_cast<Scalar*>(B.data()), B.rows(), B.cols(), i_first, 0, i_last - i_first, B.cols());
-    ddd_product_inplace(BC, Bbatch, C);
+    ddd_product(BC, Bbatch, C);
     for (long i = i_first; i < i_last; i++)
     {
       for (long k = A_row_index[i]; k < A_row_index[i + 1]; k++)

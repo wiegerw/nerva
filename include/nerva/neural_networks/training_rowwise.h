@@ -15,13 +15,13 @@
 #include "nerva/neural_networks/learning_rate_schedulers.h"
 #include "nerva/neural_networks/loss_function.h"
 #include "nerva/neural_networks/mlp_algorithms.h"
+#include "nerva/neural_networks/nerva_timer.h"
 #include "nerva/neural_networks/regrow.h"
 #include "nerva/neural_networks/sgd_options.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
 #include "nerva/utilities/print.h"
 #include "nerva/utilities/timer.h"
-#include "nerva/neural_networks/global_timer.h"
 #include "fmt/format.h"
 #include <algorithm>
 #include <iomanip>
@@ -43,7 +43,7 @@ long output_count(const Matrix& T)
 template <typename EigenMatrix>
 auto compute_accuracy(multilayer_perceptron& M, const EigenMatrix& Xtest, const EigenMatrix& Ttest, long Q) -> double
 {
-  global_timer_suspend();
+  nerva_timer_suspend();
 
   auto is_correct = [](const auto& y, const auto& t)
   {
@@ -74,7 +74,7 @@ auto compute_accuracy(multilayer_perceptron& M, const EigenMatrix& Xtest, const 
     }
   }
 
-  global_timer_resume();
+  nerva_timer_resume();
 
   return static_cast<double>(total_correct) / N;
 }
@@ -82,7 +82,7 @@ auto compute_accuracy(multilayer_perceptron& M, const EigenMatrix& Xtest, const 
 inline
 auto compute_loss(multilayer_perceptron& M, const std::shared_ptr<loss_function>& loss, const eigen::matrix& X, const eigen::matrix& T, long Q) -> double
 {
-  global_timer_suspend();
+  nerva_timer_suspend();
 
   if (has_nan(M))
   {
@@ -105,7 +105,7 @@ auto compute_loss(multilayer_perceptron& M, const std::shared_ptr<loss_function>
     total_loss += loss->value(Ybatch, Tbatch);
   }
 
-  global_timer_resume();
+  nerva_timer_resume();
 
   return total_loss / N; // return the average loss
 }

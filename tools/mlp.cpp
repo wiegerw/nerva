@@ -226,7 +226,7 @@ class tool: public command_line_tool
     bool no_shuffle = false;
     bool no_statistics = false;
     bool info = false;
-    bool use_global_timer = false;
+    bool use_nerva_timer = false;
 
     // pruning + growing
     std::string prune_strategy;
@@ -278,7 +278,7 @@ class tool: public command_line_tool
       // print options
       cli |= lyra::opt(options.precision, "value")["--precision"]("The precision that is used for printing.");
       cli |= lyra::opt(info)["--info"]("print some info about the multilayer_perceptron's");
-      cli |= lyra::opt(use_global_timer)["--timer"]("print timer messages");
+      cli |= lyra::opt(use_nerva_timer)["--timer"]("print timer messages");
 
       // pruning + growing
       cli |= lyra::opt(prune_strategy, "strategy")["--prune"]("The pruning strategy: Magnitude(<drop_fraction>), SET(<drop_fraction>) or Threshold(<value>)");
@@ -308,9 +308,9 @@ class tool: public command_line_tool
       {
         options.statistics = false;
       }
-      if (use_global_timer)
+      if (use_nerva_timer)
       {
-        global_timer_enable();
+        nerva_timer_enable();
       }
       if (options.threads >= 1 && options.threads <= 8)
       {

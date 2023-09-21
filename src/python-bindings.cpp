@@ -11,7 +11,7 @@
 #include "nerva/neural_networks/activation_functions.h"
 #include "nerva/neural_networks/batch_normalization_layers_colwise.h"
 #include "nerva/neural_networks/dropout_layers_colwise.h"
-#include "nerva/neural_networks/global_timer.h"
+#include "nerva/neural_networks/nerva_timer.h"
 #include "nerva/neural_networks/learning_rate_schedulers.h"
 #include "nerva/neural_networks/loss_functions.h"
 #include "nerva/neural_networks/masking.h"
@@ -625,12 +625,12 @@ PYBIND11_MODULE(NERVALIB, m)
   //                       global timer
   /////////////////////////////////////////////////////////////////////////
 
-  m.def("global_timer_enable", global_timer_enable);
-  m.def("global_timer_disable", global_timer_disable);
-  m.def("global_timer_suspend", global_timer_suspend);
-  m.def("global_timer_resume", global_timer_resume);
-  m.def("global_timer_start", global_timer_start);
-  m.def("global_timer_stop", global_timer_stop);
+  m.def("nerva_timer_enable", nerva_timer_enable);
+  m.def("nerva_timer_disable", nerva_timer_disable);
+  m.def("nerva_timer_suspend", nerva_timer_suspend);
+  m.def("nerva_timer_resume", nerva_timer_resume);
+  m.def("nerva_timer_start", nerva_timer_start);
+  m.def("nerva_timer_stop", nerva_timer_stop);
 
   /////////////////////////////////////////////////////////////////////////
   //                       version

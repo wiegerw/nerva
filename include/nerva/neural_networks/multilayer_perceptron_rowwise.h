@@ -11,7 +11,7 @@
 
 #include "nerva/neural_networks/check_gradients.h"
 #include "nerva/neural_networks/layers_rowwise.h"
-#include "nerva/neural_networks/global_timer.h"
+#include "nerva/neural_networks/nerva_timer.h"
 
 namespace nerva::rowwise {
 
@@ -31,13 +31,13 @@ struct multilayer_perceptron
 
   void feedforward(eigen::matrix& result)
   {
-    GLOBAL_TIMER_START("feedforward");
+    NERVA_TIMER_START("feedforward");
     for (std::size_t i = 0; i < layers.size() - 1; i++)
     {
       layers[i]->feedforward(layers[i+1]->X);
     }
     layers.back()->feedforward(result);
-    GLOBAL_TIMER_STOP("feedforward");
+    NERVA_TIMER_STOP("feedforward");
   }
 
   void feedforward(const eigen::matrix& X, eigen::matrix& result)
@@ -48,13 +48,13 @@ struct multilayer_perceptron
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY)
   {
-    GLOBAL_TIMER_START("backpropagate");
+    NERVA_TIMER_START("backpropagate");
     layers.back()->backpropagate(Y, DY);
     for (auto i = layers.size() - 1; i > 0; i--)
     {
       layers[i - 1]->backpropagate(layers[i]->X, layers[i]->DX);
     }
-    GLOBAL_TIMER_STOP("backpropagate");
+    NERVA_TIMER_STOP("backpropagate");
   }
 
   void optimize(scalar eta)

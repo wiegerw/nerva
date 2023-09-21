@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "nerva/neural_networks/global_timer.h"
+#include "nerva/neural_networks/nerva_timer.h"
 #include "nerva/neural_networks/layers_colwise.h"
 #include "fmt/format.h"
 #include <random>
@@ -70,16 +70,16 @@ struct batch_normalization_layer: public neural_network_layer
     using eigen::power_minus_half;
     auto N = X.cols();
 
-    GLOBAL_TIMER_START("batchnorm1")
+    NERVA_TIMER_START("batchnorm1")
     DZ = hadamard(column_repeat(gamma, N), DY);
-    GLOBAL_TIMER_STOP("batchnorm1")
+    NERVA_TIMER_STOP("batchnorm1")
     Dbeta = rows_sum(DY);
-    GLOBAL_TIMER_START("batchnorm2")
+    NERVA_TIMER_START("batchnorm2")
     Dgamma = rows_sum(hadamard(DY, Z));
-    GLOBAL_TIMER_STOP("batchnorm2")
-    GLOBAL_TIMER_START("batchnorm3")
+    NERVA_TIMER_STOP("batchnorm2")
+    NERVA_TIMER_START("batchnorm3")
     DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Z, column_repeat(-diag(DZ * Z.transpose()), N)) + DZ * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
-    GLOBAL_TIMER_STOP("batchnorm3")
+    NERVA_TIMER_STOP("batchnorm3")
   }
 
   void optimize(scalar eta) override
