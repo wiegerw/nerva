@@ -17,6 +17,13 @@
 
 namespace nerva::mkl {
 
+template <typename Derived>
+void print_numpy_matrix(const std::string& name, const Eigen::MatrixBase<Derived>& A, long edgeitems=3)
+{
+  auto A_view = mkl::make_dense_matrix_view(A);
+  nerva::print_numpy_matrix(name, A_view, edgeitems);
+}
+
 template <typename Scalar, int MatrixLayout>
 mkl::dense_matrix_view<Scalar, MatrixLayout> make_dense_matrix_view(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A)
 {
@@ -134,14 +141,16 @@ mkl::sparse_matrix_csr<Scalar> to_csr(const Eigen::Matrix<Scalar, Eigen::Dynamic
 // Performs the assignment A := B * C, with A sparse and B, C dense.
 // N.B. Only the existing entries of A are changed.
 // Use a sequential computation to copy values to A
-template <typename DerivedA, typename DerivedB, typename DerivedC>
-void ddd_product(Eigen::MatrixBase<DerivedA>& A,
+template <typename Scalar, int MatrixLayoutA, typename DerivedB, typename DerivedC>
+void ddd_product(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutA>& A,
                  const Eigen::MatrixBase<DerivedB>& B,
                  const Eigen::MatrixBase<DerivedC>& C
 )
 {
-  using Scalar = typename DerivedA::Scalar;
-  constexpr int MatrixLayoutA = DerivedA::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
+  if (A.size() == 0)
+  {
+    A = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayoutA>(B.rows(), C.cols());
+  }
   constexpr int MatrixLayoutB = DerivedB::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
   constexpr int MatrixLayoutC = DerivedC::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor;
   dense_matrix_view<Scalar, MatrixLayoutA> A_view = mkl::make_dense_matrix_view(A);
