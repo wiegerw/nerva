@@ -160,9 +160,9 @@ def parse_init_weights(text: str, linear_layer_count: int) -> List[WeightInitial
     return [nerva.weights.parse_weight_initializer(word) for word in words]
 
 
-def parse_optimizers(text: str, linear_layer_count: int) -> List[Optimizer]:
+def parse_optimizers(text: str, layer_count: int) -> List[Optimizer]:
     words = text.strip().split(';')
-    n = linear_layer_count
+    n = layer_count
 
     if len(words) == 0:
         optimizer = nerva.optimizers.GradientDescent()
@@ -403,9 +403,8 @@ def main():
         linear_layer_densities = [1.0] * (len(linear_layer_sizes) - 1)
 
     layer_specifications = args.layers.split(';')
-    linear_layer_specifications = [spec for spec in layer_specifications if nervalibcolwise.is_linear_layer(spec)]
     linear_layer_weights = parse_init_weights(args.init_weights, linear_layer_count)
-    layer_optimizers = parse_optimizers(args.optimizers, linear_layer_count)
+    layer_optimizers = parse_optimizers(args.optimizers, len(layer_specifications))
     linear_layer_dropouts = parse_dropouts(args.dropouts, linear_layer_count)
     loss = parse_loss_function(args.loss)
     learning_rate = parse_learning_rate(args.learning_rate)
@@ -414,7 +413,7 @@ def main():
                  linear_layer_densities,
                  layer_optimizers,
                  linear_layer_weights,
-                 linear_layer_specifications,
+                 layer_specifications,
                  linear_layer_dropouts,
                  loss,
                  learning_rate,

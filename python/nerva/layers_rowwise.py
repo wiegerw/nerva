@@ -160,7 +160,9 @@ class BatchNormalization(Layer):
         self.output_size = output_size
 
     def compile(self, batch_size: int):
-        return nervalibrowwise.batch_normalization_layer(self.input_size, batch_size)
+        layer = nervalibrowwise.batch_normalization_layer(self.input_size, batch_size)
+        self._layer = layer
+        return layer
 
     def __str__(self):
         return 'BatchNormalization()'
@@ -176,7 +178,9 @@ class SimpleBatchNormalization(Layer):
         self.output_size = output_size
 
     def compile(self, batch_size: int):
-        return nervalibrowwise.simple_batch_normalization_layer(self.input_size, batch_size)
+        layer = nervalibrowwise.simple_batch_normalization_layer(self.input_size, batch_size)
+        self._layer = layer
+        return layer
 
     def __str__(self):
         return 'SimpleBatchNormalization()'
@@ -192,7 +196,9 @@ class AffineTransform(Layer):
         self.output_size = output_size
 
     def compile(self, batch_size: int):
-        return nervalibrowwise.affine_layer(self.input_size, batch_size)
+        layer = nervalibrowwise.affine_layer(self.input_size, batch_size)
+        self._layer = layer
+        return layer
 
     def __str__(self):
         return 'AffineTransform()'
