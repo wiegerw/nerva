@@ -16,14 +16,14 @@
 
 namespace nerva::rowwise {
 
-template <typename Matrix>
+template<typename Matrix>
 struct dropout_layer
 {
   Matrix R;
   scalar p;
 
   dropout_layer(std::size_t D, std::size_t K, scalar p_)
-   : p(p_)
+    : p(p_)
   {
     R = eigen::matrix::Constant(K, D, scalar(1));
   }
@@ -35,8 +35,8 @@ struct dropout_layer
   }
 };
 
-template <typename Matrix>
-struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
+template<typename Matrix>
+struct linear_dropout_layer : public linear_layer<Matrix>, dropout_layer<Matrix>
 {
   using super = linear_layer<Matrix>;
   using super::W;
@@ -54,8 +54,9 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
   static constexpr bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   linear_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
-   : super(D, K, N), dropout_layer<Matrix>(D, K, p)
-  {}
+    : super(D, K, N), dropout_layer<Matrix>(D, K, p)
+  {
+  }
 
   void feedforward(eigen::matrix& result) override
   {
@@ -77,22 +78,33 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
     }
     else
     {
-      DW = hadamard(DY.transpose() * X, R);
-      Db = columns_sum(DY);
-      DX = DY * hadamard(W, R);
+      if constexpr (NervaUseEigenProduct)
+      {
+        DW = hadamard(DY.transpose() * X, R);
+        Db = columns_sum(DY);
+        DX = DY * hadamard(W, R);
+      }
+      else
+      {
+        mkl::ddd_product(DW, DY.transpose(), X);
+        DW = hadamard(DW, R);
+        Db = columns_sum(DY);
+        DX = DY * hadamard(W, R);
+      }
     }
   }
 
   [[nodiscard]] std::string to_string() const override
   {
-    return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation=NoActivation(), dropout={})", input_size(), output_size(), optimizer->to_string(), p);
+    return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation=NoActivation(), dropout={})",
+                       input_size(), output_size(), optimizer->to_string(), p);
   }
 };
 
 using dense_linear_dropout_layer = linear_dropout_layer<eigen::matrix>;
 
-template <typename Matrix>
-struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix>
+template<typename Matrix>
+struct sigmoid_dropout_layer : public sigmoid_layer<Matrix>, dropout_layer<Matrix>
 {
   using super = sigmoid_layer<Matrix>;
   using super::W;
@@ -112,8 +124,9 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
   static constexpr bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   sigmoid_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
-      : super(D, K, N), dropout_layer<Matrix>(D, K, p)
-  {}
+    : super(D, K, N), dropout_layer<Matrix>(D, K, p)
+  {
+  }
 
   void feedforward(eigen::matrix& result) override
   {
@@ -140,23 +153,35 @@ struct sigmoid_dropout_layer: public sigmoid_layer<Matrix>, dropout_layer<Matrix
     }
     else
     {
-      DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(N, K) - Y));
-      DW = hadamard(DZ.transpose() * X, R);
-      Db = columns_sum(DZ);
-      DX = DZ * hadamard(W, R);
+      if constexpr (NervaUseEigenProduct)
+      {
+        DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(N, K) - Y));
+        DW = hadamard(DZ.transpose() * X, R);
+        Db = columns_sum(DZ);
+        DX = DZ * hadamard(W, R);
+      }
+      else
+      {
+        DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(N, K) - Y));
+        mkl::ddd_product(DW, DZ.transpose(), X);
+        DW = hadamard(DW, R);
+        Db = columns_sum(DZ);
+        DX = DZ * hadamard(W, R);
+      }
     }
   }
 
   [[nodiscard]] std::string to_string() const override
   {
-    return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation=Sigmoid(), dropout={})", input_size(), output_size(), optimizer->to_string(), p);
+    return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation=Sigmoid(), dropout={})",
+                       input_size(), output_size(), optimizer->to_string(), p);
   }
 };
 
 using dense_sigmoid_dropout_layer = sigmoid_dropout_layer<eigen::matrix>;
 
-template <typename Matrix, typename ActivationFunction>
-struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunction>, dropout_layer<Matrix>
+template<typename Matrix, typename ActivationFunction>
+struct activation_dropout_layer : public activation_layer<Matrix, ActivationFunction>, dropout_layer<Matrix>
 {
   using super = activation_layer<Matrix, ActivationFunction>;
   using super::W;
@@ -177,8 +202,9 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
   static constexpr bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
 
   activation_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, ActivationFunction act)
-      : super(D, K, N, act), dropout_layer<Matrix>(D, K, p)
-  {}
+    : super(D, K, N, act), dropout_layer<Matrix>(D, K, p)
+  {
+  }
 
   void feedforward(eigen::matrix& result) override
   {
@@ -201,34 +227,48 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
     }
     else
     {
-      DZ = hadamard(DY, act.gradient(Z));
-      DW = hadamard(DZ.transpose() * X, R);
-      Db = columns_sum(DZ);
-      DX = DZ * hadamard(W, R);
+      if constexpr (NervaUseEigenProduct)
+      {
+        DZ = hadamard(DY, act.gradient(Z));
+        DW = hadamard(DZ.transpose() * X, R);
+        Db = columns_sum(DZ);
+        DX = DZ * hadamard(W, R);
+      }
+      else
+      {
+        DZ = hadamard(DY, act.gradient(Z));
+        mkl::ddd_product(DW, DZ.transpose(), X);
+        DW = hadamard(DW, R);
+        Db = columns_sum(DZ);
+        DX = DZ * hadamard(W, R);
+      }
     }
   }
 
   [[nodiscard]] std::string to_string() const override
   {
-    return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation={}, dropout={})", input_size(), output_size(), optimizer->to_string(), act.to_string(), p);
+    return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation={}, dropout={})", input_size(),
+                       output_size(), optimizer->to_string(), act.to_string(), p);
   }
 };
 
-template <typename Matrix>
-struct relu_dropout_layer: public activation_dropout_layer<Matrix, eigen::relu_activation>
+template<typename Matrix>
+struct relu_dropout_layer : public activation_dropout_layer<Matrix, eigen::relu_activation>
 {
   using super = activation_dropout_layer<Matrix, eigen::relu_activation>;
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
   relu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
-   : super(D, K, N, p, eigen::relu_activation())
-  {}
+    : super(D, K, N, p, eigen::relu_activation())
+  {
+  }
 };
+
 using dense_relu_dropout_layer = relu_dropout_layer<eigen::matrix>;
 
-template <typename Matrix>
-struct softmax_dropout_layer: public softmax_layer<Matrix>, dropout_layer<Matrix>
+template<typename Matrix>
+struct softmax_dropout_layer : public softmax_layer<Matrix>, dropout_layer<Matrix>
 {
   using super = softmax_layer<Matrix>;
   using super::to_string;
@@ -236,12 +276,14 @@ struct softmax_dropout_layer: public softmax_layer<Matrix>, dropout_layer<Matrix
 
   softmax_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
     : super(D, K, N), dropout_layer<Matrix>(D, K, p)
-  {}
+  {
+  }
 };
+
 using dense_softmax_dropout_layer = softmax_dropout_layer<eigen::matrix>;
 
-template <typename Matrix>
-struct log_softmax_dropout_layer: public log_softmax_layer<Matrix>, dropout_layer<Matrix>
+template<typename Matrix>
+struct log_softmax_dropout_layer : public log_softmax_layer<Matrix>, dropout_layer<Matrix>
 {
   using super = log_softmax_layer<Matrix>;
   using super::to_string;
@@ -249,25 +291,29 @@ struct log_softmax_dropout_layer: public log_softmax_layer<Matrix>, dropout_laye
 
   log_softmax_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
     : super(D, K, N), dropout_layer<Matrix>(D, K, p)
-  {}
+  {
+  }
 };
+
 using dense_log_softmax_dropout_layer = log_softmax_dropout_layer<eigen::matrix>;
 
-template <typename Matrix>
-struct hyperbolic_tangent_dropout_layer: public activation_dropout_layer<Matrix, eigen::hyperbolic_tangent_activation>
+template<typename Matrix>
+struct hyperbolic_tangent_dropout_layer : public activation_dropout_layer<Matrix, eigen::hyperbolic_tangent_activation>
 {
   using super = activation_dropout_layer<Matrix, eigen::hyperbolic_tangent_activation>;
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
   hyperbolic_tangent_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
-      : super(D, K, N, p, eigen::hyperbolic_tangent_activation())
-  {}
+    : super(D, K, N, p, eigen::hyperbolic_tangent_activation())
+  {
+  }
 };
+
 using dense_hyperbolic_tangent_dropout_layer = hyperbolic_tangent_dropout_layer<eigen::matrix>;
 
-template <typename Matrix>
-struct all_relu_dropout_layer: public activation_dropout_layer<Matrix, eigen::all_relu_activation>
+template<typename Matrix>
+struct all_relu_dropout_layer : public activation_dropout_layer<Matrix, eigen::all_relu_activation>
 {
   using super = activation_dropout_layer<Matrix, eigen::all_relu_activation>;
   using super::to_string;
@@ -275,12 +321,14 @@ struct all_relu_dropout_layer: public activation_dropout_layer<Matrix, eigen::al
 
   all_relu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, scalar alpha)
     : super(D, K, N, p, eigen::all_relu_activation(alpha))
-  {}
+  {
+  }
 };
+
 using dense_all_relu_dropout_layer = all_relu_dropout_layer<eigen::matrix>;
 
-template <typename Matrix>
-struct leaky_relu_dropout_layer: public activation_dropout_layer<Matrix, eigen::leaky_relu_activation>
+template<typename Matrix>
+struct leaky_relu_dropout_layer : public activation_dropout_layer<Matrix, eigen::leaky_relu_activation>
 {
   using super = activation_dropout_layer<Matrix, eigen::leaky_relu_activation>;
   using super::to_string;
@@ -288,12 +336,14 @@ struct leaky_relu_dropout_layer: public activation_dropout_layer<Matrix, eigen::
 
   leaky_relu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, scalar alpha)
     : super(D, K, N, p, eigen::leaky_relu_activation(alpha))
-  {}
+  {
+  }
 };
+
 using dense_leaky_relu_dropout_layer = leaky_relu_dropout_layer<eigen::matrix>;
 
-template <typename Matrix>
-struct trelu_dropout_layer: public activation_dropout_layer<Matrix, eigen::trimmed_relu_activation>
+template<typename Matrix>
+struct trelu_dropout_layer : public activation_dropout_layer<Matrix, eigen::trimmed_relu_activation>
 {
   using super = activation_dropout_layer<Matrix, eigen::trimmed_relu_activation>;
   using super::to_string;
@@ -301,21 +351,26 @@ struct trelu_dropout_layer: public activation_dropout_layer<Matrix, eigen::trimm
 
   trelu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, scalar epsilon)
     : super(D, K, N, p, eigen::trimmed_relu_activation(epsilon))
-  {}
+  {
+  }
 };
+
 using dense_trelu_dropout_layer = trelu_dropout_layer<eigen::matrix>;
 
-template <typename Matrix>
-struct srelu_dropout_layer: public activation_dropout_layer<Matrix, eigen::srelu_activation>
+template<typename Matrix>
+struct srelu_dropout_layer : public activation_dropout_layer<Matrix, eigen::srelu_activation>
 {
   using super = activation_dropout_layer<Matrix, eigen::srelu_activation>;
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
-  srelu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, scalar al = 1, scalar tl = 0, scalar ar = 1, scalar tr = 0)
+  srelu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, scalar al = 1, scalar tl = 0,
+                      scalar ar = 1, scalar tr = 0)
     : super(D, K, N, p, eigen::srelu_activation(al, tl, ar, tr))
-  {}
+  {
+  }
 };
+
 using dense_srelu_dropout_layer = srelu_dropout_layer<eigen::matrix>;
 
 } // namespace nerva::rowwise

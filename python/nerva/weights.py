@@ -3,13 +3,13 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 class WeightInitializer(object):
-    def compile(self):
-        return NotImplementedError
+    pass
 
 
 class Xavier(WeightInitializer):
     def __str__(self):
         return 'Xavier'
+
 
 class XavierNormalized(WeightInitializer):
     def __str__(self):

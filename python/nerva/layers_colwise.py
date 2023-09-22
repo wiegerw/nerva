@@ -55,7 +55,7 @@ class Dense(Layer):
         return f'{N}/{N} (100%)'
 
     def set_weights_and_bias(self, init: WeightInitializer) -> None:
-        self._layer.set_weights_and_bias(init.compile())
+        self._layer.set_weights_and_bias(str(init))
 
     def compile(self, batch_size: int):
         """
@@ -122,11 +122,11 @@ class Sparse(Layer):
     def set_support_random(self, density: float) -> None:
         self._layer.set_support_random(density)
 
-    def set_weights_and_bias(self, init: WeightInitializer) -> None:
-        self._layer.set_weights_and_bias(init.compile())
+    def set_weights_and_bias(self, weight_initializer: WeightInitializer) -> None:
+        self._layer.set_weights_and_bias(str(weight_initializer))
 
-    def initialize_weights(self, init: WeightInitializer) -> None:
-        self._layer.initialize_weights(init.compile())
+    def initialize_weights(self, weight_initializer: WeightInitializer) -> None:
+        self._layer.initialize_weights(str(weight_initializer))
 
     def weight_count(self):
         return self._layer.weight_count()
@@ -147,7 +147,7 @@ class Sparse(Layer):
         return self._layer.prune_threshold(threshold)
 
     def grow_random(self, count: int, weight_initializer=Xavier()) -> None:
-        self._layer.grow_random(weight_initializer.compile(), count)
+        self._layer.grow_random(str(weight_initializer), count)
 
 
 class BatchNormalization(Layer):
@@ -221,7 +221,7 @@ class Sequential(object):
 
     def set_weights_and_bias(self, weight_initializers: List[WeightInitializer]):
         print(f'Initializing weights using {", ".join(str(w) for w in weight_initializers)}')
-        self.compiled_model.set_weights_and_bias([w.compile() for w in weight_initializers])
+        self.compiled_model.set_weights_and_bias([str(w) for w in weight_initializers])
 
     def load_weights_and_bias(self, filename: str):
         """
