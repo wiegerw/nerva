@@ -32,12 +32,6 @@ from nerva.loss_colwise import LossFunction, parse_loss_function
 from nerva.learning_rate_colwise import LearningRateScheduler, parse_learning_rate
 
 
-def make_batch_normalization_layer(input_size: int, output_size: int, optimizer: Optimizer) -> BatchNormalization:
-    layer = BatchNormalization(input_size, output_size)
-    layer.optimizer = optimizer
-    return layer
-
-
 def make_linear_layer(input_size: int,
                       output_size: int,
                       density: float,
@@ -84,7 +78,7 @@ def make_layers(layer_specifications: list[str],
             output_size = input_size
             optimizer = optimizers[optimizer_index]
             optimizer_index += 1
-            blayer = make_batch_normalization_layer(input_size, output_size, optimizer)
+            blayer = BatchNormalization(input_size, output_size, optimizer)
             result.append(blayer)
         else:  # linear spec
             output_size = linear_layer_sizes[linear_layer_index + 1]

@@ -8,58 +8,37 @@ class WeightInitializer(object):
 
 
 class Xavier(WeightInitializer):
-    def compile(self):
+    def __str__(self):
         return 'Xavier'
 
-    def __str__(self):
-        return 'Xavier()'
-
 class XavierNormalized(WeightInitializer):
-    def compile(self):
-        return 'XavierNormalized'
-
     def __str__(self):
-        return 'XavierNormalized()'
+        return 'XavierNormalized'
 
 
 class He(WeightInitializer):
-    def compile(self):
-        return 'He'
-
     def __str__(self):
-        return 'He()'
+        return 'He'
 
 
 class Uniform(WeightInitializer):
-    def compile(self):
-        return 'Uniform'
-
     def __str__(self):
-        return 'Uniform()'
+        return 'Uniform'
 
 
 class PyTorch(WeightInitializer):
-    def compile(self):
-        return 'PyTorch'
-
     def __str__(self):
-        return 'PyTorch()'
+        return 'PyTorch'
 
 
 class Zero(WeightInitializer):
-    def compile(self):
-        return 'Zero'
-
     def __str__(self):
-        return 'Zero()'
+        return 'Zero'
 
 
 class None_(WeightInitializer):
-    def compile(self):
-        return 'None'
-
     def __str__(self):
-        return 'None_()'
+        return 'None'
 
 
 def parse_weight_initializer(text: str):

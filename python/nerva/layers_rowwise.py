@@ -55,7 +55,7 @@ class Dense(Layer):
         return f'{N}/{N} (100%)'
 
     def set_weights_and_bias(self, init: WeightInitializer) -> None:
-        self._layer.set_weights_and_bias(init.compile())
+        self._layer.set_weights_and_bias(str(init))
 
     def compile(self, batch_size: int):
         """
@@ -66,9 +66,9 @@ class Dense(Layer):
         """
         activation = print_activation(self.activation)
         if self.dropout_rate == 0.0:
-            layer = nervalibrowwise.make_dense_linear_layer(self.input_size, self.output_size, batch_size, activation, self.weight_initializer.compile(), self.optimizer.compile())
+            layer = nervalibrowwise.make_dense_linear_layer(self.input_size, self.output_size, batch_size, activation, str(self.weight_initializer), str(self.optimizer))
         else:
-            layer = nervalibrowwise.make_dense_linear_dropout_layer(self.input_size, self.output_size, batch_size, self.dropout_rate, activation, self.weight_initializer.compile(), self.optimizer.compile())
+            layer = nervalibrowwise.make_dense_linear_dropout_layer(self.input_size, self.output_size, batch_size, self.dropout_rate, activation, str(self.weight_initializer), str(self.optimizer))
         self._layer = layer
         return layer
 
@@ -115,7 +115,7 @@ class Sparse(Layer):
         :return:
         """
         activation = print_activation(self.activation)
-        layer = nervalibrowwise.make_sparse_linear_layer(self.input_size, self.output_size, batch_size, self.density, activation, self.weight_initializer.compile(), self.optimizer.compile())
+        layer = nervalibrowwise.make_sparse_linear_layer(self.input_size, self.output_size, batch_size, self.density, activation, str(self.weight_initializer), str(self.optimizer))
         self._layer = layer
         return layer
 
@@ -153,55 +153,21 @@ class Sparse(Layer):
 class BatchNormalization(Layer):
     def __init__(self,
                  input_size: int,
-                 output_size: int
+                 output_size: int,
+                 optimizer: Optimizer
                 ):
         assert input_size == output_size
         self.input_size = input_size
         self.output_size = output_size
+        self.optimizer = optimizer
 
     def compile(self, batch_size: int):
-        layer = nervalibrowwise.batch_normalization_layer(self.input_size, batch_size)
+        layer = nervalibrowwise.make_batch_normalization_layer(self.input_size, batch_size, str(self.optimizer))
         self._layer = layer
         return layer
 
     def __str__(self):
-        return 'BatchNormalization()'
-
-
-class SimpleBatchNormalization(Layer):
-    def __init__(self,
-                 input_size: int,
-                 output_size: int
-                ):
-        assert input_size == output_size
-        self.input_size = input_size
-        self.output_size = output_size
-
-    def compile(self, batch_size: int):
-        layer = nervalibrowwise.simple_batch_normalization_layer(self.input_size, batch_size)
-        self._layer = layer
-        return layer
-
-    def __str__(self):
-        return 'SimpleBatchNormalization()'
-
-
-class AffineTransform(Layer):
-    def __init__(self,
-                 input_size: int,
-                 output_size: int
-                ):
-        assert input_size == output_size
-        self.input_size = input_size
-        self.output_size = output_size
-
-    def compile(self, batch_size: int):
-        layer = nervalibrowwise.affine_layer(self.input_size, batch_size)
-        self._layer = layer
-        return layer
-
-    def __str__(self):
-        return 'AffineTransform()'
+        return f'BatchNormalization(optimizer={self.optimizer})'
 
 
 # neural networks

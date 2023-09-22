@@ -366,6 +366,7 @@ PYBIND11_MODULE(NERVALIB, m)
 
   m.def("compute_sparse_layer_densities", compute_sparse_layer_densities);
   m.def("is_linear_layer", is_linear_layer);
+
   m.def("make_dense_linear_layer", [](std::size_t D,
                                       std::size_t K,
                                       long N,
@@ -376,6 +377,7 @@ PYBIND11_MODULE(NERVALIB, m)
   {
     return make_dense_linear_layer(D, K, N, activation, weights, optimizer, nerva_rng);
   });
+
   m.def("make_dense_linear_dropout_layer", [](std::size_t D,
                                               std::size_t K,
                                               long N,
@@ -387,6 +389,7 @@ PYBIND11_MODULE(NERVALIB, m)
   {
     return make_dense_linear_dropout_layer(D, K, N, dropout_rate, activation, weights, optimizer, nerva_rng);
   });
+
   m.def("make_sparse_linear_layer", [](std::size_t D,
                                        std::size_t K,
                                        long N,
@@ -397,6 +400,14 @@ PYBIND11_MODULE(NERVALIB, m)
   )
   {
     return make_sparse_linear_layer(D, K, N, density, activation, weights, optimizer, nerva_rng);
+  });
+
+  m.def("make_batch_normalization_layer", [](std::size_t D,
+                                             long N,
+                                             const std::string& optimizer
+  )
+  {
+    return make_batch_normalization_layer(D, N, optimizer);
   });
 
   /////////////////////////////////////////////////////////////////////////
