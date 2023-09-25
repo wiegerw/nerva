@@ -537,6 +537,7 @@ struct softmax_layer : public linear_layer<Matrix>
     using eigen::column_repeat;
     using eigen::columns_sum;
     auto N = X.rows();
+    auto K = Y.cols();
 
     if constexpr (IsSparse)
     {
@@ -549,14 +550,14 @@ struct softmax_layer : public linear_layer<Matrix>
     {
       if constexpr (NervaUseEigenProduct)
       {
-        DZ = hadamard(Y, DY - column_repeat(diag(DY * Y.transpose()), N));
+        DZ = hadamard(Y, DY - column_repeat(diag(Y * DY.transpose()), K));
         DW = DZ.transpose() * X;
         Db = columns_sum(DZ);
         DX = DZ * W;
       }
       else
       {
-        DZ = hadamard(Y, DY - column_repeat(diag(DY * Y.transpose()), N));
+        DZ = hadamard(Y, DY - column_repeat(diag(Y * DY.transpose()), K));
         mkl::ddd_product(DW, DZ.transpose(), X);
         Db = columns_sum(DZ);
         mkl::ddd_product(DX, DZ, W);
@@ -616,15 +617,16 @@ struct log_softmax_layer : public linear_layer<Matrix>
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
+    using eigen::diag;
     using eigen::hadamard;
     using eigen::column_repeat;
     using eigen::columns_sum;
     using eigen::rows_sum;
-    auto N = X.rows();
+    auto K = Y.cols();
 
     if constexpr (IsSparse)
     {
-      DZ = DY - hadamard(stable_softmax()(Z), column_repeat(rows_sum(DY), N));
+      DZ = DY - hadamard(stable_softmax()(Z), column_repeat(rows_sum(DY), K));
       mkl::sdd_product_batch(DW, DZ.transpose(), X, std::max(4L, static_cast<long>(DZ.cols() / 10)));
       Db = columns_sum(DZ);
       mkl::dds_product(DX, DZ, W);
@@ -633,14 +635,14 @@ struct log_softmax_layer : public linear_layer<Matrix>
     {
       if constexpr (NervaUseEigenProduct)
       {
-        DZ = DY - hadamard(stable_softmax()(Z), column_repeat(rows_sum(DY), N));
+        DZ = DY - hadamard(stable_softmax()(Z), column_repeat(rows_sum(DY), K));
         DW = DZ.transpose() * X;
         Db = columns_sum(DZ);
         DX = DZ * W;
       }
       else
       {
-        DZ = DY - hadamard(stable_softmax()(Z), column_repeat(rows_sum(DY), N));
+        DZ = DY - hadamard(stable_softmax()(Z), column_repeat(rows_sum(DY), K));
         mkl::ddd_product(DW, DZ.transpose(), X);
         Db = columns_sum(DZ);
         mkl::ddd_product(DX, DZ, W);
