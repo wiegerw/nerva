@@ -12,7 +12,6 @@
 #include "doctest/doctest.h"
 #include "nerva/neural_networks/multilayer_perceptron.h"
 #include "nerva/neural_networks/loss_functions_colwise.h"
-#include "nerva/utilities/stopwatch.h"
 #include "nerva/utilities/string_utility.h"
 #include <iostream>
 
@@ -35,7 +34,11 @@ void print_vector(std::ostream& out, const std::string& name, const eigen::vecto
 
 bool compare_output(std::string output1, std::string output2)
 {
-  float epsilon = 0.0001; // The precision must be lowered if mkl::ddd_product is used.
+#ifdef NERVA_USE_NERVA_USE_EIGEN_PRODUCT
+  float epsilon = 0.000001;
+#else
+  float epsilon = 0.0001;
+#endif
 
   utilities::trim(output1);
   utilities::trim(output2);

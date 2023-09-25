@@ -13,7 +13,7 @@
 #include "nerva/neural_networks/batch_normalization_layers_colwise.h"
 #include "nerva/neural_networks/check_gradients.h"
 #include "nerva/datasets/make_dataset.h"
-#include "nerva/neural_networks/layers.h"
+#include "nerva/neural_networks/layers_colwise.h"
 #include "nerva/neural_networks/loss_functions_colwise.h"
 #include "nerva/neural_networks/mlp_algorithms.h"
 #include "nerva/neural_networks/weights.h"
@@ -26,8 +26,8 @@ using namespace nerva;
 template <typename Layer, typename LossFunction>
 void test_linear_layer(Layer& layer, const eigen::matrix& X, const eigen::matrix& T, LossFunction loss)
 {
-  long K = T.rows();
-  long N = X.rows();
+  long K = layer.output_size();
+  long N = X.cols();
 
   // do a feedforward + backpropagate pass to compute Db and DW
   layer.X = X;
@@ -378,7 +378,7 @@ TEST_CASE("test_mlp1")
   };
   eigen::vector b3 {{3, 2}};
 
-  long batch_size = 2;
+  long batch_size = 4;
   multilayer_perceptron M;
 
   auto layer1 = std::make_shared<relu_layer<eigen::matrix>>(2, 2, batch_size);
@@ -831,7 +831,7 @@ TEST_CASE("test_chessboard")
 {
   log::logger::set_reporting_level(log::debug);
 
-  long batch_size = 2;
+  long batch_size = 3;
   long N = 3;
   std::mt19937 rng{1885661379};
   auto [X, T] = datasets::make_dataset_chessboard(N, rng);

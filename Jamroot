@@ -25,9 +25,10 @@ project nerva
        <include>/usr/include/python3.10  # TODO: find a better way for this
        <cxxflags>-std=c++17
 
+       <define>EIGEN_USE_MKL_ALL
        <define>FMT_HEADER_ONLY
        <define>NERVA_TIMER
-       <define>EIGEN_USE_MKL_ALL
+       #<define>NERVA_USE_EIGEN_PRODUCT
 
        <include>$(MKLROOT)/include
        <linkflags>-L$(MKLROOT)/lib/intel64

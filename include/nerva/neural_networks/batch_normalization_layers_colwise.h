@@ -70,16 +70,10 @@ struct batch_normalization_layer: public neural_network_layer
     using eigen::power_minus_half;
     auto N = X.cols();
 
-    NERVA_TIMER_START("batchnorm1")
     DZ = hadamard(column_repeat(gamma, N), DY);
-    NERVA_TIMER_STOP("batchnorm1")
     Dbeta = rows_sum(DY);
-    NERVA_TIMER_START("batchnorm2")
     Dgamma = rows_sum(hadamard(DY, Z));
-    NERVA_TIMER_STOP("batchnorm2")
-    NERVA_TIMER_START("batchnorm3")
     DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Z, column_repeat(-diag(DZ * Z.transpose()), N)) + DZ * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
-    NERVA_TIMER_STOP("batchnorm3")
   }
 
   void optimize(scalar eta) override
