@@ -479,13 +479,12 @@ TEST_CASE("test_cblas_scal")
     {7, 4, 1},
   };
 
-  matrix_t B {
-    {4, 6, 8},
-    {14, 8, 2},
-  };
+  float alpha = 2;
+
+  matrix_t B = alpha * A;
 
   auto A_view = make_dense_matrix_view(A);
-  cblas_scal(A_view, float(2));
+  cblas_scal(alpha, A_view);
   print_numpy_matrix("A", A_view);
   CHECK(A == B);
 }

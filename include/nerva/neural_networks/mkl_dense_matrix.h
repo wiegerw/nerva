@@ -530,19 +530,9 @@ auto ddd_product_manual_loops(const MatrixA<Scalar, MatrixLayoutA>& A, const Mat
   }
 }
 
-// x := a*x
-template <typename Scalar, int MatrixLayout>
-void cblas_scal(dense_matrix_view<Scalar, MatrixLayout>& x, Scalar a)
-{
-  if constexpr (std::is_same_v<Scalar, float>)
-  {
-    cblas_sscal(x.rows() * x.cols(), a, x.data(), 1);
-  }
-  else
-  {
-    cblas_dscal(x.rows() * x.cols(), a, x.data(), 1);
-  }
-};
+//----------------------------------------------------------------------//
+//                     BLAS level 1 routines
+//----------------------------------------------------------------------//
 
 // y := a*x + y
 template <typename Scalar, int MatrixLayout>
@@ -556,6 +546,123 @@ void cblas_axpy(Scalar a, const dense_matrix_view<Scalar, MatrixLayout>& x, dens
   else
   {
     cblas_daxpy(x.rows() * x.cols(), a, x.data(), 1, y.data(), 1);
+  }
+};
+
+// returns elements_sum(abs(x))
+template <typename Scalar, int MatrixLayout>
+Scalar cblas_asum(dense_matrix_view<Scalar, MatrixLayout>& x)
+{
+  if constexpr (std::is_same_v<Scalar, float>)
+  {
+    return cblas_sasum(x.rows() * x.cols(), x.data(), 1);
+  }
+  else
+  {
+    return cblas_dasum(x.rows() * x.cols(), x.data(), 1);
+  }
+};
+
+// y := x
+template <typename Scalar, int MatrixLayout>
+void cblas_copy(const dense_matrix_view<Scalar, MatrixLayout>& x, dense_matrix_view<Scalar, MatrixLayout>& y)
+{
+  assert(x.rows() == y.rows() && x.cols() == y.cols());
+  if constexpr (std::is_same_v<Scalar, float>)
+  {
+    cblas_scopy(x.rows() * x.cols(), x.data(), 1, y.data(), 1);
+  }
+  else
+  {
+    cblas_dcopy(x.rows() * x.cols(), x.data(), 1, y.data(), 1);
+  }
+};
+
+// returns elements_sum(hadamard(x, y))
+template <typename Scalar, int MatrixLayout>
+Scalar cblas_dot(const dense_matrix_view<Scalar, MatrixLayout>& x, dense_matrix_view<Scalar, MatrixLayout>& y)
+{
+  if constexpr (std::is_same_v<Scalar, float>)
+  {
+    Scalar one(1);
+    return cblas_sdot(x.rows() * x.cols(), x.data(), one, y.data(), one);
+  }
+  else
+  {
+    Scalar one(1);
+    return cblas_ddot(x.rows() * x.cols(), x.data(), one, y.data(), one);
+  }
+};
+
+// returns elements_sum(abs(sqrt(x)))
+template <typename Scalar, int MatrixLayout>
+Scalar cblas_nrm2(dense_matrix_view<Scalar, MatrixLayout>& x)
+{
+  if constexpr (std::is_same_v<Scalar, float>)
+  {
+    return cblas_snrm2(x.rows() * x.cols(), x.data(), 1);
+  }
+  else
+  {
+    return cblas_dnrm2(x.rows() * x.cols(), x.data(), 1);
+  }
+};
+
+// x := a*x
+template <typename Scalar, int MatrixLayout>
+void cblas_scal(Scalar a, dense_matrix_view<Scalar, MatrixLayout>& x)
+{
+  if constexpr (std::is_same_v<Scalar, float>)
+  {
+    cblas_sscal(x.rows() * x.cols(), a, x.data(), 1);
+  }
+  else
+  {
+    cblas_dscal(x.rows() * x.cols(), a, x.data(), 1);
+  }
+};
+
+// x, y := y, x
+template <typename Scalar, int MatrixLayout>
+void cblas_swap(const dense_matrix_view<Scalar, MatrixLayout>& x, dense_matrix_view<Scalar, MatrixLayout>& y)
+{
+  if constexpr (std::is_same_v<Scalar, float>)
+  {
+    Scalar one(1);
+    return cblas_sswap(x.rows() * x.cols(), x.data(), one, y.data(), one);
+  }
+  else
+  {
+    Scalar one(1);
+    return cblas_dswap(x.rows() * x.cols(), x.data(), one, y.data(), one);
+  }
+};
+
+// Returns the index of the element with maximum absolute value.
+template <typename Scalar, int MatrixLayout>
+CBLAS_INDEX cblas_iamax(dense_matrix_view<Scalar, MatrixLayout>& x)
+{
+  if constexpr (std::is_same_v<Scalar, float>)
+  {
+    return cblas_isamax(x.rows() * x.cols(), x.data(), 1);
+  }
+  else
+  {
+    return cblas_idamax(x.rows() * x.cols(), x.data(), 1);
+  }
+};
+
+// Returns the index of the element with minimum absolute value.
+template <typename Scalar, int MatrixLayout>
+CBLAS_INDEX cblas_iamin(dense_matrix_view<Scalar, MatrixLayout>& x)
+{
+  if constexpr (std::is_same_v<Scalar, float>)
+  {
+    return cblas_isamin(x.rows() * x.cols(), x.data(), 1);
+  }
+  else
+  {
+    return cblas_idamin(x.rows() * x.cols(), x.data(), 1);
   }
 };
 
