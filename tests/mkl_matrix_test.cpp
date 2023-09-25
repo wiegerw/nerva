@@ -21,6 +21,7 @@ using namespace nerva;
 using vector = Eigen::VectorXd;
 using matrix = Eigen::MatrixXd;
 using matrix_wrapper = Eigen::Map<matrix>;
+using matrix_t = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>;
 
 inline
 long nonzero_count(const matrix& A)
@@ -467,4 +468,51 @@ TEST_CASE("test_efficient_product")
   print_numpy_matrix("B3", B3);
 
   // TODO: add a comparison function for matrices with different layout
+}
+
+TEST_CASE("test_cblas_scal")
+{
+  using namespace mkl;
+
+  matrix_t A {
+    {2, 3, 4},
+    {7, 4, 1},
+  };
+
+  matrix_t B {
+    {4, 6, 8},
+    {14, 8, 2},
+  };
+
+  auto A_view = make_dense_matrix_view(A);
+  cblas_scal(A_view, float(2));
+  print_numpy_matrix("A", A_view);
+  CHECK(A == B);
+}
+
+TEST_CASE("test_cblas_axpy")
+{
+  using namespace mkl;
+
+  matrix_t A {
+    {2, 3, 4},
+    {7, 4, 1},
+  };
+
+  matrix_t B {
+    {1, 2, 3},
+    {4, 2, 0},
+  };
+
+  float alpha = 2;
+
+  matrix_t C = alpha * A + B;
+
+  auto A_view = make_dense_matrix_view(A);
+  auto B_view = make_dense_matrix_view(B);
+
+  cblas_axpy(alpha, A_view, B_view);
+  print_numpy_matrix("B", B);
+  print_numpy_matrix("C", C);
+  CHECK(C == B);
 }

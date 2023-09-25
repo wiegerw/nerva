@@ -530,5 +530,34 @@ auto ddd_product_manual_loops(const MatrixA<Scalar, MatrixLayoutA>& A, const Mat
   }
 }
 
+// x := a*x
+template <typename Scalar, int MatrixLayout>
+void cblas_scal(dense_matrix_view<Scalar, MatrixLayout>& x, Scalar a)
+{
+  if constexpr (std::is_same_v<Scalar, float>)
+  {
+    cblas_sscal(x.rows() * x.cols(), a, x.data(), 1);
+  }
+  else
+  {
+    cblas_dscal(x.rows() * x.cols(), a, x.data(), 1);
+  }
+};
+
+// y := a*x + y
+template <typename Scalar, int MatrixLayout>
+void cblas_axpy(Scalar a, const dense_matrix_view<Scalar, MatrixLayout>& x, dense_matrix_view<Scalar, MatrixLayout>& y)
+{
+  assert(x.rows() == y.rows() && x.cols() == y.cols());
+  if constexpr (std::is_same_v<Scalar, float>)
+  {
+    cblas_saxpy(x.rows() * x.cols(), a, x.data(), 1, y.data(), 1);
+  }
+  else
+  {
+    cblas_daxpy(x.rows() * x.cols(), a, x.data(), 1, y.data(), 1);
+  }
+};
+
 } // namespace nerva::mkl
 
