@@ -13,26 +13,27 @@ loss="SoftmaxCrossEntropy"
 batch_size=5
 gradient_step=0.00001
 optimizers="GradientDescent"
+tool=../tools/dist/mlpcolwisedouble
 
 function run()
 {
-  ../tools/dist/mlpd \
-               --epochs=$epochs \
-               --layers="$layers" \
-               --sizes=$sizes \
-               --dataset=$dataset \
-               --init-weights=$init_weights \
-               --batch-size=$batch_size \
-               --learning-rate="$learning_rate" \
-               --optimizers=$optimizers \
-               --size=$size \
-               --loss=$loss \
-               --normalize \
-               --threads=4 \
-               --verbose \
-               --no-shuffle \
-               --seed=$seed \
-               --gradient-step=$gradient_step
+  $tool \
+       --epochs=$epochs \
+       --layers="$layers" \
+       --sizes=$sizes \
+       --dataset=$dataset \
+       --init-weights=$init_weights \
+       --batch-size=$batch_size \
+       --learning-rate="$learning_rate" \
+       --optimizers=$optimizers \
+       --size=$size \
+       --loss=$loss \
+       --normalize \
+       --threads=4 \
+       --verbose \
+       --no-shuffle \
+       --seed=$seed \
+       --gradient-step=$gradient_step
 }
 
 function run_default()

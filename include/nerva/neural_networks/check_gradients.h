@@ -120,24 +120,29 @@ void print_gradient(const std::string& name, Function f, scalar& x, scalar dx, s
 template <typename Function>
 bool check_gradient(const std::string& name, Function f, eigen::vector& x, const eigen::vector& dx, scalar h, unsigned int count = 5, scalar threshold = 0.05)
 {
-  bool result = true;
+  int failure_count = 0;
   long n = x.size();
   for (long i = 0; i < n; i++)
   {
     if (!check_gradient(f, x[i], dx[i], h, count, threshold))
     {
       print_gradient(name + '[' + std::to_string(i) + ']', f, x[i], dx[i], h, count);
-      result = false;
+      failure_count++;
+      if (failure_count > 2)
+      {
+        std::cout << "too many errors in " << name << std::endl;
+        break;
+      }
     }
   }
-  return result;
+  return failure_count == 0;
 }
 
 // check gradient of an eigen::matrix function
 template <typename Function>
 bool check_gradient(const std::string& name, Function f, eigen::matrix& X, const eigen::matrix& dX, scalar h, unsigned int count = 5, scalar threshold = 0.05)
 {
-  bool result = true;
+  int failure_count = 0;
   auto n = X.rows();
   auto m = X.cols();
   for (auto i = 0; i < n; i++)
@@ -147,11 +152,20 @@ bool check_gradient(const std::string& name, Function f, eigen::matrix& X, const
       if (!check_gradient(f, X(i, j), dX(i, j), h, count, threshold))
       {
         print_gradient(name + '[' + std::to_string(i) + ',' + std::to_string(j) + ']', f, X(i, j), dX(i, j), h, count);
-        result = false;
+        failure_count++;
+        if (failure_count > 2)
+        {
+          std::cout << "too many errors in " << name << std::endl;
+          break;
+        }
       }
     }
+    if (failure_count > 2)
+    {
+      break;
+    }
   }
-  return result;
+  return failure_count == 0;
 }
 
 // Check the gradient of an mkl::sparse_matrix_csr<scalar> function.
@@ -159,7 +173,7 @@ bool check_gradient(const std::string& name, Function f, eigen::matrix& X, const
 template <typename Scalar, typename Function>
 bool check_gradient(const std::string& name, Function f, mkl::sparse_matrix_csr<Scalar>& X, const mkl::sparse_matrix_csr<Scalar>& dX, Scalar h, unsigned int count = 5, Scalar threshold = 0.05)
 {
-  bool result = true;
+  int failure_count = 0;
   auto m = X.rows();
   auto X_values = const_cast<Scalar*>(X.values().data());
   const auto& X_col_index = X.col_index();
@@ -174,12 +188,21 @@ bool check_gradient(const std::string& name, Function f, mkl::sparse_matrix_csr<
       if (!check_gradient(f, X_values[k], dX_values[k], h, count, threshold))
       {
         print_gradient(name + '[' + std::to_string(i) + ',' + std::to_string(j) + ']', f, X_values[k], dX_values[k], h, count);
-        result = false;
+        failure_count++;
+        if (failure_count > 2)
+        {
+          std::cout << "too many errors in " << name << std::endl;
+          break;
+        }
       }
+    }
+    if (failure_count > 2)
+    {
+      break;
     }
   }
 
-  return result;
+  return failure_count == 0;
 }
 
 } // namespace nerva

@@ -4,7 +4,8 @@ project nerva_tools
        <linkflags>-lpython3.10  # TODO: find a better way to do this
    ;
 
-exe mlpd : mlp.cpp : <scalar>double ;
+exe mlpcolwisedouble : mlp.cpp : <scalar>double <orientation>colwise ;
+exe mlprowwisedouble : mlp.cpp : <scalar>double <orientation>rowwise ;
 exe mlpcolwise : mlp.cpp : <scalar>float <orientation>colwise ;
 exe mlprowwise : mlp.cpp : <scalar>float <orientation>rowwise ;
 exe mkl  : mkl.cpp : <scalar>float ;
@@ -14,5 +15,6 @@ install dist
     mkl
     mlpcolwise
     mlprowwise
-    mlpd
+    mlpcolwisedouble
+    mlprowwisedouble
   ;
