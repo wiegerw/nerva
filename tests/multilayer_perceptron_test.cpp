@@ -35,7 +35,7 @@ void print_vector(std::ostream& out, const std::string& name, const eigen::vecto
 
 bool compare_output(std::string output1, std::string output2)
 {
-  float epsilon = 0.000001;
+  float epsilon = 0.0001; // The precision must be lowered if mkl::ddd_product is used.
 
   utilities::trim(output1);
   utilities::trim(output2);
