@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "nerva/neural_networks/mkl_dense_vector.h"
 #include "nerva/neural_networks/print_matrix.h"
 #include "Eigen/Dense"
 #include <mkl.h>
@@ -374,6 +375,12 @@ dense_matrix_view<Scalar, 1 - MatrixLayout> make_transposed_dense_matrix_view(co
   return dense_matrix_view<Scalar, 1 - MatrixLayout>(const_cast<Scalar*>(A.data()), A.cols(), A.rows());
 }
 
+template <typename Scalar, int MatrixLayout>
+dense_vector_view<Scalar> make_dense_vector_view(const dense_matrix_view<Scalar, MatrixLayout>& A, long increment = 1)
+{
+  return dense_vector_view<Scalar>(const_cast<Scalar*>(A.data()), A.rows() * A.cols(), increment);
+}
+
 // Computes `B := alpha * op(A)`. This function can for example be used to change the layout of a matrix.
 // N.B. A and B should be different!
 // The rows and columns of A are not being set.
@@ -539,28 +546,17 @@ template <typename Scalar, int MatrixLayout>
 void cblas_axpy(Scalar a, const dense_matrix_view<Scalar, MatrixLayout>& x, dense_matrix_view<Scalar, MatrixLayout>& y)
 {
   assert(x.rows() == y.rows() && x.cols() == y.cols());
-  if constexpr (std::is_same_v<Scalar, float>)
-  {
-    cblas_saxpy(x.rows() * x.cols(), a, x.data(), 1, y.data(), 1);
-  }
-  else
-  {
-    cblas_daxpy(x.rows() * x.cols(), a, x.data(), 1, y.data(), 1);
-  }
+  auto x_view = make_dense_vector_view(x);
+  auto y_view = make_dense_vector_view(y);
+  return cblas_axpy(a, x_view, y_view);
 };
 
 // returns elements_sum(abs(x))
 template <typename Scalar, int MatrixLayout>
 Scalar cblas_asum(dense_matrix_view<Scalar, MatrixLayout>& x)
 {
-  if constexpr (std::is_same_v<Scalar, float>)
-  {
-    return cblas_sasum(x.rows() * x.cols(), x.data(), 1);
-  }
-  else
-  {
-    return cblas_dasum(x.rows() * x.cols(), x.data(), 1);
-  }
+  auto x_view = make_dense_vector_view(x);
+  return cblas_asum(x_view);
 };
 
 // y := x
@@ -568,102 +564,59 @@ template <typename Scalar, int MatrixLayout>
 void cblas_copy(const dense_matrix_view<Scalar, MatrixLayout>& x, dense_matrix_view<Scalar, MatrixLayout>& y)
 {
   assert(x.rows() == y.rows() && x.cols() == y.cols());
-  if constexpr (std::is_same_v<Scalar, float>)
-  {
-    cblas_scopy(x.rows() * x.cols(), x.data(), 1, y.data(), 1);
-  }
-  else
-  {
-    cblas_dcopy(x.rows() * x.cols(), x.data(), 1, y.data(), 1);
-  }
+  auto x_view = make_dense_vector_view(x);
+  auto y_view = make_dense_vector_view(y);
+  cblas_copy(x_view, y_view);
 };
 
 // returns elements_sum(hadamard(x, y))
 template <typename Scalar, int MatrixLayout>
 Scalar cblas_dot(const dense_matrix_view<Scalar, MatrixLayout>& x, dense_matrix_view<Scalar, MatrixLayout>& y)
 {
-  if constexpr (std::is_same_v<Scalar, float>)
-  {
-    Scalar one(1);
-    return cblas_sdot(x.rows() * x.cols(), x.data(), one, y.data(), one);
-  }
-  else
-  {
-    Scalar one(1);
-    return cblas_ddot(x.rows() * x.cols(), x.data(), one, y.data(), one);
-  }
+  auto x_view = make_dense_vector_view(x);
+  auto y_view = make_dense_vector_view(y);
+  return cblas_dot(x_view, y_view);
 };
 
 // returns elements_sum(abs(sqrt(x)))
 template <typename Scalar, int MatrixLayout>
 Scalar cblas_nrm2(dense_matrix_view<Scalar, MatrixLayout>& x)
 {
-  if constexpr (std::is_same_v<Scalar, float>)
-  {
-    return cblas_snrm2(x.rows() * x.cols(), x.data(), 1);
-  }
-  else
-  {
-    return cblas_dnrm2(x.rows() * x.cols(), x.data(), 1);
-  }
+  auto x_view = make_dense_vector_view(x);
+  cblas_nrm2(x_view);
 };
 
 // x := a*x
 template <typename Scalar, int MatrixLayout>
 void cblas_scal(Scalar a, dense_matrix_view<Scalar, MatrixLayout>& x)
 {
-  if constexpr (std::is_same_v<Scalar, float>)
-  {
-    cblas_sscal(x.rows() * x.cols(), a, x.data(), 1);
-  }
-  else
-  {
-    cblas_dscal(x.rows() * x.cols(), a, x.data(), 1);
-  }
+  auto x_view = make_dense_vector_view(x);
+  cblas_scal(a, x_view);
 };
 
 // x, y := y, x
 template <typename Scalar, int MatrixLayout>
 void cblas_swap(const dense_matrix_view<Scalar, MatrixLayout>& x, dense_matrix_view<Scalar, MatrixLayout>& y)
 {
-  if constexpr (std::is_same_v<Scalar, float>)
-  {
-    Scalar one(1);
-    return cblas_sswap(x.rows() * x.cols(), x.data(), one, y.data(), one);
-  }
-  else
-  {
-    Scalar one(1);
-    return cblas_dswap(x.rows() * x.cols(), x.data(), one, y.data(), one);
-  }
+  auto x_view = make_dense_vector_view(x);
+  auto y_view = make_dense_vector_view(y);
+  cblas_swap(x_view, y_view);
 };
 
 // Returns the index of the element with maximum absolute value.
 template <typename Scalar, int MatrixLayout>
 CBLAS_INDEX cblas_iamax(dense_matrix_view<Scalar, MatrixLayout>& x)
 {
-  if constexpr (std::is_same_v<Scalar, float>)
-  {
-    return cblas_isamax(x.rows() * x.cols(), x.data(), 1);
-  }
-  else
-  {
-    return cblas_idamax(x.rows() * x.cols(), x.data(), 1);
-  }
+  auto x_view = make_dense_vector_view(x);
+  return cblas_iamax(x_view);
 };
 
 // Returns the index of the element with minimum absolute value.
 template <typename Scalar, int MatrixLayout>
 CBLAS_INDEX cblas_iamin(dense_matrix_view<Scalar, MatrixLayout>& x)
 {
-  if constexpr (std::is_same_v<Scalar, float>)
-  {
-    return cblas_isamin(x.rows() * x.cols(), x.data(), 1);
-  }
-  else
-  {
-    return cblas_idamin(x.rows() * x.cols(), x.data(), 1);
-  }
+  auto x_view = make_dense_vector_view(x);
+  return cblas_iamin(x_view);
 };
 
 } // namespace nerva::mkl
