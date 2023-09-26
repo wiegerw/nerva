@@ -28,7 +28,7 @@ project nerva
        <define>EIGEN_USE_MKL_ALL
        <define>FMT_HEADER_ONLY
        <define>NERVA_TIMER
-       #<define>NERVA_USE_EIGEN_PRODUCT
+       <define>NERVA_USE_EIGEN_PRODUCT
 
        <include>$(MKLROOT)/include
        <linkflags>-L$(MKLROOT)/lib/intel64

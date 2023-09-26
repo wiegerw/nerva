@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "nerva/neural_networks/batch_normalization_layers_colwise.h"
 #include "nerva/neural_networks/check_gradients.h"
 #include "nerva/neural_networks/layers_colwise.h"
 #include "nerva/neural_networks/nerva_timer.h"
@@ -93,6 +94,14 @@ struct multilayer_perceptron
       {
         check_gradient("Db" + std::to_string(i+1), f, slayer->b, slayer->Db, h);
         check_gradient("DW" + std::to_string(i+1), f, slayer->W, slayer->DW, h);
+      }
+
+      // check batch normalization layers
+      auto blayer = dynamic_cast<dense_batch_normalization_layer*>(layers[i].get());
+      if (blayer)
+      {
+        check_gradient("Dbeta", f, blayer->beta, blayer->Dbeta, h);
+        check_gradient("Dgamma", f, blayer->gamma, blayer->Dgamma, h);
       }
     }
   }
