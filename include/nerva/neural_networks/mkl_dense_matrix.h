@@ -619,5 +619,85 @@ CBLAS_INDEX cblas_iamin(dense_matrix_view<Scalar, MatrixLayout>& x)
   return cblas_iamin(x_view);
 };
 
+//----------------------------------------------------------------------//
+//                     BLAS level 2 routines
+//----------------------------------------------------------------------//
+
+// y := alpha*A*x + beta*y
+template <typename Scalar, int MatrixLayout>
+void cblas_gemv(Scalar alpha,
+                Scalar beta,
+                const dense_matrix_view<Scalar, MatrixLayout>& A,
+                const dense_vector_view<Scalar>& x,
+                dense_vector_view<Scalar>& y)
+{
+  constexpr CBLAS_LAYOUT layoutA = MatrixLayout == column_major ? CblasColMajor : CblasRowMajor;
+  constexpr CBLAS_TRANSPOSE transA = CblasNoTrans;
+
+  if constexpr (std::is_same_v<Scalar, float>)
+  {
+    cblas_sgemv(layoutA, transA, A.rows(), A.cols(), alpha, A.data(), A.leading_dimension(), x.data(), x.increment(), beta, y.data(), y.increment());
+  }
+  else
+  {
+    cblas_dgemv(layoutA, transA, A.rows(), A.cols(), alpha, A.data(), A.leading_dimension(), x.data(), x.increment(), beta, y.data(), y.increment());
+  }
+}
+
+// A := alpha * x * y^T + A
+template <typename Scalar, int MatrixLayout>
+void cblas_ger(Scalar alpha,
+               const dense_vector_view<Scalar>& x,
+               const dense_vector_view<Scalar>& y,
+               dense_matrix_view<Scalar, MatrixLayout>& A)
+{
+  constexpr CBLAS_LAYOUT layoutA = MatrixLayout == column_major ? CblasColMajor : CblasRowMajor;
+  if constexpr (std::is_same_v<Scalar, float>)
+  {
+    cblas_sger(layoutA, A.rows(), A.cols(), alpha, A.data(), x.data(), x.increment(), y.data(), y.increment(), A.data(), A.leading_dimension());
+  }
+  else
+  {
+    cblas_dger(layoutA, A.rows(), A.cols(), alpha, A.data(), x.data(), x.increment(), y.data(), y.increment(), A.data(), A.leading_dimension());
+  }
+}
+
+//----------------------------------------------------------------------//
+//                     BLAS level 3 routines
+//----------------------------------------------------------------------//
+
+// C := alpha*op(A)*op(B) + beta*C
+template <typename Scalar, int MatrixLayout>
+void cblas_gemm(const dense_matrix_view<Scalar, MatrixLayout>& A,
+                bool A_transposed,
+                const dense_matrix_view<Scalar, MatrixLayout>& B,
+                bool B_transposed,
+                dense_matrix_view<Scalar, MatrixLayout>& C,
+                Scalar alpha,
+                Scalar beta
+               )
+{
+  constexpr CBLAS_LAYOUT layout = MatrixLayout == column_major ? CblasColMajor : CblasRowMajor;
+  CBLAS_TRANSPOSE transA = A_transposed ? CblasTrans : CblasNoTrans;
+  CBLAS_TRANSPOSE transB = B_transposed ? CblasTrans : CblasNoTrans;
+
+  // op(A) is an m-by-k matrix,
+  // op(B) is a k-by-n matrix,
+  // C is an m-by-n matrix.
+  long m = A_transposed ? A.cols() : A.rows();
+  long k = A_transposed ? A.rows() : A.cols();
+  long n = B_transposed ? B.rows() : B.cols();
+
+  if constexpr (std::is_same_v<Scalar, float>)
+  {
+    cblas_sgemm(layout, transA, transB, m, n, k, alpha, A.data(), A.leading_dimension(), B.data(), B.leading_dimension(), beta, C.data(), C.leading_dimension());
+  }
+  else
+  {
+    cblas_dgemm(layout, transA, transB, m, n, k, alpha, A.data(), A.leading_dimension(), B.data(), B.leading_dimension(), beta, C.data(), C.leading_dimension());
+  }
+}
+
+
 } // namespace nerva::mkl
 
