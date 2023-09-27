@@ -237,7 +237,8 @@ struct sigmoid_layer : public linear_layer<Matrix>
       else
       {
         mkl::ddd_product(Z, W, X);
-        result = Sigmoid(Z + column_repeat(b, N));
+        Z += column_repeat(b, N);
+        result = Sigmoid(Z);
       }
     }
   }
@@ -337,7 +338,8 @@ struct activation_layer : public linear_layer<Matrix>
       else
       {
         mkl::ddd_product(Z, W, X);
-        result = act(Z + column_repeat(b, N));
+        Z += column_repeat(b, N);
+        result = act(Z);
       }
     }
   }
@@ -523,7 +525,8 @@ struct softmax_layer : public linear_layer<Matrix>
       else
       {
         mkl::ddd_product(Z, W, X);
-        result = stable_softmax()(Z + column_repeat(b, N));
+        Z += column_repeat(b, N);
+        result = stable_softmax()(Z);
       }
     }
   }
@@ -607,7 +610,8 @@ struct log_softmax_layer : public linear_layer<Matrix>
       else
       {
         mkl::ddd_product(Z, W, X);
-        result = stable_log_softmax()(Z + column_repeat(b, N));
+        Z += column_repeat(b, N);
+        result = stable_log_softmax()(Z);
       }
     }
   }
