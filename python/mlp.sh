@@ -10,28 +10,35 @@ optimizers="Momentum(0.9)"
 learning_rate="Constant(0.1)"
 loss=SoftmaxCrossEntropy
 batch_size=100
-epochs=5
+epochs=3
+toolname=mlp_rowwise
+tool="../tools/dist/$toolname"
 
-print_header "Train CIFAR10 using mlprowwise.cpp"
-../tools/dist/mlprowwise \
-	--seed=$seed \
-	--overall-density=$density \
-	--batch-size=$batch_size \
-	--epochs=$epochs \
-	--sizes=$sizes \
-	--layers=$layers \
-	--optimizers=$optimizers \
-	--init-weights=$init_weights \
-	--learning-rate=$learning_rate \
-	--loss=$loss \
-	--dataset=cifar10 \
-	--threads=4 \
-	--no-shuffle \
-	--verbose \
-	2>&1 | tee logs/mlprowwise.cpp.log
+function train_cpp()
+{
+  print_header "Train CIFAR10 using $toolname"
+  $tool \
+      --seed=$seed \
+      --overall-density=$density \
+      --batch-size=$batch_size \
+      --epochs=$epochs \
+      --sizes=$sizes \
+      --layers=$layers \
+      --optimizers=$optimizers \
+      --init-weights=$init_weights \
+      --learning-rate=$learning_rate \
+      --loss=$loss \
+      --dataset=cifar10 \
+      --threads=4 \
+      --no-shuffle \
+      --verbose \
+      2>&1 | tee logs/mlp-$toolname.log
+}
 
-print_header "Train CIFAR10 using mlpcolwise.cpp"
-../tools/dist/mlpcolwise \
+function train_python()
+{
+  print_header "Train CIFAR10 using $tool"
+  python3 -u $tool \
         --seed=$seed \
         --overall-density=$density \
         --batch-size=$batch_size \
@@ -42,40 +49,29 @@ print_header "Train CIFAR10 using mlpcolwise.cpp"
         --init-weights=$init_weights \
         --learning-rate=$learning_rate \
         --loss=$loss \
-        --dataset=cifar10 \
-        --threads=4 \
-        --no-shuffle \
-        --verbose \
-        2>&1 | tee logs/mlpcolwise.cpp.log
+        --manual \
+        --datadir=./data \
+        2>&1 | tee logs/mlpcolwise.py.log
+}
 
-print_header "Train CIFAR10 using mlpcolwise.py"
-python3 -u mlpcolwise.py \
-	--seed=$seed \
-	--overall-density=$density \
-	--batch-size=$batch_size \
-	--epochs=$epochs \
-	--sizes=$sizes \
-	--layers=$layers \
-	--optimizers=$optimizers \
-	--init-weights=$init_weights \
-	--learning-rate=$learning_rate \
-	--loss=$loss \
-	--manual \
-	--datadir=./data \
-	2>&1 | tee logs/mlpcolwise.py.log
+toolname=mlp_rowwise
+tool="../tools/dist/$toolname"
+train_cpp
 
-print_header "Train CIFAR10 using mlprowwise.py"
-python3 -u mlprowwise.py \
-	--seed=$seed \
-	--overall-density=$density \
-	--batch-size=$batch_size \
-	--epochs=$epochs \
-	--sizes=$sizes \
-	--layers=$layers \
-	--optimizers=$optimizers \
-	--init-weights=$init_weights \
-	--learning-rate=$learning_rate \
-	--loss=$loss \
-	--manual \
-	--datadir=./data \
-	2>&1 | tee logs/mlprowwise.py.log
+toolname=mlp_rowwise_mkl
+tool="../tools/dist/$toolname"
+train_cpp
+
+toolname=mlp_colwise
+tool="../tools/dist/$toolname"
+train_cpp
+
+toolname=mlp_colwise_mkl
+tool="../tools/dist/$toolname"
+train_cpp
+
+tool=mlprowwise.py
+train_python
+
+tool=mlpcolwise.py
+train_python
