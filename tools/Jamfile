@@ -4,17 +4,25 @@ project nerva_tools
        <linkflags>-lpython3.10  # TODO: find a better way to do this
    ;
 
-exe mlpcolwisedouble : mlp.cpp : <scalar>double <orientation>colwise ;
-exe mlprowwisedouble : mlp.cpp : <scalar>double <orientation>rowwise ;
-exe mlpcolwise : mlp.cpp : <scalar>float <orientation>colwise ;
-exe mlprowwise : mlp.cpp : <scalar>float <orientation>rowwise ;
-exe mkl  : mkl.cpp : <scalar>float ;
+exe mlp_colwise            : mlp.cpp : <scalar>float  <orientation>colwise <computation>eigen ;
+exe mlp_rowwise            : mlp.cpp : <scalar>float  <orientation>rowwise <computation>eigen ;
+exe mlp_colwise_double     : mlp.cpp : <scalar>double <orientation>colwise <computation>eigen ;
+exe mlp_rowwise_double     : mlp.cpp : <scalar>double <orientation>rowwise <computation>eigen ;
+exe mlp_colwise_mkl        : mlp.cpp : <scalar>float  <orientation>colwise <computation>mkl ;
+exe mlp_rowwise_mkl        : mlp.cpp : <scalar>float  <orientation>rowwise <computation>mkl ;
+exe mlp_colwise_mkl_double : mlp.cpp : <scalar>double <orientation>colwise <computation>mkl ;
+exe mlp_rowwise_mkl_double : mlp.cpp : <scalar>double <orientation>rowwise <computation>mkl ;
+exe mkl : mkl.cpp : <scalar>float ;
 
 install dist
   :
     mkl
-    mlpcolwise
-    mlprowwise
-    mlpcolwisedouble
-    mlprowwisedouble
+    mlp_colwise
+    mlp_rowwise
+    mlp_colwise_double
+    mlp_rowwise_double
+    mlp_colwise_mkl
+    mlp_rowwise_mkl
+    mlp_colwise_mkl_double
+    mlp_rowwise_mkl_double
   ;

@@ -18,6 +18,10 @@ feature.compose <scalar>double : <define>NERVA_USE_DOUBLE ;
 feature.feature orientation : colwise rowwise : composite optional propagated ;
 feature.compose <orientation>colwise : <define>NERVA_COLWISE ;
 
+# Define a feature for the computations
+feature.feature computation : mkl eigen : composite optional propagated ;
+feature.compose <computation>eigen : <define>NERVA_USE_EIGEN_PRODUCT ;
+
 project nerva
    : requirements
        <include>include
@@ -28,7 +32,6 @@ project nerva
        <define>EIGEN_USE_MKL_ALL
        <define>FMT_HEADER_ONLY
        <define>NERVA_TIMER
-       <define>NERVA_USE_EIGEN_PRODUCT
 
        <include>$(MKLROOT)/include
        <linkflags>-L$(MKLROOT)/lib/intel64
