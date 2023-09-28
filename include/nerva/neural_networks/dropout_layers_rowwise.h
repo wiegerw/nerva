@@ -78,7 +78,7 @@ struct linear_dropout_layer : public linear_layer<Matrix>, dropout_layer<Matrix>
     }
     else
     {
-      if constexpr (NervaUseEigenProduct)
+      if constexpr (NervaComputation == computation::eigen)
       {
         DW = hadamard(DY.transpose() * X, R);
         Db = columns_sum(DY);
@@ -153,7 +153,7 @@ struct sigmoid_dropout_layer : public sigmoid_layer<Matrix>, dropout_layer<Matri
     }
     else
     {
-      if constexpr (NervaUseEigenProduct)
+      if constexpr (NervaComputation == computation::eigen)
       {
         DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(N, K) - Y));
         DW = hadamard(DZ.transpose() * X, R);
@@ -227,7 +227,7 @@ struct activation_dropout_layer : public activation_layer<Matrix, ActivationFunc
     }
     else
     {
-      if constexpr (NervaUseEigenProduct)
+      if constexpr (NervaComputation == computation::eigen)
       {
         DZ = hadamard(DY, act.gradient(Z));
         DW = hadamard(DZ.transpose() * X, R);

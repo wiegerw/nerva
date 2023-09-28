@@ -4,13 +4,14 @@
 # logging intermediate results.
 
 source utilities.sh
+source mlp-functions.sh
 
 seed=1
 init_weights=XavierNormalized
 density=1.0
 sizes="3072,1024,512,10"
 layers="ReLU;ReLU;Linear"
-optimizers="Nesterov(mu=0.9)"
+optimizers="Momentum(0.9)"
 learning_rate="Constant(lr=0.1)"
 loss=SoftmaxCrossEntropy
 batch_size=100
@@ -19,102 +20,38 @@ optimizers="GradientDescent"
 
 function train()
 {
+  name="compare-$optimizers"
   local weight_file="data/mlp-compare.npz"
 
-  print_header "Train CIFAR10 using mlptorch.py"
-  python3 -u mlptorch.py \
-    --seed=$seed \
-    --overall-density=$density \
-    --batch-size=$batch_size \
-    --epochs=$epochs \
-    --sizes=$sizes \
-    --layers=$layers \
-    --optimizers=$optimizers \
-    --save-weights=$weight_file \
-    --learning-rate=$learning_rate \
-    --loss=$loss \
-    --preprocessed=cifar$seed \
-    --debug \
-    2>&1 | tee "logs/compare-${optimizers}-mlptorch.py.log"
+  tool="mlptorch.py"
+  train_torch --preprocessed=cifar$seed --save-weights=$weight_file --debug
 
-  print_header "Train CIFAR10 using mlpcolwise.cpp"
-  ../tools/dist/mlpcolwise \
-    --seed=$seed \
-    --overall-density=$density \
-    --batch-size=$batch_size \
-    --epochs=$epochs \
-    --sizes=$sizes \
-    --layers=$layers \
-    --optimizers=$optimizers \
-    --init-weights=$init_weights \
-    --load-weights=$weight_file \
-    --learning-rate=$learning_rate \
-    --loss=$loss \
-    --preprocessed=cifar$seed \
-    --threads=4 \
-    --no-shuffle \
-    --debug \
-    2>&1 | tee "logs/compare-${optimizers}-mlpcolwise.cpp.log"
+  tool="../tools/dist/mlp_rowwise_eigen"
+  train_cpp --preprocessed=cifar$seed --load-weights=$weight_file --debug
 
-  print_header "Train CIFAR10 using mlprowwise.cpp"
-  ../tools/dist/mlprowwise \
-    --seed=$seed \
-    --overall-density=$density \
-    --batch-size=$batch_size \
-    --epochs=$epochs \
-    --sizes=$sizes \
-    --layers=$layers \
-    --optimizers=$optimizers \
-    --init-weights=$init_weights \
-    --load-weights=$weight_file \
-    --learning-rate=$learning_rate \
-    --loss=$loss \
-    --preprocessed=cifar$seed \
-    --threads=4 \
-    --no-shuffle \
-    --debug \
-    2>&1 | tee "logs/compare-${optimizers}-mlprowwise.cpp.log"
+  tool="../tools/dist/mlp_rowwise_mkl"
+  train_cpp --preprocessed=cifar$seed --load-weights=$weight_file --debug
 
-  print_header "Train CIFAR10 using mlpcolwise.py"
-  python3 -u mlpcolwise.py \
-    --seed=$seed \
-    --overall-density=$density \
-    --batch-size=$batch_size \
-    --epochs=$epochs \
-    --sizes=$sizes \
-    --layers=$layers \
-    --optimizers=$optimizers \
-    --load-weights=$weight_file \
-    --learning-rate=$learning_rate \
-    --loss=$loss \
-    --preprocessed=cifar$seed \
-    --debug \
-    2>&1 | tee "logs/compare-${optimizers}-mlpcolwise.py.log"
+  tool="../tools/dist/mlp_colwise_eigen"
+  train_cpp --preprocessed=cifar$seed --load-weights=$weight_file --debug
 
-  print_header "Train CIFAR10 using mlprowwise.py"
-  python3 -u mlprowwise.py \
-    --seed=$seed \
-    --overall-density=$density \
-    --batch-size=$batch_size \
-    --epochs=$epochs \
-    --sizes=$sizes \
-    --layers=$layers \
-    --optimizers=$optimizers \
-    --load-weights=$weight_file \
-    --learning-rate=$learning_rate \
-    --loss=$loss \
-    --preprocessed=cifar$seed \
-    --debug \
-    2>&1 | tee "logs/compare-${optimizers}-mlprowwise.py.log"
+  tool="../tools/dist/mlp_colwise_mkl"
+  train_cpp --preprocessed=cifar$seed --load-weights=$weight_file --debug
+
+  tool=mlprowwise.py
+  train_python --preprocessed=cifar$seed --load-weights=$weight_file --debug --manual
+
+  tool=mlpcolwise.py
+  train_python --preprocessed=cifar$seed --load-weights=$weight_file --debug --manual
 }
 
 optimizers="GradientDescent"
 train
 
-#optimizers="Momentum(0.9)"
-#learning_rate="Constant(0.01)"
-#train
+optimizers="Momentum(0.9)"
+learning_rate="Constant(0.01)"
+train
 
-#learning_rate="Constant(0.01)"
-#optimizers="Nesterov(0.9)"
-#train
+learning_rate="Constant(0.01)"
+optimizers="Nesterov(0.9)"
+train

@@ -17,11 +17,19 @@ using scalar = double;
 using scalar = float;
 #endif
 
-#ifdef NERVA_USE_EIGEN_PRODUCT
-constexpr bool NervaUseEigenProduct = true;
+enum class computation
+{
+  eigen,
+  mkl,
+  blas
+};
+
+#ifdef NERVA_USE_MKL
+constexpr computation NervaComputation = computation::mkl;
+#elif defined NERVA_USE_BLAS
+constexpr computation NervaComputation = computation::blas;
 #else
-constexpr bool NervaUseEigenProduct = false;
+constexpr computation NervaComputation = computation::eigen;
 #endif
 
 } // namespace nerva
-

@@ -19,8 +19,10 @@ feature.feature orientation : colwise rowwise : composite optional propagated ;
 feature.compose <orientation>colwise : <define>NERVA_COLWISE ;
 
 # Define a feature for the computations
-feature.feature computation : mkl eigen : composite optional propagated ;
-feature.compose <computation>eigen : <define>NERVA_USE_EIGEN_PRODUCT ;
+feature.feature computation : mkl eigen blas : composite optional propagated ;
+feature.compose <computation>eigen : <define>NERVA_USE_EIGEN ;
+feature.compose <computation>mkl : <define>NERVA_USE_MKL ;
+feature.compose <computation>blas : <define>NERVA_USE_BLAS ;
 
 project nerva
    : requirements
