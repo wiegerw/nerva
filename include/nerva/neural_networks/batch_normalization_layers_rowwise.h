@@ -86,6 +86,14 @@ struct batch_normalization_layer: public neural_network_layer
   {
     optimizer->update(eta);
   }
+
+  void info(unsigned int layer_index) const override
+  {
+    std::string i = std::to_string(layer_index);
+    std::cout << to_string() << std::endl;
+    print_numpy_matrix("beta" + i, beta);
+    print_numpy_matrix("gamma" + i, gamma);
+  }
 };
 
 using dense_batch_normalization_layer = batch_normalization_layer;

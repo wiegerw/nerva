@@ -48,6 +48,12 @@ void print_model_info(const multilayer_perceptron& M)
       print_numpy_matrix(name("b"), slayer->b.transpose());
       index++;
     }
+    else if (auto blayer = dynamic_cast<batch_normalization_layer*>(layer.get()))
+    {
+      print_numpy_matrix(name("beta"), blayer->beta.transpose());
+      print_numpy_matrix(name("gamma"), blayer->gamma.transpose());
+      index++;
+    }
   }
 }
 
