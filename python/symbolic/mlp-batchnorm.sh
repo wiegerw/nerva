@@ -9,7 +9,7 @@ batch_size=100
 epochs=1
 loss=SoftmaxCrossEntropy
 learning_rate="Constant(0.01)"
-weights="../mlp-compare.npz"
+weights="../data/mlp-compare.npz"
 dataset="../cifar1/epoch0.npz"
 
 function train()

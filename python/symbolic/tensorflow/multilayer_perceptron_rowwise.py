@@ -2,7 +2,7 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from nerva.datasets import load_dict_from_npz
+from symbolic.utilities import load_dict_from_npz
 from symbolic.tensorflow.layers_rowwise import *
 from symbolic.utilities import ppn
 

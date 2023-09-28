@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Tuple, Union
 
 import torch
-from nerva.datasets import load_dict_from_npz
+from symbolic.utilities import load_dict_from_npz
 
 
 class MemoryDataLoader(object):

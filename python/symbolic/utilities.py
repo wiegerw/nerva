@@ -129,3 +129,19 @@ def ppn(name: str, x: Union[sp.Matrix, np.ndarray, torch.Tensor, tf.Tensor, tf.V
     """
     x = to_numpy(x)
     return symbolic.numpy.utilities.pp(name, x)
+
+
+def load_dict_from_npz(filename: str) -> Dict[str, Union[torch.Tensor, torch.LongTensor]]:
+    """
+    Loads a dictionary from a file in .npz format
+    :param filename: a file name
+    :return: a dictionary
+    """
+    def make_tensor(x: np.ndarray) -> Union[torch.Tensor, torch.LongTensor]:
+        if np.issubdtype(x.dtype, np.integer):
+            return torch.LongTensor(x)
+        return torch.Tensor(x)
+
+    data = dict(np.load(filename, allow_pickle=True))
+    data = {key: make_tensor(value) for key, value in data.items()}
+    return data
