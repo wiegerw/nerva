@@ -290,6 +290,8 @@ class SGD(StochasticGradientDescentAlgorithm):
         super().__init__(M, train_loader, test_loader, options, loss, learning_rate)
         self.preprocessed_dir = preprocessed_dir
         self.regrow = PruneGrow(prune, grow) if prune else None
+        self.train_loader = train_loader
+        self.test_loader = test_loader
 
     def reload_data(self, epoch) -> None:
         """
@@ -317,14 +319,14 @@ class SGD(StochasticGradientDescentAlgorithm):
         options = self.options
         num_classes = M.layers[-1].output_size
 
+        self.on_start_training()
+
         dataset = self.train_loader.dataset
         batch_size = len(dataset) // len(self.train_loader)
         Xtrain, Ttrain = extract_tensors_from_dataloader(self.train_loader)
         N = Xtrain.shape[0]  # the number of examples
         I = list(range(N))
         K = N // batch_size  # the number of batches
-
-        self.on_start_training()
 
         lr = self.learning_rate(0)
         compute_statistics(M, lr, self.loss, self.train_loader, self.test_loader, 0, 0.0, options.statistics)

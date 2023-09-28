@@ -27,6 +27,13 @@ tool="../tools/dist/mlp_colwise_mkl"
 train_cpp --preprocessed=cifar$seed
 
 tool=mlprowwise.py
+train_python --preprocessed=cifar$seed
+
+tool=mlpcolwise.py
+train_python --preprocessed=cifar$seed
+
+name="preprocessed-manual"
+tool=mlprowwise.py
 train_python --preprocessed=cifar$seed --manual
 
 tool=mlpcolwise.py

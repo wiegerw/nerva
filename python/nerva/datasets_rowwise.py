@@ -175,10 +175,12 @@ def extract_tensors_from_dataloader(dataloader: DataLoader) -> Tuple[torch.Tenso
     :param dataloader: a data loader
     """
     dataset = dataloader.dataset
-    batch_size = len(dataset) // len(dataloader)
+    N = len(dataset)
+    D = len(dataset[0])
+    batch_size = N // len(dataloader)
 
-    Xdata = torch.empty((len(dataset),) + dataset[0][0].shape)
-    Tdata = torch.empty(len(dataset), dtype=torch.long)
+    Xdata = torch.empty((N, D))
+    Tdata = torch.empty(N, dtype=torch.long)
 
     for i, (X, T) in enumerate(dataloader):
         Xdata[i * batch_size: (i + 1) * batch_size] = X
