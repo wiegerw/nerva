@@ -174,19 +174,17 @@ def extract_tensors_from_dataloader(dataloader: DataLoader) -> Tuple[torch.Tenso
     Returns the dataset and corresponding targets that are wrapped in a data loader
     :param dataloader: a data loader
     """
-    dataset = dataloader.dataset
-    N = len(dataset)
-    D = len(dataset[0])
-    batch_size = N // len(dataloader)
+    dataset = []
+    targets = []
 
-    Xdata = torch.empty((N, D))
-    Tdata = torch.empty(N, dtype=torch.long)
+    for data_batch, target_batch in dataloader:
+        dataset.append(data_batch)
+        targets.append(target_batch)
 
-    for i, (X, T) in enumerate(dataloader):
-        Xdata[i * batch_size: (i + 1) * batch_size] = X
-        Tdata[i * batch_size: (i + 1) * batch_size] = T
+    dataset = torch.cat(dataset, dim=0)
+    targets = torch.cat(targets, dim=0)
 
-    return Xdata.T, Tdata
+    return dataset.T, targets
 
 
 def create_npz_dataloaders(filename: str, batch_size: int) -> Tuple[TorchDataLoader, TorchDataLoader]:
