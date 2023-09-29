@@ -12,7 +12,7 @@ density=1.0
 sizes="3072,1024,512,10"
 layers="ReLU;ReLU;Linear"
 optimizers="Momentum(0.9)"
-learning_rate="Constant(lr=0.1)"
+learning_rate="Constant(0.01)"
 loss=SoftmaxCrossEntropy
 batch_size=100
 epochs=1

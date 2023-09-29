@@ -3,15 +3,15 @@ source utilities.sh
 source mlp-functions.sh
 
 seed=1
-init_weights=XavierNormalized
+init_weights=Xavier
 density=1
 sizes="3072,1024,512,10"
 layers="BatchNorm;ReLU;BatchNorm;ReLU;Linear"
 optimizers="Momentum(0.9)"
-learning_rate="Constant(0.1)"
+learning_rate="Constant(0.01)"
 loss=SoftmaxCrossEntropy
 batch_size=100
-epochs=1
+epochs=5
 name=batchnorm
 
 tool="../tools/dist/mlp_rowwise_eigen"
