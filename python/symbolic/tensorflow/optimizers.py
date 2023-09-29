@@ -19,14 +19,10 @@ class MomentumOptimizer(GradientDescentOptimizer):
         self.x.assign(self.x + self.delta_x)
 
 
-class NesterovOptimizer(GradientDescentOptimizer):
+class NesterovOptimizer(MomentumOptimizer):
     def __init__(self, x, Dx, mu):
-        super().__init__(x, Dx)
-        self.mu = mu
-        self.delta_x = tf.zeros_like(x)
-        self.delta_x_prev = tf.zeros_like(x)
+        super().__init__(x, Dx, mu)
 
     def update(self, eta):
-        self.delta_x_prev = self.delta_x
         self.delta_x = self.mu * self.delta_x - eta * self.Dx
-        self.x.assign(self.x + (-self.mu * self.delta_x_prev + (1 + self.mu) * self.delta_x))
+        self.x.assign(self.x + self.mu * self.delta_x - eta * self.Dx)

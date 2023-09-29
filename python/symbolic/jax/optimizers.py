@@ -50,18 +50,14 @@ class MomentumOptimizer(GradientDescentOptimizer):
         x1 = x + self.delta_x
         setattr(self.obj, self.attr_x, x1)
 
-class NesterovOptimizer(GradientDescentOptimizer):
+class NesterovOptimizer(MomentumOptimizer):
     def __init__(self, obj, attr_x: str, attr_Dx: str, mu: float):
-        super().__init__(obj, attr_x, attr_Dx)
-        self.mu = mu
-        x = getattr(self.obj, self.attr_x)
-        self.delta_x = jnp.zeros_like(x)
-        self.delta_x_prev = jnp.zeros_like(x)
+        super().__init__(obj, attr_x, attr_Dx, mu)
 
     def update(self, eta):
         x = getattr(self.obj, self.attr_x)
         Dx = getattr(self.obj, self.attr_Dx)
         self.delta_x_prev = self.delta_x
         self.delta_x = self.mu * self.delta_x - eta * Dx
-        x1 = x + (-self.mu * self.delta_x_prev + (1 + self.mu) * self.delta_x)
+        x1 = x + self.mu * self.delta_x - eta * Dx
         setattr(self.obj, self.attr_x, x1)
