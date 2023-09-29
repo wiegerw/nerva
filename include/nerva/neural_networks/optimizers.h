@@ -115,61 +115,46 @@ struct momentum_optimizer: public gradient_descent_optimizer<T>
 };
 
 template <typename T>
-struct nesterov_optimizer: public gradient_descent_optimizer<T>
+struct nesterov_optimizer: public momentum_optimizer<T>
 {
-  using super = gradient_descent_optimizer<T>;
+  using super = momentum_optimizer<T>;
   using super::x;
   using super::Dx;
+  using super::delta_x;
+  using super::mu;
   static constexpr bool IsSparse = std::is_same_v<T, mkl::sparse_matrix_csr<scalar>>;
-
-  T delta_x;
-  T delta_x_prev;
-  scalar mu;
 
   void reset_support() override
   {
     if constexpr (IsSparse)
     {
       delta_x.reset_support(x);
-      delta_x_prev.reset_support(x);
     }
   }
 
-  nesterov_optimizer(T& x, T& Dx, scalar mu_)
-    : super(x, Dx),
-      delta_x(x.rows(), x.cols()),
-      delta_x_prev(x.rows(), x.cols()),
-      mu(mu_)
-  {
-    if constexpr (IsSparse)
-    {
-      reset_support();
-    }
-    else
-    {
-      delta_x.array() = scalar(0);
-      delta_x_prev.array() = scalar(0);
-    }
-  }
+  nesterov_optimizer(T& x, T& Dx, scalar mu)
+    : super(x, Dx, mu)
+  { }
 
   [[nodiscard]] auto to_string() const -> std::string override
   {
     return fmt::format("Nesterov({:7.5f})", mu);
   }
 
+  // Keras equations:
+  // 1. velocity = momentum * velocity - learning_rate * g
+  // 2. w = w + momentum * velocity - learning_rate * g
   void update(scalar eta) override
   {
     if constexpr (IsSparse)
     {
-      mkl::assign_matrix(delta_x_prev, delta_x);
       mkl::ss_sum(delta_x, Dx, mu, -eta);
-      mkl::sss_sum(x, delta_x, delta_x_prev, scalar(1), scalar(1) + mu, -mu);
+      mkl::sss_sum(x, delta_x, Dx, scalar(1), mu, -eta);
     }
     else
     {
-      delta_x_prev = delta_x;
       delta_x = mu * delta_x - eta * Dx;
-      x += (-mu * delta_x_prev + (scalar(1) + mu) * delta_x);
+      x = x + mu * delta_x - eta * Dx;
     }
   }
 };
