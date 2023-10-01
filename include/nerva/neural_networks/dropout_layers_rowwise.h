@@ -203,8 +203,7 @@ struct activation_dropout_layer : public activation_layer<Matrix, ActivationFunc
 
   activation_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, ActivationFunction act)
     : super(D, K, N, act), dropout_layer<Matrix>(D, K, p)
-  {
-  }
+  { }
 
   void feedforward(eigen::matrix& result) override
   {

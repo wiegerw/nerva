@@ -80,7 +80,7 @@ std::shared_ptr<dense_linear_layer> make_dense_linear_layer(std::size_t D,
   else if (func.name == "AllRelu")
   {
     scalar alpha = func.as_scalar("alpha");
-    auto layer = std::make_shared<dense_trelu_layer>(alpha, D, K, N);
+    auto layer = std::make_shared<dense_trelu_layer>(D, K, N, alpha);
     set_weights_and_bias(*layer, weights, rng);
     set_linear_layer_optimizer(*layer, optimizer);
     return layer;
@@ -88,7 +88,7 @@ std::shared_ptr<dense_linear_layer> make_dense_linear_layer(std::size_t D,
   else if (func.name == "LeakyRelu")
   {
     scalar alpha = func.as_scalar("alpha");
-    auto layer = std::make_shared<dense_leaky_relu_layer>(alpha, D, K, N);
+    auto layer = std::make_shared<dense_leaky_relu_layer>(D, K, N, alpha);
     set_weights_and_bias(*layer, weights, rng);
     set_linear_layer_optimizer(*layer, optimizer);
     return layer;
@@ -96,7 +96,7 @@ std::shared_ptr<dense_linear_layer> make_dense_linear_layer(std::size_t D,
   else if (func.name == "TReLU")
   {
     scalar epsilon = func.as_scalar("epsilon");
-    auto layer = std::make_shared<dense_trelu_layer>(epsilon, D, K, N);
+    auto layer = std::make_shared<dense_trelu_layer>(D, K, N, epsilon);
     set_weights_and_bias(*layer, weights, rng);
     set_linear_layer_optimizer(*layer, optimizer);
     return layer;
@@ -274,7 +274,7 @@ std::shared_ptr<neural_network_layer> make_dense_linear_dropout_layer(std::size_
   else if (func.name == "AllRelu")
   {
     scalar alpha = func.as_scalar("alpha");
-    auto layer = std::make_shared<dense_trelu_dropout_layer>(alpha, D, K, N, dropout);
+    auto layer = std::make_shared<dense_trelu_dropout_layer>(D, K, N, dropout, alpha);
     set_weights_and_bias(*layer, weights, rng);
     set_linear_layer_optimizer(*layer, optimizer);
     return layer;
@@ -282,7 +282,7 @@ std::shared_ptr<neural_network_layer> make_dense_linear_dropout_layer(std::size_
   else if (func.name == "LeakyRelu")
   {
     scalar alpha = func.as_scalar("alpha");
-    auto layer = std::make_shared<dense_leaky_relu_dropout_layer>(alpha, D, K, N, dropout);
+    auto layer = std::make_shared<dense_leaky_relu_dropout_layer>(D, K, N, dropout, alpha);
     set_weights_and_bias(*layer, weights, rng);
     set_linear_layer_optimizer(*layer, optimizer);
     return layer;
@@ -290,7 +290,7 @@ std::shared_ptr<neural_network_layer> make_dense_linear_dropout_layer(std::size_
   else if (func.name == "TReLU")
   {
     scalar epsilon = func.as_scalar("epsilon");
-    auto layer = std::make_shared<dense_trelu_dropout_layer>(epsilon, D, K, N, dropout);
+    auto layer = std::make_shared<dense_trelu_dropout_layer>(D, K, N, dropout, epsilon);
     set_weights_and_bias(*layer, weights, rng);
     set_linear_layer_optimizer(*layer, optimizer);
     return layer;
