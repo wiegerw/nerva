@@ -11,7 +11,7 @@
 #define NERVA_PARSE_NUMBERS_H
 
 #include "nerva/utilities/logger.h"
-#include "nerva/neural_networks/scalar.h"
+#include "nerva/neural_networks/settings.h"
 #include "nerva/utilities/string_utility.h"
 #include <cctype>
 #include <cstddef>

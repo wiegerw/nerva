@@ -34,6 +34,7 @@ function train_cpp()
       --threads=4 \
       --no-shuffle \
       --verbose \
+      --timer \
       "$@" \
       2>&1 | tee logs/$name-$toolname.log
 }
@@ -54,6 +55,7 @@ function train_python()
       --learning-rate=$learning_rate \
       --loss=$loss \
       --dropouts=$dropouts \
+      --timer \
       "$@" \
       2>&1 | tee logs/$name-$tool.log
 }

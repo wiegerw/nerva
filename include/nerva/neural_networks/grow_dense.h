@@ -17,7 +17,7 @@
 #include "nerva/neural_networks/functions.h"
 #include "nerva/neural_networks/mkl_eigen.h"
 #include "nerva/neural_networks/mkl_sparse_matrix.h"
-#include "nerva/neural_networks/scalar.h"
+#include "nerva/neural_networks/settings.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/algorithms.h"
 
