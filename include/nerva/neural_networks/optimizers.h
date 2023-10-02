@@ -54,7 +54,16 @@ struct gradient_descent_optimizer: public optimizer_function
     }
     else
     {
-      x -= eta * Dx;
+      if constexpr (NervaComputation == computation::eigen)
+      {
+        x -= eta * Dx;
+      }
+      else
+      {
+        auto x_view = mkl::make_dense_matrix_view(x);
+        auto Dx_view = mkl::make_dense_matrix_view(x);
+        mkl::cblas_axpy(-eta, Dx_view, x_view);
+      }
     }
   }
 };
@@ -100,8 +109,20 @@ struct momentum_optimizer: public gradient_descent_optimizer<T>
     }
     else
     {
-      delta_x = mu * delta_x - eta * Dx;
-      x += delta_x;
+      if constexpr (NervaComputation == computation::eigen)
+      {
+        delta_x = mu * delta_x - eta * Dx;
+        x += delta_x;
+      }
+      else
+      {
+        auto x_view = mkl::make_dense_matrix_view(x);
+        auto Dx_view = mkl::make_dense_matrix_view(Dx);
+        auto delta_x_view = mkl::make_dense_matrix_view(delta_x);
+        mkl::cblas_scal(mu, delta_x_view);
+        mkl::cblas_axpy(-eta, Dx_view, delta_x_view);
+        mkl::cblas_axpy(scalar(1), delta_x_view, x_view);
+      }
     }
   }
 
@@ -153,8 +174,21 @@ struct nesterov_optimizer: public momentum_optimizer<T>
     }
     else
     {
-      delta_x = mu * delta_x - eta * Dx;
-      x = x + mu * delta_x - eta * Dx;
+      if constexpr (NervaComputation == computation::eigen)
+      {
+        delta_x = mu * delta_x - eta * Dx;
+        x = x + mu * delta_x - eta * Dx;
+      }
+      else
+      {
+        auto x_view = mkl::make_dense_matrix_view(x);
+        auto Dx_view = mkl::make_dense_matrix_view(Dx);
+        auto delta_x_view = mkl::make_dense_matrix_view(delta_x);
+        mkl::cblas_scal(mu, delta_x_view);
+        mkl::cblas_axpy(-eta, Dx_view, delta_x_view);
+        mkl::cblas_axpy(mu, delta_x_view, x_view);
+        mkl::cblas_axpy(-eta, Dx_view, x_view);
+      }
     }
   }
 };

@@ -12,7 +12,7 @@ learning_rate="Constant(0.1)"
 loss=SoftmaxCrossEntropy
 batch_size=100
 epochs=5
-name=default
+name=sparse
 
 tool="../tools/dist/mlp_rowwise_eigen"
 train_cpp --dataset=cifar10
@@ -32,7 +32,7 @@ train_python --datadir=./data
 tool=mlpcolwise.py
 train_python --datadir=./data
 
-name="default-manual"
+name="sparse-manual"
 tool=mlprowwise.py
 train_python --datadir=./data --manual
 
