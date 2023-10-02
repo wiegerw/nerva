@@ -103,7 +103,7 @@ struct linear_layer: public neural_network_layer
     }
     else
     {
-      if constexpr (NervaComputation == computation::eigen)
+      if (NervaComputation == computation::eigen)
       {
         result = X * W.transpose() + row_repeat(b, N);
       }
@@ -127,7 +127,7 @@ struct linear_layer: public neural_network_layer
     }
     else
     {
-      if constexpr (NervaComputation == computation::eigen)
+      if (NervaComputation == computation::eigen)
       {
         DW = DY.transpose() * X;
         Db = columns_sum(DY);
@@ -231,7 +231,7 @@ struct sigmoid_layer : public linear_layer<Matrix>
     }
     else
     {
-      if constexpr (NervaComputation == computation::eigen)
+      if (NervaComputation == computation::eigen)
       {
         Z = X * W.transpose() + row_repeat(b, N);
         result = Sigmoid(Z);
@@ -262,7 +262,7 @@ struct sigmoid_layer : public linear_layer<Matrix>
     }
     else
     {
-      if constexpr (NervaComputation == computation::eigen)
+      if (NervaComputation == computation::eigen)
       {
         DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(N, K) - Y));
         DW = DZ.transpose() * X;
@@ -332,7 +332,7 @@ struct activation_layer : public linear_layer<Matrix>
     }
     else
     {
-      if constexpr (NervaComputation == computation::eigen)
+      if (NervaComputation == computation::eigen)
       {
         Z = X * W.transpose() + row_repeat(b, N);
         result = act(Z);
@@ -360,7 +360,7 @@ struct activation_layer : public linear_layer<Matrix>
     }
     else
     {
-      if constexpr (NervaComputation == computation::eigen)
+      if (NervaComputation == computation::eigen)
       {
         DZ = hadamard(DY, act.gradient(Z));
         DW = DZ.transpose() * X;
@@ -519,7 +519,7 @@ struct softmax_layer : public linear_layer<Matrix>
     }
     else
     {
-      if constexpr (NervaComputation == computation::eigen)
+      if (NervaComputation == computation::eigen)
       {
         Z = X * W.transpose() + row_repeat(b, N);
         result = stable_softmax()(Z);
@@ -551,7 +551,7 @@ struct softmax_layer : public linear_layer<Matrix>
     }
     else
     {
-      if constexpr (NervaComputation == computation::eigen)
+      if (NervaComputation == computation::eigen)
       {
         DZ = hadamard(Y, DY - column_repeat(diag(Y * DY.transpose()), K));
         DW = DZ.transpose() * X;
@@ -605,7 +605,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
     }
     else
     {
-      if constexpr (NervaComputation == computation::eigen)
+      if (NervaComputation == computation::eigen)
       {
         Z = X * W.transpose() + row_repeat(b, N);
         result = stable_log_softmax()(Z);
@@ -637,7 +637,7 @@ struct log_softmax_layer : public linear_layer<Matrix>
     }
     else
     {
-      if constexpr (NervaComputation == computation::eigen)
+      if (NervaComputation == computation::eigen)
       {
         DZ = DY - hadamard(stable_softmax()(Z), column_repeat(rows_sum(DY), K));
         DW = DZ.transpose() * X;

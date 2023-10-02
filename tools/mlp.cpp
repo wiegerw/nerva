@@ -221,6 +221,7 @@ class tool: public command_line_tool
     std::string dropouts_text;
     std::string layer_specifications_text;
     std::string init_weights_text = "None";
+    std::string computation = "eigen";
     double overall_density = 1;
     std::string preprocessed_dir;  // a directory containing a dataset for every epoch
     bool no_shuffle = false;
@@ -286,6 +287,7 @@ class tool: public command_line_tool
       cli |= lyra::opt(grow_weights, "value")["--grow-weights"]("The weight function used for growing x=Xavier, X=XavierNormalized, ...");
 
       // miscellaneous
+      cli |= lyra::opt(computation, "value")["--computation"]("The computation mode (eigen, mkl, blas)");
       cli |= lyra::opt(options.threads, "value")["--threads"]("The number of threads used by Eigen.");
       cli |= lyra::opt(options.gradient_step, "value")["--gradient-step"]("If positive, gradient checks will be done with the given step size");
     }
@@ -298,6 +300,8 @@ class tool: public command_line_tool
     auto run() -> bool override
     {
       NERVA_LOG(log::verbose) << command_line_call() << "\n\n";
+
+      set_nerva_computation(computation);
 
       options.debug = is_debug();
       if (no_shuffle)

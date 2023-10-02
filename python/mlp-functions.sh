@@ -14,10 +14,12 @@ dropouts=""
 epochs=3
 tool="../tools/dist/mlp_rowwise"
 name="mlp"
+computation="eigen"
 
 function train_cpp()
 {
   toolname=$(basename -- "$tool")
+  toolname="${toolname}_$computation"
   print_header "experiment=$name   tool=$toolname"
   $tool \
       --seed=$seed \
@@ -32,6 +34,7 @@ function train_cpp()
       --loss=$loss \
       --dropouts=$dropouts \
       --threads=4 \
+      --computation=$computation \
       --no-shuffle \
       --verbose \
       --timer \
@@ -42,6 +45,7 @@ function train_cpp()
 function train_python()
 {
   toolname=$(basename -- "$tool")
+  toolname="${toolname}_$computation"
   print_header "experiment=$name   tool=$toolname"
   python3 -u $tool \
       --seed=$seed \
@@ -55,6 +59,7 @@ function train_python()
       --learning-rate=$learning_rate \
       --loss=$loss \
       --dropouts=$dropouts \
+      --computation=$computation \
       --timer \
       "$@" \
       2>&1 | tee logs/$name-$tool.log

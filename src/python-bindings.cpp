@@ -488,6 +488,7 @@ PYBIND11_MODULE(NERVALIB, m)
   m.def("compute_accuracy", compute_accuracy<datasets::matrix_ref>);
   m.def("compute_statistics", compute_statistics<datasets::dataset_view<Orientation>>);
   m.def("set_num_threads", mkl_set_num_threads);
+  m.def("set_nerva_computation", set_nerva_computation);
 
   /////////////////////////////////////////////////////////////////////////
   //                       activation functions

@@ -14,17 +14,17 @@ batch_size=100
 epochs=5
 name=batchnorm
 
-tool="../tools/dist/mlp_rowwise_eigen"
+tool="../tools/dist/mlp_rowwise"
 train_cpp --dataset=cifar10
 
-tool="../tools/dist/mlp_rowwise_mkl"
+tool="../tools/dist/mlp_rowwise"
+train_cpp --dataset=cifar10 --computation=mkl
+
+tool="../tools/dist/mlp_colwise"
 train_cpp --dataset=cifar10
 
-tool="../tools/dist/mlp_colwise_eigen"
-train_cpp --dataset=cifar10
-
-tool="../tools/dist/mlp_colwise_mkl"
-train_cpp --dataset=cifar10
+tool="../tools/dist/mlp_colwise"
+train_cpp --dataset=cifar10 --computation=mkl
 
 tool=mlprowwise.py
 train_python --datadir=./data --manual

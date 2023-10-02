@@ -226,6 +226,9 @@ def make_argument_parser():
     # timer
     cmdline_parser.add_argument("--timer", help="Enable timer messages", action="store_true")
 
+    # computation
+    cmdline_parser.add_argument('--computation', type=str, default='eigen', help='The computation mode (eigen, mkl, blas)')
+
     return cmdline_parser
 
 
@@ -379,6 +382,7 @@ def main():
     print_command_line_arguments(args)
 
     initialize_frameworks(args)
+    nervalibrowwise.set_nerva_computation(args.computation)
 
     if args.datadir:
         if args.augmented:

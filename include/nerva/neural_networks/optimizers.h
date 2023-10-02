@@ -54,7 +54,7 @@ struct gradient_descent_optimizer: public optimizer_function
     }
     else
     {
-      if constexpr (NervaComputation == computation::eigen)
+      if (NervaComputation == computation::eigen)
       {
         x -= eta * Dx;
       }
@@ -109,7 +109,7 @@ struct momentum_optimizer: public gradient_descent_optimizer<T>
     }
     else
     {
-      if constexpr (NervaComputation == computation::eigen)
+      if (NervaComputation == computation::eigen)
       {
         delta_x = mu * delta_x - eta * Dx;
         x += delta_x;
@@ -174,12 +174,12 @@ struct nesterov_optimizer: public momentum_optimizer<T>
     }
     else
     {
-      if constexpr (NervaComputation == computation::eigen)
+      if (NervaComputation == computation::eigen || NervaComputation == computation::mkl)
       {
         delta_x = mu * delta_x - eta * Dx;
         x = x + mu * delta_x - eta * Dx;
       }
-      else
+      else if (NervaComputation == computation::blas)
       {
         auto x_view = mkl::make_dense_matrix_view(x);
         auto Dx_view = mkl::make_dense_matrix_view(Dx);

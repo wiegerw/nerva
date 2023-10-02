@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <stdexcept>
+
 namespace nerva {
 
 #ifdef NERVA_USE_DOUBLE
@@ -24,12 +26,27 @@ enum class computation
   blas
 };
 
-#ifdef NERVA_USE_MKL
-constexpr computation NervaComputation = computation::mkl;
-#elif defined NERVA_USE_BLAS
-constexpr computation NervaComputation = computation::blas;
-#else
-constexpr computation NervaComputation = computation::eigen;
-#endif
+inline computation NervaComputation = computation::eigen;
+
+inline
+void set_nerva_computation(const std::string& text)
+{
+  if (text == "eigen")
+  {
+    NervaComputation = computation::eigen;
+  }
+  else if (text == "mkl")
+  {
+    NervaComputation = computation::mkl;
+  }
+  else if (text == "blas")
+  {
+    NervaComputation = computation::blas;
+  }
+  else
+  {
+    throw std::runtime_error("unknown computation " + text);
+  }
+}
 
 } // namespace nerva
