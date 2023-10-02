@@ -60,10 +60,12 @@ struct multilayer_perceptron
 
   void optimize(scalar eta)
   {
+    NERVA_TIMER_START("optimize");
     for (auto& layer: layers)
     {
       layer->optimize(eta);
     }
+    NERVA_TIMER_STOP("optimize");
   }
 
   void check_gradients(const std::shared_ptr<loss_function>& loss, const eigen::matrix& T, scalar h = 0.01)

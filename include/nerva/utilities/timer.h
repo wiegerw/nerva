@@ -10,6 +10,9 @@
 #ifndef NERVA_UTILITIES_TIMER_H
 #define NERVA_UTILITIES_TIMER_H
 
+#include "nerva/utilities/print.h"
+#include "fmt/format.h"
+#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <map>
@@ -24,8 +27,29 @@ class map_timer
 
   protected:
     std::map<std::string, std::vector<std::pair<time, time>>> m_values;
+    bool m_report_on_destruction;
 
   public:
+    explicit map_timer(bool report_on_destruction = false)
+     : m_report_on_destruction(report_on_destruction)
+    {}
+
+    ~map_timer()
+    {
+      if (m_report_on_destruction)
+      {
+        double total_time = 0;
+        std::cout << "--- timing results ---" << std::endl;
+        for (const auto& [key, value]: m_values)
+        {
+          auto seconds = total_seconds(key);
+          total_time += seconds;
+          std::cout << fmt::format("{:20} = {:.4f}", key, seconds) << std::endl;
+        }
+        std::cout << fmt::format("{:20} = {:.4f}", "TOTAL TIME", total_time) << std::endl;
+      }
+    }
+
     /// \brief Sets the start value for the given key to the current time
     void start(const std::string& key)
     {
@@ -62,7 +86,7 @@ class map_timer
     [[nodiscard]] double total_seconds(const std::string& key) const
     {
       double result = 0;
-      for (const auto& [t1, t2]: m_values.at("epoch"))
+      for (const auto& [t1, t2]: m_values.at(key))
       {
         result += std::chrono::duration<double>(t2 - t1).count();
       }

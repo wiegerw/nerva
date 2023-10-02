@@ -21,8 +21,9 @@ enum class timer_status
   suspended
 };
 
-inline utilities::map_timer nerva_timer;
+inline utilities::map_timer nerva_timer{true};
 inline timer_status nerva_timer_status = timer_status::disabled;
+inline bool nerva_timer_verbose{false};
 
 inline
 void nerva_timer_enable()
@@ -72,8 +73,11 @@ void nerva_timer_stop(const std::string& key)
   if (nerva_timer_status == timer_status::active)
   {
     double s = nerva_timer.stop(key);
-    auto index = nerva_timer.values(key).size();
-    std::cout << fmt::format("{:>15}-{:<4} {:.6f}s", key, index, s) << std::endl;
+    if (nerva_timer_verbose)
+    {
+      auto index = nerva_timer.values(key).size();
+      std::cout << fmt::format("{:>15}-{:<4} {:.6f}s", key, index, s) << std::endl;
+    }
   }
 }
 
