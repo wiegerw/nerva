@@ -210,6 +210,9 @@ class Sequential(object):
     def optimize(self, eta):
         self.compiled_model.optimize(eta)
 
+    def renew_dropout_masks(self):
+        nervalibcolwise.renew_dropout_masks(self.compiled_model)
+
     def __str__(self):
         layers = ',\n  '.join([str(layer) for layer in self.layers])
         return f'Sequential(\n  {layers}\n)'

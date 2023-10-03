@@ -318,7 +318,7 @@ class SGD(StochasticGradientDescentAlgorithm):
             self.regrow(self.M)
 
         if epoch > 0 and self.clip > 0:
-            self.M.clip(self.clip)
+            self.M.compiled_model.clip(self.clip)
 
     # This is faster than using the DataLoader interface
     def run_manual(self):
@@ -441,6 +441,7 @@ def main():
         options = SGDOptions()
         options.epochs = args.epochs
         options.batch_size = args.batch_size
+        options.clip = args.clip
         options.shuffle = False
         options.statistics = True
         options.debug = args.debug

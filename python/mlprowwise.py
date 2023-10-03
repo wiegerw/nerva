@@ -293,6 +293,7 @@ class SGD(StochasticGradientDescentAlgorithm):
         super().__init__(M, train_loader, test_loader, options, loss, learning_rate)
         self.preprocessed_dir = preprocessed_dir
         self.regrow = PruneGrow(prune, grow) if prune else None
+        self.clip = options.clip
         self.train_loader = train_loader
         self.test_loader = test_loader
 
@@ -316,6 +317,9 @@ class SGD(StochasticGradientDescentAlgorithm):
 
         if epoch > 0:
             self.M.renew_dropout_masks()
+
+        if epoch > 0 and self.clip > 0:
+            self.M.compiled_model.clip(self.clip)
 
     # This is faster than using the DataLoader interface
     def run_manual(self):
@@ -438,6 +442,7 @@ def main():
         options = SGDOptions()
         options.epochs = args.epochs
         options.batch_size = args.batch_size
+        options.clip = args.clip
         options.shuffle = False
         options.statistics = True
         options.debug = args.debug

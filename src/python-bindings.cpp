@@ -429,7 +429,6 @@ PYBIND11_MODULE(NERVALIB, m)
     .def("set_weights_and_bias", [](multilayer_perceptron& M, const std::vector<weight_initialization>& weights) { set_weights_and_bias(M, weights, nerva_rng); })
     .def("weights", [](multilayer_perceptron& M) { return mlp_weights(M); })
     .def("bias", [](multilayer_perceptron& M) { return mlp_bias(M); })
-    .def("renew_dropout_masks", [](multilayer_perceptron& M) { renew_dropout_masks(M, nerva_rng); })
     ;
 
   py::class_<mlp_masking, std::shared_ptr<mlp_masking>>(m, "MLPMasking")
@@ -439,6 +438,7 @@ PYBIND11_MODULE(NERVALIB, m)
 
   m.def("save_model_weights_to_npy", save_model_weights_to_npy);
   m.def("print_model_info", print_model_info);
+  m.def("renew_dropout_masks", [](multilayer_perceptron& M) { renew_dropout_masks(M, nerva_rng); });
 
   /////////////////////////////////////////////////////////////////////////
   //                       weights
@@ -465,6 +465,7 @@ PYBIND11_MODULE(NERVALIB, m)
     .def_readwrite("batch_size", &sgd_options::batch_size)
     .def_readwrite("epochs", &sgd_options::epochs)
     .def_readwrite("debug", &sgd_options::debug)
+    .def_readwrite("clip", &sgd_options::clip)
     .def_readwrite("shuffle", &sgd_options::shuffle)
     .def_readwrite("statistics", &sgd_options::statistics)
     .def("info", &sgd_options::info)
