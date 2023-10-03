@@ -569,5 +569,11 @@ inline void read_dense_matrix(const std::string& filename, Matrix& A)
   }
 }
 
+template <typename Derived, typename Scalar>
+void clip(Eigen::MatrixBase<Derived>& A, Scalar epsilon)
+{
+  A = A.unaryExpr([epsilon](auto x) { return (std::fabs(x) < epsilon) ? 0 : x; });
+}
+
 } // namespace nerva::eigen
 

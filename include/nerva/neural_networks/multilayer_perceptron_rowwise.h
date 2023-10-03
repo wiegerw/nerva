@@ -108,6 +108,15 @@ struct multilayer_perceptron
     }
   }
 
+  // Sets values x with 0 < |x| < epsilon to zero. Small values may hurt the performance considerably.
+  void clip(scalar epsilon)
+  {
+    for (auto& layer: layers)
+    {
+      layer->clip(epsilon);
+    }
+  }
+
   void info(const std::string& name = "") const
   {
     std::cout << "==================================\n";

@@ -200,6 +200,11 @@ class sgd_algorithm: public stochastic_gradient_descent_algorithm<datasets::data
       {
         (*regrow)(M);
       }
+
+      if (epoch > 0 && options.clip > 0)
+      {
+        M.clip(options.clip);
+      }
     }
 
     void on_end_epoch(unsigned int epoch) override
@@ -288,6 +293,7 @@ class tool: public command_line_tool
 
       // miscellaneous
       cli |= lyra::opt(computation, "value")["--computation"]("The computation mode (eigen, mkl, blas)");
+      cli |= lyra::opt(options.clip, "value")["--clip"]("A threshold value that is used to set elements to zero");
       cli |= lyra::opt(options.threads, "value")["--threads"]("The number of threads used by Eigen.");
       cli |= lyra::opt(options.gradient_step, "value")["--gradient-step"]("If positive, gradient checks will be done with the given step size");
     }

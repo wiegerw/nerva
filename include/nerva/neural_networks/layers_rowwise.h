@@ -38,11 +38,14 @@ struct neural_network_layer
 
   [[nodiscard]] virtual auto to_string() const -> std::string = 0;
 
-  virtual void optimize(scalar eta) = 0;
-
   virtual void feedforward(eigen::matrix& result) = 0;
 
   virtual void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) = 0;
+
+  virtual void optimize(scalar eta) = 0;
+
+  virtual void clip(scalar epsilon)
+  {}
 
   virtual void info(unsigned int layer_index) const
   {}
@@ -145,6 +148,15 @@ struct linear_layer: public neural_network_layer
   void optimize(scalar eta) override
   {
     optimizer->update(eta);
+  }
+
+  void clip(scalar epsilon) override
+  {
+    // TODO: clip other matrices too
+    if (optimizer)
+    {
+      optimizer->clip(epsilon);
+    }
   }
 
   void info(unsigned int layer_index) const override

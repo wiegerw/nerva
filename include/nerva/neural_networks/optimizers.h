@@ -22,6 +22,9 @@ struct optimizer_function
 {
   virtual void update(scalar eta) = 0;
 
+  virtual void clip(scalar epsilon)
+  {}
+
   // Update the support (i.e. the set of nonzero entries). Only applies to sparse matrices.
   virtual void reset_support()
   {}
@@ -126,6 +129,18 @@ struct momentum_optimizer: public gradient_descent_optimizer<T>
     }
   }
 
+  void clip(scalar epsilon) override
+  {
+    if constexpr (IsSparse)
+    {
+      mkl::clip(delta_x, epsilon);
+    }
+    else
+    {
+      eigen::clip(delta_x, epsilon);
+    }
+  }
+
   void reset_support() override
   {
     if constexpr (IsSparse)
@@ -217,6 +232,14 @@ struct composite_optimizer: public optimizer_function
     for (auto& optimizer: optimizers)
     {
       optimizer->update(eta);
+    }
+  }
+
+  void clip(scalar epsilon) override
+  {
+    for (auto& optimizer: optimizers)
+    {
+      optimizer->clip(epsilon);
     }
   }
 

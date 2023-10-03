@@ -28,6 +28,7 @@ struct sgd_options
   bool statistics = true;
   bool debug = false;
   scalar gradient_step = 0;  // if gradient_step > 0 then gradient checks will be done
+  scalar clip = 0; // threshold for values that are clipped to 0
 
   void info() const;
 };
@@ -58,6 +59,7 @@ std::ostream& operator<<(std::ostream& out, const sgd_options& options)
   out << "epochs = " << options.epochs << std::endl;
   out << "batch size = " << options.batch_size << std::endl;
   out << "shuffle = " << std::boolalpha << options.shuffle << std::endl;
+  out << "clip = " << options.clip << std::endl;
   if (options.regrow_rate > 0)
   {
     out << "regrow rate = " << options.regrow_rate << std::endl;

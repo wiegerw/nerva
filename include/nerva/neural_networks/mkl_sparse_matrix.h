@@ -16,6 +16,7 @@
 #include "nerva/utilities/stopwatch.h"
 #include <mkl.h>
 #include <mkl_spblas.h>
+#include <omp.h>
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -690,6 +691,23 @@ bool has_nan(const sparse_matrix_csr<T>& A)
     }
   }
   return false;
+}
+
+template <typename T>
+void clip(sparse_matrix_csr<T>& A, T epsilon)
+{
+  auto& values = A.values();
+
+  #pragma omp parallel for
+  for (std::size_t i = 0; i < values.size(); ++i)
+  {
+    if (std::fabs(values[i]) < epsilon)
+    {
+      values[i] = T(0);
+    }
+  }
+
+  A.construct_csr();
 }
 
 } // namespace nerva::mkl
