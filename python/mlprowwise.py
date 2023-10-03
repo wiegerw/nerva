@@ -314,7 +314,8 @@ class SGD(StochasticGradientDescentAlgorithm):
         if epoch > 0 and self.regrow:
             self.regrow(self.M)
 
-        # TODO: renew dropout masks
+        if epoch > 0:
+            self.M.renew_dropout_masks()
 
     # This is faster than using the DataLoader interface
     def run_manual(self):

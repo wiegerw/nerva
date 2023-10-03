@@ -15,20 +15,26 @@ batch_size=100
 epochs=5
 name=dropout
 
+computation=eigen
 tool="../tools/dist/mlp_rowwise"
-train_cpp --dataset=cifar10
+train_cpp --dataset=cifar10 --clip=1e-25
 
+computation=mkl
 tool="../tools/dist/mlp_rowwise"
-train_cpp --dataset=cifar10 --computation=mkl
+train_cpp --dataset=cifar10 --clip=1e-25
 
+computation=eigen
 tool="../tools/dist/mlp_colwise"
-train_cpp --dataset=cifar10
+train_cpp --dataset=cifar10 --clip=1e-25
 
+computation=mkl
 tool="../tools/dist/mlp_colwise"
-train_cpp --dataset=cifar10 --computation=mkl
+train_cpp --dataset=cifar10 --clip=1e-25
 
+computation=mkl
 tool=mlprowwise.py
 train_python --datadir=./data --manual
 
+computation=mkl
 tool=mlpcolwise.py
 train_python --datadir=./data --manual

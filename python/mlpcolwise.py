@@ -228,6 +228,7 @@ def make_argument_parser():
 
     # computation
     cmdline_parser.add_argument('--computation', type=str, default='eigen', help='The computation mode (eigen, mkl, blas)')
+    cmdline_parser.add_argument('--clip', type=float, default=0, help='A threshold value that is used to set elements to zero')
 
     return cmdline_parser
 
@@ -293,6 +294,7 @@ class SGD(StochasticGradientDescentAlgorithm):
         super().__init__(M, train_loader, test_loader, options, loss, learning_rate)
         self.preprocessed_dir = preprocessed_dir
         self.regrow = PruneGrow(prune, grow) if prune else None
+        self.clip = options.clip
 
     def reload_data(self, epoch) -> None:
         """
@@ -309,10 +311,14 @@ class SGD(StochasticGradientDescentAlgorithm):
         if epoch > 0:
             self.reload_data(epoch)
 
+        if epoch > 0:
+            self.M.renew_dropout_masks()
+
         if epoch > 0 and self.regrow:
             self.regrow(self.M)
 
-        # TODO: renew dropout masks
+        if epoch > 0 and self.clip > 0:
+            self.M.clip(self.clip)
 
     # This is faster than using the DataLoader interface
     def run_manual(self):
