@@ -18,19 +18,19 @@ grow_weights=XavierNormalized
 name=regrow
 
 tool="../tools/dist/mlp_rowwise"
-train_cpp --dataset=cifar10 --prune=$prune --grow=$grow --grow-weights=$grow_weights
-
-tool="../tools/dist/mlp_rowwise"
-train_cpp --dataset=cifar10 --prune=$prune --grow=$grow --grow-weights=$grow_weights --computation=mkl
-
-tool="../tools/dist/mlp_colwise"
-train_cpp --dataset=cifar10 --prune=$prune --grow=$grow --grow-weights=$grow_weights
+computation=eigen
+#train_cpp --dataset=cifar10 --prune=$prune --grow=$grow --grow-weights=$grow_weights --clip=1e-20
+computation=mkl
+train_cpp --dataset=cifar10 --prune=$prune --grow=$grow --grow-weights=$grow_weights --clip=1e-20
 
 tool="../tools/dist/mlp_colwise"
-train_cpp --dataset=cifar10 --prune=$prune --grow=$grow --grow-weights=$grow_weights --computation=mkl
+computation=eigen
+train_cpp --dataset=cifar10 --prune=$prune --grow=$grow --grow-weights=$grow_weights --clip=1e-20
+computation=mkl
+train_cpp --dataset=cifar10 --prune=$prune --grow=$grow --grow-weights=$grow_weights --clip=1e-20
 
+computation=mkl
 tool=mlprowwise.py
-train_python --datadir=./data --prune=$prune --grow=$grow --grow-weights=$grow_weights --computation=mkl
-
+train_python --datadir=./data --prune=$prune --grow=$grow --grow-weights=$grow_weights --clip=1e-20
 tool=mlpcolwise.py
-train_python --datadir=./data --prune=$prune --grow=$grow --grow-weights=$grow_weights --computation=mkl
+train_python --datadir=./data --prune=$prune --grow=$grow --grow-weights=$grow_weights --clip=1e-20

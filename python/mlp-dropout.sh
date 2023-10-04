@@ -17,19 +17,19 @@ name=dropout
 
 computation=eigen
 tool="../tools/dist/mlp_rowwise"
-train_cpp --dataset=cifar10 --clip=1e-25
+#train_cpp --dataset=cifar10 --clip=1e-20
 
 computation=mkl
 tool="../tools/dist/mlp_rowwise"
-train_cpp --dataset=cifar10 --clip=1e-25
+train_cpp --dataset=cifar10 --clip=1e-20
 
 computation=eigen
 tool="../tools/dist/mlp_colwise"
-train_cpp --dataset=cifar10 --clip=1e-25
+train_cpp --dataset=cifar10 --clip=1e-20
 
 computation=mkl
 tool="../tools/dist/mlp_colwise"
-train_cpp --dataset=cifar10 --clip=1e-25
+train_cpp --dataset=cifar10 --clip=1e-20
 
 computation=mkl
 tool=mlprowwise.py

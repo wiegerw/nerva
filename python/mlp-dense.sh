@@ -15,16 +15,16 @@ epochs=5
 name=default
 
 tool="../tools/dist/mlp_rowwise"
-train_cpp --dataset=cifar10
+train_cpp --dataset=cifar10 --clip=1e-20
 
 tool="../tools/dist/mlp_rowwise"
-train_cpp --dataset=cifar10 --computation=mkl
+train_cpp --dataset=cifar10 --computation=mkl --clip=1e-20
 
 tool="../tools/dist/mlp_colwise"
-train_cpp --dataset=cifar10
+train_cpp --dataset=cifar10 --clip=1e-20
 
 tool="../tools/dist/mlp_colwise"
-train_cpp --dataset=cifar10 --computation=mkl
+train_cpp --dataset=cifar10 --computation=mkl --clip=1e-20
 
 tool=mlprowwise.py
 train_python --datadir=./data

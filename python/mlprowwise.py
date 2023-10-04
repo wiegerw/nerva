@@ -228,6 +228,7 @@ def make_argument_parser():
 
     # computation
     cmdline_parser.add_argument('--computation', type=str, default='eigen', help='The computation mode (eigen, mkl, blas)')
+    cmdline_parser.add_argument('--clip', type=float, default=0, help='A threshold value that is used to set elements to zero')
 
     return cmdline_parser
 
