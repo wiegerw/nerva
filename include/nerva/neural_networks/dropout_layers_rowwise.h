@@ -103,83 +103,6 @@ struct linear_dropout_layer : public linear_layer<Matrix>, dropout_layer<Matrix>
 
 using dense_linear_dropout_layer = linear_dropout_layer<eigen::matrix>;
 
-template<typename Matrix>
-struct sigmoid_dropout_layer : public sigmoid_layer<Matrix>, dropout_layer<Matrix>
-{
-  using super = sigmoid_layer<Matrix>;
-  using super::W;
-  using super::DW;
-  using super::b;
-  using super::Db;
-  using super::X;
-  using super::DX;
-  using super::Z;
-  using super::DZ;
-  using super::optimizer;
-  using super::input_size;
-  using super::output_size;
-  using super::to_string;
-  using dropout_layer<Matrix>::p;
-  using dropout_layer<Matrix>::R;
-  static constexpr bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
-
-  sigmoid_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
-    : super(D, K, N), dropout_layer<Matrix>(D, K, p)
-  {
-  }
-
-  void feedforward(eigen::matrix& result) override
-  {
-    using eigen::row_repeat;
-    using eigen::hadamard;
-    using eigen::Sigmoid;
-    auto N = X.rows();
-
-    Z = X * hadamard(W, R).transpose() + row_repeat(b, N);
-    result = Sigmoid(Z);
-  }
-
-  void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
-  {
-    using eigen::hadamard;
-    using eigen::columns_sum;
-    using eigen::ones;
-    auto K = Y.cols();
-    auto N = X.rows();
-
-    if constexpr (IsSparse)
-    {
-      // TODO
-    }
-    else
-    {
-      if (NervaComputation == computation::eigen)
-      {
-        DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(N, K) - Y));
-        DW = hadamard(DZ.transpose() * X, R);
-        Db = columns_sum(DZ);
-        DX = DZ * hadamard(W, R);
-      }
-      else
-      {
-        DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(N, K) - Y));
-        mkl::ddd_product(DW, DZ.transpose(), X);
-        DW = hadamard(DW, R);
-        Db = columns_sum(DZ);
-        DX = DZ * hadamard(W, R);
-      }
-    }
-  }
-
-  [[nodiscard]] std::string to_string() const override
-  {
-    return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation=Sigmoid(), dropout={})",
-                       input_size(), output_size(), optimizer->to_string(), p);
-  }
-};
-
-using dense_sigmoid_dropout_layer = sigmoid_dropout_layer<eigen::matrix>;
-
 template<typename Matrix, typename ActivationFunction>
 struct activation_dropout_layer : public activation_layer<Matrix, ActivationFunction>, dropout_layer<Matrix>
 {
@@ -265,6 +188,21 @@ struct relu_dropout_layer : public activation_dropout_layer<Matrix, eigen::relu_
 };
 
 using dense_relu_dropout_layer = relu_dropout_layer<eigen::matrix>;
+
+template<typename Matrix>
+struct sigmoid_dropout_layer : public activation_dropout_layer<Matrix, eigen::sigmoid_activation>
+{
+  using super = activation_dropout_layer<Matrix, eigen::sigmoid_activation>;
+  using super::to_string;
+  using dropout_layer<Matrix>::p;
+
+  sigmoid_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
+    : super(D, K, N, p, eigen::sigmoid_activation())
+  {
+  }
+};
+
+using dense_sigmoid_dropout_layer = sigmoid_dropout_layer<eigen::matrix>;
 
 template<typename Matrix>
 struct softmax_dropout_layer : public softmax_layer<Matrix>, dropout_layer<Matrix>

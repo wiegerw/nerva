@@ -194,107 +194,6 @@ struct linear_layer: public neural_network_layer
 using dense_linear_layer = linear_layer<eigen::matrix>;
 using sparse_linear_layer = linear_layer<mkl::sparse_matrix_csr<scalar>>;
 
-template <typename Matrix>
-struct sigmoid_layer : public linear_layer<Matrix>
-{
-  using super = linear_layer<Matrix>;
-  using super::W;
-  using super::DW;
-  using super::b;
-  using super::Db;
-  using super::X;
-  using super::DX;
-  using super::optimizer;
-  using super::input_size;
-  using super::output_size;
-  static constexpr bool IsSparse = std::is_same_v<Matrix, mkl::sparse_matrix_csr<scalar>>;
-
-  eigen::matrix Z;
-  eigen::matrix DZ;
-
-  sigmoid_layer(std::size_t D, std::size_t K, std::size_t N)
-    : super(D, K, N), Z(N, K), DZ(N, K)
-  {}
-
-  [[nodiscard]] auto to_string() const -> std::string override
-  {
-    if constexpr (IsSparse)
-    {
-      return fmt::format("Sparse(input_size={}, output_size={}, density={}, optimizer={}, activation=Sigmoid())", input_size(), output_size(), W.density(), optimizer->to_string());
-    }
-    else
-    {
-      return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation=Sigmoid())", input_size(), output_size(), optimizer->to_string());
-    }
-  }
-
-  void feedforward(eigen::matrix& result) override
-  {
-    using eigen::row_repeat;
-    using eigen::Sigmoid;
-    auto N = X.rows();
-
-    if constexpr (IsSparse)
-    {
-      bool W_transposed = true;
-      mkl::dds_product(Z, X, W, W_transposed);
-      Z += row_repeat(b, N);
-      result = Sigmoid(Z);
-    }
-    else
-    {
-      if (NervaComputation == computation::eigen)
-      {
-        Z = X * W.transpose() + row_repeat(b, N);
-        result = Sigmoid(Z);
-      }
-      else
-      {
-        mkl::ddd_product(Z, X, W.transpose());
-        Z += row_repeat(b, N);
-        result = Sigmoid(Z);
-      }
-    }
-  }
-
-  void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
-  {
-    using eigen::hadamard;
-    using eigen::columns_sum;
-    using eigen::ones;
-    auto K = Y.cols();
-    auto N = X.rows();
-
-    if constexpr (IsSparse)
-    {
-      DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(K, N) - Y));
-      mkl::sdd_product_batch(DW, DZ.transpose(), X, std::max(4L, static_cast<long>(DZ.cols() / 10)));
-      Db = columns_sum(DZ);
-      mkl::dds_product(DX, DZ, W);
-    }
-    else
-    {
-      if (NervaComputation == computation::eigen)
-      {
-        DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(N, K) - Y));
-        DW = DZ.transpose() * X;
-        Db = columns_sum(DZ);
-        DX = DZ * W;
-      }
-      else
-      {
-        DZ = hadamard(DY, hadamard(Y, ones<eigen::matrix>(N, K) - Y));
-        mkl::ddd_product(DW, DZ.transpose(), X);
-        Db = columns_sum(DZ);
-        mkl::ddd_product(DX, DZ, W);
-      }
-    }
-  }
-};
-
-using dense_sigmoid_layer = sigmoid_layer<eigen::matrix>;
-using sparse_sigmoid_layer = sigmoid_layer<mkl::sparse_matrix_csr<scalar>>;
-
 template <typename Matrix, typename ActivationFunction>
 struct activation_layer : public linear_layer<Matrix>
 {
@@ -415,6 +314,19 @@ struct relu_layer : public activation_layer<Matrix, eigen::relu_activation>
 
 using dense_relu_layer = relu_layer<eigen::matrix>;
 using sparse_relu_layer = relu_layer<mkl::sparse_matrix_csr<scalar>>;
+
+template <typename Matrix>
+struct sigmoid_layer : public activation_layer<Matrix, eigen::sigmoid_activation>
+{
+  using super = activation_layer<Matrix, eigen::sigmoid_activation>;
+
+  explicit sigmoid_layer(std::size_t D, std::size_t K, std::size_t N)
+    : super(D, K, N, eigen::sigmoid_activation())
+  {}
+};
+
+using dense_sigmoid_layer = sigmoid_layer<eigen::matrix>;
+using sparse_sigmoid_layer = sigmoid_layer<mkl::sparse_matrix_csr<scalar>>;
 
 template <typename Matrix>
 struct trelu_layer : public activation_layer<Matrix, eigen::trimmed_relu_activation>
