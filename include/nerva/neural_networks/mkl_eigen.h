@@ -30,6 +30,12 @@ mkl::dense_matrix_view<Scalar, MatrixLayout> make_dense_matrix_view(const Eigen:
   return mkl::dense_matrix_view<Scalar, MatrixLayout>(const_cast<Scalar*>(A.data()), A.rows(), A.cols());
 }
 
+template <typename Scalar, int MatrixLayout>
+dense_vector_view<Scalar> make_dense_vector_view(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout>& A)
+{
+  return dense_vector_view<Scalar>(const_cast<Scalar*>(A.data()), A.rows() * A.cols());
+}
+
 template <typename Scalar = scalar, int MatrixLayout = eigen::default_matrix_layout>
 Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, MatrixLayout> to_eigen(const mkl::sparse_matrix_csr<Scalar>& A)
 {

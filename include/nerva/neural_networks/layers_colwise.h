@@ -378,9 +378,19 @@ struct activation_layer : public linear_layer<Matrix>
         Db = rows_sum(DZ);
         DX = W.transpose() * DZ;
       }
-      else
+      else if (NervaComputation == computation::mkl)
       {
         DZ = hadamard(DY, act.gradient(Z));
+        mkl::ddd_product(DW, DZ, X.transpose());
+        Db = rows_sum(DZ);
+        mkl::ddd_product(DX, W.transpose(), DZ);
+      }
+      else if (NervaComputation == computation::blas)
+      {
+        DZ = act.gradient(Z);
+        auto DY_view = mkl::make_dense_vector_view(DY);
+        auto DZ_view = mkl::make_dense_vector_view(DZ);
+        vm_mul(DZ_view, DY_view, DZ_view);
         mkl::ddd_product(DW, DZ, X.transpose());
         Db = rows_sum(DZ);
         mkl::ddd_product(DX, W.transpose(), DZ);
