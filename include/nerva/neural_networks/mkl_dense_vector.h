@@ -10,6 +10,7 @@
 #pragma once
 
 #include <mkl.h>
+#include <cassert>
 #include <type_traits>
 
 namespace nerva {

@@ -51,15 +51,19 @@ project nerva
        <toolset>gcc:<cxxflags>-Wno-write-strings
        <toolset>gcc:<cxxflags>-fopenmp
 
-       #--- intel ---#
-       <toolset>intel:<include>/opt/intel/oneapi/compiler/latest/linux/include
-       <toolset>intel:<include>/opt/intel/oneapi/compiler/latest/linux/include/sycl
-       <toolset>intel:<cxxflags>-DMKL_ILP64
-       <toolset>intel:<cxxflags>-m64
-       <toolset>intel:<cxxflags>-Wno-writable-strings   # suppress MKL warnings
-       <toolset>intel:<cxxflags>-Wno-tautological-constant-compare
-       <toolset>intel:<cxxflags>-fhonor-nan-compares    # otherwise std::isnan gives erroneous results
-       <toolset>intel:<linkflags>-L/opt/intel/oneapi/compiler/latest/linux/compiler/lib/intel64_lin
+       #--- intel icpx ---#
+       <toolset>clang-icpx:<cxxflags>-DMKL_ILP64
+       <toolset>clang-icpx:<cxxflags>-m64
+       <toolset>clang-icpx:<cxxflags>-Wno-writable-strings   # suppress MKL warnings
+       <toolset>clang-icpx:<cxxflags>-Wno-tautological-constant-compare
+       <toolset>clang-icpx:<cxxflags>-fhonor-nan-compares    # otherwise std::isnan gives erroneous results
+       <toolset>clang-icpx:<cxxflags>-fsycl 
+       <toolset>clang-icpx:<cxxflags>-fsycl-unnamed-lambda
+       #<toolset>clang-icpx:<cxxflags>-fiopenmp 
+       <toolset>clang-icpx:<linkflags>-L/opt/intel/oneapi/compiler/latest/linux/compiler/lib/intel64_lin
+       <toolset>clang-icpx:<linkflags>-fsycl
+       <toolset>clang-icpx:<linkflags>-lsycl
+       #<toolset>intel:<cxxflags>-fopenmp-targets=<arch>
    ;
 
 lib nervalib
