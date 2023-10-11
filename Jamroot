@@ -52,6 +52,7 @@ project nerva
        <toolset>gcc:<cxxflags>-fopenmp
 
        #--- intel icpx ---#
+       <toolset>clang-icpx:<define>NERVA_SYCL
        <toolset>clang-icpx:<cxxflags>-DMKL_ILP64
        <toolset>clang-icpx:<cxxflags>-m64
        <toolset>clang-icpx:<cxxflags>-Wno-writable-strings   # suppress MKL warnings
