@@ -13,6 +13,10 @@
 #include <cassert>
 #include <type_traits>
 
+#ifdef NERVA_SYCL
+#include <sycl/sycl.hpp>
+#endif
+
 namespace nerva {
 
 template <typename Scalar_>
@@ -56,7 +60,17 @@ class dense_vector_view
       return m_data[i * m_increment];
     }
 
-    Scalar& operator()(long i, long j)
+    Scalar& operator()(long i)
+    {
+      return m_data[i * m_increment];
+    }
+
+    Scalar operator[](long i) const
+    {
+      return m_data[i * m_increment];
+    }
+
+    Scalar& operator[](long i)
     {
       return m_data[i * m_increment];
     }
@@ -846,5 +860,57 @@ void vm_minmag(const dense_vector_view<Scalar>& a, const dense_vector_view<Scala
 {
   vm_apply_binary_operation(a, b, y, vsMinMagI, vdMinMagI);
 };
+
+//----------------------------------------------------------------------//
+//                     SYCL implementations
+//----------------------------------------------------------------------//
+
+#ifdef NERVA_SYCL
+// z := a * x + b * y
+template <typename Scalar>
+void assign_axby(Scalar a, Scalar b, const dense_vector_view<Scalar>& x, const dense_vector_view<Scalar>& y, dense_vector_view<Scalar>& z)
+{
+  sycl::queue q;
+  sycl::buffer<Scalar, 1> x_buffer{ const_cast<Scalar*>(x.data()), sycl::range<1>{static_cast<std::size_t>(x.size())}};
+  sycl::buffer<Scalar, 1> y_buffer{ const_cast<Scalar*>(y.data()), sycl::range<1>{static_cast<std::size_t>(y.size())}};
+  sycl::buffer<Scalar, 1> z_buffer{ z.data(), sycl::range<1>{static_cast<std::size_t>(z.size())}};
+
+  q.submit([&](sycl::handler& cgh)
+  {
+    auto x = x_buffer.template get_access<sycl::access::mode::read>(cgh);
+    auto y = y_buffer.template get_access<sycl::access::mode::read>(cgh);
+    auto z = z_buffer.template get_access<sycl::access::mode::write>(cgh);
+    std::size_t n = x.size();
+
+    cgh.parallel_for(sycl::range<1>{n}, [=](sycl::id<1> i)
+    {
+      z[i] = a * x[i] + b * y[i];
+    });
+  }).wait();
+};
+
+// z := z + a * x + b * y
+template <typename Scalar, typename Buffer>
+void add_axby(Scalar a, Scalar b, Buffer& x, Buffer& y, Buffer& z)
+{
+  sycl::queue q;
+  sycl::buffer<Scalar, 1> x_buffer{ const_cast<Scalar*>(x.data()), sycl::range<1>{static_cast<std::size_t>(x.size())}};
+  sycl::buffer<Scalar, 1> y_buffer{ const_cast<Scalar*>(y.data()), sycl::range<1>{static_cast<std::size_t>(y.size())}};
+  sycl::buffer<Scalar, 1> z_buffer{ z.data(), sycl::range<1>{static_cast<std::size_t>(z.size())}};
+
+  q.submit([&](sycl::handler& cgh)
+  {
+    auto x = x_buffer.template get_access<sycl::access::mode::read>(cgh);
+    auto y = y_buffer.template get_access<sycl::access::mode::read>(cgh);
+    auto z = z_buffer.template get_access<sycl::access::mode::write>(cgh);
+    std::size_t n = x.size();
+
+    cgh.parallel_for(sycl::range<1>{n}, [=](sycl::id<1> i)
+    {
+      z[i] += a * x[i] + b * y[i];
+    });
+  }).wait();
+};
+#endif
 
 } // namespace nerva

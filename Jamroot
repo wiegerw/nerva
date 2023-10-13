@@ -28,6 +28,7 @@ project nerva
        <define>EIGEN_USE_MKL_ALL
        <define>FMT_HEADER_ONLY
        <define>NERVA_TIMER
+       <define>NERVA_SYCL
 
        <include>$(MKLROOT)/include
        <linkflags>-L$(MKLROOT)/lib/intel64
@@ -60,9 +61,11 @@ project nerva
        <toolset>clang-icpx:<cxxflags>-fhonor-nan-compares    # otherwise std::isnan gives erroneous results
        <toolset>clang-icpx:<cxxflags>-fsycl 
        <toolset>clang-icpx:<cxxflags>-fsycl-unnamed-lambda
-       #<toolset>clang-icpx:<cxxflags>-fiopenmp 
+       <toolset>clang-icpx:<cxxflags>-fsycl-targets=spir64_x86_64
+       <toolset>clang-icpx:<cxxflags>-fiopenmp 
        <toolset>clang-icpx:<linkflags>-L/opt/intel/oneapi/compiler/latest/linux/compiler/lib/intel64_lin
        <toolset>clang-icpx:<linkflags>-fsycl
+       <toolset>clang-icpx:<linkflags>-fsycl-targets=spir64_x86_64
        <toolset>clang-icpx:<linkflags>-lsycl
        #<toolset>intel:<cxxflags>-fopenmp-targets=<arch>
    ;

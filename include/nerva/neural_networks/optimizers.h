@@ -117,7 +117,7 @@ struct momentum_optimizer: public gradient_descent_optimizer<T>
         delta_x = mu * delta_x - eta * Dx;
         x += delta_x;
       }
-      else
+      else if (NervaComputation == computation::mkl || NervaComputation == computation::blas)
       {
         auto x_view = mkl::make_dense_matrix_view(x);
         auto Dx_view = mkl::make_dense_matrix_view(Dx);
@@ -125,6 +125,17 @@ struct momentum_optimizer: public gradient_descent_optimizer<T>
         mkl::cblas_scal(mu, delta_x_view);
         mkl::cblas_axpy(-eta, Dx_view, delta_x_view);
         mkl::cblas_axpy(scalar(1), delta_x_view, x_view);
+      }
+      else if (NervaComputation == computation::sycl)
+      {
+#ifdef NERVA_SYCL
+        auto Dx_view = mkl::make_dense_vector_view(Dx);
+        auto delta_x_view = mkl::make_dense_vector_view(delta_x);
+        assign_axby(mu, -eta, delta_x_view, Dx_view, delta_x_view);
+        x += delta_x;
+#else
+      throw std::runtime_error("computation mode sycl is disabled");
+#endif
       }
     }
   }
@@ -203,6 +214,18 @@ struct nesterov_optimizer: public momentum_optimizer<T>
         mkl::cblas_axpy(-eta, Dx_view, delta_x_view);
         mkl::cblas_axpy(mu, delta_x_view, x_view);
         mkl::cblas_axpy(-eta, Dx_view, x_view);
+      }
+      else if (NervaComputation == computation::sycl)
+      {
+#ifdef NERVA_SYCL
+        auto x_view = mkl::make_dense_vector_view(x);
+        auto Dx_view = mkl::make_dense_vector_view(Dx);
+        auto delta_x_view = mkl::make_dense_vector_view(delta_x);
+        assign_axby(mu, -eta, delta_x_view, Dx_view, delta_x_view);
+        add_axby(mu, -eta, delta_x_view, Dx_view, x_view);
+#else
+        throw std::runtime_error("computation mode sycl is disabled");
+#endif
       }
     }
   }

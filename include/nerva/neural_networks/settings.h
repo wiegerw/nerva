@@ -23,7 +23,8 @@ enum class computation
 {
   eigen,
   mkl,
-  blas
+  blas,
+  sycl
 };
 
 inline computation NervaComputation = computation::eigen;
@@ -42,6 +43,10 @@ void set_nerva_computation(const std::string& text)
   else if (text == "blas")
   {
     NervaComputation = computation::blas;
+  }
+  else if (text == "sycl")
+  {
+    NervaComputation = computation::sycl;
   }
   else
   {
