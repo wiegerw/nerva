@@ -14,7 +14,7 @@ import symbolic.tensorflow.softmax_functions as tf_
 import symbolic.torch.softmax_functions as torch_
 import symbolic.sympy.softmax_functions as sympy_
 import symbolic.jax.softmax_functions as jnp_
-import nervalib as eigen_
+import nervalibcolwise as eigen_
 from symbolic.utilities import to_numpy, to_sympy, to_tensorflow, to_torch, to_jax, to_eigen
 
 Matrix = sp.Matrix
