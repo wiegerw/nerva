@@ -5,28 +5,15 @@
 
 from typing import Union, Tuple, List
 from unittest import TestCase
+from symbolic.sympy.matrix_operations import *
 
 import sympy as sp
 
 Matrix = sp.Matrix
 
+
 def matrix(name: str, rows: int, columns: int) -> Matrix:
     return Matrix(sp.symarray(name, (rows, columns), real=True))
-
-
-def is_column_vector(x: Matrix) -> bool:
-    m, n = x.shape
-    return n == 1
-
-
-def is_row_vector(x: Matrix) -> bool:
-    m, n = x.shape
-    return m == 1
-
-
-def is_square(X: Matrix) -> bool:
-    m, n = X.shape
-    return m == n
 
 
 def pp(name: str, x: sp.Matrix):
@@ -39,17 +26,6 @@ def pp(name: str, x: sp.Matrix):
                 print(', ', end='')
         print(']')
     print()
-
-
-def diag(X: Matrix) -> Matrix:
-    assert is_square(X)
-    m, n = X.shape
-    return Matrix([[X[i, i] for i in range(m)]]).T
-
-
-def Diag(x: Matrix) -> Matrix:
-    assert is_column_vector(x) or is_row_vector(x)
-    return sp.diag(*x)
 
 
 def substitute(expr, substitutions: Union[Tuple[Matrix, Matrix], List[Tuple[Matrix, Matrix]]]):
