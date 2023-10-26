@@ -219,6 +219,50 @@ class TestBatchNormalizationLayers(TestCase):
         self.assertTrue(equal_matrices(Dgamma, Dgamma1))
         self.assertTrue(equal_matrices(DZ, DZ1))
 
+    def test_yeh_batch_normalization_layer_rowwise(self):
+        # see https://chrisyeh96.github.io/2017/08/28/deriving-batchnorm-backprop.html
+
+        D = 3
+        N = 2
+        K = D                # K and D are always equal in batch normalization
+        loss = elements_sum  # squared_error seems too complicated
+
+        # variables
+        x = matrix('x', N, D)
+        y = matrix('y', N, K)
+        z = matrix('z', N, K)
+        beta = matrix('beta', 1, K)
+        gamma = matrix('gamma', 1, K)
+        X = x
+
+        # feedforward
+        R = X - row_repeat(columns_mean(X), N)
+        Sigma = diag(R.T * R).T / N
+        power_minus_half_Sigma = power_minus_half(Sigma)
+        Z = hadamard(row_repeat(power_minus_half_Sigma, N), R)
+        Y = hadamard(row_repeat(gamma, N), Z) + row_repeat(beta, N)
+
+        # symbolic differentiation
+        DY = substitute(diff(loss(y), y), (y, Y))
+
+        # backpropagation
+        DZ = hadamard(row_repeat(gamma, N), DY)  # not explicitly given in [Yeh 2017]
+        Dbeta = columns_sum(DY)                  # the same as in [Yeh 2017]
+        Dgamma = columns_sum(hadamard(DY, Z))    # I can't parse the equation in [Yeh 2017], but this should be it
+        DX = (1 / N) * (-hadamard(row_repeat(Dgamma, N), Z) + N * DY - row_repeat(Dbeta, N)) * row_repeat(hadamard(gamma, Sigma), D) # I can't parse the equation in [Yeh 2017], but this should be it
+
+        # test gradients
+        DX1 = diff(loss(Y), x)
+        Dbeta1 = diff(loss(Y), beta)
+        Dgamma1 = diff(loss(Y), gamma)
+        Y_z = hadamard(row_repeat(gamma, N), z) + row_repeat(beta, N)
+        DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
+
+        self.assertTrue(equal_matrices(DX, DX1))
+        self.assertTrue(equal_matrices(Dbeta, Dbeta1))
+        self.assertTrue(equal_matrices(Dgamma, Dgamma1))
+        self.assertTrue(equal_matrices(DZ, DZ1))
+
 
 if __name__ == '__main__':
     import unittest
