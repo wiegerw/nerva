@@ -255,6 +255,7 @@ def compute_loss_torch(M: MLPPyTorch, data_loader, device):
 def train_torch(M, train_loader, test_loader, epochs, device, debug=False):
     M.train()  # Set model in training mode
     watch = StopWatch()
+    total_time = 0.0
 
     print_epoch(epoch=0,
                 lr=M.optimizer.param_groups[0]["lr"],
@@ -298,12 +299,15 @@ def train_torch(M, train_loader, test_loader, epochs, device, debug=False):
                     elapsed=elapsed)
 
         M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
+        total_time += elapsed
+    print(f'Total training time: {total_time:6.2f}s')
 
 
 # At every epoch a new dataset in .npz format is read from datadir.
 def train_torch_preprocessed(M, datadir, epochs, batch_size, device, debug=False):
     M.train()  # Set model in training mode
     watch = StopWatch()
+    total_time = 0.0
 
     train_loader, test_loader = create_npz_dataloaders(f'{datadir}/epoch0.npz', batch_size=batch_size)
 
@@ -354,6 +358,8 @@ def train_torch_preprocessed(M, datadir, epochs, batch_size, device, debug=False
                     elapsed=elapsed)
 
         M.learning_rate.step()  # N.B. this updates the learning rate in M.optimizer
+        total_time += elapsed
+    print(f'Total training time: {total_time:6.2f}s')
 
 
 def make_argument_parser():
@@ -383,6 +389,7 @@ def make_argument_parser():
 
     # dataset
     cmdline_parser.add_argument('--datadir', type=str, default='./data', help='the data directory (default: ./data)')
+    cmdline_parser.add_argument('--dataset', type=str, help='An .npz file containing train and test data')
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
     cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
 
@@ -451,6 +458,8 @@ def main():
             train_loader, test_loader = create_cifar10_augmented_dataloaders(args.batch_size, args.batch_size, args.datadir)
         else:
             train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
+    elif args.dataset:
+        train_loader, test_loader = create_npz_dataloaders(args.dataset, batch_size=args.batch_size)
     else:
         train_loader, test_loader = None, None
 
