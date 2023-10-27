@@ -7,7 +7,7 @@ source utilities.sh
 source mlp-functions.sh
 
 seed=1
-init_weights=XavierNormalized
+init_weights=Xavier
 density=1.0
 sizes="3072,1024,512,10"
 layers="ReLU;ReLU;Linear"
@@ -17,6 +17,7 @@ loss=SoftmaxCrossEntropy
 batch_size=100
 epochs=1
 optimizers="GradientDescent"
+computation=mkl
 
 function train()
 {
@@ -26,16 +27,10 @@ function train()
   tool="mlptorch.py"
   train_torch --preprocessed=cifar$seed --save-weights=$weight_file --debug
 
-  tool="../tools/dist/mlp_rowwise_eigen"
+  tool="../tools/dist/mlp_rowwise"
   train_cpp --preprocessed=cifar$seed --load-weights=$weight_file --debug
 
-  tool="../tools/dist/mlp_rowwise_mkl"
-  train_cpp --preprocessed=cifar$seed --load-weights=$weight_file --debug
-
-  tool="../tools/dist/mlp_colwise_eigen"
-  train_cpp --preprocessed=cifar$seed --load-weights=$weight_file --debug
-
-  tool="../tools/dist/mlp_colwise_mkl"
+  tool="../tools/dist/mlp_colwise"
   train_cpp --preprocessed=cifar$seed --load-weights=$weight_file --debug
 
   tool=mlprowwise.py
@@ -50,8 +45,8 @@ train
 
 optimizers="Momentum(0.9)"
 learning_rate="Constant(0.01)"
-train
+#train
 
 learning_rate="Constant(0.01)"
 optimizers="Nesterov(0.9)"
-train
+#train

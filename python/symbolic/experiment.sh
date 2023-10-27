@@ -57,9 +57,9 @@ function train_python()
           2>&1 | tee -a $logfile
 }
 
-function train_cpp()
+function train_nerva_cpp()
 {
-  print_header "Train CIFAR10 using mlp_rowwise"
+  print_header "Train Nerva-c++ (rowwise)"
   ../../tools/dist/mlp_rowwise \
       --computation=mkl \
       --seed=$seed \
@@ -80,14 +80,36 @@ function train_cpp()
       2>&1 | tee -a $logfile
 }
 
+function train_nerva_python()
+{
+  print_header "Train Nerva-python (rowwise)"
+  ./mlprowwise.py \
+      --computation=mkl \
+      --seed=$seed \
+      --overall-density=$density \
+      --batch-size=$batch_size \
+      --epochs=$epochs \
+      --sizes=$sizes \
+      --layers=$layers \
+      --optimizers=$optimizer \
+      --init-weights=$init_weight \
+      --load-weights=$weights \
+      --learning-rate=$learning_rate \
+      --loss=$loss \
+      --dataset=$dataset \
+      --manual \
+      2>&1 | tee -a $logfile
+}
+
 # create directory logs if it does not exist
 mkdir -p logs
 
 # run the experiments
 cd ..
 train_pytorch  # N.B. this must be the first one, since it generates initial weights
+train_nerva_python
 cd "$CURRENTDIR" || exit
-train_cpp
+train_nerva_cpp
 train_python "numpy-rowwise"      --numpy      --rowwise
 train_python "tensorflow-rowwise" --tensorflow --rowwise
 train_python "torch-rowwise"      --torch      --rowwise

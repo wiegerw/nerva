@@ -388,7 +388,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--optimizers", type=str, help="The optimizer (GradientDescent, Momentum(<mu>), Nesterov(<mu>))", default="GradientDescent")
 
     # dataset
-    cmdline_parser.add_argument('--datadir', type=str, default='./data', help='the data directory (default: ./data)')
+    cmdline_parser.add_argument('--datadir', type=str, default='', help='the data directory')
     cmdline_parser.add_argument('--dataset', type=str, help='An .npz file containing train and test data')
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
     cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
@@ -424,8 +424,8 @@ def check_command_line_arguments(args):
     if args.densities and args.overall_density:
         raise RuntimeError('the options --densities and --overall-density cannot be used simultaneously')
 
-    if not args.datadir and not args.preprocessed:
-        raise RuntimeError('at least one of the options --datadir and --preprocessed must be set')
+    if not args.datadir and not args.dataset and not args.preprocessed:
+        raise RuntimeError('at least one of the options --datadir --dataset and --preprocessed must be set')
 
 
 def quote(text):

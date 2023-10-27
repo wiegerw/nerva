@@ -201,6 +201,7 @@ def make_argument_parser():
 
     # dataset
     cmdline_parser.add_argument('--datadir', type=str, default='', help='the data directory (default: ./data)')
+    cmdline_parser.add_argument('--dataset', type=str, help='An .npz file containing train and test data')
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
     cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
 
@@ -240,8 +241,8 @@ def check_command_line_arguments(args):
     if args.densities and args.overall_density:
         raise RuntimeError('the options --densities and --overall-density cannot be used simultaneously')
 
-    if not args.datadir and not args.preprocessed:
-        raise RuntimeError('at least one of the options --datadir and --preprocessed must be set')
+    if not args.datadir and not args.dataset and not args.preprocessed:
+        raise RuntimeError('at least one of the options --datadir --dataset and --preprocessed must be set')
 
 
 def quote(text):
@@ -395,6 +396,8 @@ def main():
             train_loader, test_loader = create_cifar10_augmented_dataloaders(args.batch_size, args.batch_size, args.datadir)
         else:
             train_loader, test_loader = create_cifar10_dataloaders(args.batch_size, args.batch_size, args.datadir)
+    elif args.dataset:
+        train_loader, test_loader = create_npz_dataloaders(args.dataset, batch_size=args.batch_size)
     else:
         train_loader, test_loader = None, None
 
