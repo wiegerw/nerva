@@ -260,6 +260,8 @@ def print_command_line_arguments(args):
         words = arg.split('=')
         if len(words) == 1:
             return quote(arg)
+        elif len(words) == 2 and not words[1]:
+            return ''
         else:
             return f'{words[0]}={quote(words[1])}'
 

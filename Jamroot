@@ -28,7 +28,6 @@ project nerva
        <define>EIGEN_USE_MKL_ALL
        <define>FMT_HEADER_ONLY
        <define>NERVA_TIMER
-       <define>NERVA_SYCL
 
        <include>$(MKLROOT)/include
        <linkflags>-L$(MKLROOT)/lib/intel64

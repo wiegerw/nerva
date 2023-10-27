@@ -428,8 +428,28 @@ def check_command_line_arguments(args):
         raise RuntimeError('at least one of the options --datadir and --preprocessed must be set')
 
 
+def quote(text):
+    if any(char in text for char in '^@%+=:;,./-"\''):
+        if not '"' in text:
+            return f'"{text}"'
+        elif not "'" in text:
+            return f"'{text}'"
+        else:
+            return shlex.quote(text)
+    return text
+
+
 def print_command_line_arguments(args):
-    print("python3 " + " ".join(shlex.quote(arg) if " " in arg else arg for arg in sys.argv) + '\n')
+    def print_arg(arg):
+        words = arg.split('=')
+        if len(words) == 1:
+            return quote(arg)
+        elif len(words) == 2 and not words[1]:
+            return ''
+        else:
+            return f'{words[0]}={quote(words[1])}'
+
+    print("python3 " + " ".join(print_arg(arg) for arg in sys.argv) + '\n')
 
 
 def initialize_frameworks(args):
