@@ -14,19 +14,14 @@ from symbolic.training import SGDOptions, print_epoch
 from symbolic.utilities import StopWatch, ppn
 
 
-def to_one_hot(x: torch.LongTensor, n_classes: int):
-    one_hot = torch.zeros(len(x), n_classes, dtype=torch.float)
-    one_hot.scatter_(1, x.unsqueeze(1), 1)
-    return one_hot
-
-
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
     N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
     for X, T in data_loader:
         Y = M.feedforward(X)
-        predicted = Y.argmax(dim=1)  # the predicted classes for the batch
-        total_correct += (predicted == T).sum().item()
+        predicted = Y.argmax(axis=1)  # the predicted classes for the batch
+        targets = T.argmax(axis=1)    # the expected classes
+        total_correct += (predicted == targets).sum().item()
 
     return total_correct / N
 
@@ -34,9 +29,7 @@ def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
 def compute_loss(M: MultilayerPerceptron, data_loader: DataLoader, loss: LossFunction):
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
-    num_classes = M.layers[-1].output_size()
     for X, T in data_loader:
-        T = to_one_hot(T, num_classes)
         Y = M.feedforward(X)
         total_loss += loss(Y, T)
 
@@ -64,14 +57,12 @@ def sgd(M: MultilayerPerceptron,
     lr = learning_rate(0)
     compute_statistics(M, lr, loss, train_loader, test_loader, epoch=0)
     training_time = 0.0
-    num_classes = M.layers[-1].output_size()
 
     for epoch in range(epochs):
         timer = StopWatch()
         lr = learning_rate(epoch)  # update the learning at the start of each epoch
 
         for k, (X, T) in enumerate(train_loader):
-            T = to_one_hot(T, num_classes)
             Y = M.feedforward(X)
             DY = loss.gradient(Y, T) / Y.shape[0]
 

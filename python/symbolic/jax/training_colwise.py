@@ -5,21 +5,14 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from typing import List
-import numpy as np
 from symbolic.learning_rate import parse_learning_rate, LearningRateScheduler
 from symbolic.jax.datasets import DataLoader, create_npz_dataloaders
 from symbolic.jax.loss_functions_colwise import *
 from symbolic.jax.multilayer_perceptron_colwise import MultilayerPerceptron
 from symbolic.jax.parse_mlp_colwise import parse_multilayer_perceptron, parse_loss_function
-from symbolic.jax.utilities import set_numpy_options
+from symbolic.jax.utilities import pp, set_numpy_options
 from symbolic.training import SGDOptions, print_epoch
-from symbolic.utilities import StopWatch, ppn
-
-
-def to_one_hot(x: jnp.ndarray, n_classes: int):
-    one_hot = np.zeros((n_classes, len(x)), dtype=float)
-    one_hot[x, np.arange(len(x))] = 1
-    return jnp.array(one_hot)
+from symbolic.utilities import StopWatch
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
@@ -28,7 +21,8 @@ def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
     for X, T in data_loader:
         Y = M.feedforward(X)
         predicted = Y.argmax(axis=0)  # the predicted classes for the batch
-        total_correct += (predicted == T).sum().item()
+        targets = T.argmax(axis=0)    # the expected classes
+        total_correct += (predicted == targets).sum().item()
 
     return total_correct / N
 
@@ -36,9 +30,7 @@ def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
 def compute_loss(M: MultilayerPerceptron, data_loader: DataLoader, loss: LossFunction):
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
-    num_classes = M.layers[-1].output_size()
     for X, T in data_loader:
-        T = to_one_hot(T, num_classes)
         Y = M.feedforward(X)
         total_loss += loss(Y, T)
 
@@ -66,23 +58,21 @@ def sgd(M: MultilayerPerceptron,
     lr = learning_rate(0)
     compute_statistics(M, lr, loss, train_loader, test_loader, epoch=0)
     training_time = 0.0
-    num_classes = M.layers[-1].output_size()
 
     for epoch in range(epochs):
         timer = StopWatch()
         lr = learning_rate(epoch)  # update the learning at the start of each epoch
 
         for k, (X, T) in enumerate(train_loader):
-            T = to_one_hot(T, num_classes)
             Y = M.feedforward(X)
-            DY = loss.gradient(Y, T) / Y.shape[0]
+            DY = loss.gradient(Y, T) / Y.shape[1]
 
             if SGDOptions.debug:
                 print(f'epoch: {epoch} batch: {k}')
                 M.info()
-                ppn("X", X.T)
-                ppn("Y", Y.T)
-                ppn("DY", DY.T)
+                pp("X", X.T)
+                pp("Y", Y.T)
+                pp("DY", DY.T)
 
             M.backpropagate(Y, DY)
             M.optimize(lr)

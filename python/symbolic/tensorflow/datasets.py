@@ -11,33 +11,49 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 
 
+def to_one_hot_rowwise(x: tf.Tensor, n_classes: int):
+    one_hot = tf.one_hot(x, n_classes, dtype=tf.float32, axis=1)
+    return one_hot
+
+
+def to_one_hot_colwise(x: tf.Tensor, n_classes: int):
+    one_hot = tf.one_hot(x, n_classes, dtype=tf.float32, axis=0)
+    return one_hot
+
+
 class MemoryDataLoader(object):
     """
     A data loader with an interface similar to torch.utils.data.DataLoader.
     """
 
-    def __init__(self, Xdata: tf.Tensor, Tdata: tf.Tensor, batch_size: int, rowwise=True):
+    def __init__(self, Xdata: tf.Tensor, Tdata: tf.Tensor, batch_size: int, rowwise=True, num_classes=0):
         """
         :param Xdata: a dataset with row layout
-        :param Tdata: an integer vector containing the targets
+        :param Tdata: the expected targets. In case of a classification task the targets may be specified as a vector
+                      of integers that denote the expected classes. In such a case the targets will be expanded on the
+                      fly using one hot encoding.
         :param batch_size: the batch size
         :param rowwise: determines the layout of the batches (column or row layout)
+        :param num_classes: the number of classes in case of a classification problem, 0 otherwise
         """
         self.Xdata = Xdata
         self.Tdata = Tdata
         self.batch_size = batch_size
         self.dataset = Xdata
         self.rowwise = rowwise
+        self.num_classes = int(tf.reduce_max(Tdata) + 1) if num_classes == 0 and len(Tdata.shape) == 1 else num_classes
 
     def __iter__(self):
         N = self.Xdata.shape[0]  # N is the number of examples
         K = N // self.batch_size  # K is the number of batches
         for k in range(K):
             batch = range(k * self.batch_size, (k + 1) * self.batch_size)
+            Xbatch = tf.gather(self.Xdata, batch)
+            Tbatch = tf.gather(self.Tdata, batch)
             if self.rowwise:
-                yield tf.gather(self.Xdata, batch), tf.gather(self.Tdata, batch)
+                yield Xbatch, to_one_hot_rowwise(Tbatch, self.num_classes) if self.num_classes else Tbatch
             else:
-                yield tf.transpose(tf.gather(self.Xdata, batch)), tf.gather(self.Tdata, batch)
+                yield tf.transpose(Xbatch), to_one_hot_colwise(Tbatch, self.num_classes) if self.num_classes else Tbatch
 
     def __len__(self):
         """

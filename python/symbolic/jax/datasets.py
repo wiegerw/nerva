@@ -5,8 +5,20 @@
 from pathlib import Path
 from typing import Tuple, Union
 
-import jax
+import numpy as np
 import jax.numpy as jnp
+
+
+def to_one_hot_rowwise(x: jnp.ndarray, n_classes: int):
+    one_hot = np.zeros((len(x), n_classes), dtype=float)
+    one_hot[np.arange(len(x)), x] = 1
+    return jnp.array(one_hot)
+
+
+def to_one_hot_colwise(x: jnp.ndarray, n_classes: int):
+    one_hot = np.zeros((n_classes, len(x)), dtype=float)
+    one_hot[x, np.arange(len(x))] = 1
+    return jnp.array(one_hot)
 
 
 class MemoryDataLoader(object):
@@ -14,28 +26,34 @@ class MemoryDataLoader(object):
     A data loader with an interface similar to torch.utils.data.DataLoader.
     """
 
-    def __init__(self, Xdata: jnp.ndarray, Tdata: jnp.ndarray, batch_size: int, rowwise=True):
+    def __init__(self, Xdata: jnp.ndarray, Tdata: jnp.ndarray, batch_size: int, rowwise=True, num_classes=0):
         """
         :param Xdata: a dataset with row layout
-        :param Tdata: an integer vector containing the targets
+        :param Tdata: the expected targets. In case of a classification task the targets may be specified as a vector
+                      of integers that denote the expected classes. In such a case the targets will be expanded on the
+                      fly using one hot encoding.
         :param batch_size: the batch size
         :param rowwise: determines the layout of the batches (column or row layout)
+        :param num_classes: the number of classes in case of a classification problem, 0 otherwise
         """
         self.Xdata = Xdata
         self.Tdata = Tdata
         self.batch_size = batch_size
         self.dataset = Xdata
         self.rowwise = rowwise
+        self.num_classes = int(Tdata.max() + 1) if num_classes == 0 and len(Tdata.shape) == 1 else num_classes
 
     def __iter__(self):
         N = self.Xdata.shape[0]  # N is the number of examples
         K = N // self.batch_size  # K is the number of batches
         for k in range(K):
             batch = jnp.array(range(k * self.batch_size, (k + 1) * self.batch_size))
+            Xbatch = self.Xdata[batch]
+            Tbatch = self.Tdata[batch]
             if self.rowwise:
-                yield self.Xdata[batch], self.Tdata[batch]
+                yield self.Xdata[batch], to_one_hot_rowwise(Tbatch, self.num_classes) if self.num_classes else Tbatch
             else:
-                yield self.Xdata[batch].T, self.Tdata[batch]
+                yield self.Xdata[batch].T, to_one_hot_colwise(Tbatch, self.num_classes) if self.num_classes else Tbatch
 
     def __len__(self):
         """
