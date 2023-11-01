@@ -3,6 +3,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import torch
+
 from symbolic.optimizers import GradientDescentOptimizer
 
 

@@ -5,12 +5,13 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from typing import List
-from symbolic.learning_rate import parse_learning_rate, LearningRateScheduler
+
 from symbolic.jax.datasets import DataLoader, create_npz_dataloaders
 from symbolic.jax.loss_functions_colwise import *
 from symbolic.jax.multilayer_perceptron_colwise import MultilayerPerceptron
 from symbolic.jax.parse_mlp_colwise import parse_multilayer_perceptron, parse_loss_function
 from symbolic.jax.utilities import pp, set_numpy_options
+from symbolic.learning_rate import parse_learning_rate, LearningRateScheduler
 from symbolic.training import SGDOptions, print_epoch
 from symbolic.utilities import StopWatch
 

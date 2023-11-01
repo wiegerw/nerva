@@ -3,8 +3,10 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import math
+
 from symbolic.tensorflow.activation_functions import *
 from symbolic.tensorflow.softmax_functions import *
+
 
 # Naming conventions:
 # - lowercase functions operate on vectors (y and t)

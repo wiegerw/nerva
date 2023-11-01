@@ -4,13 +4,13 @@
 
 from typing import List
 
+from symbolic.torch.layers_rowwise import BatchNormalizationLayer, Layer, LinearLayer, SigmoidLayer, SoftmaxLayer, \
+    LogSoftmaxLayer, SReLULayer, ActivationLayer
 from symbolic.torch.loss_functions_rowwise import LossFunction, SquaredErrorLossFunction, MeanSquaredErrorLossFunction, \
     CrossEntropyLossFunction, StableSoftmaxCrossEntropyLossFunction, LogisticCrossEntropyLossFunction, \
     NegativeLogLikelihoodLossFunction
-from symbolic.torch.parse_mlp import parse_activation
-from symbolic.torch.layers_rowwise import BatchNormalizationLayer, Layer, LinearLayer, SigmoidLayer, SoftmaxLayer, \
-    LogSoftmaxLayer, SReLULayer, ActivationLayer
 from symbolic.torch.multilayer_perceptron_rowwise import MultilayerPerceptron
+from symbolic.torch.parse_mlp import parse_activation
 
 
 def parse_multilayer_perceptron(layer_specifications: List[str],

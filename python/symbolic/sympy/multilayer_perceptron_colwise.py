@@ -2,8 +2,8 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from symbolic.utilities import load_dict_from_npz
 from symbolic.sympy.layers_colwise import *
+from symbolic.utilities import load_dict_from_npz
 from symbolic.utilities import ppn
 
 Matrix = sp.Matrix

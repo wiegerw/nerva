@@ -2,9 +2,6 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from collections.abc import Callable
-from typing import Tuple, Any
-
 from symbolic.numpy.activation_functions import *
 from symbolic.numpy.parse_mlp import parse_optimizer
 from symbolic.numpy.softmax_functions import *

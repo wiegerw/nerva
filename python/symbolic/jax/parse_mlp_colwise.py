@@ -10,7 +10,7 @@ from symbolic.jax.loss_functions_colwise import LossFunction, SquaredErrorLossFu
     CrossEntropyLossFunction, StableSoftmaxCrossEntropyLossFunction, LogisticCrossEntropyLossFunction, \
     NegativeLogLikelihoodLossFunction
 from symbolic.jax.multilayer_perceptron_colwise import MultilayerPerceptron
-from symbolic.jax.parse_mlp import parse_optimizer, parse_activation
+from symbolic.jax.parse_mlp import parse_activation
 
 
 def parse_multilayer_perceptron(layer_specifications: List[str],

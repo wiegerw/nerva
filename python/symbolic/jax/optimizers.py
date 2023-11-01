@@ -6,6 +6,7 @@ from typing import List
 
 import jax.numpy as jnp
 
+
 class Optimizer(object):
     def update(self, eta):
         raise NotImplementedError

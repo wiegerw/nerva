@@ -5,6 +5,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from typing import List
+
 from symbolic.learning_rate import parse_learning_rate, LearningRateScheduler
 from symbolic.numpy.datasets import DataLoader, create_npz_dataloaders
 from symbolic.numpy.loss_functions_colwise import *

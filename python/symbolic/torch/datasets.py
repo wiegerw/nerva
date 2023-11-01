@@ -7,7 +7,6 @@ from typing import Tuple, Union
 
 import torch
 
-from symbolic.torch.utilities import pp
 from symbolic.utilities import load_dict_from_npz
 
 

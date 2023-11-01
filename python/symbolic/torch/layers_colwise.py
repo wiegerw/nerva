@@ -2,14 +2,11 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from collections.abc import Callable
-from typing import Tuple, Any
-
+from symbolic.optimizers import CompositeOptimizer
 from symbolic.torch.activation_functions import *
 from symbolic.torch.parse_mlp import parse_optimizer
 from symbolic.torch.softmax_functions import *
 from symbolic.torch.weight_initializers import set_layer_weights
-from symbolic.optimizers import CompositeOptimizer
 
 Matrix = torch.Tensor
 

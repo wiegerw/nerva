@@ -4,6 +4,7 @@
 
 import numpy as np
 import sympy as sp
+
 from symbolic.sympy.matrix_operations import zeros
 
 Matrix = sp.Matrix

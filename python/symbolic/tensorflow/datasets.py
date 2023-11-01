@@ -2,11 +2,12 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
+import os
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Tuple
 
 import numpy as np
-import os
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 

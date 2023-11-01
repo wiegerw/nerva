@@ -10,7 +10,7 @@ from symbolic.numpy.loss_functions_rowwise import LossFunction, SquaredErrorLoss
     CrossEntropyLossFunction, StableSoftmaxCrossEntropyLossFunction, LogisticCrossEntropyLossFunction, \
     NegativeLogLikelihoodLossFunction
 from symbolic.numpy.multilayer_perceptron_rowwise import MultilayerPerceptron
-from symbolic.numpy.parse_mlp import parse_optimizer, parse_activation
+from symbolic.numpy.parse_mlp import parse_activation
 
 
 def parse_multilayer_perceptron(layer_specifications: List[str],

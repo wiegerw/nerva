@@ -3,10 +3,10 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Tuple
 
-import numpy as np
 import jax.numpy as jnp
+import numpy as np
 
 
 def to_one_hot_rowwise(x: jnp.ndarray, n_classes: int):

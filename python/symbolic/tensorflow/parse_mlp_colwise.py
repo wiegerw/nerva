@@ -9,7 +9,7 @@ from symbolic.tensorflow.loss_functions_colwise import LossFunction, SquaredErro
     MeanSquaredErrorLossFunction, CrossEntropyLossFunction, StableSoftmaxCrossEntropyLossFunction, \
     LogisticCrossEntropyLossFunction, NegativeLogLikelihoodLossFunction
 from symbolic.tensorflow.multilayer_perceptron_colwise import MultilayerPerceptron
-from symbolic.tensorflow.parse_mlp import parse_optimizer, parse_activation
+from symbolic.tensorflow.parse_mlp import parse_activation
 
 
 def parse_multilayer_perceptron(layer_specifications: List[str],

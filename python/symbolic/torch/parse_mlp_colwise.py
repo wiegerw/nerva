@@ -3,13 +3,13 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 from typing import List
 
+from symbolic.torch.layers_colwise import BatchNormalizationLayer, Layer, LinearLayer, SigmoidLayer, SoftmaxLayer, \
+    LogSoftmaxLayer, SReLULayer, ActivationLayer
 from symbolic.torch.loss_functions_colwise import LossFunction, SquaredErrorLossFunction, MeanSquaredErrorLossFunction, \
     CrossEntropyLossFunction, StableSoftmaxCrossEntropyLossFunction, LogisticCrossEntropyLossFunction, \
     NegativeLogLikelihoodLossFunction
-from symbolic.torch.parse_mlp import parse_activation, parse_optimizer
-from symbolic.torch.layers_colwise import BatchNormalizationLayer, Layer, LinearLayer, SigmoidLayer, SoftmaxLayer, \
-    LogSoftmaxLayer, SReLULayer, ActivationLayer
 from symbolic.torch.multilayer_perceptron_colwise import MultilayerPerceptron
+from symbolic.torch.parse_mlp import parse_activation
 
 
 def parse_multilayer_perceptron(layer_specifications: List[str],
