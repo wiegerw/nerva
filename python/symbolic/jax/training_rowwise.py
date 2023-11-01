@@ -60,8 +60,7 @@ def sgd(M: MultilayerPerceptron,
         loss: LossFunction,
         learning_rate: LearningRateScheduler,
         train_loader: DataLoader,
-        test_loader: DataLoader,
-        batch_size: int
+        test_loader: DataLoader
        ):
 
     lr = learning_rate(0)
@@ -76,7 +75,7 @@ def sgd(M: MultilayerPerceptron,
         for k, (X, T) in enumerate(train_loader):
             T = to_one_hot(T, num_classes)
             Y = M.feedforward(X)
-            DY = loss.gradient(Y, T) / batch_size
+            DY = loss.gradient(Y, T) / Y.shape[0]
 
             if SGDOptions.debug:
                 print(f'epoch: {epoch} batch: {k}')
@@ -114,7 +113,7 @@ def train(layer_specifications: List[str],
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers)
     M.load_weights_and_bias(weights_and_bias_file)
     train_loader, test_loader = create_npz_dataloaders(dataset_file, batch_size=batch_size)
-    sgd(M, epochs, loss, learning_rate, train_loader, test_loader, batch_size)
+    sgd(M, epochs, loss, learning_rate, train_loader, test_loader)
 
 
 if __name__ == '__main__':
