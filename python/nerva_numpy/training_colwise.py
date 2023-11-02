@@ -4,13 +4,13 @@
 
 from typing import List
 
-from symbolic.learning_rate import parse_learning_rate, LearningRateScheduler
 from nerva_numpy.datasets import DataLoader, create_npz_dataloaders
+from nerva_numpy.learning_rate import parse_learning_rate, LearningRateScheduler
 from nerva_numpy.loss_functions_colwise import *
 from nerva_numpy.multilayer_perceptron_colwise import MultilayerPerceptron
 from nerva_numpy.parse_mlp_colwise import parse_multilayer_perceptron, parse_loss_function
-from nerva_numpy.utilities import pp, set_numpy_options, StopWatch
 from nerva_numpy.training import SGDOptions, print_epoch
+from nerva_numpy.utilities import pp, set_numpy_options, StopWatch
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):

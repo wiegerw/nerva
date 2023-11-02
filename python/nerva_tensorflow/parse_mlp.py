@@ -7,7 +7,7 @@ from typing import Callable, Any
 from nerva_tensorflow.activation_functions import ActivationFunction, ReLUActivation, HyperbolicTangentActivation, \
     AllReLUActivation, LeakyReLUActivation, SReLUActivation, SigmoidActivation
 from nerva_tensorflow.optimizers import Optimizer, GradientDescentOptimizer, MomentumOptimizer, NesterovOptimizer
-from utilities import parse_function_call
+from nerva_tensorflow.utilities import parse_function_call
 
 
 def parse_activation(text: str) -> ActivationFunction:

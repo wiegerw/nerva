@@ -7,7 +7,7 @@ from typing import Callable, Any
 from nerva_numpy.activation_functions import SReLUActivation, ActivationFunction, ReLUActivation, \
     HyperbolicTangentActivation, AllReLUActivation, LeakyReLUActivation, SigmoidActivation
 from nerva_numpy.optimizers import Optimizer, GradientDescentOptimizer, MomentumOptimizer, NesterovOptimizer
-from utilities import parse_function_call
+from nerva_numpy.utilities import parse_function_call
 
 
 def parse_activation(text: str) -> ActivationFunction:

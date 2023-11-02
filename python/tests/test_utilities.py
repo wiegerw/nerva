@@ -121,14 +121,14 @@ def parse_function_call(text: str) -> Tuple[str, Dict[str, str]]:
     raise RuntimeError(f'Could not parse function call "{text}"')
 
 
-def ppn(name: str, x: Union[sp.Matrix, np.ndarray, torch.Tensor, tf.Tensor, tf.Variable, jnp.ndarray]):
-    """
-    Pretty print in NumPy format
-    :param name: the name of the matrix
-    :param x: a matrix
-    """
-    x = to_numpy(x)
-    return symbolic.numpy.utilities.pp(name, x)
+# def ppn(name: str, x: Union[sp.Matrix, np.ndarray, torch.Tensor, tf.Tensor, tf.Variable, jnp.ndarray]):
+#     """
+#     Pretty print in NumPy format
+#     :param name: the name of the matrix
+#     :param x: a matrix
+#     """
+#     x = to_numpy(x)
+#     return nerva_numpy.utilities.pp(name, x)
 
 
 def load_dict_from_npz(filename: str) -> Dict[str, Union[torch.Tensor, torch.LongTensor]]:

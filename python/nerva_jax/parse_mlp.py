@@ -7,7 +7,7 @@ from typing import Callable, Any
 from nerva_jax.activation_functions import SReLUActivation, ActivationFunction, ReLUActivation, \
     HyperbolicTangentActivation, AllReLUActivation, LeakyReLUActivation, SigmoidActivation
 from nerva_jax.optimizers import Optimizer, GradientDescentOptimizer, MomentumOptimizer, NesterovOptimizer
-from utilities import parse_function_call
+from nerva_jax.utilities import parse_function_call
 
 
 def parse_activation(text: str) -> ActivationFunction:

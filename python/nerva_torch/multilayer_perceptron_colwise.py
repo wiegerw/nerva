@@ -3,8 +3,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from nerva_torch.layers_colwise import *
-from utilities import load_dict_from_npz
-from utilities import ppn
+from nerva_torch.utilities import pp, load_dict_from_npz
 
 Matrix = torch.Tensor
 
@@ -36,8 +35,8 @@ class MultilayerPerceptron(object):
         index = 1
         for layer in self.layers:
             if isinstance(layer, LinearLayer):
-                ppn(f'W{index}', layer.W)
-                ppn(f'b{index}', layer.b)
+                pp(f'W{index}', layer.W)
+                pp(f'b{index}', layer.b)
                 index += 1
 
     def load_weights_and_bias(self, filename: str):

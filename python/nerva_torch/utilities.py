@@ -2,9 +2,11 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-import numpy as np
+import re
 import time
+from typing import Tuple, Dict, Union
 
+import numpy as np
 import torch
 
 
@@ -36,3 +38,43 @@ class StopWatch(object):
 
     def reset(self):
         self.start = time.perf_counter()
+
+
+def parse_function_call(text: str) -> Tuple[str, Dict[str, str]]:
+    text = text.strip()
+    try:
+        if re.match(r"\w*$", text):  # no arguments case
+            name = text
+            return name, {}
+        else:
+            m = re.match(r"(\w*)\((.*?)\)", text)
+            name = m.group(1)
+            args = {}
+            for arg in m.group(2).split(','):
+                key, value = arg.split('=')
+                key = key.strip()
+                value = value.strip()
+                if key in args:
+                    raise ValueError(f'Duplicate key in function call "{text}"')
+                args[key] = value
+            return name, args
+    except Exception as e:
+        print(e)
+        pass
+    raise RuntimeError(f'Could not parse function call "{text}"')
+
+
+def load_dict_from_npz(filename: str) -> Dict[str, Union[torch.Tensor, torch.LongTensor]]:
+    """
+    Loads a dictionary from a file in .npz format
+    :param filename: a file name
+    :return: a dictionary
+    """
+    def make_tensor(x: np.ndarray) -> Union[torch.Tensor, torch.LongTensor]:
+        if np.issubdtype(x.dtype, np.integer):
+            return torch.LongTensor(x)
+        return torch.Tensor(x)
+
+    data = dict(np.load(filename, allow_pickle=True))
+    data = {key: make_tensor(value) for key, value in data.items()}
+    return data

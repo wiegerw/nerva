@@ -14,7 +14,7 @@ learning_rate="Constant(0.01)"
 loss=SoftmaxCrossEntropy
 batch_size=100
 epochs=1
-dataset="cifar1/epoch0.npz"
+dataset="data/cifar10.npz"
 logfile="experiment.log"
 weights="experiment-weights.npz"
 

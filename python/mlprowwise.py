@@ -200,7 +200,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--optimizers", type=str, help="The optimizer (GradientDescent, Momentum(<mu>), Nesterov(<mu>))", default="GradientDescent")
 
     # dataset
-    cmdline_parser.add_argument('--datadir', type=str, default='', help='the data directory (default: ./data)')
+    cmdline_parser.add_argument('--datadir', type=str, default='', help='the data directory')
     cmdline_parser.add_argument('--dataset', type=str, help='An .npz file containing train and test data')
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
     cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")

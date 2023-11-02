@@ -6,7 +6,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from typing import List
-from symbolic.learning_rate import parse_learning_rate, LearningRateScheduler
+from nerva_tensorflow.learning_rate import parse_learning_rate, LearningRateScheduler
 from nerva_tensorflow.datasets import DataLoader, create_npz_dataloaders
 from nerva_tensorflow.loss_functions_colwise import *
 from nerva_tensorflow.multilayer_perceptron_colwise import MultilayerPerceptron

@@ -3,8 +3,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from nerva_numpy.layers_colwise import *
-from nerva_numpy.utilities import pp
-from utilities import load_dict_from_npz
+from nerva_numpy.utilities import pp, load_dict_from_npz
 
 Matrix = np.ndarray
 

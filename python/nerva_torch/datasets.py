@@ -7,7 +7,7 @@ from typing import Tuple, Union
 
 import torch
 
-from utilities import load_dict_from_npz
+from nerva_torch.utilities import load_dict_from_npz
 
 
 def to_one_hot_rowwise(x: torch.LongTensor, num_classes: int):
