@@ -3,6 +3,8 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import os
+import time
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import numpy as np
 import tensorflow as tf
@@ -24,3 +26,15 @@ def pp(name: str, x: tf.Tensor):
         print(f'{name} ({shape[0]})\n{x.numpy()}')
     else:
         print(f'{name} ({shape[0]}x{shape[1]})\n{x.numpy()}')
+
+
+class StopWatch(object):
+    def __init__(self):
+        self.start = time.perf_counter()
+
+    def seconds(self):
+        end = time.perf_counter()
+        return end - self.start
+
+    def reset(self):
+        self.start = time.perf_counter()

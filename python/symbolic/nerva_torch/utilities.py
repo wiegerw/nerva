@@ -3,6 +3,8 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import numpy as np
+import time
+
 import torch
 
 
@@ -22,3 +24,15 @@ def pp(name: str, x: torch.Tensor):
         print(f'{name} ({x.shape[0]})\n{x.data}')
     else:
         print(f'{name} ({x.shape[0]}x{x.shape[1]})\n{x.data}')
+
+
+class StopWatch(object):
+    def __init__(self):
+        self.start = time.perf_counter()
+
+    def seconds(self):
+        end = time.perf_counter()
+        return end - self.start
+
+    def reset(self):
+        self.start = time.perf_counter()

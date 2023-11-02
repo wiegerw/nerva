@@ -1,19 +1,16 @@
-#!/usr/bin/env python3
-
 # Copyright 2022 - 2023 Wieger Wesselink.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from typing import List
 
-from symbolic.learning_rate import parse_learning_rate, LearningRateScheduler
+from symbolic.nerva_torch.learning_rate import parse_learning_rate, LearningRateScheduler
 from symbolic.nerva_torch.datasets import DataLoader, create_npz_dataloaders
 from symbolic.nerva_torch.loss_functions_rowwise import *
 from symbolic.nerva_torch.multilayer_perceptron_rowwise import MultilayerPerceptron
 from symbolic.nerva_torch.parse_mlp_rowwise import parse_multilayer_perceptron, parse_loss_function
-from symbolic.nerva_torch.utilities import pp, set_numpy_options, set_torch_options
-from symbolic.training import SGDOptions, print_epoch
-from symbolic.utilities import StopWatch
+from symbolic.nerva_torch.utilities import pp, set_numpy_options, set_torch_options, StopWatch
+from symbolic.nerva_torch.training import SGDOptions, print_epoch
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
@@ -106,30 +103,3 @@ def train(layer_specifications: List[str],
     M.load_weights_and_bias(weights_and_bias_file)
     train_loader, test_loader = create_npz_dataloaders(dataset_file, batch_size=batch_size)
     sgd(M, epochs, loss, learning_rate, train_loader, test_loader)
-
-
-if __name__ == '__main__':
-    layer_specifications = ['ReLU', 'ReLU', 'Linear']
-    linear_layer_sizes = [3072, 1024, 512, 10]
-    linear_layer_optimizers = ['Momentum(0.9)', 'Momentum(0.9)', 'Momentum(0.9)']
-    linear_layer_weight_initializers = ['Xavier', 'Xavier', 'Xavier']
-    batch_size = 100
-    epochs = 1
-    loss = 'SoftmaxCrossEntropy'
-    learning_rate = 'Constant(0.01)'
-    weights_and_bias_file = '../../mlp-compare.npz'
-    dataset_file = '../../cifar1/epoch0.npz'
-    debug = False
-
-    train(layer_specifications,
-          linear_layer_sizes,
-          linear_layer_optimizers,
-          linear_layer_weight_initializers,
-          batch_size,
-          epochs,
-          loss,
-          learning_rate,
-          weights_and_bias_file,
-          dataset_file,
-          debug
-         )
