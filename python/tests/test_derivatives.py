@@ -5,7 +5,7 @@
 
 from typing import Union, Tuple, List
 from unittest import TestCase
-from symbolic.sympy.matrix_operations import *
+from symbolic.nerva_sympy.matrix_operations import *
 
 import sympy as sp
 

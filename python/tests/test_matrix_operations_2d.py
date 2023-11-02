@@ -8,11 +8,11 @@ from unittest import TestCase
 
 import numpy as np
 
-import symbolic.numpy.matrix_operations_2d as np_
-import symbolic.tensorflow.matrix_operations_2d as tf_
-import symbolic.torch.matrix_operations_2d as torch_
-import symbolic.sympy.matrix_operations_2d as sympy_
-import symbolic.jax.matrix_operations_2d as jnp_
+import symbolic.nerva_numpy.matrix_operations_2d as np_
+import symbolic.nerva_tensorflow.matrix_operations_2d as tf_
+import symbolic.nerva_torch.matrix_operations_2d as torch_
+import symbolic.nerva_sympy.matrix_operations_2d as sympy_
+import symbolic.nerva_jax.matrix_operations_2d as jnp_
 from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, to_jax
 
 

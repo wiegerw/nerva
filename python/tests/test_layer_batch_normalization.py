@@ -7,7 +7,7 @@
 # see also https://docs.sympy.org/latest/modules/matrices/matrices.html
 
 from unittest import TestCase
-from symbolic.sympy.matrix_operations import *
+from symbolic.nerva_sympy.matrix_operations import *
 from symbolic.utilities import *
 
 

@@ -9,11 +9,11 @@ from unittest import TestCase
 import numpy as np
 
 from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, to_jax, to_eigen
-import symbolic.numpy.activation_functions as np_
-import symbolic.tensorflow.activation_functions as tf_
-import symbolic.torch.activation_functions as torch_
-import symbolic.sympy.activation_functions as sympy_
-import symbolic.jax.activation_functions as jnp_
+import symbolic.nerva_numpy.activation_functions as np_
+import symbolic.nerva_tensorflow.activation_functions as tf_
+import symbolic.nerva_torch.activation_functions as torch_
+import symbolic.nerva_sympy.activation_functions as sympy_
+import symbolic.nerva_jax.activation_functions as jnp_
 import nervalibcolwise as eigen_
 
 

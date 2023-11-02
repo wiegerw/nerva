@@ -4,7 +4,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-from symbolic.sympy.matrix_operations import *
+from symbolic.nerva_sympy.matrix_operations import *
 
 import sympy as sp
 

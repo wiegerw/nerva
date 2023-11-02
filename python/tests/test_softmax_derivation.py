@@ -4,9 +4,9 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-from symbolic.sympy.matrix_operations import *
-from symbolic.sympy.softmax_functions import *
-from symbolic.sympy.loss_functions import *
+from symbolic.nerva_sympy.matrix_operations import *
+from symbolic.nerva_sympy.softmax_functions import *
+from symbolic.nerva_sympy.loss_functions import *
 
 import sympy as sp
 

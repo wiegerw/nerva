@@ -11,13 +11,13 @@ import random
 import numpy as np
 import sympy as sp
 
-from symbolic.sympy.matrix_operations import substitute
+from symbolic.nerva_sympy.matrix_operations import substitute
 from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, matrix, equal_matrices, to_jax, to_eigen
-import symbolic.numpy.loss_functions as np_
-import symbolic.tensorflow.loss_functions as tf_
-import symbolic.torch.loss_functions as torch_
-import symbolic.sympy.loss_functions as sympy_
-import symbolic.jax.loss_functions as jnp_
+import symbolic.nerva_numpy.loss_functions as np_
+import symbolic.nerva_tensorflow.loss_functions as tf_
+import symbolic.nerva_torch.loss_functions as torch_
+import symbolic.nerva_sympy.loss_functions as sympy_
+import symbolic.nerva_jax.loss_functions as jnp_
 import nervalibcolwise as eigen_
 
 def instantiate_one_hot_colwise(X: sp.Matrix) -> sp.Matrix:

@@ -15,7 +15,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import torch
 from sympy import Matrix
-import symbolic.numpy.utilities
+import symbolic.nerva_numpy.utilities
 
 
 def matrix(name: str, rows: int, columns: int) -> Matrix:

@@ -6,7 +6,7 @@
 
 from unittest import TestCase
 
-from symbolic.sympy.matrix_operations import *
+from symbolic.nerva_sympy.matrix_operations import *
 
 
 class TestLemmas(TestCase):
