@@ -18,7 +18,7 @@ import symbolic.tensorflow.loss_functions as tf_
 import symbolic.torch.loss_functions as torch_
 import symbolic.sympy.loss_functions as sympy_
 import symbolic.jax.loss_functions as jnp_
-import nervalib as eigen_
+import nervalibcolwise as eigen_
 
 def instantiate_one_hot_colwise(X: sp.Matrix) -> sp.Matrix:
     m, n = X.shape

@@ -14,7 +14,7 @@ import symbolic.tensorflow.activation_functions as tf_
 import symbolic.torch.activation_functions as torch_
 import symbolic.sympy.activation_functions as sympy_
 import symbolic.jax.activation_functions as jnp_
-import nervalib as eigen_
+import nervalibcolwise as eigen_
 
 
 class TestActivationFunctions(TestCase):
