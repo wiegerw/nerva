@@ -2,7 +2,12 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
+import numpy as np
 import torch
+
+
+def set_numpy_options():
+    np.set_printoptions(precision=8, edgeitems=3, threshold=5, suppress=True, linewidth=160)
 
 
 def set_torch_options():

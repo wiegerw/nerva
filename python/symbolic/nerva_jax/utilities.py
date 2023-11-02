@@ -5,7 +5,7 @@
 import jax.numpy as jnp
 
 
-def set_numpy_options():
+def set_jax_options():
     jnp.set_printoptions(precision=8, edgeitems=3, threshold=5, suppress=True, linewidth=160)
 
 

@@ -11,8 +11,9 @@ from symbolic.nerva_torch.datasets import DataLoader, create_npz_dataloaders
 from symbolic.nerva_torch.loss_functions_colwise import *
 from symbolic.nerva_torch.multilayer_perceptron_colwise import MultilayerPerceptron
 from symbolic.nerva_torch.parse_mlp_colwise import parse_multilayer_perceptron, parse_loss_function
+from symbolic.nerva_torch.utilities import pp, set_numpy_options, set_torch_options
 from symbolic.training import SGDOptions, print_epoch
-from symbolic.utilities import StopWatch, ppn
+from symbolic.utilities import StopWatch
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
@@ -70,9 +71,9 @@ def sgd(M: MultilayerPerceptron,
             if SGDOptions.debug:
                 print(f'epoch: {epoch} batch: {k}')
                 M.info()
-                ppn("X", X.T)
-                ppn("Y", Y.T)
-                ppn("DY", DY.T)
+                pp("X", X.T)
+                pp("Y", Y.T)
+                pp("DY", DY.T)
 
             M.backpropagate(Y, DY)
             M.optimize(lr)
@@ -97,6 +98,8 @@ def train(layer_specifications: List[str],
           debug: bool
          ):
     SGDOptions.debug = debug
+    set_numpy_options()
+    set_torch_options()
     loss = parse_loss_function(loss)
     learning_rate = parse_learning_rate(learning_rate)
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers)

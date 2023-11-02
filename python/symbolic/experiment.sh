@@ -40,9 +40,8 @@ function train_pytorch()
 
 function train_python()
 {
-  shift
-  extra_args=$*
-  python3 -u mlp.py \
+  tool=$1
+  python3 -u $tool \
           --layers=$layers \
           --sizes=$sizes \
           --optimizers=$optimizers \
@@ -53,7 +52,6 @@ function train_python()
           --loss=$loss \
           --learning-rate=$learning_rate \
           --dataset=$dataset \
-          $extra_args \
           2>&1 | tee -a $logfile
 }
 
@@ -110,7 +108,11 @@ train_pytorch  # N.B. this must be the first one, since it generates initial wei
 train_nerva_python
 cd "$CURRENTDIR" || exit
 train_nerva_cpp
-train_python "numpy-rowwise"      --numpy      --rowwise
-train_python "tensorflow-rowwise" --tensorflow --rowwise
-train_python "torch-rowwise"      --torch      --rowwise
-train_python "jax-rowwise"        --jax        --rowwise
+train_python mlp_numpy_colwise.py
+train_python mlp_numpy_rowwise.py
+train_python mlp_tensorflow_colwise.py
+train_python mlp_tensorflow_rowwise.py
+train_python mlp_torch_colwise.py
+train_python mlp_torch_rowwise.py
+train_python mlp_jax_colwise.py
+train_python mlp_jax_rowwise.py

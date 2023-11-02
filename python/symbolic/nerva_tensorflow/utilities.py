@@ -4,7 +4,12 @@
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import numpy as np
 import tensorflow as tf
+
+
+def set_numpy_options():
+    np.set_printoptions(precision=8, edgeitems=3, threshold=5, suppress=True, linewidth=160)
 
 
 def set_tensorflow_options():

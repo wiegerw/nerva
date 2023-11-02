@@ -13,8 +13,9 @@ from symbolic.nerva_tensorflow.datasets import DataLoader, create_npz_dataloader
 from symbolic.nerva_tensorflow.loss_functions_colwise import *
 from symbolic.nerva_tensorflow.multilayer_perceptron_colwise import MultilayerPerceptron
 from symbolic.nerva_tensorflow.parse_mlp_colwise import parse_multilayer_perceptron, parse_loss_function
+from symbolic.nerva_tensorflow.utilities import pp, set_numpy_options, set_tensorflow_options
 from symbolic.training import SGDOptions, print_epoch
-from symbolic.utilities import StopWatch, ppn
+from symbolic.utilities import StopWatch
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
@@ -71,9 +72,9 @@ def sgd(M: MultilayerPerceptron,
             if SGDOptions.debug:
                 print(f'epoch: {epoch} batch: {k}')
                 M.info()
-                ppn("X", tf.transpose(X))
-                ppn("Y", tf.transpose(Y))
-                ppn("DY", tf.transpose(DY))
+                pp("X", tf.transpose(X))
+                pp("Y", tf.transpose(Y))
+                pp("DY", tf.transpose(DY))
 
             M.backpropagate(Y, DY)
             M.optimize(lr)
@@ -98,6 +99,8 @@ def train(layer_specifications: List[str],
           debug: bool
          ):
     SGDOptions.debug = debug
+    set_numpy_options()
+    set_tensorflow_options()
     loss = parse_loss_function(loss)
     learning_rate = parse_learning_rate(learning_rate)
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers)

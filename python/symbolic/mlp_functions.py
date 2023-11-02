@@ -6,18 +6,6 @@
 
 import argparse
 
-import symbolic.nerva_jax.training_colwise
-import symbolic.nerva_jax.training_rowwise
-import symbolic.nerva_numpy.training_colwise
-import symbolic.nerva_numpy.training_rowwise
-import symbolic.nerva_tensorflow.training_colwise
-import symbolic.nerva_tensorflow.training_rowwise
-import symbolic.nerva_torch.training_colwise
-import symbolic.nerva_torch.training_rowwise
-from symbolic.nerva_numpy.utilities import set_numpy_options
-from symbolic.nerva_tensorflow.utilities import set_tensorflow_options
-from symbolic.nerva_torch.utilities import set_torch_options
-
 
 def make_argument_parser():
     cmdline_parser = argparse.ArgumentParser()
@@ -66,53 +54,3 @@ def print_header(header: str):
     print('===========================================')
     print(f'               {header}')
     print('===========================================')
-
-
-def main():
-    cmdline_parser = make_argument_parser()
-    args = cmdline_parser.parse_args()
-
-    set_tensorflow_options()
-    set_torch_options()
-    set_numpy_options()
-
-    linear_layer_sizes = [int(s) for s in args.sizes.split(',')]
-    layer_specifications = args.layers.split(';')
-    linear_layer_weight_initializers = args.init_weights.split(',')
-    linear_layer_optimizers = args.optimizers.split(';')
-
-    train_functions = {}
-    if args.numpy and args.colwise:
-        train_functions['numpy-colwise'] = symbolic.nerva_numpy.training_colwise.train
-    if args.numpy and args.rowwise:
-        train_functions['numpy-rowwise'] = symbolic.nerva_numpy.training_rowwise.train
-    if args.tensorflow and args.colwise:
-        train_functions['tensorflow-colwise'] = symbolic.nerva_tensorflow.training_colwise.train
-    if args.tensorflow and args.rowwise:
-        train_functions['tensorflow-rowwise'] = symbolic.nerva_tensorflow.training_rowwise.train
-    if args.torch and args.colwise:
-        train_functions['torch-colwise'] = symbolic.nerva_torch.training_colwise.train
-    if args.torch and args.rowwise:
-        train_functions['torch-rowwise'] = symbolic.nerva_torch.training_rowwise.train
-    if args.jax and args.colwise:
-        train_functions['jax-colwise'] = symbolic.nerva_jax.training_colwise.train
-    if args.jax and args.rowwise:
-        train_functions['jax-rowwise'] = symbolic.nerva_jax.training_rowwise.train
-
-    for header, train in train_functions.items():
-        print_header(header)
-        train(layer_specifications,
-              linear_layer_sizes,
-              linear_layer_optimizers,
-              linear_layer_weight_initializers,
-              args.batch_size,
-              args.epochs,
-              args.loss,
-              args.learning_rate,
-              args.weights,
-              args.dataset,
-              args.debug
-             )
-
-if __name__ == '__main__':
-    main()

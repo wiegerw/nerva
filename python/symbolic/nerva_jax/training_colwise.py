@@ -10,7 +10,7 @@ from symbolic.nerva_jax.datasets import DataLoader, create_npz_dataloaders
 from symbolic.nerva_jax.loss_functions_colwise import *
 from symbolic.nerva_jax.multilayer_perceptron_colwise import MultilayerPerceptron
 from symbolic.nerva_jax.parse_mlp_colwise import parse_multilayer_perceptron, parse_loss_function
-from symbolic.nerva_jax.utilities import pp, set_numpy_options
+from symbolic.nerva_jax.utilities import pp, set_jax_options
 from symbolic.learning_rate import parse_learning_rate, LearningRateScheduler
 from symbolic.training import SGDOptions, print_epoch
 from symbolic.utilities import StopWatch
@@ -98,7 +98,7 @@ def train(layer_specifications: List[str],
           debug: bool
          ):
     SGDOptions.debug = debug
-    set_numpy_options()
+    set_jax_options()
     loss = parse_loss_function(loss)
     learning_rate = parse_learning_rate(learning_rate)
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers)
