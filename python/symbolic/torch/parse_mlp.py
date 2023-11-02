@@ -4,10 +4,9 @@
 
 from typing import Callable, Any
 
-from symbolic.optimizers import Optimizer, GradientDescentOptimizer
 from symbolic.torch.activation_functions import ActivationFunction, ReLUActivation, HyperbolicTangentActivation, \
     AllReLUActivation, LeakyReLUActivation, SReLUActivation, SigmoidActivation
-from symbolic.torch.optimizers import MomentumOptimizer, NesterovOptimizer
+from symbolic.torch.optimizers import Optimizer, GradientDescentOptimizer, MomentumOptimizer, NesterovOptimizer
 from symbolic.utilities import parse_function_call
 
 

@@ -3,10 +3,10 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from symbolic.jax.activation_functions import *
+from symbolic.jax.optimizers import CompositeOptimizer
 from symbolic.jax.parse_mlp import parse_optimizer
 from symbolic.jax.softmax_functions import *
 from symbolic.jax.weight_initializers import set_layer_weights
-from symbolic.optimizers import CompositeOptimizer
 
 Matrix = jnp.ndarray
 

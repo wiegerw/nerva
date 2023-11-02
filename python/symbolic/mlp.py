@@ -5,14 +5,15 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import argparse
+
+import symbolic.jax.training_colwise
+import symbolic.jax.training_rowwise
 import symbolic.numpy.training_colwise
 import symbolic.numpy.training_rowwise
 import symbolic.tensorflow.training_colwise
 import symbolic.tensorflow.training_rowwise
 import symbolic.torch.training_colwise
 import symbolic.torch.training_rowwise
-import symbolic.jax.training_colwise
-import symbolic.jax.training_rowwise
 from symbolic.numpy.utilities import set_numpy_options
 from symbolic.tensorflow.utilities import set_tensorflow_options
 from symbolic.torch.utilities import set_torch_options

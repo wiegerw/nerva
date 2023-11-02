@@ -3,10 +3,10 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from symbolic.numpy.activation_functions import *
+from symbolic.numpy.optimizers import CompositeOptimizer
 from symbolic.numpy.parse_mlp import parse_optimizer
 from symbolic.numpy.softmax_functions import *
 from symbolic.numpy.weight_initializers import set_layer_weights
-from symbolic.optimizers import CompositeOptimizer
 
 Matrix = np.ndarray
 

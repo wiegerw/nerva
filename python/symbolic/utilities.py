@@ -2,14 +2,15 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
+import os
 import re
 import time
 from typing import Union, Dict, Tuple
 
+import jax.numpy as jnp
 import numpy as np
 import sympy as sp
-import jax.numpy as jnp
-import os
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import torch
