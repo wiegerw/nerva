@@ -5,8 +5,8 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-from symbolic.nerva_sympy.softmax_functions import *
-from symbolic.utilities import *
+from nerva_sympy.softmax_functions import *
+from tests.test_utilities import *
 
 
 class TestSoftmaxLayers(TestCase):

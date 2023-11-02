@@ -8,12 +8,12 @@ from unittest import TestCase
 
 import numpy as np
 
-import symbolic.nerva_numpy.matrix_operations as np_
-import symbolic.nerva_tensorflow.matrix_operations as tf_
-import symbolic.nerva_torch.matrix_operations as torch_
-import symbolic.nerva_sympy.matrix_operations as sympy_
-import symbolic.nerva_jax.matrix_operations as jnp_
-from symbolic.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, to_jax
+import nerva_numpy.matrix_operations as np_
+import nerva_tensorflow.matrix_operations as tf_
+import nerva_torch.matrix_operations as torch_
+import nerva_sympy.matrix_operations as sympy_
+import nerva_jax.matrix_operations as jnp_
+from tests.test_utilities import to_numpy, to_sympy, to_torch, to_tensorflow, to_jax
 
 
 class TestMatrixOperations(TestCase):

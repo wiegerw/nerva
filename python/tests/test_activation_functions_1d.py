@@ -5,7 +5,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-from symbolic.nerva_sympy.activation_functions import *
+from nerva_sympy.activation_functions import *
 
 
 class TestActivationFunctions1D(TestCase):

@@ -3,9 +3,8 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from typing import Union, Tuple, List
 from unittest import TestCase
-from symbolic.nerva_sympy.matrix_operations import *
+from nerva_sympy.matrix_operations import *
 
 import sympy as sp
 

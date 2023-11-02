@@ -5,9 +5,9 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-from symbolic.nerva_sympy.activation_functions import *
-from symbolic.nerva_sympy.matrix_operations import *
-from symbolic.utilities import *
+from nerva_sympy.activation_functions import *
+from nerva_sympy.matrix_operations import *
+from tests.test_utilities import *
 
 
 class TestLinearLayers(TestCase):

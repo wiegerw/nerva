@@ -7,8 +7,8 @@
 # see also https://docs.sympy.org/latest/modules/matrices/matrices.html
 
 from unittest import TestCase
-from symbolic.nerva_sympy.matrix_operations import *
-from symbolic.utilities import *
+from nerva_sympy.matrix_operations import *
+from tests.test_utilities import *
 
 
 class TestBatchNormalizationLayers(TestCase):
