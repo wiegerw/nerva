@@ -51,9 +51,9 @@ class MemoryDataLoader(object):
             Xbatch = self.Xdata[batch]
             Tbatch = self.Tdata[batch]
             if self.rowwise:
-                yield self.Xdata[batch], to_one_hot_rowwise(Tbatch, self.num_classes) if self.num_classes else Tbatch
+                yield Xbatch, to_one_hot_rowwise(Tbatch, self.num_classes) if self.num_classes else Tbatch
             else:
-                yield self.Xdata[batch].T, to_one_hot_colwise(Tbatch, self.num_classes) if self.num_classes else Tbatch
+                yield Xbatch.T, to_one_hot_colwise(Tbatch, self.num_classes) if self.num_classes else Tbatch
 
     def __len__(self):
         """
