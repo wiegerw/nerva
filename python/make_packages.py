@@ -29,12 +29,27 @@ classifiers =
     Operating System :: OS Independent
 
 [options]
-package_dir = src
+package_dir =
+  = src
 packages = find:
 python_requires = >=3.10
 
 [options.packages.find]
 where = src
+'''
+
+PYPROJECT_TOML = '''
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"
+'''
+
+README_MD = '''
+# The NAME library
+This repository contains a Python implementation of multilayer perceptrons in FRAMEWORK.
 '''
 
 package_requirements = {
@@ -170,10 +185,20 @@ def join_files(path1: Path, path2: Path):
     remove_file(path2)
 
 
-def create_requirements():
+def create_requirements_files():
     for package, requirements in package_requirements.items():
         dest = Path('dist') / package_names[package] / 'requirements.txt'
         text = '\n'.join(requirements)
+        save_text(dest, text)
+
+
+def create_readme_files():
+    for package, requirements in package_requirements.items():
+        dest = Path('dist') / package_names[package] / 'README.MD'
+        text = README_MD.lstrip()
+        text = text.replace('FRAMEWORK', package_frameworks[package])
+        text = text.replace('NAME', package_names[package])
+        text = text.replace('VERSION', VERSION)
         save_text(dest, text)
 
 
@@ -184,6 +209,10 @@ def create_setup_files():
         text = text.replace('FRAMEWORK', package_frameworks[package])
         text = text.replace('NAME', package_names[package])
         text = text.replace('VERSION', VERSION)
+        save_text(dest, text)
+
+        dest = Path('dist') / package_names[package] / 'pyproject.toml'
+        text = PYPROJECT_TOML.lstrip()
         save_text(dest, text)
 
 
@@ -220,9 +249,6 @@ def copy_mlp_files():
         framework = package.replace('nerva_', '')
         target_folder = Path('dist') / package_names[package] / 'tools'
         mlp_utilities_file = source_folder / f'mlp_utilities.py'
-
-        copy_file(mlp_utilities_file, target_folder / 'mlp_utilities.py')
-
         mlp_file = target_folder / 'mlp.py'
         copy_file(source_folder / f'mlp_{framework}_rowwise.py', mlp_file)
         text = extract_function_from_file(mlp_utilities_file, 'make_argument_parser')
@@ -284,7 +310,8 @@ def fix_source_files():
 
 def main():
     make_package_folders()
-    create_requirements()
+    create_requirements_files()
+    create_readme_files()
     create_setup_files()
     copy_mlp_files()
     copy_source_files()
