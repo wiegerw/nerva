@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Copyright 2023 Wieger Wesselink.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
@@ -37,20 +35,4 @@ def make_argument_parser():
     # logging
     cmdline_parser.add_argument("--debug", help="Log intermediate values", action="store_true")
 
-    # framework
-    cmdline_parser.add_argument("--numpy", help="Train using NumPy", action="store_true")
-    cmdline_parser.add_argument("--torch", help="Train using PyTorch", action="store_true")
-    cmdline_parser.add_argument("--tensorflow", help="Train using Tensorflow", action="store_true")
-    cmdline_parser.add_argument("--jax", help="Train using JAX", action="store_true")
-
-    # layout
-    cmdline_parser.add_argument("--colwise", help="Train using data with column layout", action="store_true")
-    cmdline_parser.add_argument("--rowwise", help="Train using data with row layout", action="store_true")
-
     return cmdline_parser
-
-
-def print_header(header: str):
-    print('===========================================')
-    print(f'               {header}')
-    print('===========================================')

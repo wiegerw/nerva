@@ -105,11 +105,19 @@ mkdir -p logs
 train_pytorch  # N.B. this must be the first one, since it generates initial weights
 train_nerva_python
 train_nerva_cpp
+print_header "numpy-colwise"
 train_python mlp_numpy_colwise.py
+print_header "numpy-rowwise"
 train_python mlp_numpy_rowwise.py
+print_header "tensorflow-colwise"
 train_python mlp_tensorflow_colwise.py
+print_header "tensorflow-rowwise"
 train_python mlp_tensorflow_rowwise.py
+print_header "torch-colwise"
 train_python mlp_torch_colwise.py
+print_header "torch-rowwise"
 train_python mlp_torch_rowwise.py
+print_header "jax-colwise"
 train_python mlp_jax_colwise.py
+print_header "jax-rowwise"
 train_python mlp_jax_rowwise.py

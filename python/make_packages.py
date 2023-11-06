@@ -70,16 +70,51 @@ def save_text(path: Path, text: str):
     path.write_text(text)
 
 
+def copy_file(source: Path, target: Path):
+    print(f"Copy '{source}' to '{target}'")
+    shutil.copy(source, target)
+
+
+def create_folder(folder: Path):
+    print(f'Create folder {folder}')
+    folder.mkdir(parents=True, exist_ok=True)
+
+
 def remove_file(path: Path):
     print(f'Removing {path}')
     path.unlink()
 
 
+def replace_string_in_file(path, source, target):
+    text = path.read_text()
+    text = text.replace(source, target)
+    path.write_text(text)
+
+
+def extract_function_from_file(path: Path, function_name: str) -> str:
+    text = path.read_text().strip()
+    lines = re.split(r'\n', text)
+
+    in_function = False
+    function_lines = []
+
+    for line in lines:
+        if not in_function and f'def {function_name}(' in line:
+            in_function = True
+
+        if in_function:
+            function_lines.append(line)
+            if function_lines[-1].isspace() and function_lines[-2].isspace():
+                break
+
+    return '\n'.join(function_lines).strip()
+
+
 def make_package_folders():
     for package in package_requirements:
-        folder = package_folder(package)
-        print(f'Create folder {folder}')
-        folder.mkdir(parents=True, exist_ok=True)
+        create_folder(Path('dist') / package_names[package] / 'src' / package)
+        create_folder(Path('dist') / package_names[package] / 'tests')
+        create_folder(Path('dist') / package_names[package] / 'tools')
 
 
 def split_license(text):
@@ -159,8 +194,7 @@ def copy_source_files():
             if source_file.stem.endswith('_colwise'):
                 continue
             destination_file = destination_folder / source_file.name
-            print(f"Copy '{source_file}' to '{destination_file}'")
-            shutil.copy(source_file, destination_file)
+            copy_file(source_file, destination_file)
         join_files(destination_folder / 'loss_functions.py', destination_folder / 'loss_functions_rowwise.py')
         join_files(destination_folder / 'parse_mlp.py', destination_folder / 'parse_mlp_rowwise.py')
         join_files(destination_folder / 'softmax_functions.py', destination_folder / 'softmax_functions_rowwise.py')
@@ -169,7 +203,6 @@ def copy_source_files():
 
 def copy_test_files():
     destination_folder = Path('dist') / package_names['nerva_sympy'] / 'tests'
-    destination_folder.mkdir(parents=True, exist_ok=True)
     test_folder = Path('tests')
     for source_file in test_folder.glob('*.py'):
         if not 'sympy' in source_file.name:
@@ -177,6 +210,25 @@ def copy_test_files():
         destination_file = destination_folder / source_file.name
         print(f"Copy '{source_file}' to '{destination_file}'")
         shutil.copy(source_file, destination_file)
+
+
+def copy_mlp_files():
+    source_folder = Path('.')
+    for package in package_requirements:
+        if 'sympy' in package:
+            continue
+        framework = package.replace('nerva_', '')
+        target_folder = Path('dist') / package_names[package] / 'tools'
+        mlp_utilities_file = source_folder / f'mlp_utilities.py'
+
+        copy_file(mlp_utilities_file, target_folder / 'mlp_utilities.py')
+
+        mlp_file = target_folder / 'mlp.py'
+        copy_file(source_folder / f'mlp_{framework}_rowwise.py', mlp_file)
+        text = extract_function_from_file(mlp_utilities_file, 'make_argument_parser')
+        replace_string_in_file(mlp_file, 'def main():', text + '\n\n\ndef main():')
+        replace_string_in_file(mlp_file, '_rowwise', '')
+        replace_string_in_file(mlp_file, 'from mlp_utilities import make_argument_parser', 'import argparse')
 
 
 def remove_function_definition(text: str, function_name: str):
@@ -214,11 +266,6 @@ def fix_source_files():
         text = remove_matching_function_definitions(text, '_colwise')
         path.write_text(text)
 
-    def remove_rowwise(path):
-        text = path.read_text()
-        text = remove_matching_function_definitions(text, '_colwise')
-        path.write_text(text)
-
     def rename_file(folder, src, target):
         src = folder / src
         target = folder / target
@@ -230,7 +277,7 @@ def fix_source_files():
         remove_colwise_functions(folder / 'loss_functions.py')
         remove_colwise_functions(folder / 'softmax_functions.py')
         for path in folder.glob('*.py'):
-            remove_rowwise(path)
+            replace_string_in_file(path, '_rowwise', '')
         rename_file(folder, 'multilayer_perceptron_rowwise.py', 'multilayer_perceptron.py')
         rename_file(folder, 'layers_rowwise.py', 'layers.py')
 
@@ -239,9 +286,10 @@ def main():
     make_package_folders()
     create_requirements()
     create_setup_files()
+    copy_mlp_files()
     copy_source_files()
-    fix_source_files()
     copy_test_files()
+    fix_source_files()
 
 
 if __name__ == '__main__':

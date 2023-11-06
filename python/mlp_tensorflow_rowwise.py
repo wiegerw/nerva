@@ -4,7 +4,7 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from mlp_functions import make_argument_parser, print_header
+from mlp_utilities import make_argument_parser
 from nerva_tensorflow.training_rowwise import train
 
 
@@ -17,7 +17,6 @@ def main():
     linear_layer_weight_initializers = args.init_weights.split(',')
     linear_layer_optimizers = args.optimizers.split(';')
 
-    print_header('tensorflow-rowwise')
     train(layer_specifications,
           linear_layer_sizes,
           linear_layer_optimizers,
