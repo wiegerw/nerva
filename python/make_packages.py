@@ -16,6 +16,10 @@ package_requirements = {
     'nerva_torch': ['numpy', 'torch'],
 }
 
+def package_folder(package: str) -> Path:
+    return Path('dist') / package / 'src' / package
+
+
 def save_text(path: Path, text: str):
     print(f'Saving {path}')
     path.write_text(text)
@@ -28,9 +32,9 @@ def remove_file(path: Path):
 
 def make_package_folders():
     for package in package_requirements:
-        package_folder = Path('dist') / package / package
-        print(f'Create folder {package_folder}')
-        package_folder.mkdir(parents=True, exist_ok=True)
+        folder = package_folder(package)
+        print(f'Create folder {folder}')
+        folder.mkdir(parents=True, exist_ok=True)
 
 
 def split_license(text):
@@ -93,7 +97,7 @@ def create_requirements():
 
 def copy_files():
     for package, requirements in package_requirements.items():
-        destination_folder = Path('dist') / package / package
+        destination_folder = package_folder(package)
         for source_file in Path(package).glob('*.py'):
             if source_file.stem.endswith('_colwise'):
                 continue
@@ -122,12 +126,9 @@ def remove_lines_containing_word(text: str, word: str):
     return re.sub(pattern, "", text)
 
 
-# remove references to rowwise/colwise
 def fix_files():
 
-    # fix the datasets.py files
-    for package in package_requirements:
-        path = Path('dist') / package / package / 'datasets.py'
+    def fix_datasets_file(path):
         text = path.read_text()
         text = re.sub(r"if self\.rowwise:\n\s*(.*?)\n\s*else:\n.*?\n\n", r"\1\n", text, flags=re.DOTALL)  # simplify if statements
         text = remove_function_definition(text, 'to_one_hot_colwise')
@@ -136,41 +137,31 @@ def fix_files():
         text = text.replace(', rowwise', '')
         text = remove_lines_containing_word(text, 'rowwise')
         path.write_text(text)
-        # print('------------------------------')
-        # print(path)
-        # print(text)
 
-    # fix the loss_functions.py files
-    for package in package_requirements:
-        path = Path('dist') / package / package / 'loss_functions.py'
+    def remove_colwise_functions(path):
         text = path.read_text()
         text = remove_matching_function_definitions(text, '_colwise')
         path.write_text(text)
 
-    # fix the softmax_functions.py files
-    for package in package_requirements:
-        path = Path('dist') / package / package / 'softmax_functions.py'
+    def remove_rowwise(path):
         text = path.read_text()
         text = remove_matching_function_definitions(text, '_colwise')
         path.write_text(text)
 
-    # remove strings `_rowwise`
-    for package in package_requirements:
-        package_folder = Path('dist') / package / package
-        for path in package_folder.glob('*.py'):
-            text = path.read_text()
-            text = text.replace('_rowwise', '')
-            path.write_text(text)
+    def rename_file(folder, src, target):
+        src = folder / src
+        target = folder / target
+        src.rename(target)
 
-    # rename files
     for package in package_requirements:
-        package_folder = Path('dist') / package / package
-        src = package_folder / 'multilayer_perceptron_rowwise.py'
-        target = package_folder / 'multilayer_perceptron.py'
-        src.rename(target)
-        src = package_folder / 'layers_rowwise.py'
-        target = package_folder / 'layers.py'
-        src.rename(target)
+        folder = package_folder(package)
+        fix_datasets_file(folder / 'datasets.py')
+        remove_colwise_functions(folder / 'loss_functions.py')
+        remove_colwise_functions(folder / 'softmax_functions.py')
+        for path in folder.glob('*.py'):
+            remove_rowwise(path)
+        rename_file(folder, 'multilayer_perceptron_rowwise.py', 'multilayer_perceptron.py')
+        rename_file(folder, 'layers_rowwise.py', 'layers.py')
 
 
 def main():
