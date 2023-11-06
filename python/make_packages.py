@@ -40,6 +40,7 @@ where = src
 package_requirements = {
     'nerva_jax': ['numpy', 'jax'],
     'nerva_numpy': ['numpy'],
+    'nerva_sympy': ['numpy', 'sympy'],
     'nerva_tensorflow': ['numpy', 'tensorflow'],
     'nerva_torch': ['numpy', 'torch'],
 }
@@ -47,6 +48,7 @@ package_requirements = {
 package_frameworks = {
     'nerva_jax': 'JAX',
     'nerva_numpy': 'NumPy',
+    'nerva_sympy': 'SymPy',
     'nerva_tensorflow': 'Tensorflow',
     'nerva_torch': 'PyTorch',
 }
@@ -54,6 +56,7 @@ package_frameworks = {
 package_names = {
     'nerva_jax': 'nerva-jax',
     'nerva_numpy': 'nerva-numpy',
+    'nerva_sympy': 'nerva-sympy',
     'nerva_tensorflow': 'nerva-tensorflow',
     'nerva_torch': 'nerva-torch',
 }
@@ -121,6 +124,8 @@ def split_imports(text: str) -> Tuple[str, str]:
 
 
 def join_files(path1: Path, path2: Path):
+    if not path1.exists():
+        return
     license1, text1 = split_license(path1.read_text())
     license2, text2 = split_license(path2.read_text())
     imports1, code1 = split_imports(text1)
@@ -162,6 +167,18 @@ def copy_source_files():
         join_files(destination_folder / 'training.py', destination_folder / 'training_rowwise.py')
 
 
+def copy_test_files():
+    destination_folder = Path('dist') / package_names['nerva_sympy'] / 'tests'
+    destination_folder.mkdir(parents=True, exist_ok=True)
+    test_folder = Path('tests')
+    for source_file in test_folder.glob('*.py'):
+        if not 'sympy' in source_file.name:
+            continue
+        destination_file = destination_folder / source_file.name
+        print(f"Copy '{source_file}' to '{destination_file}'")
+        shutil.copy(source_file, destination_file)
+
+
 def remove_function_definition(text: str, function_name: str):
     pattern = r"def {}\(.*?\):[\s\S]*?(?:(?=\bdef\b)|$)".format(re.escape(function_name))
     return re.sub(pattern, "", text)
@@ -181,6 +198,8 @@ def remove_lines_containing_word(text: str, word: str):
 def fix_source_files():
 
     def fix_datasets_file(path):
+        if not path.exists():
+            return
         text = path.read_text()
         text = re.sub(r"if self\.rowwise:\n\s*(.*?)\n\s*else:\n.*?\n\n", r"\1\n", text, flags=re.DOTALL)  # simplify if statements
         text = remove_function_definition(text, 'to_one_hot_colwise')
@@ -222,6 +241,7 @@ def main():
     create_setup_files()
     copy_source_files()
     fix_source_files()
+    copy_test_files()
 
 
 if __name__ == '__main__':
