@@ -9,11 +9,53 @@ import shutil
 from pathlib import Path
 from typing import Tuple
 
+VERSION = '0.1'
+
+SETUP_CFG = '''
+[metadata]
+name = NAME
+version = VERSION
+author = Wieger Wesselink
+author_email = j.w.wesselink@tue.nl
+description = An implementation of multilayer perceptrons in FRAMEWORK.
+long_description = file: README.md
+long_description_content_type = text/markdown
+url = https://github.com/wiegerw/NAME
+project_urls =
+    Bug Tracker = https://github.com/wiegerw/NAME/issues
+classifiers =
+    Programming Language :: Python :: 3
+    License :: OSI Approved :: Boost Software License 1.0 (BSL-1.0)
+    Operating System :: OS Independent
+
+[options]
+package_dir = src
+packages = find:
+python_requires = >=3.10
+
+[options.packages.find]
+where = src
+'''
+
 package_requirements = {
     'nerva_jax': ['numpy', 'jax'],
     'nerva_numpy': ['numpy'],
     'nerva_tensorflow': ['numpy', 'tensorflow'],
     'nerva_torch': ['numpy', 'torch'],
+}
+
+package_frameworks = {
+    'nerva_jax': 'JAX',
+    'nerva_numpy': 'NumPy',
+    'nerva_tensorflow': 'Tensorflow',
+    'nerva_torch': 'PyTorch',
+}
+
+package_names = {
+    'nerva_jax': 'nerva-jax',
+    'nerva_numpy': 'nerva-numpy',
+    'nerva_tensorflow': 'nerva-tensorflow',
+    'nerva_torch': 'nerva-torch',
 }
 
 def package_folder(package: str) -> Path:
@@ -95,7 +137,16 @@ def create_requirements():
         save_text(dest, text)
 
 
-def copy_files():
+def create_setup_files():
+    for package, requirements in package_requirements.items():
+        dest = Path('dist') / package / 'setup.cfg'
+        text = SETUP_CFG.strip()
+        text = text.replace('FRAMEWORK', package_frameworks[package])
+        text = text.replace('NAME', package_names[package])
+        save_text(dest, text)
+
+
+def copy_source_files():
     for package, requirements in package_requirements.items():
         destination_folder = package_folder(package)
         for source_file in Path(package).glob('*.py'):
@@ -126,7 +177,7 @@ def remove_lines_containing_word(text: str, word: str):
     return re.sub(pattern, "", text)
 
 
-def fix_files():
+def fix_source_files():
 
     def fix_datasets_file(path):
         text = path.read_text()
@@ -167,8 +218,9 @@ def fix_files():
 def main():
     make_package_folders()
     create_requirements()
-    copy_files()
-    fix_files()
+    create_setup_files()
+    copy_source_files()
+    fix_source_files()
 
 
 if __name__ == '__main__':
