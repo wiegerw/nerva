@@ -5,9 +5,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-
 import numpy as np
-
 import nerva_numpy.matrix_operations_2d as np_
 import nerva_tensorflow.matrix_operations_2d as tf_
 import nerva_torch.matrix_operations_2d as torch_

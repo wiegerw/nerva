@@ -59,7 +59,7 @@ package_names = {
 }
 
 def package_folder(package: str) -> Path:
-    return Path('dist') / package / 'src' / package
+    return Path('dist') / package_names[package] / 'src' / package
 
 
 def save_text(path: Path, text: str):
@@ -132,17 +132,18 @@ def join_files(path1: Path, path2: Path):
 
 def create_requirements():
     for package, requirements in package_requirements.items():
-        dest = Path('dist') / package / 'requirements.txt'
+        dest = Path('dist') / package_names[package] / 'requirements.txt'
         text = '\n'.join(requirements)
         save_text(dest, text)
 
 
 def create_setup_files():
     for package, requirements in package_requirements.items():
-        dest = Path('dist') / package / 'setup.cfg'
+        dest = Path('dist') / package_names[package] / 'setup.cfg'
         text = SETUP_CFG.strip()
         text = text.replace('FRAMEWORK', package_frameworks[package])
         text = text.replace('NAME', package_names[package])
+        text = text.replace('VERSION', VERSION)
         save_text(dest, text)
 
 

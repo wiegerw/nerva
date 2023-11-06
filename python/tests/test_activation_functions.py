@@ -5,16 +5,14 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-
 import numpy as np
-
-from tests.test_utilities import to_numpy, to_sympy, to_torch, to_tensorflow, to_jax, to_eigen
 import nerva_numpy.activation_functions as np_
 import nerva_tensorflow.activation_functions as tf_
 import nerva_torch.activation_functions as torch_
 import nerva_sympy.activation_functions as sympy_
 import nerva_jax.activation_functions as jnp_
 import nervalibcolwise as eigen_
+from tests.test_utilities import to_numpy, to_sympy, to_torch, to_tensorflow, to_jax, to_eigen
 
 
 class TestActivationFunctions(TestCase):

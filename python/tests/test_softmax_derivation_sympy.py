@@ -5,10 +5,7 @@
 
 from unittest import TestCase
 from nerva_sympy.softmax_functions import *
-
-import sympy as sp
-
-from tests.test_utilities import equal_matrices
+from tests.sympy_utilities import equal_matrices
 
 Matrix = sp.Matrix
 

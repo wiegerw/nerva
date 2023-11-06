@@ -4,21 +4,20 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from unittest import TestCase
-
 import random
-
+from unittest import TestCase
 import numpy as np
 import sympy as sp
-
 from nerva_sympy.matrix_operations import substitute
-from tests.test_utilities import to_numpy, to_sympy, to_torch, to_tensorflow, matrix, equal_matrices, to_jax, to_eigen
 import nerva_numpy.loss_functions as np_
 import nerva_tensorflow.loss_functions as tf_
 import nerva_torch.loss_functions as torch_
 import nerva_sympy.loss_functions as sympy_
 import nerva_jax.loss_functions as jnp_
 import nervalibcolwise as eigen_
+from tests.test_utilities import to_numpy, to_sympy, to_torch, to_tensorflow, to_jax, to_eigen
+from tests.sympy_utilities import matrix, equal_matrices
+
 
 def instantiate_one_hot_colwise(X: sp.Matrix) -> sp.Matrix:
     m, n = X.shape

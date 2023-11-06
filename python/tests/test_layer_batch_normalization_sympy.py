@@ -8,7 +8,7 @@
 
 from unittest import TestCase
 from nerva_sympy.matrix_operations import *
-from tests.test_utilities import *
+from tests.sympy_utilities import matrix, equal_matrices, squared_error
 
 
 class TestBatchNormalizationLayers(TestCase):

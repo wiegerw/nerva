@@ -6,32 +6,12 @@ import os
 import re
 import time
 from typing import Union, Dict, Tuple
-
 import jax.numpy as jnp
 import numpy as np
 import sympy as sp
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import torch
-from sympy import Matrix
-
-
-def matrix(name: str, rows: int, columns: int) -> Matrix:
-    return Matrix(sp.symarray(name, (rows, columns), real=True))
-
-
-def equal_matrices(A: Matrix, B: Matrix, simplify_arguments=False) -> bool:
-    m, n = A.shape
-    if simplify_arguments:
-        A = sp.simplify(A)
-        B = sp.simplify(B)
-    return A.shape == B.shape and sp.simplify(A - B) == sp.zeros(m, n)
-
-
-def instantiate(X: sp.Matrix, low=0, high=10) -> sp.Matrix:
-    X0 = sp.Matrix(np.random.randint(low, high, X.shape))
-    return X0
 
 
 def to_numpy(x: Union[sp.Matrix, np.ndarray, torch.Tensor, tf.Tensor, tf.Variable, jnp.ndarray]) -> np.ndarray:
@@ -69,15 +49,6 @@ def to_jax(X: np.ndarray) -> jnp.ndarray:
 
 def to_eigen(X: np.ndarray) -> np.ndarray:
     return np.asfortranarray(np.copy(X, order='C'))
-
-
-def squared_error(X: Matrix):
-    m, n = X.shape
-
-    def f(x: Matrix) -> float:
-        return sp.sqrt(sum(xi * xi for xi in x))
-
-    return sum(f(X.col(j)) for j in range(n))
 
 
 class StopWatch(object):
@@ -119,16 +90,6 @@ def parse_function_call(text: str) -> Tuple[str, Dict[str, str]]:
         print(e)
         pass
     raise RuntimeError(f'Could not parse function call "{text}"')
-
-
-# def ppn(name: str, x: Union[sp.Matrix, np.ndarray, torch.Tensor, tf.Tensor, tf.Variable, jnp.ndarray]):
-#     """
-#     Pretty print in NumPy format
-#     :param name: the name of the matrix
-#     :param x: a matrix
-#     """
-#     x = to_numpy(x)
-#     return nerva_numpy.utilities.pp(name, x)
 
 
 def load_dict_from_npz(filename: str) -> Dict[str, Union[torch.Tensor, torch.LongTensor]]:

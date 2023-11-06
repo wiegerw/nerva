@@ -7,7 +7,7 @@
 from unittest import TestCase
 from nerva_sympy.activation_functions import *
 from nerva_sympy.matrix_operations import *
-from tests.test_utilities import *
+from tests.sympy_utilities import matrix, equal_matrices
 
 
 class TestSReLULayers(TestCase):

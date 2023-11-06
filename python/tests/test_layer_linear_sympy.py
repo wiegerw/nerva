@@ -7,15 +7,15 @@
 from unittest import TestCase
 from nerva_sympy.activation_functions import *
 from nerva_sympy.matrix_operations import *
-from tests.test_utilities import *
+from tests.sympy_utilities import matrix, equal_matrices, squared_error
 
 
-class TestDropoutLayers(TestCase):
+class TestLinearLayers(TestCase):
 
-    def test_linear_dropout_layer_colwise(self):
+    def test_linear_layer_colwise(self):
         D = 3
-        N = 2
         K = 2
+        N = 2
         loss = squared_error
 
         # variables
@@ -23,21 +23,19 @@ class TestDropoutLayers(TestCase):
         y = matrix('y', K, N)
         w = matrix('w', K, D)
         b = matrix('b', K, 1)
-        r = matrix('r', K, D)
         X = x
         W = w
-        R = r
 
         # feedforward
-        Y = hadamard(W, R) * X + column_repeat(b, N)
+        Y = W * X + column_repeat(b, N)
 
         # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
 
         # backpropagation
-        DW = hadamard(DY * X.T, R)
+        DW = DY * X.T
         Db = rows_sum(DY)
-        DX = hadamard(W, R).T * DY
+        DX = W.T * DY
 
         # test gradients
         DW1 = diff(loss(Y), w)
@@ -48,13 +46,12 @@ class TestDropoutLayers(TestCase):
         self.assertTrue(equal_matrices(Db, Db1))
         self.assertTrue(equal_matrices(DX, DX1))
 
-    def test_activation_dropout_layer_colwise(self):
+    def test_activation_layer_colwise(self):
         D = 3
-        N = 2
         K = 2
+        N = 2
         loss = squared_error
-        act = Hyperbolic_tangent
-        act_gradient = Hyperbolic_tangent_gradient
+        act = HyperbolicTangentActivation()
 
         # variables
         x = matrix('x', D, N)
@@ -62,23 +59,21 @@ class TestDropoutLayers(TestCase):
         z = matrix('z', K, N)
         w = matrix('w', K, D)
         b = matrix('b', K, 1)
-        r = matrix('r', K, D)
         X = x
         W = w
-        R = r
 
         # feedforward
-        Z = hadamard(W, R) * X + column_repeat(b, N)
+        Z = W * X + column_repeat(b, N)
         Y = act(Z)
 
         # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
 
         # backpropagation
-        DZ = hadamard(DY, act_gradient(Z))
-        DW = hadamard(DZ * X.T, R)
+        DZ = hadamard(DY, act.gradient(Z))
+        DW = DZ * X.T
         Db = rows_sum(DZ)
-        DX = hadamard(W, R).T * DZ
+        DX = W.T * DZ
 
         # test gradients
         DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
@@ -91,10 +86,10 @@ class TestDropoutLayers(TestCase):
         self.assertTrue(equal_matrices(Db, Db1))
         self.assertTrue(equal_matrices(DX, DX1))
 
-    def test_sigmoid_dropout_layer_colwise(self):
+    def test_sigmoid_layer_colwise(self):
         D = 3
-        N = 2
         K = 2
+        N = 2
         loss = squared_error
 
         # variables
@@ -103,13 +98,11 @@ class TestDropoutLayers(TestCase):
         z = matrix('z', K, N)
         w = matrix('w', K, D)
         b = matrix('b', K, 1)
-        r = matrix('r', K, D)
         X = x
         W = w
-        R = r
 
         # feedforward
-        Z = hadamard(W, R) * X + column_repeat(b, N)
+        Z = W * X + column_repeat(b, N)
         Y = Sigmoid(Z)
 
         # symbolic differentiation
@@ -117,9 +110,9 @@ class TestDropoutLayers(TestCase):
 
         # backpropagation
         DZ = hadamard(DY, hadamard(Y, ones(K, N) - Y))
-        DW = hadamard(DZ * X.T, R)
+        DW = DZ * X.T
         Db = rows_sum(DZ)
-        DX = hadamard(W, R).T * DZ
+        DX = W.T * DZ
 
         # test gradients
         Y_z = Sigmoid(z)
@@ -133,10 +126,10 @@ class TestDropoutLayers(TestCase):
         self.assertTrue(equal_matrices(Db, Db1))
         self.assertTrue(equal_matrices(DX, DX1))
 
-    def test_linear_dropout_layer_rowwise(self):
+    def test_linear_layer_rowwise(self):
         D = 3
-        N = 2
         K = 2
+        N = 2
         loss = squared_error
 
         # variables
@@ -144,21 +137,19 @@ class TestDropoutLayers(TestCase):
         y = matrix('y', N, K)
         w = matrix('w', K, D)
         b = matrix('b', 1, K)
-        r = matrix('r', D, K)
         X = x
         W = w
-        R = r
 
         # feedforward
-        Y = X * hadamard(W.T, R) + row_repeat(b, N)
+        Y = X * W.T + row_repeat(b, N)
 
         # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
 
         # backpropagation
-        DW = hadamard(DY.T * X, R.T)
+        DW = DY.T * X
         Db = columns_sum(DY)
-        DX = DY * hadamard(W, R.T)
+        DX = DY * W
 
         # test gradients
         DW1 = diff(loss(Y), w)
@@ -169,13 +160,12 @@ class TestDropoutLayers(TestCase):
         self.assertTrue(equal_matrices(Db, Db1))
         self.assertTrue(equal_matrices(DX, DX1))
 
-    def test_activation_dropout_layer_rowwise(self):
+    def test_activation_layer_rowwise(self):
         D = 3
-        N = 2
         K = 2
+        N = 2
         loss = squared_error
-        act = Hyperbolic_tangent
-        act_gradient = Hyperbolic_tangent_gradient
+        act = HyperbolicTangentActivation()
 
         # variables
         x = matrix('x', N, D)
@@ -183,23 +173,21 @@ class TestDropoutLayers(TestCase):
         z = matrix('z', N, K)
         w = matrix('w', K, D)
         b = matrix('b', 1, K)
-        r = matrix('r', D, K)
         X = x
         W = w
-        R = r
 
         # feedforward
-        Z = X * hadamard(W.T, R) + row_repeat(b, N)
+        Z = X * W.T + row_repeat(b, N)
         Y = act(Z)
 
         # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
 
         # backpropagation
-        DZ = hadamard(DY, act_gradient(Z))
-        DW = hadamard(DZ.T * X, R.T)
+        DZ = hadamard(DY, act.gradient(Z))
+        DW = DZ.T * X
         Db = columns_sum(DZ)
-        DX = DZ * hadamard(W, R.T)
+        DX = DZ * W
 
         # test gradients
         DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
@@ -212,10 +200,10 @@ class TestDropoutLayers(TestCase):
         self.assertTrue(equal_matrices(Db, Db1))
         self.assertTrue(equal_matrices(DX, DX1))
 
-    def test_sigmoid_dropout_layer_rowwise(self):
+    def test_sigmoid_layer_rowwise(self):
         D = 3
-        N = 2
         K = 2
+        N = 2
         loss = squared_error
         sigma = Sigmoid
 
@@ -225,13 +213,11 @@ class TestDropoutLayers(TestCase):
         z = matrix('z', N, K)
         w = matrix('w', K, D)
         b = matrix('b', 1, K)
-        r = matrix('r', D, K)
         X = x
         W = w
-        R = r
 
         # feedforward
-        Z = X * hadamard(W.T, R) + row_repeat(b, N)
+        Z = X * W.T + row_repeat(b, N)
         Y = Sigmoid(Z)
 
         # symbolic differentiation
@@ -239,9 +225,9 @@ class TestDropoutLayers(TestCase):
 
         # backpropagation
         DZ = hadamard(DY, hadamard(Y, ones(N, K) - Y))
-        DW = hadamard(DZ.T * X, R.T)
+        DW = DZ.T * X
         Db = columns_sum(DZ)
-        DX = DZ * hadamard(W, R.T)
+        DX = DZ * W
 
         # test gradients
         Y_z = Sigmoid(z)

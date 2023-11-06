@@ -5,46 +5,9 @@
 
 from unittest import TestCase
 from nerva_sympy.matrix_operations import *
-
-import sympy as sp
+from tests.sympy_utilities import matrix, pp, to_number
 
 Matrix = sp.Matrix
-
-
-def matrix(name: str, rows: int, columns: int) -> Matrix:
-    return Matrix(sp.symarray(name, (rows, columns), real=True))
-
-
-def pp(name: str, x: sp.Matrix):
-    print(f'{name} ({x.shape[0]}x{x.shape[1]})')
-    for row in x.tolist():
-        print('[', end='')
-        for i, elem in enumerate(row):
-            print(f'{elem}', end='')
-            if i < len(row) - 1:
-                print(', ', end='')
-        print(']')
-    print()
-
-
-def substitute(expr, substitutions: Union[Tuple[Matrix, Matrix], List[Tuple[Matrix, Matrix]]]):
-    if isinstance(substitutions, tuple):
-        substitutions = [substitutions]
-    for (X, Y) in substitutions:
-        assert X.shape == Y.shape
-        m, n = X.shape
-        sigma = ((X[i, j], Y[i, j]) for i in range(m) for j in range(n))
-        expr = expr.subs(sigma)
-    return expr
-
-
-def to_number(x: sp.Matrix):
-    assert x.shape == (1, 1)
-    return x[0, 0]
-
-
-def pow3(X: Matrix) -> Matrix:
-    return X.applyfunc(lambda x: x * x * x)
 
 
 class TestBatchNorm(TestCase):
@@ -94,11 +57,6 @@ class TestBatchNorm(TestCase):
         z_r = Z(r)
         dz_dr4 = (to_number(power_minus_half_sigma_r) / N) * (-z_r * z_r.T + N * sp.eye(N))
         self.assertEqual(sp.simplify(dz_dr), sp.simplify(dz_dr4))
-
-
-        # pp('df_dr', df_dr)
-        # pp('df_dr1', df_dr1)
-        #df_dr1 = - (1/2) * power_minus_half(Sigma(r)) * (1 / to_number(Sigma(r))) * Sigma(r).jacobian(r)
 
 
 if __name__ == '__main__':

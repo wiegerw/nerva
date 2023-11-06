@@ -5,9 +5,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-
 import numpy as np
-
 from nerva_sympy.softmax_functions import *
 import nerva_numpy.softmax_functions as np_
 import nerva_tensorflow.softmax_functions as tf_

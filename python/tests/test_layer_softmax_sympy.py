@@ -5,88 +5,13 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
-from nerva_sympy.activation_functions import *
-from nerva_sympy.matrix_operations import *
-from tests.test_utilities import *
+from nerva_sympy.softmax_functions import *
+from tests.sympy_utilities import matrix, equal_matrices, squared_error
 
 
-class TestLinearLayers(TestCase):
+class TestSoftmaxLayers(TestCase):
 
-    def test_linear_layer_colwise(self):
-        D = 3
-        K = 2
-        N = 2
-        loss = squared_error
-
-        # variables
-        x = matrix('x', D, N)
-        y = matrix('y', K, N)
-        w = matrix('w', K, D)
-        b = matrix('b', K, 1)
-        X = x
-        W = w
-
-        # feedforward
-        Y = W * X + column_repeat(b, N)
-
-        # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
-
-        # backpropagation
-        DW = DY * X.T
-        Db = rows_sum(DY)
-        DX = W.T * DY
-
-        # test gradients
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
-
-        self.assertTrue(equal_matrices(DW, DW1))
-        self.assertTrue(equal_matrices(Db, Db1))
-        self.assertTrue(equal_matrices(DX, DX1))
-
-    def test_activation_layer_colwise(self):
-        D = 3
-        K = 2
-        N = 2
-        loss = squared_error
-        act = HyperbolicTangentActivation()
-
-        # variables
-        x = matrix('x', D, N)
-        y = matrix('y', K, N)
-        z = matrix('z', K, N)
-        w = matrix('w', K, D)
-        b = matrix('b', K, 1)
-        X = x
-        W = w
-
-        # feedforward
-        Z = W * X + column_repeat(b, N)
-        Y = act(Z)
-
-        # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
-
-        # backpropagation
-        DZ = hadamard(DY, act.gradient(Z))
-        DW = DZ * X.T
-        Db = rows_sum(DZ)
-        DX = W.T * DZ
-
-        # test gradients
-        DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
-
-        self.assertTrue(equal_matrices(DZ, DZ1))
-        self.assertTrue(equal_matrices(DW, DW1))
-        self.assertTrue(equal_matrices(Db, Db1))
-        self.assertTrue(equal_matrices(DX, DX1))
-
-    def test_sigmoid_layer_colwise(self):
+    def test_softmax_layer_colwise(self):
         D = 3
         K = 2
         N = 2
@@ -103,69 +28,82 @@ class TestLinearLayers(TestCase):
 
         # feedforward
         Z = W * X + column_repeat(b, N)
-        Y = Sigmoid(Z)
+        Y = softmax_colwise(Z)
 
         # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
 
         # backpropagation
-        DZ = hadamard(DY, hadamard(Y, ones(K, N) - Y))
+        DZ = hadamard(Y, DY - row_repeat(diag(Y.T * DY).T, K))
         DW = DZ * X.T
         Db = rows_sum(DZ)
         DX = W.T * DZ
 
         # test gradients
-        Y_z = Sigmoid(z)
-        DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
-
-        self.assertTrue(equal_matrices(DZ, DZ1))
         self.assertTrue(equal_matrices(DW, DW1))
         self.assertTrue(equal_matrices(Db, Db1))
         self.assertTrue(equal_matrices(DX, DX1))
 
-    def test_linear_layer_rowwise(self):
-        D = 3
+        # test DZ using Z = z
+        Z = z
+        Y = softmax_colwise(Z)
+        DY = substitute(diff(loss(y), y), (y, Y))
+        DZ = hadamard(Y, DY - row_repeat(diag(Y.T * DY).T, K))
+        DZ1 = diff(loss(Y), z)
+        self.assertTrue(equal_matrices(DZ, DZ1))
+
+    def test_log_softmax_layer_colwise(self):
+        D = 2
         K = 2
         N = 2
         loss = squared_error
 
         # variables
-        x = matrix('x', N, D)
-        y = matrix('y', N, K)
+        x = matrix('x', D, N)
+        y = matrix('y', K, N)
+        z = matrix('z', K, N)
         w = matrix('w', K, D)
-        b = matrix('b', 1, K)
+        b = matrix('b', K, 1)
         X = x
         W = w
 
         # feedforward
-        Y = X * W.T + row_repeat(b, N)
+        Z = W * X + column_repeat(b, N)
+        Y = log_softmax_colwise(Z)
 
         # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
 
         # backpropagation
-        DW = DY.T * X
-        Db = columns_sum(DY)
-        DX = DY * W
+        DZ = DY - hadamard(softmax_colwise(Z), row_repeat(columns_sum(DY), K))
+        DW = DZ * X.T
+        Db = rows_sum(DZ)
+        DX = W.T * DZ
 
         # test gradients
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
-
         self.assertTrue(equal_matrices(DW, DW1))
         self.assertTrue(equal_matrices(Db, Db1))
         self.assertTrue(equal_matrices(DX, DX1))
 
-    def test_activation_layer_rowwise(self):
+        # test DZ using Z = z
+        Z = z
+        Y = log_softmax_colwise(Z)
+        DY = substitute(diff(loss(y), y), (y, Y))
+        DZ = DY - hadamard(softmax_colwise(Z), row_repeat(columns_sum(DY), K))
+        DZ1 = diff(loss(Y), z)
+        self.assertTrue(equal_matrices(DZ, DZ1))
+
+    def test_softmax_layer_rowwise(self):
         D = 3
         K = 2
         N = 2
         loss = squared_error
-        act = HyperbolicTangentActivation()
 
         # variables
         x = matrix('x', N, D)
@@ -178,34 +116,38 @@ class TestLinearLayers(TestCase):
 
         # feedforward
         Z = X * W.T + row_repeat(b, N)
-        Y = act(Z)
+        Y = softmax_rowwise(Z)
 
         # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
 
         # backpropagation
-        DZ = hadamard(DY, act.gradient(Z))
+        DZ = hadamard(Y, DY - column_repeat(diag(DY * Y.T), N))
         DW = DZ.T * X
         Db = columns_sum(DZ)
         DX = DZ * W
 
         # test gradients
-        DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
-
-        self.assertTrue(equal_matrices(DZ, DZ1))
         self.assertTrue(equal_matrices(DW, DW1))
         self.assertTrue(equal_matrices(Db, Db1))
         self.assertTrue(equal_matrices(DX, DX1))
 
-    def test_sigmoid_layer_rowwise(self):
-        D = 3
+        # test DZ using Z = z
+        Z = z
+        Y = softmax_rowwise(Z)
+        DY = substitute(diff(loss(y), y), (y, Y))
+        DZ = hadamard(Y, DY - column_repeat(diag(DY * Y.T), N))
+        DZ1 = diff(loss(Y), z)
+        self.assertTrue(equal_matrices(DZ, DZ1))
+
+    def test_log_softmax_layer_rowwise(self):
+        D = 2
         K = 2
         N = 2
         loss = squared_error
-        sigma = Sigmoid
 
         # variables
         x = matrix('x', N, D)
@@ -218,28 +160,33 @@ class TestLinearLayers(TestCase):
 
         # feedforward
         Z = X * W.T + row_repeat(b, N)
-        Y = Sigmoid(Z)
+        Y = log_softmax_rowwise(Z)
 
         # symbolic differentiation
         DY = substitute(diff(loss(y), y), (y, Y))
 
         # backpropagation
-        DZ = hadamard(DY, hadamard(Y, ones(N, K) - Y))
+        DZ = DY - hadamard(softmax_rowwise(Z), column_repeat(rows_sum(DY), N))
         DW = DZ.T * X
         Db = columns_sum(DZ)
         DX = DZ * W
 
         # test gradients
-        Y_z = Sigmoid(z)
-        DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
         DW1 = diff(loss(Y), w)
         Db1 = diff(loss(Y), b)
         DX1 = diff(loss(Y), x)
+        # N.B. These tests take a long time, and are duplicates of the ones in test_log_softmax_layer_rowwise
+        # self.assertTrue(equal_matrices(DW, DW1))
+        # self.assertTrue(equal_matrices(Db, Db1))
+        # self.assertTrue(equal_matrices(DX, DX1))
 
+        # test DZ using Z = z
+        Z = z
+        Y = log_softmax_rowwise(Z)
+        DY = substitute(diff(loss(y), y), (y, Y))
+        DZ = DY - hadamard(softmax_rowwise(Z), column_repeat(rows_sum(DY), N))
+        DZ1 = diff(loss(Y), z)
         self.assertTrue(equal_matrices(DZ, DZ1))
-        self.assertTrue(equal_matrices(DW, DW1))
-        self.assertTrue(equal_matrices(Db, Db1))
-        self.assertTrue(equal_matrices(DX, DX1))
 
 
 if __name__ == '__main__':

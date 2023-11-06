@@ -5,37 +5,9 @@
 
 from unittest import TestCase
 from nerva_sympy.matrix_operations import *
-
-import sympy as sp
+from tests.sympy_utilities import matrix, pp
 
 Matrix = sp.Matrix
-
-
-def matrix(name: str, rows: int, columns: int) -> Matrix:
-    return Matrix(sp.symarray(name, (rows, columns), real=True))
-
-
-def pp(name: str, x: sp.Matrix):
-    print(f'{name} ({x.shape[0]}x{x.shape[1]})')
-    for row in x.tolist():
-        print('[', end='')
-        for i, elem in enumerate(row):
-            print(f'{elem}', end='')
-            if i < len(row) - 1:
-                print(', ', end='')
-        print(']')
-    print()
-
-
-def substitute(expr, substitutions: Union[Tuple[Matrix, Matrix], List[Tuple[Matrix, Matrix]]]):
-    if isinstance(substitutions, tuple):
-        substitutions = [substitutions]
-    for (X, Y) in substitutions:
-        assert X.shape == Y.shape
-        m, n = X.shape
-        sigma = ((X[i, j], Y[i, j]) for i in range(m) for j in range(n))
-        expr = expr.subs(sigma)
-    return expr
 
 
 class TestLemmas(TestCase):
