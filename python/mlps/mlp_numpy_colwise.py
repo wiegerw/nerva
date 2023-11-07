@@ -4,8 +4,9 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from mlp_utilities import make_argument_parser
-from mlps.nerva_tensorflow.training_colwise import train
+from mlps.mlp_utilities import make_argument_parser
+from mlps.nerva_numpy.training_colwise import train
+
 
 def main():
     cmdline_parser = make_argument_parser()

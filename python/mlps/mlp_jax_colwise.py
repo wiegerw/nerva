@@ -4,7 +4,7 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from mlp_utilities import make_argument_parser
+from mlps.mlp_utilities import make_argument_parser
 from mlps.nerva_jax.training_colwise import train
 
 

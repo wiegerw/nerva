@@ -77,7 +77,11 @@ package_names = {
 }
 
 def package_folder(package: str) -> Path:
-    return Path('../dist') / package_names[package] / 'src' / package
+    return Path('dist') / package_names[package] / 'src' / package
+
+
+def is_empty_line(line: str):
+    return not line or line.isspace()
 
 
 def save_text(path: Path, text: str):
@@ -106,51 +110,83 @@ def replace_string_in_file(path, source, target):
     path.write_text(text)
 
 
-def extract_function_from_file(path: Path, function_name: str) -> str:
-    text = path.read_text().strip()
-    lines = re.split(r'\n', text)
+def split_lines(text: str, is_section_start, is_section_end) -> Tuple[str, str]:
+    """ Splits text into two parts. The first part consists of sections defined by `is_section_start`
+    and `is_section_end`. The second part contains the remaining lines.
+    :param text:
+    :param is_section_start:
+    :param is_section_end:
+    :return:
+    """
+    lines = text.split('\n')
+    inside_section = False  # True if we are inside a section
 
-    in_function = False
-    function_lines = []
+    section_lines = []
+    other_lines = []
 
     for line in lines:
-        if not in_function and f'def {function_name}(' in line:
-            in_function = True
+        if not inside_section and is_section_start(line):
+            inside_section = True
+        elif inside_section and is_section_end(line):
+            inside_section = False
 
-        if in_function:
-            function_lines.append(line)
-            if function_lines[-1].isspace() and function_lines[-2].isspace():
-                break
+        if inside_section:
+            section_lines.append(line)
+        else:
+            other_lines.append(line)
 
-    return '\n'.join(function_lines).strip()
+    return '\n'.join(section_lines), '\n'.join(other_lines)
+
+
+def split_imports(text: str) -> Tuple[str, str]:
+    def is_import_start(line: str):
+        return line.startswith('import ') or line.startswith('from ')
+
+    def is_import_end(line: str):
+        return is_empty_line(line)
+
+    return split_lines(text, is_import_start, is_import_end)
+
+
+def split_license(text):
+
+    def is_license_start(line: str):
+        return line.startswith('# Copyright')
+
+    def is_license_end(line: str):
+        return not line.startswith('#')
+
+    return split_lines(text, is_license_start, is_license_end)
 
 
 def remove_functions_from_file(path: Path, word: str):
     """Removes all function definitions from `text` that have `word` in their name"""
     text = path.read_text().strip()
-    lines = re.split(r'\n', text)
-    inside_function = False  # True if we are inside a function containing `word` in its name
 
-    def is_start_of_function(line):
+    def is_function_start(line):
         return re.match(rf'^def \w*{word}\w*\(', line)
 
     # We assume that a function is ended by a line that does not start with a white space character
-    def is_end_of_function(line):
+    def is_function_end(line):
         return line and not re.match(r'^\s', line)
 
     remaining_lines = []
 
-    for line in lines:
-        if not inside_function and is_start_of_function(line):
-            inside_function = True
-        elif inside_function and is_end_of_function(line):
-            inside_function = False
-
-        if not inside_function:
-            remaining_lines.append(line)
-
-    text = '\n'.join(remaining_lines).strip() + '\n'
+    _, text = split_lines(text, is_function_start, is_function_end)
     path.write_text(text)
+
+
+def extract_function_from_file(path: Path, function_name: str) -> str:
+    text = path.read_text().strip()
+
+    def is_function_start(line):
+        return line.startswith(f'def {function_name}(')
+
+    def is_function_end(line):
+        return line and not re.match(r'^\s', line)
+
+    text, _ = split_lines(text, is_function_start, is_function_end)
+    return text
 
 
 def remove_lines_containing_word(text: str, word: str):
@@ -160,50 +196,9 @@ def remove_lines_containing_word(text: str, word: str):
 
 def make_package_folders():
     for package in package_requirements:
-        create_folder(Path('../dist') / package_names[package] / 'src' / package)
-        create_folder(Path('../dist') / package_names[package] / 'tests')
-        create_folder(Path('../dist') / package_names[package] / 'tools')
-
-
-def split_license(text):
-    lines = text.split('\n')
-    license = []
-    code = []
-
-    def is_license(line: str):
-        return line.strip().startswith("# ")
-
-    inside_license = True
-
-    for line in lines:
-        if not is_license(line):
-            inside_license = False
-        if inside_license:
-            license.append(line)
-        else:
-            code.append(line)
-
-    return '\n'.join(license).strip(), '\n'.join(code).strip()
-
-
-def split_imports(text: str) -> Tuple[str, str]:
-    lines = text.split('\n')
-    imports = []
-    code = []
-
-    def is_import(line: str):
-        return line.startswith('import ') or line.startswith('from ') or line.isspace() or not line
-
-    inside_imports = True
-    for line in lines:
-        if not is_import(line):
-            inside_imports = False
-        if inside_imports:
-            imports.append(line)
-        else:
-            code.append(line)
-
-    return '\n'.join(imports).strip(), '\n'.join(code).strip()
+        create_folder(Path('dist') / package_names[package] / 'src' / package)
+        create_folder(Path('dist') / package_names[package] / 'tests')
+        create_folder(Path('dist') / package_names[package] / 'tools')
 
 
 def join_files(path1: Path, path2: Path):
@@ -226,14 +221,14 @@ def create_init_files():
 
 def create_requirements_files():
     for package, requirements in package_requirements.items():
-        dest = Path('../dist') / package_names[package] / 'requirements.txt'
+        dest = Path('dist') / package_names[package] / 'requirements.txt'
         text = '\n'.join(requirements)
         save_text(dest, text)
 
 
 def create_readme_files():
     for package, requirements in package_requirements.items():
-        dest = Path('../dist') / package_names[package] / 'README.MD'
+        dest = Path('dist') / package_names[package] / 'README.MD'
         text = README_MD.lstrip()
         text = text.replace('FRAMEWORK', package_frameworks[package])
         text = text.replace('NAME', package_names[package])
@@ -243,14 +238,14 @@ def create_readme_files():
 
 def create_setup_files():
     for package, requirements in package_requirements.items():
-        dest = Path('../dist') / package_names[package] / 'setup.cfg'
+        dest = Path('dist') / package_names[package] / 'setup.cfg'
         text = SETUP_CFG.strip()
         text = text.replace('FRAMEWORK', package_frameworks[package])
         text = text.replace('NAME', package_names[package])
         text = text.replace('VERSION', VERSION)
         save_text(dest, text)
 
-        dest = Path('../dist') / package_names[package] / 'pyproject.toml'
+        dest = Path('dist') / package_names[package] / 'pyproject.toml'
         text = PYPROJECT_TOML.lstrip()
         save_text(dest, text)
 
@@ -270,7 +265,7 @@ def copy_source_files():
 
 
 def copy_test_files():
-    destination_folder = Path('../dist') / package_names['nerva_sympy'] / 'tests'
+    destination_folder = Path('dist') / package_names['nerva_sympy'] / 'tests'
     test_folder = Path('tests')
     for source_file in test_folder.glob('*.py'):
         if not 'sympy' in source_file.name:
@@ -281,19 +276,19 @@ def copy_test_files():
 
 
 def copy_mlp_files():
-    source_folder = Path('..')
+    source_folder = Path('.')
     for package in package_requirements:
         if 'sympy' in package:
             continue
         framework = package.replace('nerva_', '')
-        target_folder = Path('../dist') / package_names[package] / 'tools'
+        target_folder = Path('dist') / package_names[package] / 'tools'
         mlp_utilities_file = source_folder / f'mlp_utilities.py'
         mlp_file = target_folder / 'mlp.py'
         copy_file(source_folder / f'mlp_{framework}_rowwise.py', mlp_file)
         text = extract_function_from_file(mlp_utilities_file, 'make_argument_parser')
         replace_string_in_file(mlp_file, 'def main():', text + '\n\n\ndef main():')
         replace_string_in_file(mlp_file, '_rowwise', '')
-        replace_string_in_file(mlp_file, 'from mlp_utilities import make_argument_parser', 'import argparse')
+        replace_string_in_file(mlp_file, 'from mlps.mlp_utilities import make_argument_parser', 'import argparse')
 
 
 def fix_source_files():

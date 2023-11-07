@@ -97,7 +97,7 @@ def main():
     args = cmdline_parser.parse_args()
 
     processor = Processor()
-    for path in sorted(Path('../python/tests').glob('test_layer_*.py')):
+    for path in sorted(Path('../python/mlps/tests').glob('test_layer_*.py')):
         text = path.read_text()
         paragraphs = re.split(r'\n(\s*\n)+', text, flags=re.MULTILINE)[::2]
         for paragraph in paragraphs:
