@@ -5,7 +5,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from mlp_utilities import make_argument_parser
-from nerva_torch.training_colwise import train
+from mlps.nerva_torch.training_colwise import train
 
 
 def main():
