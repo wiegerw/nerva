@@ -125,6 +125,39 @@ def extract_function_from_file(path: Path, function_name: str) -> str:
     return '\n'.join(function_lines).strip()
 
 
+def remove_functions_from_file(path: Path, word: str):
+    """Removes all function definitions from `text` that have `word` in their name"""
+    text = path.read_text().strip()
+    lines = re.split(r'\n', text)
+    inside_function = False  # True if we are inside a function containing `word` in its name
+
+    def is_start_of_function(line):
+        return re.match(rf'^def \w*{word}\w*\(', line)
+
+    # We assume that a function is ended by a line that does not start with a white space character
+    def is_end_of_function(line):
+        return line and not re.match(r'^\s', line)
+
+    remaining_lines = []
+
+    for line in lines:
+        if not inside_function and is_start_of_function(line):
+            inside_function = True
+        elif inside_function and is_end_of_function(line):
+            inside_function = False
+
+        if not inside_function:
+            remaining_lines.append(line)
+
+    text = '\n'.join(remaining_lines).strip() + '\n'
+    path.write_text(text)
+
+
+def remove_lines_containing_word(text: str, word: str):
+    pattern = r".*?\b{}\b.*?\n".format(re.escape(word))
+    return re.sub(pattern, "", text)
+
+
 def make_package_folders():
     for package in package_requirements:
         create_folder(Path('dist') / package_names[package] / 'src' / package)
@@ -183,6 +216,12 @@ def join_files(path1: Path, path2: Path):
     text = f'{license1}\n\n{imports1}\n{imports2}\n\n{code1}\n\n{code2}\n'
     save_text(path1, text)
     remove_file(path2)
+
+
+def create_init_files():
+    for package, requirements in package_requirements.items():
+        path = package_folder(package) / '__init__.py'
+        path.touch(mode=0o644, exist_ok=True)
 
 
 def create_requirements_files():
@@ -257,22 +296,6 @@ def copy_mlp_files():
         replace_string_in_file(mlp_file, 'from mlp_utilities import make_argument_parser', 'import argparse')
 
 
-def remove_function_definition(text: str, function_name: str):
-    pattern = r"def {}\(.*?\):[\s\S]*?(?:(?=\bdef\b)|$)".format(re.escape(function_name))
-    return re.sub(pattern, "", text)
-
-
-def remove_matching_function_definitions(text, word):
-    """Removes all function definitions that have `word` in their name"""
-    pattern = rf"def .*{re.escape(word)}.*\(.*\)(?: -> \w+)?:[\s\S]*?(?:(?=\bdef\b)|$)"
-    return re.sub(pattern, "", text)
-
-
-def remove_lines_containing_word(text: str, word: str):
-    pattern = r".*?\b{}\b.*?\n".format(re.escape(word))
-    return re.sub(pattern, "", text)
-
-
 def fix_source_files():
 
     def fix_datasets_file(path):
@@ -280,17 +303,12 @@ def fix_source_files():
             return
         text = path.read_text()
         text = re.sub(r"if self\.rowwise:\n\s*(.*?)\n\s*else:\n.*?\n\n", r"\1\n", text, flags=re.DOTALL)  # simplify if statements
-        text = remove_function_definition(text, 'to_one_hot_colwise')
         text = text.replace('_rowwise', '')
         text = text.replace(', rowwise = True', '')
         text = text.replace(', rowwise', '')
         text = remove_lines_containing_word(text, 'rowwise')
         path.write_text(text)
-
-    def remove_colwise_functions(path):
-        text = path.read_text()
-        text = remove_matching_function_definitions(text, '_colwise')
-        path.write_text(text)
+        remove_functions_from_file(path, 'to_one_hot_colwise')
 
     def rename_file(folder, src, target):
         src = folder / src
@@ -300,8 +318,8 @@ def fix_source_files():
     for package in package_requirements:
         folder = package_folder(package)
         fix_datasets_file(folder / 'datasets.py')
-        remove_colwise_functions(folder / 'loss_functions.py')
-        remove_colwise_functions(folder / 'softmax_functions.py')
+        remove_functions_from_file(folder / 'loss_functions.py', '_colwise')
+        remove_functions_from_file(folder / 'softmax_functions.py', '_colwise')
         for path in folder.glob('*.py'):
             replace_string_in_file(path, '_rowwise', '')
         rename_file(folder, 'multilayer_perceptron_rowwise.py', 'multilayer_perceptron.py')
@@ -310,6 +328,7 @@ def fix_source_files():
 
 def main():
     make_package_folders()
+    create_init_files()
     create_requirements_files()
     create_readme_files()
     create_setup_files()
