@@ -118,8 +118,9 @@ def replace_pattern_in_file(path, pattern, replacement):
 
 def remove_lines_containing_word(path: Path, word: str):
     text = path.read_text()
-    pattern = r".*?\b{}\b.*?\n".format(re.escape(word))
-    text = re.sub(pattern, "", text)
+    lines = text.split('\n')
+    lines = [line for line in lines if not word in line]
+    text = '\n'.join(lines)
     path.write_text(text)
 
 
@@ -173,6 +174,12 @@ def split_license(text):
     return split_lines(text, is_license_start, is_license_end)
 
 
+def split_code_file(path: Path):
+    license, text = split_license(path.read_text())
+    imports, code = split_imports(text)
+    return license.strip(), imports.strip(), code.strip()
+
+
 def remove_functions_from_file(path: Path, word: str):
     """Removes all function definitions from `text` that have the substring `word` in their name"""
     text = path.read_text().strip()
@@ -212,11 +219,11 @@ def join_files(package: str, path1: Path, path2: Path):
     if not path1.exists():
         return
     word = f'{package}.{path1.stem}'
+    replace_pattern_in_file(path1, r'\\\n', '')  # remove line continuations
+    replace_pattern_in_file(path2, r'\\\n', '')  # remove line continuations
     remove_lines_containing_word(path2, word)
-    license1, text1 = split_license(path1.read_text())
-    license2, text2 = split_license(path2.read_text())
-    imports1, code1 = split_imports(text1)
-    imports2, code2 = split_imports(text2)
+    license1, imports1, code1 = split_code_file(path1)
+    license2, imports2, code2 = split_code_file(path2)
     text = f'{license1}\n\n{imports1}\n{imports2}\n\n{code1}\n\n{code2}\n'
     save_text(path1, text)
     remove_file(path2)

@@ -152,9 +152,6 @@ def Negative_log_likelihood_loss_colwise_gradient(Y, T):
     return -hadamard(row_repeat(inverse(columns_sum(hadamard(Y, T))), K), T)
 
 
-#####################################################################################
-
-
 def squared_error_loss_rowwise(y, t):
     return dot(y - t, y - t)
 
