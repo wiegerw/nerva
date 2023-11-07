@@ -4,7 +4,7 @@
 
 import re
 import time
-from typing import Tuple, Dict, Union
+from typing import Dict, Tuple, Union
 
 import numpy as np
 import torch

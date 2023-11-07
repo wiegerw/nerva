@@ -5,8 +5,7 @@
 import sympy as sp
 
 from mlps.nerva_sympy.layers_rowwise import LinearLayer
-from utilities import load_dict_from_npz
-from utilities import ppn
+from utilities import load_dict_from_npz, ppn
 
 Matrix = sp.Matrix
 

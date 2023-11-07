@@ -4,7 +4,8 @@
 
 import tensorflow as tf
 
-from mlps.nerva_tensorflow.matrix_operations import Diag, column_repeat, columns_max, columns_sum, exp, hadamard, identity, \
+from mlps.nerva_tensorflow.matrix_operations import Diag, column_repeat, columns_max, columns_sum, exp, hadamard, \
+    identity, \
     inverse, is_column_vector, is_row_vector, log, row_repeat, rows_max, rows_sum
 
 Matrix = tf.Tensor

@@ -2,6 +2,8 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
+import numpy as np
+
 from mlps.nerva_numpy.activation_functions import ActivationFunction, SReLUActivation, Sigmoid
 from mlps.nerva_numpy.matrix_operations import column_repeat, columns_sum, diag, elements_sum, hadamard, \
     identity, ones, power_minus_half, row_repeat, rows_mean, rows_sum, vector_size, zeros

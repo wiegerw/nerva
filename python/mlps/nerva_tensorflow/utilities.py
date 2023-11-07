@@ -5,7 +5,7 @@
 import os
 import re
 import time
-from typing import Tuple, Dict
+from typing import Dict, Tuple
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import numpy as np

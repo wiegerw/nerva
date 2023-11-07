@@ -5,7 +5,7 @@
 import tensorflow as tf
 
 from mlps.nerva_tensorflow.layers_rowwise import LinearLayer
-from mlps.nerva_tensorflow.utilities import pp, load_dict_from_npz
+from mlps.nerva_tensorflow.utilities import load_dict_from_npz, pp
 
 Matrix = tf.Tensor
 

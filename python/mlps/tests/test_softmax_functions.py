@@ -6,6 +6,7 @@
 
 from unittest import TestCase
 import numpy as np
+from mlps.nerva_sympy.matrix_operations import *
 from mlps.nerva_sympy.softmax_functions import *
 import mlps.nerva_numpy.softmax_functions as np_
 import mlps.nerva_tensorflow.softmax_functions as tf_

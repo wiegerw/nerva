@@ -2,11 +2,11 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from typing import Callable, Any
+from typing import Any, Callable
 
-from mlps.nerva_tensorflow.activation_functions import ActivationFunction, ReLUActivation, HyperbolicTangentActivation, \
-    AllReLUActivation, LeakyReLUActivation, SReLUActivation, SigmoidActivation
-from mlps.nerva_tensorflow.optimizers import Optimizer, GradientDescentOptimizer, MomentumOptimizer, NesterovOptimizer
+from mlps.nerva_tensorflow.activation_functions import ActivationFunction, AllReLUActivation, \
+    HyperbolicTangentActivation, LeakyReLUActivation, ReLUActivation, SReLUActivation, SigmoidActivation
+from mlps.nerva_tensorflow.optimizers import GradientDescentOptimizer, MomentumOptimizer, NesterovOptimizer, Optimizer
 from mlps.nerva_tensorflow.utilities import parse_function_call
 
 

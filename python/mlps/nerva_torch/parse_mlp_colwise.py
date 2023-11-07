@@ -3,11 +3,11 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 from typing import List
 
-from mlps.nerva_torch.layers_colwise import BatchNormalizationLayer, Layer, LinearLayer, SigmoidLayer, SoftmaxLayer, \
-    LogSoftmaxLayer, SReLULayer, ActivationLayer
-from mlps.nerva_torch.loss_functions_colwise import LossFunction, SquaredErrorLossFunction, MeanSquaredErrorLossFunction, \
-    CrossEntropyLossFunction, StableSoftmaxCrossEntropyLossFunction, LogisticCrossEntropyLossFunction, \
-    NegativeLogLikelihoodLossFunction
+from mlps.nerva_torch.layers_colwise import ActivationLayer, BatchNormalizationLayer, Layer, LinearLayer, \
+    LogSoftmaxLayer, SReLULayer, SigmoidLayer, SoftmaxLayer
+from mlps.nerva_torch.loss_functions_colwise import CrossEntropyLossFunction, LogisticCrossEntropyLossFunction, \
+    LossFunction, MeanSquaredErrorLossFunction, NegativeLogLikelihoodLossFunction, SquaredErrorLossFunction, \
+    StableSoftmaxCrossEntropyLossFunction
 from mlps.nerva_torch.multilayer_perceptron_colwise import MultilayerPerceptron
 from mlps.nerva_torch.parse_mlp import parse_activation
 

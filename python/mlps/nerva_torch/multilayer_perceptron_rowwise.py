@@ -5,7 +5,7 @@
 import torch
 
 from mlps.nerva_torch.layers_rowwise import LinearLayer
-from mlps.nerva_torch.utilities import pp, load_dict_from_npz
+from mlps.nerva_torch.utilities import load_dict_from_npz, pp
 
 Matrix = torch.Tensor
 

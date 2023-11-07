@@ -7,7 +7,8 @@ import sympy as sp
 from mlps.nerva_sympy.activation_functions import Sigmoid
 from mlps.nerva_sympy.matrix_operations import column_repeat, columns_sum, dot, elements_sum, hadamard, inverse, log, \
     row_repeat, rows_sum
-from mlps.nerva_sympy.softmax_functions import log_softmax_colwise, log_softmax_rowwise, softmax_colwise, softmax_rowwise, \
+from mlps.nerva_sympy.softmax_functions import log_softmax_colwise, log_softmax_rowwise, softmax_colwise, \
+    softmax_rowwise, \
     stable_log_softmax_colwise, stable_log_softmax_rowwise, stable_softmax_colwise, stable_softmax_rowwise
 
 

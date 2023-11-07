@@ -8,7 +8,7 @@ import random
 from unittest import TestCase
 import numpy as np
 import sympy as sp
-from mlps.nerva_sympy.matrix_operations import substitute
+from mlps.nerva_sympy.matrix_operations import substitute, diff
 import mlps.nerva_numpy.loss_functions as np_
 import mlps.nerva_tensorflow.loss_functions as tf_
 import mlps.nerva_torch.loss_functions as torch_
@@ -54,12 +54,12 @@ class TestCaseLossFunction(TestCase):
 
         loss = loss_value(y, t)
         Dy1 = loss_gradient(y, t)
-        Dy2 = sympy_.diff(loss, y)
+        Dy2 = diff(loss, y)
         self.assertTrue(equal_matrices(Dy1, Dy2))
 
         loss = Loss_value(Y, T)
         DY1 = Loss_gradient(Y, T)
-        DY2 = sympy_.diff(loss, Y)
+        DY2 = diff(loss, Y)
         self.assertTrue(equal_matrices(DY1, DY2))
 
         if one_hot:

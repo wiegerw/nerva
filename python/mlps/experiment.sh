@@ -1,5 +1,5 @@
 #!/bin/bash
-source utilities.sh
+source ../utilities.sh
 
 PYTHONPATH=..
 seed=1
@@ -14,14 +14,14 @@ learning_rate="Constant(0.01)"
 loss=SoftmaxCrossEntropy
 batch_size=100
 epochs=1
-dataset="data/cifar10.npz"
+dataset="../data/cifar10.npz"
 logfile="experiment.log"
 weights="experiment-weights.npz"
 
 function train_pytorch()
 {
   print_header "Train CIFAR10 using mlptorch.py"
-  python3 -u mlptorch.py \
+  python3 -u ../mlptorch.py \
     --seed=$seed \
     --layers=$layers \
     --sizes=$sizes \
@@ -57,7 +57,7 @@ function train_python()
 function train_nerva_cpp()
 {
   print_header "Train Nerva-c++ (rowwise)"
-  ../tools/dist/mlp_rowwise \
+  ../../tools/dist/mlp_rowwise \
       --computation=mkl \
       --seed=$seed \
       --overall-density=$density \
@@ -80,7 +80,7 @@ function train_nerva_cpp()
 function train_nerva_python()
 {
   print_header "Train Nerva-python (rowwise)"
-  ./mlprowwise.py \
+  ../mlprowwise.py \
       --computation=mkl \
       --seed=$seed \
       --overall-density=$density \

@@ -4,13 +4,13 @@
 
 from typing import List
 
-from mlps.nerva_torch.learning_rate import parse_learning_rate, LearningRateScheduler
 from mlps.nerva_torch.datasets import DataLoader, create_npz_dataloaders
+from mlps.nerva_torch.learning_rate import LearningRateScheduler, parse_learning_rate
 from mlps.nerva_torch.loss_functions_colwise import *
 from mlps.nerva_torch.multilayer_perceptron_colwise import MultilayerPerceptron
-from mlps.nerva_torch.parse_mlp_colwise import parse_multilayer_perceptron, parse_loss_function
-from mlps.nerva_torch.utilities import pp, set_numpy_options, set_torch_options, StopWatch
+from mlps.nerva_torch.parse_mlp_colwise import parse_loss_function, parse_multilayer_perceptron
 from mlps.nerva_torch.training import SGDOptions, print_epoch
+from mlps.nerva_torch.utilities import StopWatch, pp, set_numpy_options, set_torch_options
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):
