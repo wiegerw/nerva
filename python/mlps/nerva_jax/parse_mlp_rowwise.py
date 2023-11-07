@@ -4,11 +4,11 @@
 
 from typing import List
 
-from mlps.nerva_jax.layers_rowwise import BatchNormalizationLayer, Layer, LinearLayer, SigmoidLayer, SoftmaxLayer, \
-    LogSoftmaxLayer, SReLULayer, ActivationLayer
-from mlps.nerva_jax.loss_functions_rowwise import LossFunction, SquaredErrorLossFunction, MeanSquaredErrorLossFunction, \
-    CrossEntropyLossFunction, StableSoftmaxCrossEntropyLossFunction, LogisticCrossEntropyLossFunction, \
-    NegativeLogLikelihoodLossFunction
+from mlps.nerva_jax.layers_rowwise import ActivationLayer, BatchNormalizationLayer, Layer, LinearLayer, LogSoftmaxLayer, \
+    SReLULayer, SigmoidLayer, SoftmaxLayer
+from mlps.nerva_jax.loss_functions_rowwise import CrossEntropyLossFunction, LogisticCrossEntropyLossFunction, \
+    LossFunction, MeanSquaredErrorLossFunction, NegativeLogLikelihoodLossFunction, SquaredErrorLossFunction, \
+    StableSoftmaxCrossEntropyLossFunction
 from mlps.nerva_jax.multilayer_perceptron_rowwise import MultilayerPerceptron
 from mlps.nerva_jax.parse_mlp import parse_activation
 

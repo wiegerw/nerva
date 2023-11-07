@@ -5,12 +5,12 @@
 from typing import List
 
 from mlps.nerva_jax.datasets import DataLoader, create_npz_dataloaders
-from mlps.nerva_jax.loss_functions_rowwise import *
+from mlps.nerva_jax.learning_rate import LearningRateScheduler, parse_learning_rate
+from mlps.nerva_jax.loss_functions_rowwise import LossFunction
 from mlps.nerva_jax.multilayer_perceptron_rowwise import MultilayerPerceptron
-from mlps.nerva_jax.parse_mlp_rowwise import parse_multilayer_perceptron, parse_loss_function
-from mlps.nerva_jax.utilities import pp, set_jax_options, StopWatch
-from mlps.nerva_jax.learning_rate import parse_learning_rate, LearningRateScheduler
+from mlps.nerva_jax.parse_mlp_rowwise import parse_loss_function, parse_multilayer_perceptron
 from mlps.nerva_jax.training import SGDOptions, print_epoch
+from mlps.nerva_jax.utilities import StopWatch, pp, set_jax_options
 
 
 def compute_accuracy(M: MultilayerPerceptron, data_loader: DataLoader):

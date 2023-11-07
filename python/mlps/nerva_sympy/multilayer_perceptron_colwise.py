@@ -2,7 +2,9 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from mlps.nerva_sympy.layers_colwise import *
+import sympy as sp
+
+from mlps.nerva_sympy.layers_colwise import LinearLayer
 from utilities import load_dict_from_npz
 from utilities import ppn
 

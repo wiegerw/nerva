@@ -2,11 +2,11 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from typing import Callable, Any
+from typing import Any, Callable
 
-from mlps.nerva_jax.activation_functions import SReLUActivation, ActivationFunction, ReLUActivation, \
-    HyperbolicTangentActivation, AllReLUActivation, LeakyReLUActivation, SigmoidActivation
-from mlps.nerva_jax.optimizers import Optimizer, GradientDescentOptimizer, MomentumOptimizer, NesterovOptimizer
+from mlps.nerva_jax.activation_functions import ActivationFunction, AllReLUActivation, HyperbolicTangentActivation, \
+    LeakyReLUActivation, ReLUActivation, SReLUActivation, SigmoidActivation
+from mlps.nerva_jax.optimizers import GradientDescentOptimizer, MomentumOptimizer, NesterovOptimizer, Optimizer
 from mlps.nerva_jax.utilities import parse_function_call
 
 

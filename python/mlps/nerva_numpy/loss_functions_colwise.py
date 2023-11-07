@@ -2,7 +2,14 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from mlps.nerva_numpy.loss_functions import *
+import numpy as np
+
+from mlps.nerva_numpy.loss_functions import Cross_entropy_loss_colwise, Cross_entropy_loss_colwise_gradient, \
+    Logistic_cross_entropy_loss_colwise, Logistic_cross_entropy_loss_colwise_gradient, Mean_squared_error_loss_colwise, \
+    Mean_squared_error_loss_colwise_gradient, Negative_log_likelihood_loss_colwise, \
+    Negative_log_likelihood_loss_colwise_gradient, Softmax_cross_entropy_loss_colwise, \
+    Softmax_cross_entropy_loss_colwise_gradient, Squared_error_loss_colwise, Squared_error_loss_colwise_gradient, \
+    Stable_softmax_cross_entropy_loss_colwise, Stable_softmax_cross_entropy_loss_colwise_gradient
 
 Matrix = np.ndarray
 

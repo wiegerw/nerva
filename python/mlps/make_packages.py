@@ -110,6 +110,19 @@ def replace_string_in_file(path, source, target):
     path.write_text(text)
 
 
+def replace_pattern_in_file(path, pattern, replacement):
+    text = path.read_text()
+    text = re.sub(pattern, replacement, text)
+    path.write_text(text)
+
+
+def remove_lines_containing_word(path: Path, word: str):
+    text = path.read_text()
+    pattern = r".*?\b{}\b.*?\n".format(re.escape(word))
+    text = re.sub(pattern, "", text)
+    path.write_text(text)
+
+
 def split_lines(text: str, is_section_start, is_section_end) -> Tuple[str, str]:
     """ Splits text into two parts. The first part consists of sections defined by `is_section_start`
     and `is_section_end`. The second part contains the remaining lines.
@@ -125,10 +138,11 @@ def split_lines(text: str, is_section_start, is_section_end) -> Tuple[str, str]:
     other_lines = []
 
     for line in lines:
+        if inside_section and is_section_end(line):
+            inside_section = False
+
         if not inside_section and is_section_start(line):
             inside_section = True
-        elif inside_section and is_section_end(line):
-            inside_section = False
 
         if inside_section:
             section_lines.append(line)
@@ -160,17 +174,15 @@ def split_license(text):
 
 
 def remove_functions_from_file(path: Path, word: str):
-    """Removes all function definitions from `text` that have `word` in their name"""
+    """Removes all function definitions from `text` that have the substring `word` in their name"""
     text = path.read_text().strip()
 
     def is_function_start(line):
-        return re.match(rf'^def \w*{word}\w*\(', line)
+        return re.search(r'^def [a-zA-Z0-9_]*_colwise[a-zA-Z0-9_]*\(', line)
 
     # We assume that a function is ended by a line that does not start with a white space character
     def is_function_end(line):
         return line and not re.match(r'^\s', line)
-
-    remaining_lines = []
 
     _, text = split_lines(text, is_function_start, is_function_end)
     path.write_text(text)
@@ -189,11 +201,6 @@ def extract_function_from_file(path: Path, function_name: str) -> str:
     return text
 
 
-def remove_lines_containing_word(text: str, word: str):
-    pattern = r".*?\b{}\b.*?\n".format(re.escape(word))
-    return re.sub(pattern, "", text)
-
-
 def make_package_folders():
     for package in package_requirements:
         create_folder(Path('dist') / package_names[package] / 'src' / package)
@@ -201,9 +208,11 @@ def make_package_folders():
         create_folder(Path('dist') / package_names[package] / 'tools')
 
 
-def join_files(path1: Path, path2: Path):
+def join_files(package: str, path1: Path, path2: Path):
     if not path1.exists():
         return
+    word = f'{package}.{path1.stem}'
+    remove_lines_containing_word(path2, word)
     license1, text1 = split_license(path1.read_text())
     license2, text2 = split_license(path2.read_text())
     imports1, code1 = split_imports(text1)
@@ -258,10 +267,10 @@ def copy_source_files():
                 continue
             destination_file = destination_folder / source_file.name
             copy_file(source_file, destination_file)
-        join_files(destination_folder / 'loss_functions.py', destination_folder / 'loss_functions_rowwise.py')
-        join_files(destination_folder / 'parse_mlp.py', destination_folder / 'parse_mlp_rowwise.py')
-        join_files(destination_folder / 'softmax_functions.py', destination_folder / 'softmax_functions_rowwise.py')
-        join_files(destination_folder / 'training.py', destination_folder / 'training_rowwise.py')
+        join_files(package, destination_folder / 'loss_functions.py', destination_folder / 'loss_functions_rowwise.py')
+        join_files(package, destination_folder / 'parse_mlp.py', destination_folder / 'parse_mlp_rowwise.py')
+        join_files(package, destination_folder / 'softmax_functions.py', destination_folder / 'softmax_functions_rowwise.py')
+        join_files(package, destination_folder / 'training.py', destination_folder / 'training_rowwise.py')
 
 
 def copy_test_files():
@@ -301,8 +310,8 @@ def fix_source_files():
         text = text.replace('_rowwise', '')
         text = text.replace(', rowwise = True', '')
         text = text.replace(', rowwise', '')
-        text = remove_lines_containing_word(text, 'rowwise')
         path.write_text(text)
+        remove_lines_containing_word(path, 'rowwise')
         remove_functions_from_file(path, 'to_one_hot_colwise')
 
     def rename_file(folder, src, target):
@@ -321,6 +330,12 @@ def fix_source_files():
         rename_file(folder, 'layers_rowwise.py', 'layers.py')
 
 
+def fix_python_files():
+    for path in Path('dist').rglob('*.py'):
+        replace_string_in_file(path, 'mlps.', '')
+        replace_pattern_in_file(path, r'\n\n\n(\n*)', r'\n\n\n')
+
+
 def main():
     make_package_folders()
     create_init_files()
@@ -331,6 +346,7 @@ def main():
     copy_source_files()
     copy_test_files()
     fix_source_files()
+    fix_python_files()
 
 
 if __name__ == '__main__':

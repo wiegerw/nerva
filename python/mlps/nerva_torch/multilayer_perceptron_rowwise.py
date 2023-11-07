@@ -2,7 +2,9 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from mlps.nerva_torch.layers_rowwise import *
+import torch
+
+from mlps.nerva_torch.layers_rowwise import LinearLayer
 from mlps.nerva_torch.utilities import pp, load_dict_from_npz
 
 Matrix = torch.Tensor

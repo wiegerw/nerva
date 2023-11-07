@@ -2,8 +2,10 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from mlps.nerva_numpy.layers_rowwise import *
-from mlps.nerva_numpy.utilities import pp, load_dict_from_npz
+import numpy as np
+
+from mlps.nerva_numpy.layers_rowwise import LinearLayer
+from mlps.nerva_numpy.utilities import load_dict_from_npz, pp
 
 Matrix = np.ndarray
 

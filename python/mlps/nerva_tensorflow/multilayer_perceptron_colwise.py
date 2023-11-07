@@ -2,7 +2,9 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from mlps.nerva_tensorflow.layers_colwise import *
+import tensorflow as tf
+
+from mlps.nerva_tensorflow.layers_colwise import LinearLayer
 from mlps.nerva_tensorflow.utilities import pp, load_dict_from_npz
 
 Matrix = tf.Tensor

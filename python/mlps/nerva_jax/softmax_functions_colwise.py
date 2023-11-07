@@ -2,7 +2,11 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from mlps.nerva_jax.softmax_functions import *
+import jax.numpy as jnp
+
+from mlps.nerva_jax.softmax_functions import log_softmax_colwise, log_softmax_colwise_jacobian, softmax_colwise, \
+    softmax_colwise_jacobian, stable_log_softmax_colwise, stable_log_softmax_colwise_jacobian, stable_softmax_colwise, \
+    stable_softmax_colwise_jacobian
 
 Matrix = jnp.ndarray
 

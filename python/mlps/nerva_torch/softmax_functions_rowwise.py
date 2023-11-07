@@ -2,7 +2,11 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from mlps.nerva_torch.softmax_functions import *
+import torch
+
+from mlps.nerva_torch.softmax_functions import log_softmax_rowwise, log_softmax_rowwise_jacobian, softmax_rowwise, \
+    softmax_rowwise_jacobian, stable_log_softmax_rowwise, stable_log_softmax_rowwise_jacobian, stable_softmax_rowwise, \
+    stable_softmax_rowwise_jacobian
 
 Matrix = torch.Tensor
 

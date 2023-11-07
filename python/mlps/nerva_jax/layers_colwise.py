@@ -2,10 +2,14 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from mlps.nerva_jax.activation_functions import *
+import jax.numpy as jnp
+
+from mlps.nerva_jax.activation_functions import ActivationFunction, SReLUActivation, Sigmoid
+from mlps.nerva_jax.matrix_operations import column_repeat, columns_sum, diag, elements_sum, hadamard, \
+    identity, ones, power_minus_half, row_repeat, rows_mean, rows_sum, vector_size, zeros
 from mlps.nerva_jax.optimizers import CompositeOptimizer
 from mlps.nerva_jax.parse_mlp import parse_optimizer
-from mlps.nerva_jax.softmax_functions import *
+from mlps.nerva_jax.softmax_functions import log_softmax_colwise, softmax_colwise
 from mlps.nerva_jax.weight_initializers import set_layer_weights
 
 Matrix = jnp.ndarray

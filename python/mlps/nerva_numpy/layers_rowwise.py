@@ -2,10 +2,14 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from mlps.nerva_numpy.activation_functions import *
+import numpy as np
+
+from mlps.nerva_numpy.activation_functions import ActivationFunction, SReLUActivation, Sigmoid
+from mlps.nerva_numpy.matrix_operations import column_repeat, columns_mean, columns_sum, diag, elements_sum, hadamard, \
+    identity, ones, power_minus_half, row_repeat, rows_sum, vector_size, zeros
 from mlps.nerva_numpy.optimizers import CompositeOptimizer
 from mlps.nerva_numpy.parse_mlp import parse_optimizer
-from mlps.nerva_numpy.softmax_functions import *
+from mlps.nerva_numpy.softmax_functions import log_softmax_rowwise, softmax_rowwise
 from mlps.nerva_numpy.weight_initializers import set_layer_weights
 
 Matrix = np.ndarray

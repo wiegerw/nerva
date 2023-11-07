@@ -2,13 +2,20 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from mlps.nerva_tensorflow.loss_functions import *
+import tensorflow as tf
+
+from mlps.nerva_tensorflow.loss_functions import Cross_entropy_loss_colwise, Cross_entropy_loss_colwise_gradient, \
+    Logistic_cross_entropy_loss_colwise, Logistic_cross_entropy_loss_colwise_gradient, Mean_squared_error_loss_colwise, \
+    Mean_squared_error_loss_colwise_gradient, Negative_log_likelihood_loss_colwise, \
+    Negative_log_likelihood_loss_colwise_gradient, Softmax_cross_entropy_loss_colwise, \
+    Softmax_cross_entropy_loss_colwise_gradient, Squared_error_loss_colwise, Squared_error_loss_colwise_gradient, \
+    Stable_softmax_cross_entropy_loss_colwise, Stable_softmax_cross_entropy_loss_colwise_gradient
 
 Matrix = tf.Tensor
 
 
 class LossFunction(object):
-    def __call__(self, Y: Matrix, T: Matrix) -> Matrix:
+    def __call__(self, Y: Matrix, T: Matrix) -> float:
         raise NotImplementedError
 
     def gradient(self, Y: Matrix, T: Matrix) -> Matrix:

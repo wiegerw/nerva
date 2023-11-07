@@ -2,8 +2,10 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from mlps.nerva_jax.layers_colwise import *
-from mlps.nerva_jax.utilities import pp, load_dict_from_npz
+import jax.numpy as jnp
+
+from mlps.nerva_jax.layers_colwise import LinearLayer
+from mlps.nerva_jax.utilities import load_dict_from_npz, pp
 
 Matrix = jnp.ndarray
 

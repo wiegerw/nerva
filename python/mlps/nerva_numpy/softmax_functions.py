@@ -2,7 +2,10 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from mlps.nerva_numpy.matrix_operations import *
+import numpy as np
+
+from mlps.nerva_numpy.matrix_operations import Diag, column_repeat, columns_max, columns_sum, exp, hadamard, identity, \
+    inverse, is_column_vector, is_row_vector, log, row_repeat, rows_max, rows_sum
 
 Matrix = np.ndarray
 

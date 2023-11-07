@@ -2,8 +2,14 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from mlps.nerva_jax.activation_functions import *
-from mlps.nerva_jax.softmax_functions import *
+import jax.numpy as jnp
+
+from mlps.nerva_jax.activation_functions import Sigmoid
+from mlps.nerva_jax.matrix_operations import column_repeat, columns_sum, dot, elements_sum, hadamard, inverse, log, \
+    row_repeat, rows_sum
+from mlps.nerva_jax.softmax_functions import log_softmax_colwise, log_softmax_rowwise, softmax_colwise, softmax_rowwise, \
+    stable_log_softmax_colwise, stable_log_softmax_rowwise, stable_softmax_colwise, stable_softmax_rowwise
+
 
 # Naming conventions:
 # - lowercase functions operate on vectors (y and t)
