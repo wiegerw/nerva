@@ -101,6 +101,7 @@ def train(layer_specifications: List[str],
     loss = parse_loss_function(loss)
     learning_rate = parse_learning_rate(learning_rate)
     M = parse_multilayer_perceptron(layer_specifications, linear_layer_sizes, linear_layer_optimizers, linear_layer_weight_initializers)
-    M.load_weights_and_bias(weights_and_bias_file)
+    if weights_and_bias_file:
+        M.load_weights_and_bias(weights_and_bias_file)
     train_loader, test_loader = create_npz_dataloaders(dataset_file, batch_size=batch_size, rowwise=False)
     sgd(M, epochs, loss, learning_rate, train_loader, test_loader)
