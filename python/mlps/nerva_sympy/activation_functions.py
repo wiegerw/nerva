@@ -5,6 +5,10 @@
 import sympy as sp
 from sympy import Lambda, Piecewise
 
+from mlps.nerva_numpy.activation_functions import AllReLUActivation, HyperbolicTangentActivation, \
+    LeakyReLUActivation, ReLUActivation, \
+    SReLUActivation, SigmoidActivation
+
 Matrix = sp.Matrix
 
 # Naming conventions:
@@ -191,3 +195,29 @@ class SReLUActivation(ActivationFunction):
 
     def gradient(self, X: Matrix) -> Matrix:
         return Srelu_gradient(self.al, self.tl, self.ar, self.tr)(X)
+
+
+def parse_activation(text: str) -> ActivationFunction:
+    try:
+        name, args = parse_function_call(text)
+        if name == 'ReLU':
+            return ReLUActivation()
+        elif name == 'Sigmoid':
+            return SigmoidActivation()
+        elif name == 'HyperbolicTangent':
+            return HyperbolicTangentActivation()
+        elif name == 'AllReLU':
+            alpha = args['alpha']
+            return AllReLUActivation(alpha)
+        elif name == 'LeakyReLU':
+            alpha = args['alpha']
+            return LeakyReLUActivation(alpha)
+        elif name == 'SReLU':
+            al = float(args.get('al', 0))
+            tl = float(args.get('tl', 0))
+            ar = float(args.get('ar', 0))
+            tr = float(args.get('tr', 1))
+            return SReLUActivation(al, tl, ar, tr)
+    except:
+        pass
+    raise RuntimeError(f'Could not parse activation "{text}"')

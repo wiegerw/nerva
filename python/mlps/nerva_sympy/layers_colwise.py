@@ -4,11 +4,10 @@
 
 import sympy as sp
 
-from mlps.nerva_sympy.activation_functions import ActivationFunction, SReLUActivation, Sigmoid
+from mlps.nerva_sympy.activation_functions import ActivationFunction, SReLUActivation, Sigmoid, parse_activation
 from mlps.nerva_sympy.matrix_operations import column_repeat, columns_sum, diag, elements_sum, hadamard, \
     identity, ones, power_minus_half, row_repeat, rows_mean, rows_sum, vector_size, zeros
-from mlps.nerva_sympy.optimizers import CompositeOptimizer
-from mlps.nerva_sympy.parse_mlp import parse_optimizer
+from mlps.nerva_sympy.optimizers import CompositeOptimizer, parse_optimizer
 from mlps.nerva_sympy.softmax_functions import log_softmax_colwise, softmax_colwise
 from mlps.nerva_sympy.weight_initializers import set_layer_weights
 
@@ -330,3 +329,28 @@ class BatchNormalizationLayer(Layer):
     def set_optimizer(self, optimizer: str):
         make_optimizer = parse_optimizer(optimizer)
         self.optimizer = CompositeOptimizer([make_optimizer(self.beta, self.Dbeta), make_optimizer(self.gamma, self.Dgamma)])
+
+
+def parse_linear_layer(text: str,
+                       D: int,
+                       K: int,
+                       optimizer: str,
+                       weight_initializer: str
+                      ) -> Layer:
+    if text == 'Linear':
+        layer = LinearLayer(D, K)
+    elif text == 'Sigmoid':
+        layer = SigmoidLayer(D, K)
+    elif text == 'Softmax':
+        layer = SoftmaxLayer(D, K)
+    elif text == 'LogSoftmax':
+        layer = LogSoftmaxLayer(D, K)
+    elif text.startswith('SReLU'):
+        act = parse_activation(text)
+        layer = SReLULayer(D, K, act)
+    else:
+        act = parse_activation(text)
+        layer = ActivationLayer(D, K, act)
+    layer.set_optimizer(optimizer)
+    layer.set_weights(weight_initializer)
+    return layer

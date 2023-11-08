@@ -2,9 +2,10 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from typing import List
+from typing import Any, Callable, List
 
 import jax.numpy as jnp
+from mlps.nerva_jax.utilities import parse_function_call
 
 
 class Optimizer(object):
@@ -62,3 +63,19 @@ class NesterovOptimizer(MomentumOptimizer):
         self.delta_x = self.mu * self.delta_x - eta * Dx
         x1 = x + self.mu * self.delta_x - eta * Dx
         setattr(self.obj, self.attr_x, x1)
+
+
+def parse_optimizer(text: str) -> Callable[[Any, str, str], Optimizer]:
+    try:
+        name, args = parse_function_call(text)
+        if name == 'GradientDescent':
+            return lambda obj, attr_x, attr_Dx: GradientDescentOptimizer(obj, attr_x, attr_Dx)
+        elif name == 'Momentum':
+            mu = float(args['mu'])
+            return lambda obj, attr_x, attr_Dx: MomentumOptimizer(obj, attr_x, attr_Dx, mu)
+        elif name == 'Nesterov':
+            mu = float(args['mu'])
+            return lambda obj, attr_x, attr_Dx: NesterovOptimizer(obj, attr_x, attr_Dx, mu)
+    except:
+        pass
+    raise RuntimeError(f'Could not parse optimizer "{text}"')

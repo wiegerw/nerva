@@ -333,6 +333,7 @@ def fix_source_files():
         remove_functions_from_file(folder / 'softmax_functions.py', '_colwise')
         for path in folder.glob('*.py'):
             replace_string_in_file(path, '_rowwise', '')
+            replace_string_in_file(path, '_colwise', '')
         rename_file(folder, 'multilayer_perceptron_rowwise.py', 'multilayer_perceptron.py')
         rename_file(folder, 'layers_rowwise.py', 'layers.py')
 

@@ -1,10 +1,11 @@
 # Copyright 2023 Wieger Wesselink.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
+from typing import List
 
 import sympy as sp
 
-from mlps.nerva_sympy.layers_rowwise import LinearLayer
+from mlps.nerva_sympy.layers_rowwise import BatchNormalizationLayer, LinearLayer, parse_linear_layer
 from utilities import load_dict_from_npz, ppn
 
 Matrix = sp.Matrix
@@ -56,3 +57,34 @@ class MultilayerPerceptron(object):
                 layer.W[:] = data[f'W{index}']
                 layer.b[:] = data[f'b{index}']
                 index += 1
+
+
+def parse_multilayer_perceptron(layer_specifications: List[str],
+                                linear_layer_sizes: List[int],
+                                optimizers: List[str],
+                                linear_layer_weight_initializers: List[str]
+                               ) -> MultilayerPerceptron:
+
+    assert len(linear_layer_weight_initializers) == len(linear_layer_sizes) - 1
+    layers = []
+
+    linear_layer_index = 0
+    optimizer_index = 0
+    D = linear_layer_sizes[linear_layer_index]  # the input size of the current layer
+
+    for specification in layer_specifications:
+        if specification == 'BatchNormalization':
+            layer = BatchNormalizationLayer(D)
+            optimizer = optimizers[optimizer_index]
+            layer.set_optimizer(optimizer)
+            optimizer_index += 1
+        else:
+            K = linear_layer_sizes[linear_layer_index + 1]  # the output size of the layer
+            optimizer = optimizers[optimizer_index]
+            weight_initializer = linear_layer_weight_initializers[linear_layer_index]
+            layer = parse_linear_layer(specification, D, K, optimizer, weight_initializer)
+            optimizer_index += 1
+            linear_layer_index += 1
+            D = K
+        layers.append(layer)
+    return MultilayerPerceptron(layers)

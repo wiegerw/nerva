@@ -4,6 +4,8 @@
 
 import torch
 
+from mlps.nerva_torch.utilities import parse_function_call
+
 Matrix = torch.Tensor
 
 
@@ -126,3 +128,29 @@ class SReLUActivation(ActivationFunction):
     def gradient(self, X: Matrix) -> Matrix:
         al, tl, ar, tr = self.x
         return Srelu_gradient(al, tl, ar, tr)(X)
+
+
+def parse_activation(text: str) -> ActivationFunction:
+    try:
+        name, args = parse_function_call(text)
+        if name == 'ReLU':
+            return ReLUActivation()
+        elif name == 'Sigmoid':
+            return SigmoidActivation()
+        elif name == 'HyperbolicTangent':
+            return HyperbolicTangentActivation()
+        elif name == 'AllReLU':
+            alpha = args['alpha']
+            return AllReLUActivation(alpha)
+        elif name == 'LeakyReLU':
+            alpha = args['alpha']
+            return LeakyReLUActivation(alpha)
+        elif name == 'SReLU':
+            al = float(args.get('al', 0))
+            tl = float(args.get('tl', 0))
+            ar = float(args.get('ar', 0))
+            tr = float(args.get('tr', 1))
+            return SReLUActivation(al, tl, ar, tr)
+    except:
+        pass
+    raise RuntimeError(f'Could not parse activation "{text}"')

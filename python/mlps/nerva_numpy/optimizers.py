@@ -2,9 +2,11 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from typing import List
+from typing import Any, Callable, List
 
 import numpy as np
+
+from mlps.nerva_numpy.utilities import parse_function_call
 
 
 class Optimizer(object):
@@ -48,3 +50,19 @@ class NesterovOptimizer(MomentumOptimizer):
     def update(self, eta):
         self.delta_x = self.mu * self.delta_x - eta * self.Dx
         self.x += self.mu * self.delta_x - eta * self.Dx
+
+
+def parse_optimizer(text: str) -> Callable[[Any, Any], Optimizer]:
+    try:
+        name, args = parse_function_call(text)
+        if name == 'GradientDescent':
+            return lambda x, Dx: GradientDescentOptimizer(x, Dx)
+        elif name == 'Momentum':
+            mu = float(args['mu'])
+            return lambda x, Dx: MomentumOptimizer(x, Dx, mu)
+        elif name == 'Nesterov':
+            mu = float(args['mu'])
+            return lambda x, Dx: NesterovOptimizer(x, Dx, mu)
+    except:
+        pass
+    raise RuntimeError(f'Could not parse optimizer "{text}"')

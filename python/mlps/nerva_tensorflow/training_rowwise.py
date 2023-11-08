@@ -9,8 +9,8 @@ from typing import List
 from mlps.nerva_tensorflow.learning_rate import parse_learning_rate, LearningRateScheduler
 from mlps.nerva_tensorflow.datasets import DataLoader, create_npz_dataloaders
 from mlps.nerva_tensorflow.loss_functions_rowwise import *
-from mlps.nerva_tensorflow.multilayer_perceptron_rowwise import MultilayerPerceptron
-from mlps.nerva_tensorflow.parse_mlp_rowwise import parse_multilayer_perceptron, parse_loss_function
+from mlps.nerva_tensorflow.multilayer_perceptron_rowwise import MultilayerPerceptron, parse_multilayer_perceptron
+from mlps.nerva_tensorflow.loss_functions_rowwise import parse_loss_function
 from mlps.nerva_tensorflow.utilities import pp, set_numpy_options, set_tensorflow_options, StopWatch
 from mlps.nerva_tensorflow.training import SGDOptions, print_epoch
 

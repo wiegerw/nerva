@@ -3,6 +3,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import jax.numpy as jnp
+from mlps.nerva_jax.utilities import parse_function_call
 
 Matrix = jnp.ndarray
 
@@ -127,3 +128,27 @@ class SReLUActivation(ActivationFunction):
         return Srelu_gradient(al, tl, ar, tr)(X)
 
 
+def parse_activation(text: str) -> ActivationFunction:
+    try:
+        name, args = parse_function_call(text)
+        if name == 'ReLU':
+            return ReLUActivation()
+        elif name == 'Sigmoid':
+            return SigmoidActivation()
+        elif name == 'HyperbolicTangent':
+            return HyperbolicTangentActivation()
+        elif name == 'AllReLU':
+            alpha = args['alpha']
+            return AllReLUActivation(alpha)
+        elif name == 'LeakyReLU':
+            alpha = args['alpha']
+            return LeakyReLUActivation(alpha)
+        elif name == 'SReLU':
+            al = float(args.get('al', 0))
+            tl = float(args.get('tl', 0))
+            ar = float(args.get('ar', 0))
+            tr = float(args.get('tr', 1))
+            return SReLUActivation(al, tl, ar, tr)
+    except:
+        pass
+    raise RuntimeError(f'Could not parse activation "{text}"')
