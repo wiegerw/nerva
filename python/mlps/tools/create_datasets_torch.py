@@ -6,145 +6,87 @@
 
 import argparse
 from pathlib import Path
-from typing import Tuple
 
 import numpy as np
 import torch
-from torchvision import transforms, datasets
+from torchvision import transforms
+from torchvision.datasets import CIFAR10, MNIST
+from torch.utils.data import DataLoader
 
 
-def create_dataloaders(train_dataset, test_dataset, batch_size, test_batch_size) -> Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset,
-        batch_size,
-        num_workers=8,
-        pin_memory=True,
-        shuffle=True)
-
-    test_loader = torch.utils.data.DataLoader(
-        test_dataset,
-        test_batch_size,
-        shuffle=False,
-        num_workers=1,
-        pin_memory=True)
-
-    return train_loader, test_loader
+def pp(name: str, x: torch.Tensor):
+    if x.dim() == 1:
+        print(f'{name} ({x.shape[0]})\n{x.data}')
+    else:
+        print(f'{name} ({x.shape[0]}x{x.shape[1]})\n{x.data}')
 
 
-def extract_tensors_from_dataloader(dataloader: torch.utils.data.DataLoader) -> Tuple[torch.Tensor, torch.Tensor]:
-    """
-    Returns the dataset and corresponding targets that are wrapped in a data loader
-    :param dataloader: a data loader
-    """
-    dataset = []
-    targets = []
-
-    for data_batch, target_batch in dataloader:
-        dataset.append(data_batch)
-        targets.append(target_batch)
-
-    dataset = torch.cat(dataset, dim=0)
-    targets = torch.cat(targets, dim=0)
-
-    return dataset, targets
+def save_dataset(path: Path, X_train, T_train, X_test, T_test):
+    """Saves the dataset in a dictionary in .npz format."""
+    print(f'Saving data to file {path}')
+    with open(path, "wb") as f:
+        np.savez_compressed(f, X_train=X_train.numpy(), T_train=T_train.numpy(), X_test=X_test.numpy(), T_test=T_test.numpy())
 
 
-def create_dataset(data_dir: str, batch_size: int, dataset: str):
-    """
-    Creates a dataset in .npz format.
-    """
+def load_cifar10(root: str, batch_size=64, num_workers=4):
+    """ Downloads the CIFAR-10 dataset, normalizes and flattens it, and saves it into .npz format."""
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-    dataset_functions = {
-        'cifar10': datasets.CIFAR10,
-        'mnist': datasets.MNIST,
-    }
+    train_dataset = CIFAR10(root=root, train=True, transform=transform, download=True)
+    test_dataset = CIFAR10(root=root, train=False, transform=transform, download=True)
 
-    normalize_functions = {
-        'cifar10': transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-        'mnist': transforms.Normalize((0.1307,), (0.3081,)),
-    }
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
-    dataset_function = dataset_functions[dataset]
-    normalize_function = normalize_functions[dataset]
+    flatten = lambda x: x.view(x.size(0), -1)
 
-    transform = transforms.Compose(
-        [transforms.ToTensor(),
-         normalize_function,
-         transforms.Lambda(lambda x: torch.flatten(x)),
-        ]
-    )
+    X_train, T_train = zip(*[(flatten(x), t) for x, t in train_loader])
+    X_train = torch.cat(X_train)
+    T_train = torch.cat(T_train)
 
-    train_dataset = dataset_function(data_dir, True, transform=transform, download=True)
-    test_dataset = dataset_function(data_dir, False, transform=transform, download=False)
-    train_loader, test_loader = create_dataloaders(train_dataset, test_dataset, batch_size, batch_size)
-    Xtrain, Ttrain = extract_tensors_from_dataloader(train_loader)
-    Xtest, Ttest = extract_tensors_from_dataloader(test_loader)
+    X_test, T_test = zip(*[(flatten(x), t) for x, t in test_loader])
+    X_test = torch.cat(X_test)
+    T_test = torch.cat(T_test)
 
-    filename = Path(data_dir) / f'{dataset}.npz'
-    print(f'Saving data to file {filename}')
-    with open(filename, "wb") as f:
-        np.savez(f,
-                 Xtrain=Xtrain.detach().numpy(),
-                 Ttrain=Ttrain.detach().numpy(),
-                 Xtest=Xtest.detach().numpy(),
-                 Ttest=Ttest.detach().numpy()
-                )
+    save_dataset(Path(root) / 'cifar10.npz', X_train, T_train, X_test, T_test)
 
 
-def create_mnist_dataset(data_dir: str, batch_size: int):
-    """
-    Creates MNIST train and test datasets without augmentation.
-    """
+def load_mnist(root: str, batch_size=64, num_workers=4):
+    """ Downloads the MNIST dataset, normalizes and flattens it, and saves it into .npz format."""
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5), (0.5,))])
 
-    normalize = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+    train_dataset = MNIST(root=root, train=True, transform=transform, download=True)
+    test_dataset = MNIST(root=root, train=False, transform=transform, download=True)
 
-    train_transform = transforms.Compose([
-        transforms.ToTensor(),
-        normalize,
-        transforms.Lambda(lambda x: torch.flatten(x)),
-    ])
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
-    test_transform = transforms.Compose([
-        transforms.ToTensor(),
-        normalize,
-        transforms.Lambda(lambda x: torch.flatten(x)),
-    ])
+    X_train, T_train = zip(*[(x.view(x.size(0), -1), t) for x, t in train_loader])
+    X_train = torch.cat(X_train)
+    T_train = torch.cat(T_train)
 
-    train_dataset = datasets.MNIST(data_dir, True, train_transform, download=True)
-    test_dataset = datasets.MNIST(data_dir, False, test_transform, download=False)
-    train_loader, test_loader = create_dataloaders(train_dataset, test_dataset, batch_size, batch_size)
-    Xtrain, Ttrain = extract_tensors_from_dataloader(train_loader)
-    Xtest, Ttest = extract_tensors_from_dataloader(test_loader)
+    X_test, T_test = zip(*[(x.view(x.size(0), -1), t) for x, t in test_loader])
+    X_test = torch.cat(X_test)
+    T_test = torch.cat(T_test)
 
-    filename = Path(data_dir) / 'mnist.npz'
-    print(f'Saving data to file {filename}')
-    with open(filename, "wb") as f:
-        np.savez_compressed(f,
-                            Xtrain=Xtrain.detach().numpy(),
-                            Ttrain=Ttrain.detach().numpy(),
-                            Xtest=Xtest.detach().numpy(),
-                            Ttest=Ttest.detach().numpy()
-                            )
+    save_dataset(Path(root) / 'mnist.npz', X_train, T_train, X_test, T_test)
 
 
 def main():
     cmdline_parser = argparse.ArgumentParser()
     cmdline_parser.add_argument("--batch-size", help="The batch size (default: 100)", type=int, default=100)
-    cmdline_parser.add_argument('--datadir', type=str, default='./data', help='The directory where data sets are stored (default: ./data)')
-    cmdline_parser.add_argument('--dataset', type=str, help='The dataset (cifar10, mnist or all)')
+    cmdline_parser.add_argument("--workers", help="The number of workers used for loading (default: 4)", type=int, default=4)
+    cmdline_parser.add_argument('--root', type=str, default='./data', help='The directory where data sets are stored (default: ./data)')
+    cmdline_parser.add_argument('dataset', type=str, help='The dataset (cifar10 or mnist)')
     args = cmdline_parser.parse_args()
 
-    all_datasets = ['cifar10', 'mnist']
-    if args.dataset in all_datasets:
-        datasets = [args.dataset]
-    elif args.dataset == 'all':
-        datasets = all_datasets
-    else:
-        raise RuntimeError(f"Error: dataset '{args.dataset}' is unsupported")
-
     torch.multiprocessing.set_sharing_strategy('file_system')
-    for dataset in datasets:
-        create_dataset(args.datadir, args.batch_size, dataset)
+    if args.dataset == 'cifar10':
+        load_cifar10(args.root, args.batch_size, args.workers)
+    elif args.dataset == 'mnist':
+        load_mnist(args.root, args.batch_size, args.workers)
+    else:
+        raise RuntimeError(f"Unknown dataset '{args.dataset}'")
 
 
 if __name__ == '__main__':
