@@ -14,18 +14,11 @@ from torchvision.datasets import CIFAR10, MNIST
 from torch.utils.data import DataLoader
 
 
-def pp(name: str, x: torch.Tensor):
-    if x.dim() == 1:
-        print(f'{name} ({x.shape[0]})\n{x.data}')
-    else:
-        print(f'{name} ({x.shape[0]}x{x.shape[1]})\n{x.data}')
-
-
 def save_dataset(path: Path, X_train, T_train, X_test, T_test):
     """Saves the dataset in a dictionary in .npz format."""
     print(f'Saving data to file {path}')
     with open(path, "wb") as f:
-        np.savez_compressed(f, X_train=X_train.numpy(), T_train=T_train.numpy(), X_test=X_test.numpy(), T_test=T_test.numpy())
+        np.savez_compressed(f, Xtrain=X_train, Ttrain=T_train, Xtest=X_test, Ttest=T_test)
 
 
 def load_cifar10(root: str, batch_size=64, num_workers=4):
