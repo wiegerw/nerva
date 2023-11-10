@@ -53,33 +53,106 @@ CIFAR10_SH = r'''#!/bin/sh
 
 PYTHONPATH=../src
 
-python3 mlp.py \
+if [ ! -f ../data/cifar10.npz ]; then
+    echo "Error: file ../data/cifar10.npz does not exist."
+    echo "Please provide the correct location or run the prepare_datasets.sh script first."
+    exit 1
+fi
+
+python3 ../tools/mlp.py \
         --layers="ReLU;ReLU;Linear" \
         --sizes="3072,1024,512,10" \
         --optimizers="Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9)" \
         --init-weights="Xavier,Xavier,Xavier" \
         --batch-size=100 \
-        --epochs=1 \
+        --epochs=10 \
         --loss=SoftmaxCrossEntropy \
         --learning-rate="Constant(0.01)" \
-        --dataset=./data/cifar10.npz
+        --dataset=../data/cifar10.npz
 '''
 
-MNIST_SH = '''#!/bin/sh
+CIFAR10_BAT = r'''@echo off
+
+set PYTHONPATH=..\src
+
+if not exist ..\data\cifar10.npz (
+    echo Error: file ..\data\cifar10.npz does not exist.
+    echo Please provide the correct location or run the prepare_datasets.bat script first.
+    exit /b 1
+)
+
+python ..\tools\mlp.py ^
+    --layers="ReLU;ReLU;Linear" ^
+    --sizes="784,1024,512,10" ^
+    --optimizers="Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9)" ^
+    --init-weights="Xavier,Xavier,Xavier" ^
+    --batch-size=100 ^
+    --epochs=10 ^
+    --loss=SoftmaxCrossEntropy ^
+    --learning-rate="Constant(0.01)" ^
+    --dataset=..\data\cifar10.npz
+'''
+
+MNIST_SH = r'''#!/bin/sh
 
 PYTHONPATH=../src
 
-python3 mlp.py \
+if [ ! -f ../data/mnist.npz ]; then
+    echo "Error: file ../data/mnist.npz does not exist."
+    echo "Please provide the correct location or run the prepare_datasets.sh script first."
+    exit 1
+fi
+
+python3 ../tools/mlp.py \
         --layers="ReLU;ReLU;Linear" \
         --sizes="784,1024,512,10" \
         --optimizers="Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9)" \
         --init-weights="Xavier,Xavier,Xavier" \
         --batch-size=100 \
-        --epochs=1 \
+        --epochs=10 \
         --loss=SoftmaxCrossEntropy \
         --learning-rate="Constant(0.01)" \
-        --dataset=./data/mnist.npz
+        --dataset=../data/mnist.npz
 '''
+
+MNIST_BAT = r'''@echo off
+
+set PYTHONPATH=..\src
+
+if not exist ..\data\mnist.npz (
+    echo Error: file ..\data\mnist.npz does not exist.
+    echo Please provide the correct location or run the prepare_datasets.bat script first.
+    exit /b 1
+)
+
+python ..\tools\mlp.py ^
+    --layers="ReLU;ReLU;Linear" ^
+    --sizes="784,1024,512,10" ^
+    --optimizers="Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9)" ^
+    --init-weights="Xavier,Xavier,Xavier" ^
+    --batch-size=100 ^
+    --epochs=10 ^
+    --loss=SoftmaxCrossEntropy ^
+    --learning-rate="Constant(0.01)" ^
+    --dataset=..\data\mnist.npz
+'''
+
+PREPARE_DATASETS_SH = r'''#!/bin/sh
+
+PYTHONPATH=../src
+
+python3 ../tools/create_datasets.py cifar10 --root=../data
+python3 ../tools/create_datasets.py mnist --root=../data
+'''
+
+PREPARE_DATASETS_BAT = r'''@echo off
+
+set PYTHONPATH=..\src
+
+python ..\tools\create_datasets.py cifar10 --root=..\data
+python ..\tools\create_datasets.py mnist --root=..\data
+'''
+
 
 package_requirements = {
     'nerva_jax': ['numpy', 'jax'],
@@ -240,8 +313,10 @@ def extract_function_from_file(path: Path, function_name: str) -> str:
 def make_package_folders():
     for package in package_requirements:
         create_folder(Path('dist') / package_names[package] / 'src' / package)
-        create_folder(Path('dist') / package_names[package] / 'tests')
+        create_folder(Path('dist') / package_names[package] / 'examples')
         create_folder(Path('dist') / package_names[package] / 'tools')
+        if 'sympy' in package:
+            create_folder(Path('dist') / package_names[package] / 'tests')
 
 
 def join_files(package: str, path1: Path, path2: Path):
@@ -332,17 +407,22 @@ def create_mlp_files():
         if 'sympy' in package:
             continue
         framework = package.replace('nerva_', '')
-        target_folder = Path('dist') / package_names[package] / 'tools'
+        examples_folder = Path('dist') / package_names[package] / 'examples'
+        tools_folder = Path('dist') / package_names[package] / 'tools'
         mlp_utilities_file = source_folder / f'mlp_utilities.py'
-        mlp_file = target_folder / 'mlp.py'
+        mlp_file = tools_folder / 'mlp.py'
         copy_file(source_folder / f'mlp_{framework}_rowwise.py', mlp_file)
         text = extract_function_from_file(mlp_utilities_file, 'make_argument_parser')
         replace_string_in_file(mlp_file, 'def main():', text + '\n\n\ndef main():')
         replace_string_in_file(mlp_file, '_rowwise', '')
         replace_string_in_file(mlp_file, 'from mlps.mlp_utilities import make_argument_parser', 'import argparse')
 
-        save_text(target_folder / 'cifar10.sh', CIFAR10_SH, mode=0o755)
-        save_text(target_folder / 'mnist.sh', MNIST_SH, mode=0o755)
+        save_text(examples_folder / 'cifar10.sh', CIFAR10_SH, mode=0o755)
+        save_text(examples_folder / 'cifar10.bat', CIFAR10_BAT)
+        save_text(examples_folder / 'mnist.sh', MNIST_SH, mode=0o755)
+        save_text(examples_folder / 'mnist.bat', MNIST_BAT)
+        save_text(examples_folder / 'prepare_datasets.sh', PREPARE_DATASETS_SH, mode=0o755)
+        save_text(examples_folder / 'prepare_datasets.bat', PREPARE_DATASETS_BAT)
 
 
 def fix_source_files():
