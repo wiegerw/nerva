@@ -15,26 +15,34 @@ def save_dataset(path: Path, X_train, T_train, X_test, T_test):
     """Saves the dataset in a dictionary in .npz format."""
     print(f'Saving data to file {path}')
     with open(path, "wb") as f:
-        np.savez_compressed(f, Xtrain=X_train, Ttrain=T_train, Xtest=X_test, Ttest=T_test)
+        np.savez_compressed(f,
+                            Xtrain=X_train.astype(np.float32),
+                            Ttrain=T_train.astype(np.int64),
+                            Xtest=X_test.astype(np.float32),
+                            Ttest=T_test.astype(np.int64))
+
+
+def normalize_and_flatten(data):
+    data = data / 255.0
+    data = data.reshape(data.shape[0], -1)
+    return data
 
 
 def load_cifar10(root: str):
     (X_train, T_train), (X_test, T_test) = cifar10.load_data()
-    X_train = X_train / 255.0
-    X_test = X_test / 255.0
-    X_train = X_train.reshape(X_train.shape[0], -1)
-    X_test = X_test.reshape(X_test.shape[0], -1)
-
+    X_train = normalize_and_flatten(X_train)
+    T_train = T_train.ravel()
+    X_test = normalize_and_flatten(X_test)
+    T_test = T_test.ravel()
     save_dataset(Path(root) / 'cifar10.npz', X_train, T_train, X_test, T_test)
 
 
 def load_mnist(root: str):
     (X_train, T_train), (X_test, T_test) = mnist.load_data()
-    X_train = X_train / 255.0
-    X_test = X_test / 255.0
-    X_train = X_train.reshape(X_train.shape[0], -1)
-    X_test = X_test.reshape(X_test.shape[0], -1)
-
+    X_train = normalize_and_flatten(X_train)
+    T_train = T_train.ravel()
+    X_test = normalize_and_flatten(X_test)
+    T_test = T_test.ravel()
     save_dataset(Path(root) / 'mnist.npz', X_train, T_train, X_test, T_test)
 
 

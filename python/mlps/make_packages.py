@@ -11,8 +11,7 @@ from typing import Tuple
 
 VERSION = '0.1'
 
-SETUP_CFG = '''
-[metadata]
+SETUP_CFG = '''[metadata]
 name = NAME
 version = VERSION
 author = Wieger Wesselink
@@ -38,8 +37,7 @@ python_requires = >=3.10
 where = src
 '''
 
-PYPROJECT_TOML = '''
-[build-system]
+PYPROJECT_TOML = '''[build-system]
 requires = [
     "setuptools>=42",
     "wheel"
@@ -47,9 +45,40 @@ requires = [
 build-backend = "setuptools.build_meta"
 '''
 
-README_MD = '''
-# The NAME library
+README_MD = '''# The NAME library
 This repository contains a Python implementation of multilayer perceptrons in FRAMEWORK.
+'''
+
+CIFAR10_SH = r'''#!/bin/sh
+
+PYTHONPATH=../src
+
+python3 mlp.py \
+        --layers="ReLU;ReLU;Linear" \
+        --sizes="3072,1024,512,10" \
+        --optimizers="Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9)" \
+        --init-weights="Xavier,Xavier,Xavier" \
+        --batch-size=100 \
+        --epochs=1 \
+        --loss=SoftmaxCrossEntropy \
+        --learning-rate="Constant(0.01)" \
+        --dataset=./data/cifar10.npz
+'''
+
+MNIST_SH = '''#!/bin/sh
+
+PYTHONPATH=../src
+
+python3 mlp.py \
+        --layers="ReLU;ReLU;Linear" \
+        --sizes="784,1024,512,10" \
+        --optimizers="Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9)" \
+        --init-weights="Xavier,Xavier,Xavier" \
+        --batch-size=100 \
+        --epochs=1 \
+        --loss=SoftmaxCrossEntropy \
+        --learning-rate="Constant(0.01)" \
+        --dataset=./data/mnist.npz
 '''
 
 package_requirements = {
@@ -84,10 +113,10 @@ def is_empty_line(line: str):
     return not line or line.isspace()
 
 
-def save_text(path: Path, text: str):
+def save_text(path: Path, text: str, mode=0o644):
     print(f'Saving {path}')
     path.write_text(text)
-
+    path.chmod(mode)
 
 def copy_file(source: Path, target: Path):
     print(f"Copy '{source}' to '{target}'")
@@ -266,6 +295,13 @@ def create_setup_files():
         save_text(dest, text)
 
 
+def create_create_datasets_files():
+    copy_file(Path('tools') / 'create_datasets_numpy.py', Path('dist') / package_names['nerva_numpy'] / 'tools' / 'create_datasets.py')
+    copy_file(Path('tools') / 'create_datasets_numpy.py', Path('dist') / package_names['nerva_jax'] / 'tools' / 'create_datasets.py')
+    copy_file(Path('tools') / 'create_datasets_torch.py', Path('dist') / package_names['nerva_torch'] / 'tools' / 'create_datasets.py')
+    copy_file(Path('tools') / 'create_datasets_tensorflow.py', Path('dist') / package_names['nerva_tensorflow'] / 'tools' / 'create_datasets.py')
+
+
 def copy_source_files():
     for package, requirements in package_requirements.items():
         destination_folder = package_folder(package)
@@ -275,7 +311,6 @@ def copy_source_files():
             destination_file = destination_folder / source_file.name
             copy_file(source_file, destination_file)
         join_files(package, destination_folder / 'loss_functions.py', destination_folder / 'loss_functions_rowwise.py')
-        join_files(package, destination_folder / 'parse_mlp.py', destination_folder / 'parse_mlp_rowwise.py')
         join_files(package, destination_folder / 'softmax_functions.py', destination_folder / 'softmax_functions_rowwise.py')
         join_files(package, destination_folder / 'training.py', destination_folder / 'training_rowwise.py')
 
@@ -291,7 +326,7 @@ def copy_test_files():
         shutil.copy(source_file, destination_file)
 
 
-def copy_mlp_files():
+def create_mlp_files():
     source_folder = Path('.')
     for package in package_requirements:
         if 'sympy' in package:
@@ -305,6 +340,9 @@ def copy_mlp_files():
         replace_string_in_file(mlp_file, 'def main():', text + '\n\n\ndef main():')
         replace_string_in_file(mlp_file, '_rowwise', '')
         replace_string_in_file(mlp_file, 'from mlps.mlp_utilities import make_argument_parser', 'import argparse')
+
+        save_text(target_folder / 'cifar10.sh', CIFAR10_SH, mode=0o755)
+        save_text(target_folder / 'mnist.sh', MNIST_SH, mode=0o755)
 
 
 def fix_source_files():
@@ -350,7 +388,8 @@ def main():
     create_requirements_files()
     create_readme_files()
     create_setup_files()
-    copy_mlp_files()
+    create_create_datasets_files()
+    create_mlp_files()
     copy_source_files()
     copy_test_files()
     fix_source_files()

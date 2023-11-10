@@ -47,7 +47,9 @@ def create_cifar10(root: str, cifar10_folder: str):
     T_test = np.array(test_data[b'labels'])
 
     X_train = normalize_and_flatten(X_train)
+    T_train = T_train.ravel()
     X_test = normalize_and_flatten(X_test)
+    T_test = T_test.ravel()
 
     save_dataset(Path(root) / 'cifar10.npz', X_train, T_train, X_test, T_test)
 
@@ -71,7 +73,9 @@ def create_mnist(root: str, mnist_folder: str):
     T_test = read_idx(Path(mnist_folder) / "t10k-labels-idx1-ubyte")
 
     X_train = normalize_and_flatten(X_train)
+    T_train = T_train.ravel()
     X_test = normalize_and_flatten(X_test)
+    T_test = T_test.ravel()
 
     save_dataset(Path(root) / 'mnist.npz', X_train, T_train, X_test, T_test)
 
