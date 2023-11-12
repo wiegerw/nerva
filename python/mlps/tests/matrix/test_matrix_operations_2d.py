@@ -6,11 +6,11 @@
 
 from unittest import TestCase
 import numpy as np
-import mlps.tests.matrix_operations_numpy as np_
-import mlps.tests.matrix_operations_tensorflow as tf_
-import mlps.tests.matrix_operations_torch as torch_
-import mlps.tests.matrix_operations_sympy as sympy_
-import mlps.tests.matrix_operations_jax as jnp_
+import mlps.tests.matrix.matrix_operations_numpy as np_
+import mlps.tests.matrix.matrix_operations_tensorflow as tf_
+import mlps.tests.matrix.matrix_operations_torch as torch_
+import mlps.tests.matrix.matrix_operations_sympy as sympy_
+import mlps.tests.matrix.matrix_operations_jax as jnp_
 from mlps.tests.test_utilities import to_numpy, to_sympy, to_torch, to_tensorflow, to_jax
 
 

@@ -246,10 +246,10 @@ class TestBatchNormalizationLayers(TestCase):
         DY = substitute(diff(loss(y), y), (y, Y))
 
         # backpropagation
-        DZ = hadamard(row_repeat(gamma, N), DY)  # not explicitly given in [Yeh 2017]
-        Dbeta = columns_sum(DY)                  # the same as in [Yeh 2017]
-        Dgamma = columns_sum(hadamard(DY, Z))    # I can't parse the equation in [Yeh 2017], but this should be it
-        DX = (1 / N) * (-hadamard(row_repeat(Dgamma, N), Z) + N * DY - row_repeat(Dbeta, N)) * row_repeat(hadamard(gamma, Sigma), D) # I can't parse the equation in [Yeh 2017], but this should be it
+        DZ = hadamard(row_repeat(gamma, N), DY)  # this equation is not explicitly given in [Yeh 2017]
+        Dbeta = columns_sum(DY)                  # this equation is the same as in [Yeh 2017]
+        Dgamma = columns_sum(hadamard(DY, Z))    # I can't parse the equation in [Yeh 2017], but this is probably it
+        DX = (1 / N) * (-hadamard(row_repeat(Dgamma, N), Z) + N * DY - row_repeat(Dbeta, N)) * row_repeat(hadamard(gamma, Sigma), D) # I can't parse the equation in [Yeh 2017], but this is probably it
 
         # test gradients
         DX1 = diff(loss(Y), x)
