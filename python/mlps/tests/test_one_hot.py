@@ -46,7 +46,7 @@ def to_one_hot_tensorflow_colwise(x: tf.Tensor, n_classes: int):
     return one_hot
 
 
-class TestOneHotEncoding(TestCase):
+class TestOneHotColwise(TestCase):
     def test_to_one_hot_numpy(self):
         x = np.array([1, 2, 0, 3, 4, 1])
         expected = np.array([[0, 1, 0, 0, 0],
@@ -55,9 +55,6 @@ class TestOneHotEncoding(TestCase):
                              [0, 0, 0, 1, 0],
                              [0, 0, 0, 0, 1],
                              [0, 1, 0, 0, 0]])
-        result = to_one_hot_numpy_rowwise(x, n_classes=5)
-        np.testing.assert_array_equal(result, expected)
-
         result = to_one_hot_numpy_colwise(x, n_classes=5)
         np.testing.assert_array_equal(result.T, expected)
 
@@ -69,8 +66,6 @@ class TestOneHotEncoding(TestCase):
                                  [0, 0, 0, 1, 0],
                                  [0, 0, 0, 0, 1],
                                  [0, 1, 0, 0, 0]])
-        result = to_one_hot_torch_rowwise(x, n_classes=5)
-        self.assertTrue(torch.all(torch.eq(result, expected)))
         result = to_one_hot_torch_colwise(x, n_classes=5)
         self.assertTrue(torch.all(torch.eq(result.T, expected)))
 
@@ -82,10 +77,43 @@ class TestOneHotEncoding(TestCase):
                                 [0, 0, 0, 1, 0],
                                 [0, 0, 0, 0, 1],
                                 [0, 1, 0, 0, 0]], dtype=tf.float64)
-        result = to_one_hot_tensorflow_rowwise(x, n_classes=5)
-        self.assertTrue(tf.reduce_all(tf.equal(result, expected)))
         result = to_one_hot_tensorflow_colwise(x, n_classes=5)
         self.assertTrue(tf.reduce_all(tf.equal(tf.transpose(result), expected)))
+
+
+class TestOneHotRowwise(TestCase):
+    def test_to_one_hot_numpy(self):
+        x = np.array([1, 2, 0, 3, 4, 1])
+        expected = np.array([[0, 1, 0, 0, 0],
+                             [0, 0, 1, 0, 0],
+                             [1, 0, 0, 0, 0],
+                             [0, 0, 0, 1, 0],
+                             [0, 0, 0, 0, 1],
+                             [0, 1, 0, 0, 0]])
+        result = to_one_hot_numpy_rowwise(x, n_classes=5)
+        np.testing.assert_array_equal(result, expected)
+
+    def test_to_one_hot_torch(self):
+        x = torch.LongTensor([1, 2, 0, 3, 4, 1])
+        expected = torch.tensor([[0, 1, 0, 0, 0],
+                                 [0, 0, 1, 0, 0],
+                                 [1, 0, 0, 0, 0],
+                                 [0, 0, 0, 1, 0],
+                                 [0, 0, 0, 0, 1],
+                                 [0, 1, 0, 0, 0]])
+        result = to_one_hot_torch_rowwise(x, n_classes=5)
+        self.assertTrue(torch.all(torch.eq(result, expected)))
+
+    def test_to_one_hot_tensorflow(self):
+        x = tf.constant([1, 2, 0, 3, 4, 1])
+        expected = tf.constant([[0, 1, 0, 0, 0],
+                                [0, 0, 1, 0, 0],
+                                [1, 0, 0, 0, 0],
+                                [0, 0, 0, 1, 0],
+                                [0, 0, 0, 0, 1],
+                                [0, 1, 0, 0, 0]], dtype=tf.float64)
+        result = to_one_hot_tensorflow_rowwise(x, n_classes=5)
+        self.assertTrue(tf.reduce_all(tf.equal(result, expected)))
 
 
 if __name__ == '__main__':

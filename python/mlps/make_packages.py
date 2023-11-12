@@ -510,6 +510,8 @@ def fix_test_files():
         replace_string_in_file(path, ', to_eigen', '')
         replace_string_in_file(path, ', x6', '')
         replace_string_in_file(path, '_rowwise', '')
+        replace_string_in_file(path, 'Colwise', '')
+        replace_string_in_file(path, 'Rowwise', '')
         remove_lines_containing_word(path, 'eigen')
 
 
