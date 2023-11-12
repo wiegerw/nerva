@@ -15,7 +15,7 @@ import mlps.nerva_torch.loss_functions as torch_
 import mlps.nerva_sympy.loss_functions as sympy_
 import mlps.nerva_jax.loss_functions as jnp_
 import nervalibcolwise as eigen_
-from mlps.tests.test_utilities import to_numpy, to_sympy, to_torch, to_tensorflow, to_jax, to_eigen, \
+from mlps.tests.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, to_jax, to_eigen, \
     check_numbers_equal, check_arrays_equal, matrix, equal_matrices
 
 

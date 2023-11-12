@@ -11,7 +11,7 @@ import mlps.nerva_tensorflow.matrix_operations as tf_
 import mlps.nerva_torch.matrix_operations as torch_
 import mlps.nerva_sympy.matrix_operations as sympy_
 import mlps.nerva_jax.matrix_operations as jnp_
-from mlps.tests.test_utilities import to_numpy, to_sympy, to_torch, to_tensorflow, to_jax, check_arrays_equal, \
+from mlps.tests.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, to_jax, check_arrays_equal, \
     check_numbers_equal
 
 

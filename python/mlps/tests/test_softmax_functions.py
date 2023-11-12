@@ -14,7 +14,7 @@ import mlps.nerva_torch.softmax_functions as torch_
 import mlps.nerva_sympy.softmax_functions as sympy_
 import mlps.nerva_jax.softmax_functions as jnp_
 import nervalibcolwise as eigen_
-from mlps.tests.test_utilities import to_numpy, to_sympy, to_tensorflow, to_torch, to_jax, to_eigen, check_arrays_equal, \
+from mlps.tests.utilities import to_numpy, to_sympy, to_tensorflow, to_torch, to_jax, to_eigen, check_arrays_equal, \
     check_numbers_equal
 
 Matrix = sp.Matrix
@@ -33,18 +33,6 @@ def softmax_colwise1(X: Matrix) -> Matrix:
     return Matrix([softmax(X.col(j)).T for j in range(N)]).T
 
 
-def softmax_colwise_jacobian1(x: Matrix) -> Matrix:
-    return jacobian(softmax_colwise1(x), x)
-
-
-def log_softmax_colwise1(X: Matrix) -> Matrix:
-    return log(softmax_colwise(X))
-
-
-def log_softmax_colwise_jacobian1(x: Matrix) -> Matrix:
-    return jacobian(log_softmax_colwise(x), x)
-
-
 def softmax_rowwise1(X: Matrix) -> Matrix:
     N, D = X.shape
 
@@ -55,38 +43,6 @@ def softmax_rowwise1(X: Matrix) -> Matrix:
     return join_rows([softmax(X.row(i)) for i in range(N)])
 
 
-def softmax_rowwise2(X: Matrix) -> Matrix:
-    return softmax_colwise(X.T).T
-
-
-def softmax_rowwise_jacobian1(x: Matrix) -> Matrix:
-    assert is_row_vector(x)
-    return jacobian(softmax_rowwise(x), x)
-
-
-def softmax_rowwise_jacobian2(x: Matrix) -> Matrix:
-    assert is_row_vector(x)
-    return softmax_colwise_jacobian(x.T).T
-
-
-def log_softmax_rowwise1(X: Matrix) -> Matrix:
-    return log(softmax_rowwise(X))
-
-
-def log_softmax_rowwise2(X: Matrix) -> Matrix:
-    return log_softmax_colwise(X.T).T
-
-
-def log_softmax_rowwise_jacobian1(x: Matrix) -> Matrix:
-    assert is_row_vector(x)
-    return jacobian(log_softmax_rowwise(x), x)
-
-
-def log_softmax_rowwise_jacobian2(x: Matrix) -> Matrix:
-    assert is_row_vector(x)
-    return log_softmax_colwise_jacobian(x.T)
-
-
 class TestSoftmaxColwise(TestCase):
     def test_softmax_colwise(self):
         D = 3
@@ -95,31 +51,39 @@ class TestSoftmaxColwise(TestCase):
 
         y1 = softmax_colwise(X)
         y2 = softmax_colwise1(X)
-        y3 = stable_softmax_colwise(X)
+        y3 = softmax_rowwise(X.T).T
+        y4 = stable_softmax_colwise(X)
         self.assertEqual(sp.simplify(y1 - y2), sp.zeros(D, N))
         self.assertEqual(sp.simplify(y1 - y3), sp.zeros(D, N))
+        self.assertEqual(sp.simplify(y1 - y4), sp.zeros(D, N))
 
         y1 = log_softmax_colwise(X)
-        y2 = log_softmax_colwise1(X)
-        y3 = stable_log_softmax_colwise(X)
+        y2 = log(softmax_colwise(X))
+        y3 = log(softmax_rowwise(X.T)).T
+        y4 = stable_log_softmax_colwise(X)
         self.assertEqual(sp.simplify(y1 - y2), sp.zeros(D, N))
         self.assertEqual(sp.simplify(y1 - y3), sp.zeros(D, N))
+        self.assertEqual(sp.simplify(y1 - y4), sp.zeros(D, N))
 
     def test_softmax_colwise_jacobian(self):
         x = Matrix(sp.symbols('x y z'), real=True)
         D, N = x.shape
 
         y1 = sp.simplify(softmax_colwise_jacobian(x))
-        y2 = sp.simplify(softmax_colwise_jacobian1(x))
+        y2 = sp.simplify(jacobian(softmax_colwise1(x), x))
+        y3 = sp.simplify(softmax_rowwise_jacobian(x.T).T)
         self.assertEqual(sp.simplify(y1 - y2), sp.zeros(D, D))
+        self.assertEqual(sp.simplify(y1 - y3), sp.zeros(D, D))
 
     def test_log_softmax_colwise_jacobian(self):
         x = Matrix(sp.symbols('x y z'), real=True)
         D, N = x.shape
 
         y1 = sp.simplify(log_softmax_colwise_jacobian(x))
-        y2 = sp.simplify(log_softmax_colwise_jacobian1(x))
+        y2 = sp.simplify(jacobian(log_softmax_colwise(x), x))
+        y3 = sp.simplify(log_softmax_rowwise_jacobian(x.T))
         self.assertEqual(sp.simplify(y1 - y2), sp.zeros(D, D))
+        self.assertEqual(sp.simplify(y1 - y3), sp.zeros(D, D))
 
 
 class TestSoftmaxRowwise(TestCase):
@@ -130,39 +94,31 @@ class TestSoftmaxRowwise(TestCase):
 
         y1 = softmax_rowwise(X)
         y2 = softmax_rowwise1(X)
-        y3 = softmax_rowwise2(X)
-        y4 = stable_softmax_rowwise(X)
+        y3 = stable_softmax_rowwise(X)
         self.assertEqual(sp.simplify(y1 - y2), sp.zeros(N, D))
         self.assertEqual(sp.simplify(y1 - y3), sp.zeros(N, D))
-        self.assertEqual(sp.simplify(y1 - y4), sp.zeros(N, D))
 
         y1 = log_softmax_rowwise(X)
-        y2 = log_softmax_rowwise1(X)
-        y3 = log_softmax_rowwise2(X)
-        y4 = stable_log_softmax_rowwise(X)
+        y2 = log(softmax_rowwise(X))
+        y3 = stable_log_softmax_rowwise(X)
         self.assertEqual(sp.simplify(y1 - y2), sp.zeros(N, D))
         self.assertEqual(sp.simplify(y1 - y3), sp.zeros(N, D))
-        self.assertEqual(sp.simplify(y1 - y4), sp.zeros(N, D))
 
     def test_softmax_rowwise_jacobian(self):
         x = Matrix(sp.symbols('x y z'), real=True).T
         N, D = x.shape
 
         y1 = sp.simplify(softmax_rowwise_jacobian(x))
-        y2 = sp.simplify(softmax_rowwise_jacobian1(x))
-        y3 = sp.simplify(softmax_rowwise_jacobian2(x))
+        y2 = sp.simplify(jacobian(softmax_rowwise(x), x))
         self.assertEqual(sp.simplify(y1 - y2), sp.zeros(D, D))
-        self.assertEqual(sp.simplify(y1 - y3), sp.zeros(D, D))
 
     def test_log_softmax_rowwise_jacobian(self):
         x = Matrix(sp.symbols('x y z'), real=True).T
         N, D = x.shape
 
         y1 = sp.simplify(log_softmax_rowwise_jacobian(x))
-        y2 = sp.simplify(log_softmax_rowwise_jacobian1(x))
-        y3 = sp.simplify(log_softmax_rowwise_jacobian2(x))
+        y2 = sp.simplify(jacobian(log_softmax_rowwise(x), x))
         self.assertEqual(sp.simplify(y1 - y2), sp.zeros(D, D))
-        self.assertEqual(sp.simplify(y1 - y3), sp.zeros(D, D))
 
 
 class TestSoftmaxColwiseValues(TestCase):

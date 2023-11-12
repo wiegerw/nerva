@@ -226,6 +226,10 @@ def remove_lines_containing_word(path: Path, word: str):
     path.write_text(text)
 
 
+def remove_line_continuations(path: Path):
+    replace_pattern_in_file(path, r'\\\n', '')
+
+
 def split_lines(text: str, is_section_start, is_section_end) -> Tuple[str, str]:
     """ Splits text into two parts. The first part consists of sections defined by `is_section_start`
     and `is_section_end`. The second part contains the remaining lines.
@@ -282,16 +286,51 @@ def split_code_file(path: Path):
     return license.strip(), imports.strip(), code.strip()
 
 
+def has_max_indent(line: str, n: int) -> bool:
+    return len(line) > 0 and not line[:n+1].isspace()
+
 def remove_functions_from_file(path: Path, word: str):
     """Removes all function definitions from `text` that have the substring `word` in their name"""
     text = path.read_text().strip()
 
     def is_function_start(line):
-        return re.search(r'^def [a-zA-Z0-9_]*_colwise[a-zA-Z0-9_]*\(', line)
+        return re.search(rf'^def [a-zA-Z0-9_]*{word}[a-zA-Z0-9_]*\(', line) is not None
 
     # We assume that a function is ended by a line that does not start with a white space character
     def is_function_end(line):
-        return line and not re.match(r'^\s', line)
+        return has_max_indent(line, 0)
+
+    _, text = split_lines(text, is_function_start, is_function_end)
+    path.write_text(text)
+
+
+def remove_methods_from_file(path: Path, word: str):
+    """Removes all method definitions from `text` that have the substring `word` in their name.
+       We assume that the indentation is 4 spaces.
+    """
+    text = path.read_text().strip()
+
+    def is_function_start(line):
+        return re.search(rf'^    def [a-zA-Z0-9_]*{word}[a-zA-Z0-9_]*\(', line) is not None
+
+    def is_function_end(line):
+        return has_max_indent(line, 4)
+
+    _, text = split_lines(text, is_function_start, is_function_end)
+    path.write_text(text)
+
+
+def remove_classes_from_file(path: Path, word: str):
+    """Removes all class definitions from `text` that have the substring `word` in their name.
+       We assume that the indentation is 4 spaces.
+    """
+    text = path.read_text().strip()
+
+    def is_function_start(line):
+        return re.search(rf'^class [a-zA-Z0-9_]*{word}[a-zA-Z0-9_]*\(', line) is not None
+
+    def is_function_end(line):
+        return has_max_indent(line, 0)
 
     _, text = split_lines(text, is_function_start, is_function_end)
     path.write_text(text)
@@ -323,8 +362,8 @@ def join_files(package: str, path1: Path, path2: Path):
     if not path1.exists():
         return
     word = f'{package}.{path1.stem}'
-    replace_pattern_in_file(path1, r'\\\n', '')  # remove line continuations
-    replace_pattern_in_file(path2, r'\\\n', '')  # remove line continuations
+    remove_line_continuations(path1)
+    remove_line_continuations(path2)
     remove_lines_containing_word(path2, word)
     license1, imports1, code1 = split_code_file(path1)
     license2, imports2, code2 = split_code_file(path2)
@@ -394,11 +433,8 @@ def copy_test_files():
     destination_folder = Path('dist') / package_names['nerva_sympy'] / 'tests'
     test_folder = Path('tests')
     for source_file in test_folder.glob('*.py'):
-        if not 'sympy' in source_file.name:
-            continue
         destination_file = destination_folder / source_file.name
-        print(f"Copy '{source_file}' to '{destination_file}'")
-        shutil.copy(source_file, destination_file)
+        copy_file(source_file, destination_file)
 
 
 def create_mlp_files():
@@ -462,6 +498,21 @@ def fix_python_files():
         replace_pattern_in_file(path, r'\n\n\n(\n*)', r'\n\n\n')
 
 
+def fix_test_files():
+    tests_folder = Path('dist') / package_names['nerva_sympy'] / 'tests'
+    for path in tests_folder.glob('test*.py'):
+        remove_line_continuations(path)
+        remove_functions_from_file(path, '_colwise')
+        remove_methods_from_file(path, '_colwise')
+        remove_classes_from_file(path, 'Colwise')
+        replace_string_in_file(path, 'mlps.tests.', '')
+        replace_string_in_file(path, 'tests.', '')
+        replace_string_in_file(path, ', to_eigen', '')
+        replace_string_in_file(path, ', x6', '')
+        replace_string_in_file(path, '_rowwise', '')
+        remove_lines_containing_word(path, 'eigen')
+
+
 def main():
     make_package_folders()
     create_init_files()
@@ -474,6 +525,7 @@ def main():
     copy_test_files()
     fix_source_files()
     fix_python_files()
+    fix_test_files()
 
 
 if __name__ == '__main__':

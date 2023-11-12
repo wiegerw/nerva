@@ -15,7 +15,7 @@ from mlps.nerva_sympy import activation_functions as sympy_
 from mlps.nerva_sympy.activation_functions import *
 from mlps.nerva_tensorflow import activation_functions as tf_
 from mlps.nerva_torch import activation_functions as torch_
-from mlps.tests.test_utilities import to_numpy, to_sympy, to_tensorflow, to_torch, to_jax, to_eigen, check_arrays_equal
+from mlps.tests.utilities import to_numpy, to_sympy, to_tensorflow, to_torch, to_jax, to_eigen, check_arrays_equal
 
 
 class TestActivationFunctions1D(TestCase):
