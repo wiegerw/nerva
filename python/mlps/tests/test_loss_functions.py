@@ -15,8 +15,8 @@ import mlps.nerva_torch.loss_functions as torch_
 import mlps.nerva_sympy.loss_functions as sympy_
 import mlps.nerva_jax.loss_functions as jnp_
 import nervalibcolwise as eigen_
-from mlps.tests.test_utilities import to_numpy, to_sympy, to_torch, to_tensorflow, to_jax, to_eigen
-from mlps.tests.sympy_utilities import matrix, equal_matrices
+from mlps.tests.test_utilities import to_numpy, to_sympy, to_torch, to_tensorflow, to_jax, to_eigen, \
+    check_numbers_equal, check_arrays_equal, matrix, equal_matrices
 
 
 def instantiate_one_hot_colwise(X: sp.Matrix) -> sp.Matrix:
@@ -194,23 +194,6 @@ class TestRowwiseLossFunctionGradients(TestCase):
 
 
 class TestColwiseLossFunctionValues(TestCase):
-    def check_arrays_equal(self, operation, values):
-        print(f'--- {operation} ---')
-        values = [to_numpy(x) for x in values]
-        for x in values:
-            print(x)
-        x0 = values[0]
-        for x in values[1:]:
-            self.assertTrue(np.allclose(x0, x, atol=1e-5))
-
-    def check_numbers_equal(self, operation, values):
-        print(f'--- {operation} ---')
-        for x in values:
-            print(x, x.__class__)
-        x0 = values[0]
-        for x in values[1:]:
-            self.assertAlmostEqual(x0, x, delta=1e-5)
-
     def make_variables(self):
         y = np.array([
             [9],
@@ -255,7 +238,7 @@ class TestColwiseLossFunctionValues(TestCase):
         x4 = f_torch(to_torch(y), to_torch(t))
         x5 = f_jax(to_jax(y), to_jax(t))
         x6 = f_eigen(to_eigen(y), to_eigen(t))
-        self.check_numbers_equal(function_name, [x1, x2, x3, x4, x5, x6])
+        check_numbers_equal(self, function_name, [x1, x2, x3, x4, x5, x6])
 
         print('=== test loss gradient on vectors ===')
         name = f'{function_name}_gradient'
@@ -271,7 +254,7 @@ class TestColwiseLossFunctionValues(TestCase):
         x4 = f_torch(to_torch(y), to_torch(t))
         x5 = f_jax(to_jax(y), to_jax(t))
         x6 = f_eigen(to_eigen(y), to_eigen(t))
-        self.check_arrays_equal(function_name, [x1, x2, x3, x4, x5, x6])
+        check_arrays_equal(self, function_name, [x1, x2, x3, x4, x5, x6])
 
         print('=== test loss on matrices ===')
         name = function_name.capitalize()
@@ -287,7 +270,7 @@ class TestColwiseLossFunctionValues(TestCase):
         x4 = f_torch(to_torch(Y), to_torch(T))
         x5 = f_jax(to_jax(Y), to_jax(T))
         x6 = f_eigen(to_eigen(Y), to_eigen(T))
-        self.check_numbers_equal(function_name, [x1, x2, x3, x4, x5, x6])
+        check_numbers_equal(self, function_name, [x1, x2, x3, x4, x5, x6])
 
         print('=== test loss gradient on matrices ===')
         name = f'{function_name.capitalize()}_gradient'
@@ -303,7 +286,7 @@ class TestColwiseLossFunctionValues(TestCase):
         x4 = f_torch(to_torch(Y), to_torch(T))
         x5 = f_jax(to_jax(Y), to_jax(T))
         x6 = f_eigen(to_eigen(Y), to_eigen(T))
-        self.check_arrays_equal(function_name, [x1, x2, x3, x4, x5, x6])
+        check_arrays_equal(self, function_name, [x1, x2, x3, x4, x5, x6])
 
     def test_squared_error_loss_colwise(self):
         self._test_loss_function('squared_error_loss_colwise')
@@ -328,23 +311,6 @@ class TestColwiseLossFunctionValues(TestCase):
 
 
 class TestRowwiseLossFunctionValues(TestCase):
-    def check_arrays_equal(self, operation, values):
-        print(f'--- {operation} ---')
-        values = [to_numpy(x) for x in values]
-        for x in values:
-            print(x)
-        x0 = values[0]
-        for x in values[1:]:
-            self.assertTrue(np.allclose(x0, x, atol=1e-5))
-
-    def check_numbers_equal(self, operation, values):
-        print(f'--- {operation} ---')
-        for x in values:
-            print(x, x.__class__)
-        x0 = values[0]
-        for x in values[1:]:
-            self.assertAlmostEqual(x0, x, delta=1e-5)
-
     def make_variables(self):
         y = np.array([
             [11, 2, 3]
@@ -383,7 +349,7 @@ class TestRowwiseLossFunctionValues(TestCase):
         x4 = f_torch(to_torch(y), to_torch(t))
         x5 = f_jax(to_jax(y), to_jax(t))
         x6 = f_eigen(to_eigen(y), to_eigen(t))
-        self.check_numbers_equal(function_name, [x1, x2, x3, x4, x5, x6])
+        check_numbers_equal(self, function_name, [x1, x2, x3, x4, x5, x6])
 
         print('=== test loss gradient on vectors ===')
         name = f'{function_name}_gradient'
@@ -399,7 +365,7 @@ class TestRowwiseLossFunctionValues(TestCase):
         x4 = f_torch(to_torch(y), to_torch(t))
         x5 = f_jax(to_jax(y), to_jax(t))
         x6 = f_eigen(to_eigen(y), to_eigen(t))
-        self.check_arrays_equal(function_name, [x1, x2, x3, x4, x5, x6])
+        check_arrays_equal(self, function_name, [x1, x2, x3, x4, x5, x6])
 
         print('=== test loss on matrices ===')
         name = function_name.capitalize()
@@ -415,7 +381,7 @@ class TestRowwiseLossFunctionValues(TestCase):
         x4 = f_torch(to_torch(Y), to_torch(T))
         x5 = f_jax(to_jax(Y), to_jax(T))
         x6 = f_eigen(to_eigen(Y), to_eigen(T))
-        self.check_numbers_equal(function_name, [x1, x2, x3, x4, x5, x6])
+        check_numbers_equal(self, function_name, [x1, x2, x3, x4, x5, x6])
 
         print('=== test loss gradient on matrices ===')
         name = f'{function_name.capitalize()}_gradient'
@@ -431,7 +397,7 @@ class TestRowwiseLossFunctionValues(TestCase):
         x4 = f_torch(to_torch(Y), to_torch(T))
         x5 = f_jax(to_jax(Y), to_jax(T))
         x6 = f_eigen(to_eigen(Y), to_eigen(T))
-        self.check_arrays_equal(function_name, [x1, x2, x3, x4, x5, x6])
+        check_arrays_equal(self, function_name, [x1, x2, x3, x4, x5, x6])
 
     def test_squared_error_loss_rowwise(self):
         self._test_loss_function('squared_error_loss_rowwise')

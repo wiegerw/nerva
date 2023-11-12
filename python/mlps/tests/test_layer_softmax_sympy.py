@@ -7,7 +7,7 @@
 from unittest import TestCase
 from mlps.nerva_sympy.matrix_operations import *
 from mlps.nerva_sympy.softmax_functions import *
-from mlps.tests.sympy_utilities import matrix, equal_matrices, squared_error
+from mlps.tests.test_utilities import matrix, equal_matrices, squared_error
 
 
 class TestSoftmaxLayers(TestCase):

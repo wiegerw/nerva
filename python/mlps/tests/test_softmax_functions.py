@@ -14,7 +14,8 @@ import mlps.nerva_torch.softmax_functions as torch_
 import mlps.nerva_sympy.softmax_functions as sympy_
 import mlps.nerva_jax.softmax_functions as jnp_
 import nervalibcolwise as eigen_
-from mlps.tests.test_utilities import to_numpy, to_sympy, to_tensorflow, to_torch, to_jax, to_eigen
+from mlps.tests.test_utilities import to_numpy, to_sympy, to_tensorflow, to_torch, to_jax, to_eigen, check_arrays_equal, \
+    check_numbers_equal
 
 Matrix = sp.Matrix
 
@@ -86,7 +87,7 @@ def log_softmax_rowwise_jacobian2(x: Matrix) -> Matrix:
     return log_softmax_colwise_jacobian(x.T)
 
 
-class TestSoftmax(TestCase):
+class TestSoftmaxColwise(TestCase):
     def test_softmax_colwise(self):
         D = 3
         N = 2
@@ -120,6 +121,8 @@ class TestSoftmax(TestCase):
         y2 = sp.simplify(log_softmax_colwise_jacobian1(x))
         self.assertEqual(sp.simplify(y1 - y2), sp.zeros(D, D))
 
+
+class TestSoftmaxRowwise(TestCase):
     def test_softmax_rowwise(self):
         D = 3
         N = 2
@@ -162,41 +165,20 @@ class TestSoftmax(TestCase):
         self.assertEqual(sp.simplify(y1 - y3), sp.zeros(D, D))
 
 
-class TestSoftmaxValues(TestCase):
-    def check_arrays_equal(self, operation, values):
-        print(f'--- {operation} ---')
-        values = [to_numpy(x) for x in values]
-        for x in values:
-            print(x)
-        x0 = values[0]
-        for x in values[1:]:
-            self.assertTrue(np.allclose(x0, x, atol=1e-5))
-
-    def check_numbers_equal(self, operation, values):
-        print(f'--- {operation} ---')
-        for x in values:
-            print(x, x.__class__)
-        x0 = values[0]
-        for x in values[1:]:
-            self.assertAlmostEqual(x0, x, delta=1e-5)
-
+class TestSoftmaxColwiseValues(TestCase):
     def make_variables(self):
         X = np.array([
             [1, 2, 3],
             [7, 3, 4]
         ], dtype=np.float32)
 
-        xc = np.array([
+        x = np.array([
             [9],
             [3],
             [12],
         ], dtype=np.float32)
 
-        xr = np.array([
-            [11, 2, 3]
-        ], dtype=np.float32)
-
-        return X, xc, xr
+        return X, x
 
     def _test_softmax(self, function_name, x):
         f_sympy = getattr(sympy_, function_name)
@@ -214,23 +196,60 @@ class TestSoftmaxValues(TestCase):
         x6 = f_eigen(to_eigen(x))
 
         if isinstance(x1, sp.Matrix):
-            self.check_arrays_equal(function_name, [x1, x2, x3, x4, x5, x6])
+            check_arrays_equal(self, function_name, [x1, x2, x3, x4, x5, x6])
         else:
-            self.check_numbers_equal(function_name, [x1, x2, x3, x4, x5, x6])
+            check_numbers_equal(self, function_name, [x1, x2, x3, x4, x5, x6])
 
     def test_all(self):
-        X, xc, xr = self.make_variables()
+        X, x = self.make_variables()
         self._test_softmax('softmax_colwise', X)
-        self._test_softmax('softmax_colwise_jacobian', xc)
+        self._test_softmax('softmax_colwise_jacobian', x)
         self._test_softmax('stable_softmax_colwise', X)
         self._test_softmax('log_softmax_colwise', X)
         self._test_softmax('stable_log_softmax_colwise', X)
-        self._test_softmax('log_softmax_colwise_jacobian', xc)
+        self._test_softmax('log_softmax_colwise_jacobian', x)
+
+
+class TestSoftmaxRowwiseValues(TestCase):
+    def make_variables(self):
+        X = np.array([
+            [1, 2, 3],
+            [7, 3, 4]
+        ], dtype=np.float32)
+
+        x = np.array([
+            [11, 2, 3]
+        ], dtype=np.float32)
+
+        return X, x
+
+    def _test_softmax(self, function_name, x):
+        f_sympy = getattr(sympy_, function_name)
+        f_numpy = getattr(np_, function_name)
+        f_tensorflow = getattr(tf_, function_name)
+        f_torch = getattr(torch_, function_name)
+        f_jax = getattr(jnp_, function_name)
+        f_eigen = getattr(eigen_, function_name)
+
+        x1 = f_sympy(to_sympy(x))
+        x2 = f_numpy(to_numpy(x))
+        x3 = f_tensorflow(to_tensorflow(x))
+        x4 = f_torch(to_torch(x))
+        x5 = f_jax(to_jax(x))
+        x6 = f_eigen(to_eigen(x))
+
+        if isinstance(x1, sp.Matrix):
+            check_arrays_equal(self, function_name, [x1, x2, x3, x4, x5, x6])
+        else:
+            check_numbers_equal(self, function_name, [x1, x2, x3, x4, x5, x6])
+
+    def test_all(self):
+        X, x = self.make_variables()
         self._test_softmax('softmax_rowwise', X)
-        self._test_softmax('softmax_rowwise_jacobian', xr)
+        self._test_softmax('softmax_rowwise_jacobian', x)
         self._test_softmax('stable_softmax_rowwise', X)
         self._test_softmax('log_softmax_rowwise', X)
-        self._test_softmax('log_softmax_rowwise_jacobian', xr)
+        self._test_softmax('log_softmax_rowwise_jacobian', x)
         self._test_softmax('stable_log_softmax_rowwise', X)
 
 
