@@ -5,6 +5,7 @@
 from typing import List
 
 import jax.numpy as jnp
+
 from mlps.nerva_jax.layers_rowwise import BatchNormalizationLayer, LinearLayer, parse_linear_layer
 from mlps.nerva_jax.utilities import load_dict_from_npz, pp
 

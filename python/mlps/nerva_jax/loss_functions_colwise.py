@@ -3,6 +3,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import jax.numpy as jnp
+
 from mlps.nerva_jax.loss_functions import Cross_entropy_loss_colwise, Cross_entropy_loss_colwise_gradient, \
     Logistic_cross_entropy_loss_colwise, Logistic_cross_entropy_loss_colwise_gradient, Mean_squared_error_loss_colwise, \
     Mean_squared_error_loss_colwise_gradient, Negative_log_likelihood_loss_colwise, \

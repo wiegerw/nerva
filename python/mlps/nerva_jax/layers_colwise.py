@@ -3,6 +3,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import jax.numpy as jnp
+
 from mlps.nerva_jax.activation_functions import ActivationFunction, SReLUActivation, Sigmoid, parse_activation
 from mlps.nerva_jax.matrix_operations import column_repeat, columns_sum, diag, elements_sum, hadamard, \
     identity, ones, power_minus_half, row_repeat, rows_mean, rows_sum, vector_size, zeros

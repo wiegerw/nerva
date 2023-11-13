@@ -59,13 +59,13 @@ if [ ! -f ../data/cifar10.npz ]; then
     exit 1
 fi
 
-python3 ../tools/mlp.py \
+python3 -u ../tools/mlp.py \
         --layers="ReLU;ReLU;Linear" \
         --sizes="3072,1024,512,10" \
-        --optimizers="Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9)" \
+        --optimizers="Momentum(0.9);Momentum(0.9);Momentum(0.9)" \
         --init-weights="Xavier,Xavier,Xavier" \
         --batch-size=100 \
-        --epochs=10 \
+        --epochs=1 \
         --loss=SoftmaxCrossEntropy \
         --learning-rate="Constant(0.01)" \
         --dataset=../data/cifar10.npz
@@ -81,13 +81,13 @@ if not exist ..\data\cifar10.npz (
     exit /b 1
 )
 
-python ..\tools\mlp.py ^
+python -u ..\tools\mlp.py ^
     --layers="ReLU;ReLU;Linear" ^
     --sizes="784,1024,512,10" ^
-    --optimizers="Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9)" ^
+    --optimizers="Momentum(0.9);Momentum(0.9);Momentum(0.9)" ^
     --init-weights="Xavier,Xavier,Xavier" ^
     --batch-size=100 ^
-    --epochs=10 ^
+    --epochs=1 ^
     --loss=SoftmaxCrossEntropy ^
     --learning-rate="Constant(0.01)" ^
     --dataset=..\data\cifar10.npz
@@ -103,13 +103,13 @@ if [ ! -f ../data/mnist.npz ]; then
     exit 1
 fi
 
-python3 ../tools/mlp.py \
+python3 -u ../tools/mlp.py \
         --layers="ReLU;ReLU;Linear" \
         --sizes="784,1024,512,10" \
-        --optimizers="Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9)" \
+        --optimizers="Momentum(0.9);Momentum(0.9);Momentum(0.9)" \
         --init-weights="Xavier,Xavier,Xavier" \
         --batch-size=100 \
-        --epochs=10 \
+        --epochs=1 \
         --loss=SoftmaxCrossEntropy \
         --learning-rate="Constant(0.01)" \
         --dataset=../data/mnist.npz
@@ -125,13 +125,13 @@ if not exist ..\data\mnist.npz (
     exit /b 1
 )
 
-python ..\tools\mlp.py ^
+python -u ..\tools\mlp.py ^
     --layers="ReLU;ReLU;Linear" ^
     --sizes="784,1024,512,10" ^
-    --optimizers="Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9)" ^
+    --optimizers="Momentum(0.9);Momentum(0.9);Momentum(0.9)" ^
     --init-weights="Xavier,Xavier,Xavier" ^
     --batch-size=100 ^
-    --epochs=10 ^
+    --epochs=1 ^
     --loss=SoftmaxCrossEntropy ^
     --learning-rate="Constant(0.01)" ^
     --dataset=..\data\mnist.npz
@@ -141,16 +141,16 @@ PREPARE_DATASETS_SH = r'''#!/bin/sh
 
 PYTHONPATH=../src
 
-python3 ../tools/create_datasets.py cifar10 --root=../data
-python3 ../tools/create_datasets.py mnist --root=../data
+python3 -u ../tools/create_datasets.py cifar10 --root=../data
+python3 -u ../tools/create_datasets.py mnist --root=../data
 '''
 
 PREPARE_DATASETS_BAT = r'''@echo off
 
 set PYTHONPATH=..\src
 
-python ..\tools\create_datasets.py cifar10 --root=..\data
-python ..\tools\create_datasets.py mnist --root=..\data
+python -u ..\tools\create_datasets.py cifar10 --root=..\data
+python -u ..\tools\create_datasets.py mnist --root=..\data
 '''
 
 
@@ -445,6 +445,13 @@ def copy_test_files():
         copy_file(source_file, destination_file)
 
 
+def copy_scripts():
+    copy_file(Path('install_packages.sh'), Path('dist') / 'install_packages.sh')
+    copy_file(Path('uninstall_packages.sh'), Path('dist') / 'uninstall_packages.sh')
+    copy_file(Path('prepare_datasets.sh'), Path('dist') / 'prepare_datasets.sh')
+    copy_file(Path('test_packages.sh'), Path('dist') / 'test_packages.sh')
+
+
 def create_mlp_files():
     source_folder = Path('.')
     for package in package_requirements:
@@ -534,6 +541,7 @@ def main():
     copy_license_files()
     copy_source_files()
     copy_test_files()
+    copy_scripts()
     fix_source_files()
     fix_python_files()
     fix_test_files()

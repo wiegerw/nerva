@@ -56,14 +56,14 @@ class NesterovOptimizer(MomentumOptimizer):
 
 def parse_optimizer(text: str) -> Callable[[Any, Any], Optimizer]:
     try:
-        name, args = parse_function_call(text)
-        if name == 'GradientDescent':
+        func = parse_function_call(text)
+        if func.name == 'GradientDescent':
             return lambda x, Dx: GradientDescentOptimizer(x, Dx)
-        elif name == 'Momentum':
-            mu = float(args['mu'])
+        elif func.name == 'Momentum':
+            mu = func.as_scalar('mu')
             return lambda x, Dx: MomentumOptimizer(x, Dx, mu)
-        elif name == 'Nesterov':
-            mu = float(args['mu'])
+        elif func.name == 'Nesterov':
+            mu = func.as_scalar('mu')
             return lambda x, Dx: NesterovOptimizer(x, Dx, mu)
     except:
         pass

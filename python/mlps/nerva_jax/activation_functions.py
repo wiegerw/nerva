@@ -3,6 +3,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import jax.numpy as jnp
+
 from mlps.nerva_jax.utilities import parse_function_call
 
 Matrix = jnp.ndarray
@@ -130,24 +131,24 @@ class SReLUActivation(ActivationFunction):
 
 def parse_activation(text: str) -> ActivationFunction:
     try:
-        name, args = parse_function_call(text)
-        if name == 'ReLU':
+        func = parse_function_call(text)
+        if func.name == 'ReLU':
             return ReLUActivation()
-        elif name == 'Sigmoid':
+        elif func.name == 'Sigmoid':
             return SigmoidActivation()
-        elif name == 'HyperbolicTangent':
+        elif func.name == 'HyperbolicTangent':
             return HyperbolicTangentActivation()
-        elif name == 'AllReLU':
-            alpha = args['alpha']
+        elif func.name == 'AllReLU':
+            alpha = func.as_scalar('alpha')
             return AllReLUActivation(alpha)
-        elif name == 'LeakyReLU':
-            alpha = args['alpha']
+        elif func.name == 'LeakyReLU':
+            alpha = func.as_scalar('alpha')
             return LeakyReLUActivation(alpha)
-        elif name == 'SReLU':
-            al = float(args.get('al', 0))
-            tl = float(args.get('tl', 0))
-            ar = float(args.get('ar', 0))
-            tr = float(args.get('tr', 1))
+        elif func.name == 'SReLU':
+            al = func.as_scalar('al', 0)
+            tl = func.as_scalar('tl', 0)
+            ar = func.as_scalar('ar', 0)
+            tr = func.as_scalar('tr', 1)
             return SReLUActivation(al, tl, ar, tr)
     except:
         pass

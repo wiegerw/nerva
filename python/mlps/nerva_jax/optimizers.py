@@ -5,6 +5,7 @@
 from typing import Any, Callable, List
 
 import jax.numpy as jnp
+
 from mlps.nerva_jax.utilities import parse_function_call
 
 
@@ -65,16 +66,16 @@ class NesterovOptimizer(MomentumOptimizer):
         setattr(self.obj, self.attr_x, x1)
 
 
-def parse_optimizer(text: str) -> Callable[[Any, str, str], Optimizer]:
+def parse_optimizer(text: str) -> Callable[[Any, Any], Optimizer]:
     try:
-        name, args = parse_function_call(text)
-        if name == 'GradientDescent':
+        func = parse_function_call(text)
+        if func.name == 'GradientDescent':
             return lambda obj, attr_x, attr_Dx: GradientDescentOptimizer(obj, attr_x, attr_Dx)
-        elif name == 'Momentum':
-            mu = float(args['mu'])
+        elif func.name == 'Momentum':
+            mu = func.as_scalar('mu')
             return lambda obj, attr_x, attr_Dx: MomentumOptimizer(obj, attr_x, attr_Dx, mu)
-        elif name == 'Nesterov':
-            mu = float(args['mu'])
+        elif func.name == 'Nesterov':
+            mu = func.as_scalar('mu')
             return lambda obj, attr_x, attr_Dx: NesterovOptimizer(obj, attr_x, attr_Dx, mu)
     except:
         pass
