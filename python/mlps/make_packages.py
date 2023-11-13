@@ -450,6 +450,7 @@ def copy_scripts():
     copy_file(Path('uninstall_packages.sh'), Path('dist') / 'uninstall_packages.sh')
     copy_file(Path('prepare_datasets.sh'), Path('dist') / 'prepare_datasets.sh')
     copy_file(Path('test_packages.sh'), Path('dist') / 'test_packages.sh')
+    copy_file(Path('run_unit_tests.sh'), Path('dist') / 'run_unit_tests.sh')
 
 
 def create_mlp_files():
