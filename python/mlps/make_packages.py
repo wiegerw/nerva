@@ -157,7 +157,7 @@ python ..\tools\create_datasets.py mnist --root=..\data
 package_requirements = {
     'nerva_jax': ['numpy', 'jax'],
     'nerva_numpy': ['numpy'],
-    'nerva_sympy': ['numpy', 'sympy'],
+    'nerva_sympy': ['numpy', 'sympy', 'nerva-jax', 'nerva-numpy', 'nerva-tensorflow', 'nerva-torch'],
     'nerva_tensorflow': ['numpy', 'tensorflow'],
     'nerva_torch': ['numpy', 'torch'],
 }

@@ -1,14 +1,23 @@
 # Copyright 2023 Wieger Wesselink.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
+
 from typing import List
 
+import numpy as np
 import sympy as sp
 
 from mlps.nerva_sympy.layers_colwise import BatchNormalizationLayer, LinearLayer, parse_linear_layer
-from utilities import load_dict_from_npz, ppn
+from utilities import load_dict_from_npz, pp
 
 Matrix = sp.Matrix
+
+
+def to_column_vector(x: np.ndarray) -> sp.Matrix:
+    if x.ndim == 1:
+        return sp.Matrix(x.reshape(-1, 1))
+    else:
+        raise ValueError("Input must be a one-dimensional NumPy array.")
 
 
 class MultilayerPerceptron(object):
@@ -38,8 +47,8 @@ class MultilayerPerceptron(object):
         index = 1
         for layer in self.layers:
             if isinstance(layer, LinearLayer):
-                ppn(f'W{index}', layer.W)
-                ppn(f'b{index}', layer.b.T)  # TODO: avoid the transpose (?)
+                pp(f'W{index}', layer.W)
+                pp(f'b{index}', layer.b.T)  # TODO: avoid the transpose (?)
                 index += 1
 
     def load_weights_and_bias(self, filename: str):
@@ -55,7 +64,7 @@ class MultilayerPerceptron(object):
         for layer in self.layers:
             if isinstance(layer, LinearLayer):
                 layer.W[:] = data[f'W{index}']
-                layer.b[:] = to_col(data[f'b{index}'])  # TODO: fix the to_col
+                layer.b[:] = to_column_vector(data[f'b{index}'])
                 index += 1
 
 

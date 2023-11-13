@@ -4,8 +4,8 @@
 
 from typing import Any, Callable, List
 
-from mlps.nerva_numpy.optimizers import GradientDescentOptimizer, MomentumOptimizer, NesterovOptimizer
 from mlps.nerva_sympy.matrix_operations import zeros
+from mlps.nerva_sympy.utilities import parse_function_call
 
 
 class Optimizer(object):

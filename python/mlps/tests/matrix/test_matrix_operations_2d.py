@@ -5,14 +5,15 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
+
 import numpy as np
+
+import mlps.tests.matrix.matrix_operations_jax as jnp_
 import mlps.tests.matrix.matrix_operations_numpy as np_
+import mlps.tests.matrix.matrix_operations_sympy as sympy_
 import mlps.tests.matrix.matrix_operations_tensorflow as tf_
 import mlps.tests.matrix.matrix_operations_torch as torch_
-import mlps.tests.matrix.matrix_operations_sympy as sympy_
-import mlps.tests.matrix.matrix_operations_jax as jnp_
-from mlps.tests.utilities import to_numpy, to_sympy, to_torch, to_tensorflow, to_jax, check_numbers_equal, \
-    check_arrays_equal
+from mlps.tests.utilities import check_arrays_equal, check_numbers_equal, to_jax, to_sympy, to_tensorflow, to_torch
 
 
 class TestMatrixOperations(TestCase):

@@ -3,6 +3,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 import sympy as sp
+from sympy import Piecewise
 
 from mlps.nerva_sympy.activation_functions import ActivationFunction, SReLUActivation, Sigmoid, parse_activation
 from mlps.nerva_sympy.matrix_operations import column_repeat, columns_mean, columns_sum, diag, elements_sum, hadamard, \

@@ -40,7 +40,7 @@ TODO
 
 ## Installation
 
-The code is available as the PyPI package [CONEstrip](https://pypi.org/project/CONEstrip/).
+The code is available as the PyPI package [PACKAGE](https://pypi.org/project/CONEstrip/).
 It can be installed using
 
 ```
@@ -149,7 +149,7 @@ Training of an MLP consists of three steps:
 These steps are performed for each input batch of a dataset, and this process is
 repeated `epoch` times.
 
-#### Command line script
+#### Command line scripts
 For convenience, a command line script `tools/mlp.py` is included that can be
 used to do a training experiment. An example invocation of this script is
 provided in `examples/cifar10.sh`:

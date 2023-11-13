@@ -7,8 +7,9 @@
 # see also https://docs.sympy.org/latest/modules/matrices/matrices.html
 
 from unittest import TestCase
+
 from mlps.nerva_sympy.matrix_operations import *
-from mlps.tests.utilities import matrix, equal_matrices, squared_error
+from mlps.tests.utilities import equal_matrices, matrix, squared_error
 
 
 class TestBatchNormalizationLayers(TestCase):

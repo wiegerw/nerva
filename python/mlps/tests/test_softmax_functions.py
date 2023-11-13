@@ -5,17 +5,19 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from unittest import TestCase
+
+import nervalibcolwise as eigen_
 import numpy as np
-from mlps.nerva_sympy.matrix_operations import *
-from mlps.nerva_sympy.softmax_functions import *
+
+import mlps.nerva_jax.softmax_functions as jnp_
 import mlps.nerva_numpy.softmax_functions as np_
+import mlps.nerva_sympy.softmax_functions as sympy_
 import mlps.nerva_tensorflow.softmax_functions as tf_
 import mlps.nerva_torch.softmax_functions as torch_
-import mlps.nerva_sympy.softmax_functions as sympy_
-import mlps.nerva_jax.softmax_functions as jnp_
-import nervalibcolwise as eigen_
-from mlps.tests.utilities import to_numpy, to_sympy, to_tensorflow, to_torch, to_jax, to_eigen, check_arrays_equal, \
-    check_numbers_equal
+from mlps.nerva_sympy.matrix_operations import *
+from mlps.nerva_sympy.softmax_functions import *
+from mlps.tests.utilities import check_arrays_equal, check_numbers_equal, to_eigen, to_jax, to_numpy, to_sympy, \
+    to_tensorflow, to_torch
 
 Matrix = sp.Matrix
 
