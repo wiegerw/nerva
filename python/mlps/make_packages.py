@@ -386,13 +386,13 @@ def create_requirements_files():
 
 
 def create_readme_files():
+    text = Path('README.md').read_text()
     for package, requirements in package_requirements.items():
-        dest = Path('dist') / package_names[package] / 'README.MD'
-        text = README_MD.lstrip()
+        destination_file = Path('dist') / package_names[package] / 'README.md'
+        text = text.replace('PACKAGE', package_names[package])
         text = text.replace('FRAMEWORK', package_frameworks[package])
-        text = text.replace('NAME', package_names[package])
         text = text.replace('VERSION', VERSION)
-        save_text(dest, text)
+        save_text(destination_file, text)
 
 
 def create_setup_files():
@@ -414,6 +414,14 @@ def create_create_datasets_files():
     copy_file(Path('tools') / 'create_datasets_numpy.py', Path('dist') / package_names['nerva_jax'] / 'tools' / 'create_datasets.py')
     copy_file(Path('tools') / 'create_datasets_torch.py', Path('dist') / package_names['nerva_torch'] / 'tools' / 'create_datasets.py')
     copy_file(Path('tools') / 'create_datasets_tensorflow.py', Path('dist') / package_names['nerva_tensorflow'] / 'tools' / 'create_datasets.py')
+
+
+def copy_license_files():
+    source_file = Path('LICENSE_1_0.txt')
+    for package in package_requirements:
+        destination_folder = Path('dist') / package_names[package]
+        destination_file = destination_folder / source_file
+        copy_file(source_file, destination_file)
 
 
 def copy_source_files():
@@ -523,6 +531,7 @@ def main():
     create_setup_files()
     create_create_datasets_files()
     create_mlp_files()
+    copy_license_files()
     copy_source_files()
     copy_test_files()
     fix_source_files()
