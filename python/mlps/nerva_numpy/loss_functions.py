@@ -2,11 +2,9 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-import numpy as np
-
 from mlps.nerva_numpy.activation_functions import Sigmoid
 from mlps.nerva_numpy.matrix_operations import column_repeat, columns_sum, dot, elements_sum, hadamard, inverse, log, \
-    row_repeat, rows_sum
+    log_sigmoid, row_repeat, rows_sum
 from mlps.nerva_numpy.softmax_functions import log_softmax_colwise, log_softmax_rowwise, softmax_colwise, \
     softmax_rowwise, \
     stable_log_softmax_colwise, stable_log_softmax_rowwise, stable_softmax_colwise, stable_softmax_rowwise
@@ -136,7 +134,7 @@ def Logistic_cross_entropy_loss_colwise_gradient(Y, T):
 
 
 def negative_log_likelihood_loss_colwise(y, t):
-    return -np.log(dot(y, t))
+    return -log(dot(y, t))
 
 
 def negative_log_likelihood_loss_colwise_gradient(y, t):
@@ -254,7 +252,7 @@ def Stable_softmax_cross_entropy_loss_rowwise_gradient_one_hot(Y, T):
 
 
 def logistic_cross_entropy_loss_rowwise(y, t):
-    return -dot(t, log(Sigmoid(y)))
+    return -dot(t, log_sigmoid(y))
 
 
 def logistic_cross_entropy_loss_rowwise_gradient(y, t):
@@ -262,7 +260,7 @@ def logistic_cross_entropy_loss_rowwise_gradient(y, t):
 
 
 def Logistic_cross_entropy_loss_rowwise(Y, T):
-    return -elements_sum(hadamard(T, log(Sigmoid(Y))))
+    return -elements_sum(hadamard(T, log_sigmoid(Y)))
 
 
 def Logistic_cross_entropy_loss_rowwise_gradient(Y, T):
@@ -270,7 +268,7 @@ def Logistic_cross_entropy_loss_rowwise_gradient(Y, T):
 
 
 def negative_log_likelihood_loss_rowwise(y, t):
-    return -np.log(dot(y, t))
+    return -log(dot(y, t))
 
 
 def negative_log_likelihood_loss_rowwise_gradient(y, t):

@@ -151,3 +151,7 @@ def sqrt(X: Matrix) -> Matrix:
 
 def power_minus_half(X: Matrix) -> Matrix:
     return inverse(sqrt(X))
+
+
+def log_sigmoid(X: Matrix) -> Matrix:
+    return -np.logaddexp(0, -X)

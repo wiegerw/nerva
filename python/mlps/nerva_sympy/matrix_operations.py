@@ -6,6 +6,8 @@ from typing import List, Tuple, Union
 
 import sympy as sp
 
+from mlps.nerva_sympy.activation_functions import Sigmoid
+
 Matrix = sp.Matrix
 
 def is_column_vector(x: Matrix) -> bool:
@@ -173,6 +175,10 @@ def sqrt(X: Matrix) -> Matrix:
 
 def power_minus_half(X: Matrix) -> Matrix:
     return inverse(sqrt(X))
+
+
+def log_sigmoid(X: Matrix) -> Matrix:
+    return log(Sigmoid(X))
 
 
 def join_columns(columns: List[Matrix]) -> Matrix:
