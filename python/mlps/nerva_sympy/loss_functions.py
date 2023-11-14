@@ -136,7 +136,7 @@ def Logistic_cross_entropy_loss_colwise_gradient(Y, T):
 
 
 def negative_log_likelihood_loss_colwise(y, t):
-    return -log(dot(y, t))
+    return -sp.log(dot(y, t))  # N.B. Using log(dot(y, t)) fails. Apparently the nested call of applyfunc is problematic in this case.
 
 
 def negative_log_likelihood_loss_colwise_gradient(y, t):
@@ -270,7 +270,7 @@ def Logistic_cross_entropy_loss_rowwise_gradient(Y, T):
 
 
 def negative_log_likelihood_loss_rowwise(y, t):
-    return -log(dot(y, t))
+    return -sp.log(dot(y, t))  # N.B. Using log(dot(y, t)) fails. Apparently the nested call of applyfunc is problematic in this case.
 
 
 def negative_log_likelihood_loss_rowwise_gradient(y, t):

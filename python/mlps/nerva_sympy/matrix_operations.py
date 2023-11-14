@@ -10,6 +10,7 @@ from mlps.nerva_sympy.activation_functions import Sigmoid
 
 Matrix = sp.Matrix
 
+
 def is_column_vector(x: Matrix) -> bool:
     m, n = x.shape
     return n == 1
