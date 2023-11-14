@@ -445,12 +445,32 @@ def copy_test_files():
         copy_file(source_file, destination_file)
 
 
+def copy_example_files():
+    source_file = Path('examples') / 'training_jax.py'
+    destination_file = Path('dist') / package_names['nerva_jax'] / 'examples' / 'training1.py'
+    copy_file(source_file, destination_file)
+    replace_string_in_file(destination_file, '_rowwise', '')
+
+    source_file = Path('examples') / 'training_numpy.py'
+    destination_file = Path('dist') / package_names['nerva_numpy'] / 'examples' / 'training1.py'
+    copy_file(source_file, destination_file)
+    replace_string_in_file(destination_file, '_rowwise', '')
+
+    source_file = Path('examples') / 'training_tensorflow.py'
+    destination_file = Path('dist') / package_names['nerva_tensorflow'] / 'examples' / 'training1.py'
+    copy_file(source_file, destination_file)
+    replace_string_in_file(destination_file, '_rowwise', '')
+
+    source_file = Path('examples') / 'training_torch.py'
+    destination_file = Path('dist') / package_names['nerva_torch'] / 'examples' / 'training1.py'
+    copy_file(source_file, destination_file)
+    replace_string_in_file(destination_file, '_rowwise', '')
+
+
 def copy_scripts():
-    copy_file(Path('install_packages.sh'), Path('dist') / 'install_packages.sh')
-    copy_file(Path('uninstall_packages.sh'), Path('dist') / 'uninstall_packages.sh')
-    copy_file(Path('prepare_datasets.sh'), Path('dist') / 'prepare_datasets.sh')
-    copy_file(Path('test_packages.sh'), Path('dist') / 'test_packages.sh')
-    copy_file(Path('run_unit_tests.sh'), Path('dist') / 'run_unit_tests.sh')
+    for source_file in Path('scripts').glob('*.sh'):
+        destination_file = Path('dist') / source_file.name
+        copy_file(source_file, destination_file)
 
 
 def create_mlp_files():
@@ -542,6 +562,7 @@ def main():
     copy_license_files()
     copy_source_files()
     copy_test_files()
+    copy_example_files()
     copy_scripts()
     fix_source_files()
     fix_python_files()

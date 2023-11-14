@@ -2,6 +2,7 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
+import math
 import re
 from typing import List
 
@@ -30,6 +31,10 @@ class TimeBasedScheduler(LearningRateScheduler):
     def __str__(self):
         return f'TimeBasedScheduler(lr={self.lr}, decay={self.decay})'
 
+    def __call__(self, epoch: int) -> float:
+        self.lr = self.lr / (1 + self.decay * float(epoch))
+        return self.lr
+
 
 class StepBasedScheduler(LearningRateScheduler):
     def __init__(self, lr: float, drop_rate: float, change_rate: float):
@@ -39,6 +44,9 @@ class StepBasedScheduler(LearningRateScheduler):
 
     def __str__(self):
         return f'StepBasedScheduler(lr={self.lr}, drop_rate={self.drop_rate}, change_rate={self.change_rate})'
+
+    def __call__(self, epoch: int) -> float:
+        return self.lr * math.pow(self.drop_rate, math.floor((1.0 + epoch) / self.change_rate))
 
 
 class MultiStepLRScheduler(LearningRateScheduler):
@@ -50,6 +58,15 @@ class MultiStepLRScheduler(LearningRateScheduler):
     def __str__(self):
         return f'MultiStepLRScheduler(lr={self.lr}, milestones={self.milestones}, gamma={self.gamma})'
 
+    def __call__(self, epoch: int) -> float:
+        eta = self.lr
+        for milestone in self.milestones:
+            if epoch >= milestone:
+                eta *= self.gamma
+            else:
+                break
+        return eta
+
 
 class ExponentialScheduler(LearningRateScheduler):
     def __init__(self, lr: float, change_rate: float):
@@ -58,6 +75,9 @@ class ExponentialScheduler(LearningRateScheduler):
 
     def __str__(self):
         return f'ExponentialScheduler(lr={self.lr}, change_rate={self.change_rate})'
+
+    def __call__(self, epoch: int) -> float:
+        return self.lr * math.exp(-self.change_rate * float(epoch))
 
 
 def parse_learning_rate(text: str) -> LearningRateScheduler:
