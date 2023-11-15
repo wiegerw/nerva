@@ -2,8 +2,6 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-import torch
-
 from mlps.nerva_torch.activation_functions import Sigmoid
 from mlps.nerva_torch.matrix_operations import column_repeat, columns_sum, dot, elements_sum, hadamard, inverse, log, \
     log_sigmoid, row_repeat, rows_sum
@@ -284,22 +282,3 @@ def Negative_log_likelihood_loss_rowwise(Y, T):
 def Negative_log_likelihood_loss_rowwise_gradient(Y, T):
     N, K = Y.shape
     return -hadamard(column_repeat(inverse(rows_sum(hadamard(Y, T))), K), T)
-
-
-#----------------------------------------------#
-#         torch loss functions (used for testing)
-#----------------------------------------------#
-
-def mean_squared_error_loss_torch(Y, T):
-    loss = torch.nn.MSELoss(reduction='sum')
-    return loss(Y, T)
-
-
-def softmax_cross_entropy_loss_torch(Y, T):
-    loss = torch.nn.CrossEntropyLoss(reduction='sum')
-    return loss(Y, T)
-
-
-def negative_log_likelihood_loss_torch(Y, T):
-    loss = torch.nn.NLLLoss(reduction='sum')
-    return loss(Y, T)

@@ -6,6 +6,11 @@ import torch
 
 Matrix = torch.Tensor
 
+
+# A constant used by power_minus_half to avoid division by zero
+epsilon = 1e-7
+
+
 def is_vector(x: Matrix) -> bool:
     return len(x.shape) == 1
 
@@ -150,7 +155,7 @@ def sqrt(X: Matrix) -> Matrix:
 
 
 def power_minus_half(X: Matrix) -> Matrix:
-    return inverse(sqrt(X))
+    return inverse(sqrt(X + epsilon))  # The epsilon is needed for numerical stability
 
 
 def log_sigmoid(X: Matrix) -> Matrix:
