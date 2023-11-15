@@ -170,7 +170,7 @@ auto Stable_softmax_cross_entropy_loss_colwise_gradient_one_hot(const Matrix1& Y
 template <typename Vector1, typename Vector2>
 auto logistic_cross_entropy_loss_colwise(const Vector1& y, const Vector2& t)
 {
-  return -dot(t, log(Sigmoid(y)));
+  return -dot(t, log_sigmoid(y));
 }
 
 template <typename Vector1, typename Vector2>
@@ -182,7 +182,7 @@ auto logistic_cross_entropy_loss_colwise_gradient(const Vector1& y, const Vector
 template <typename Matrix1, typename Matrix2>
 auto Logistic_cross_entropy_loss_colwise(const Matrix1& Y, const Matrix2& T)
 {
-  return -elements_sum(hadamard(T, log(Sigmoid(Y))));
+  return -elements_sum(hadamard(T, log_sigmoid(Y)));
 }
 
 template <typename Matrix1, typename Matrix2>

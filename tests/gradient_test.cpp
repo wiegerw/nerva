@@ -896,7 +896,7 @@ TEST_CASE("test_derivatives2")
   {
     long N = R.cols();
     eigen::vector Sigma = R.array().square().rowwise().sum() / N;
-    eigen::matrix Y = Diag(eigen::power_minus_half(Sigma)) * R;
+    eigen::matrix Y = eigen::Diag(eigen::power_minus_half(Sigma)) * R;
     return fY(Y);
   };
 

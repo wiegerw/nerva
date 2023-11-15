@@ -331,6 +331,19 @@ class TestMatrixOperations(TestCase):
         check_arrays_equal(self, 'power_minus_half', [x1, x2, x3, x4, x5])
 
 
+    def test_log_sigmoid(self):
+        # (24) log_sigmoid(X: Matrix) -> Matrix:
+        m, n, f, X, Y, S, xc, xr = self.make_variables()
+
+        x = X
+        x1 = sympy_.log_sigmoid(to_sympy(x))
+        x2 = np_.log_sigmoid(x)
+        x3 = tf_.log_sigmoid(to_tensorflow(x))
+        x4 = torch_.log_sigmoid(to_torch(x))
+        x5 = jnp_.log_sigmoid(to_jax(x))
+        check_arrays_equal(self, 'log_sigmoid', [x1, x2, x3, x4, x5])
+
+
 if __name__ == '__main__':
     import unittest
     unittest.main()

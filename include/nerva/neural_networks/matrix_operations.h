@@ -196,14 +196,16 @@ template <typename Matrix>
 auto power_minus_half(const Matrix& X)
 {
   using Scalar = typename Matrix::Scalar;
-  if constexpr (std::is_same<Scalar, float>::value)
-  {
-    return X.unaryExpr([](Scalar t) { return Scalar(1) / std::sqrt(t + Scalar(1e-15)); });
-  }
-  else
-  {
-    return X.unaryExpr([](Scalar t) { return Scalar(1) / std::sqrt(t + Scalar(1e-30)); });
-  }
+  constexpr Scalar epsilon = std::is_same_v<Scalar, float> ? 1e-7 : 1e-12;
+  return inverse(sqrt(X.array() + epsilon));
+}
+
+template <class Matrix>
+auto log_sigmoid(const Matrix& X)
+{
+  using Eigen::log1p;
+  using Eigen::exp;
+  return -log1p(exp(-X.array())).matrix();
 }
 
 } // namespace nerva::eigen
