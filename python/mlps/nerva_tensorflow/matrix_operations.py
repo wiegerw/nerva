@@ -36,25 +36,25 @@ def dot(x, y):
     return tf.tensordot(tf.squeeze(x), tf.squeeze(y), axes=1)
 
 
-def zeros(m: int, n=None) -> Matrix:
+def zeros(m: int, n=None, dtype=tf.float32) -> Matrix:
     """
     Returns an mxn matrix with all elements equal to 0.
     """
-    return tf.zeros([m, n], dtype=tf.float32) if n else tf.zeros([m], dtype=tf.float32)  # TODO: how to avoid hard coded types?
+    return tf.zeros([m, n], dtype=dtype) if n else tf.zeros([m], dtype=dtype)
 
 
-def ones(m: int, n=None) -> Matrix:
+def ones(m: int, n=None, dtype=tf.float32) -> Matrix:
     """
     Returns an mxn matrix with all elements equal to 1.
     """
-    return tf.ones([m, n], dtype=tf.float32) if n else tf.ones([m], dtype=tf.float32)  # TODO: how to avoid hard coded types?
+    return tf.ones([m, n], dtype=dtype) if n else tf.ones([m], dtype=dtype)
 
 
-def identity(n: int) -> Matrix:
+def identity(n: int, dtype=tf.float32) -> Matrix:
     """
     Returns the nxn identity matrix.
     """
-    return tf.eye(n, dtype=tf.float32)  # TODO: how to avoid hard coded types?
+    return tf.eye(n, dtype=dtype)
 
 
 def product(X: Matrix, Y: Matrix) -> Matrix:
@@ -91,7 +91,7 @@ def row_repeat(x: tf.Tensor, m: int) -> tf.Tensor:
     assert is_row_vector(x)
     if len(tf.shape(x)) == 1:
         x = tf.expand_dims(x, axis=0)  # Add a dimension to make it (1, n)
-    return tf.tile(x, [m, 1])          # Tile the expanded tensor along the first dimension
+    return tf.tile(x, [m, 1])
 
 
 def columns_sum(X: Matrix) -> Matrix:

@@ -27,7 +27,7 @@ class MemoryDataLoader(object):
     A data loader with an interface similar to torch.utils.data.DataLoader.
     """
 
-    def __init__(self, Xdata: torch.Tensor, Tdata: torch.IntTensor, batch_size: int, rowwise=True, num_classes=0):
+    def __init__(self, Xdata: torch.Tensor, Tdata: torch.LongTensor, batch_size: int, rowwise=True, num_classes=0):
         """
         :param Xdata: a dataset with row layout
         :param Tdata: the expected targets. In case of a classification task the targets may be specified as a vector
