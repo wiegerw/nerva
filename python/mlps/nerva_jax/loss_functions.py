@@ -3,7 +3,7 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from mlps.nerva_jax.activation_functions import Sigmoid
-from mlps.nerva_jax.matrix_operations import column_repeat, columns_sum, dot, elements_sum, hadamard, inverse, log, \
+from mlps.nerva_jax.matrix_operations import column_repeat, columns_sum, dot, elements_sum, hadamard, reciprocal, log, \
     log_sigmoid, row_repeat, rows_sum
 from mlps.nerva_jax.softmax_functions import log_softmax_colwise, log_softmax_rowwise, softmax_colwise, softmax_rowwise, \
     stable_log_softmax_colwise, stable_log_softmax_rowwise, stable_softmax_colwise, stable_softmax_rowwise
@@ -55,7 +55,7 @@ def cross_entropy_loss_colwise(y, t):
 
 
 def cross_entropy_loss_colwise_gradient(y, t):
-    return -hadamard(t, inverse(y))
+    return -hadamard(t, reciprocal(y))
 
 
 def Cross_entropy_loss_colwise(Y, T):
@@ -63,7 +63,7 @@ def Cross_entropy_loss_colwise(Y, T):
 
 
 def Cross_entropy_loss_colwise_gradient(Y, T):
-    return -hadamard(T, inverse(Y))
+    return -hadamard(T, reciprocal(Y))
 
 
 def softmax_cross_entropy_loss_colwise(y, t):
@@ -146,7 +146,7 @@ def Negative_log_likelihood_loss_colwise(Y, T):
 
 def Negative_log_likelihood_loss_colwise_gradient(Y, T):
     K, N = Y.shape
-    return -hadamard(row_repeat(inverse(columns_sum(hadamard(Y, T))), K), T)
+    return -hadamard(row_repeat(reciprocal(columns_sum(hadamard(Y, T))), K), T)
 
 
 def squared_error_loss_rowwise(y, t):
@@ -190,7 +190,7 @@ def cross_entropy_loss_rowwise(y, t):
 
 
 def cross_entropy_loss_rowwise_gradient(y, t):
-    return -hadamard(t, inverse(y))
+    return -hadamard(t, reciprocal(y))
 
 
 def Cross_entropy_loss_rowwise(Y, T):
@@ -198,7 +198,7 @@ def Cross_entropy_loss_rowwise(Y, T):
 
 
 def Cross_entropy_loss_rowwise_gradient(Y, T):
-    return -hadamard(T, inverse(Y))
+    return -hadamard(T, reciprocal(Y))
 
 
 def softmax_cross_entropy_loss_rowwise(y, t):
@@ -271,7 +271,7 @@ def negative_log_likelihood_loss_rowwise(y, t):
 
 
 def negative_log_likelihood_loss_rowwise_gradient(y, t):
-    return -inverse(dot(y, t)) * t
+    return -reciprocal(dot(y, t)) * t
 
 
 def Negative_log_likelihood_loss_rowwise(Y, T):
@@ -280,4 +280,4 @@ def Negative_log_likelihood_loss_rowwise(Y, T):
 
 def Negative_log_likelihood_loss_rowwise_gradient(Y, T):
     N, K = Y.shape
-    return -hadamard(column_repeat(inverse(rows_sum(hadamard(Y, T))), K), T)
+    return -hadamard(column_repeat(reciprocal(rows_sum(hadamard(Y, T))), K), T)

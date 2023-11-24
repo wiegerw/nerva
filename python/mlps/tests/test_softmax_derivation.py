@@ -85,13 +85,13 @@ class TestSoftmaxDerivation(TestCase):
         x = matrix('x', 1, D)
         y = log(rows_sum(exp(x)))
         dy_dx = jacobian(y, x)
-        dy_dx_expected = inverse(rows_sum(exp(x))) * exp(x)
+        dy_dx_expected = reciprocal(rows_sum(exp(x))) * exp(x)
         self.assertEqual(dy_dx_expected, dy_dx)
 
     def test6(self):
         D = 2
         x = matrix('x', 1, D)
-        y = log(inverse(rows_sum(exp(x))) * exp(x))
+        y = log(reciprocal(rows_sum(exp(x))) * exp(x))
         y1 = x - log(rows_sum(exp(x)))  * ones(1, D)
         y = sp.simplify(y)
         y1 = sp.simplify(y1)
@@ -100,10 +100,10 @@ class TestSoftmaxDerivation(TestCase):
     def test7(self):
         D = 2
         x = matrix('x', 1, D)
-        y = log(inverse(rows_sum(exp(x))) * exp(x))
+        y = log(reciprocal(rows_sum(exp(x))) * exp(x))
         y = sp.simplify(y)
         dy_dx = jacobian(y, x)
-        dy_dx_expected = identity(D) - row_repeat(inverse(rows_sum(exp(x))) * exp(x), D)
+        dy_dx_expected = identity(D) - row_repeat(reciprocal(rows_sum(exp(x))) * exp(x), D)
         dy_dx = sp.simplify(dy_dx)
         dy_dx_expected = sp.simplify(dy_dx_expected)
         self.assertEqual(dy_dx_expected, dy_dx)

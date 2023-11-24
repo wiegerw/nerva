@@ -141,7 +141,7 @@ def log(X: torch.Tensor) -> torch.Tensor:
     return torch.log(X)
 
 
-def inverse(X: torch.Tensor) -> torch.Tensor:
+def reciprocal(X: torch.Tensor) -> torch.Tensor:
     return 1 / X
 
 
@@ -154,4 +154,4 @@ def sqrt(X: torch.Tensor) -> torch.Tensor:
 
 
 def power_minus_half(X: torch.Tensor) -> torch.Tensor:
-    return inverse(sqrt(X))
+    return reciprocal(sqrt(X))

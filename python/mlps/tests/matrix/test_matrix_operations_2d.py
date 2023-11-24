@@ -277,17 +277,17 @@ class TestMatrixOperations(TestCase):
         x5 = jnp_.log(to_jax(x))
         check_arrays_equal(self, 'log', [x1, x2, x3, x4, x5])
 
-    def test_inverse(self):
-        # (20) inverse(X: Matrix) -> Matrix:
+    def test_reciprocal(self):
+        # (20) reciprocal(X: Matrix) -> Matrix:
         m, n, f, X, Y, S, xc, xr = self.make_variables()
 
         x = X
-        x1 = sympy_.inverse(to_sympy(x))
-        x2 = np_.inverse(x)
-        x3 = tf_.inverse(to_tensorflow(x))
-        x4 = torch_.inverse(to_torch(x))
-        x5 = jnp_.inverse(to_jax(x))
-        check_arrays_equal(self, 'inverse', [x1, x2, x3, x4, x5])
+        x1 = sympy_.reciprocal(to_sympy(x))
+        x2 = np_.reciprocal(x)
+        x3 = tf_.reciprocal(to_tensorflow(x))
+        x4 = torch_.reciprocal(to_torch(x))
+        x5 = jnp_.reciprocal(to_jax(x))
+        check_arrays_equal(self, 'reciprocal', [x1, x2, x3, x4, x5])
 
     def test_square(self):
         # (21) square(X: Matrix) -> Matrix:

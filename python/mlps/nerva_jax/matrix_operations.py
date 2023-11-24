@@ -143,7 +143,7 @@ def log(X: Matrix) -> Matrix:
     return jnp.log(X)
 
 
-def inverse(X: Matrix) -> Matrix:
+def reciprocal(X: Matrix) -> Matrix:
     return 1 / X
 
 
@@ -156,7 +156,7 @@ def sqrt(X: Matrix) -> Matrix:
 
 
 def power_minus_half(X: Matrix) -> Matrix:
-    return inverse(sqrt(X + epsilon))  # The epsilon is needed for numerical stability
+    return reciprocal(sqrt(X + epsilon))  # The epsilon is needed for numerical stability
 
 
 def log_sigmoid(X: Matrix) -> Matrix:

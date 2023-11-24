@@ -5,14 +5,14 @@
 import torch
 
 from mlps.nerva_torch.matrix_operations import Diag, column_repeat, columns_max, columns_sum, exp, hadamard, identity, \
-    inverse, is_column_vector, is_row_vector, log, row_repeat, rows_max, rows_sum
+    reciprocal, is_column_vector, is_row_vector, log, row_repeat, rows_max, rows_sum
 
 Matrix = torch.Tensor
 
 def softmax_colwise(X: Matrix) -> Matrix:
     D, N = X.shape
     E = exp(X)
-    return hadamard(E, row_repeat(inverse(columns_sum(E)), D))
+    return hadamard(E, row_repeat(reciprocal(columns_sum(E)), D))
 
 
 def softmax_colwise_jacobian(x: Matrix) -> Matrix:
@@ -25,7 +25,7 @@ def stable_softmax_colwise(X: Matrix) -> Matrix:
     D, N = X.shape
     Y = X - row_repeat(columns_max(X), D)
     E = exp(Y)
-    return hadamard(E, row_repeat(inverse(columns_sum(E)), D))
+    return hadamard(E, row_repeat(reciprocal(columns_sum(E)), D))
 
 
 def stable_softmax_colwise_jacobian(x: Matrix) -> Matrix:
@@ -58,7 +58,7 @@ def stable_log_softmax_colwise_jacobian(x: Matrix) -> Matrix:
 def softmax_rowwise(X: Matrix) -> Matrix:
     N, D = X.shape
     E = exp(X)
-    return hadamard(E, column_repeat(inverse(rows_sum(E)), D))
+    return hadamard(E, column_repeat(reciprocal(rows_sum(E)), D))
 
 
 def softmax_rowwise_jacobian(x: Matrix) -> Matrix:
@@ -71,7 +71,7 @@ def stable_softmax_rowwise(X: Matrix) -> Matrix:
     N, D = X.shape
     Y = X - column_repeat(rows_max(X), D)
     E = exp(Y)
-    return hadamard(E, column_repeat(inverse(rows_sum(E)), D))
+    return hadamard(E, column_repeat(reciprocal(rows_sum(E)), D))
 
 
 def stable_softmax_rowwise_jacobian(x: Matrix) -> Matrix:

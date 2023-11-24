@@ -162,7 +162,7 @@ def log(X: Matrix) -> Matrix:
     return X.applyfunc(sp.log)
 
 
-def inverse(X: Matrix) -> Matrix:
+def reciprocal(X: Matrix) -> Matrix:
     return X.applyfunc(lambda x: 1 / x)
 
 
@@ -175,7 +175,7 @@ def sqrt(X: Matrix) -> Matrix:
 
 
 def power_minus_half(X: Matrix) -> Matrix:
-    return inverse(sqrt(X))
+    return reciprocal(sqrt(X))
 
 
 def log_sigmoid(X: Matrix) -> Matrix:

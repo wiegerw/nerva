@@ -143,7 +143,7 @@ def log(X: Matrix) -> Matrix:
     return tf.math.log(X)
 
 
-def inverse(X: Matrix) -> Matrix:
+def reciprocal(X: Matrix) -> Matrix:
     return tf.math.reciprocal(X)
 
 
@@ -156,4 +156,4 @@ def sqrt(X: Matrix) -> Matrix:
 
 
 def power_minus_half(X: Matrix) -> Matrix:
-    return inverse(sqrt(X))
+    return reciprocal(sqrt(X))
