@@ -21,7 +21,7 @@ def save_dataset(path: Path, X_train, T_train, X_test, T_test):
         np.savez_compressed(f, Xtrain=X_train, Ttrain=T_train, Xtest=X_test, Ttest=T_test)
 
 
-def load_cifar10(root: str, batch_size=64, num_workers=4):
+def load_cifar10(root: str, batch_size=64, num_workers=1):
     """ Downloads the CIFAR-10 dataset, normalizes and flattens it, and saves it into .npz format."""
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
@@ -44,7 +44,7 @@ def load_cifar10(root: str, batch_size=64, num_workers=4):
     save_dataset(Path(root) / 'cifar10.npz', X_train, T_train, X_test, T_test)
 
 
-def load_mnist(root: str, batch_size=64, num_workers=4):
+def load_mnist(root: str, batch_size=64, num_workers=1):
     """ Downloads the MNIST dataset, normalizes and flattens it, and saves it into .npz format."""
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5), (0.5,))])
 
@@ -68,7 +68,7 @@ def load_mnist(root: str, batch_size=64, num_workers=4):
 def main():
     cmdline_parser = argparse.ArgumentParser()
     cmdline_parser.add_argument("--batch-size", help="The batch size (default: 100)", type=int, default=100)
-    cmdline_parser.add_argument("--workers", help="The number of workers used for loading (default: 4)", type=int, default=4)
+    cmdline_parser.add_argument("--workers", help="The number of workers used for loading (default: 1)", type=int, default=1)
     cmdline_parser.add_argument('--root', type=str, default='./data', help='The directory where data sets are stored (default: ./data)')
     cmdline_parser.add_argument('dataset', type=str, help='The dataset (cifar10 or mnist)')
     args = cmdline_parser.parse_args()
