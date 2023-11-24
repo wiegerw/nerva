@@ -155,11 +155,11 @@ python -u ..\tools\create_datasets.py mnist --root=..\data
 
 
 package_requirements = {
-    'nerva_jax': ['numpy', 'jax'],
-    'nerva_numpy': ['numpy'],
-    'nerva_sympy': ['numpy', 'sympy', 'nerva-jax', 'nerva-numpy', 'nerva-tensorflow', 'nerva-torch'],
-    'nerva_tensorflow': ['numpy', 'tensorflow'],
-    'nerva_torch': ['numpy', 'torch'],
+    'nerva_jax': ['numpy', 'jax', 'jaxlib', 'scikit-learn'],
+    'nerva_numpy': ['numpy', 'scikit-learn'],
+    'nerva_sympy': ['numpy', 'sympy', 'scikit-learn', 'nerva-jax', 'nerva-numpy', 'nerva-tensorflow', 'nerva-torch'],
+    'nerva_tensorflow': ['numpy', 'tensorflow', 'scikit-learn'],
+    'nerva_torch': ['numpy', 'torch', 'torchvision', 'scikit-learn'],
 }
 
 package_frameworks = {
