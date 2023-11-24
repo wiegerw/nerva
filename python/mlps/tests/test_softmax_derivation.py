@@ -72,6 +72,42 @@ class TestSoftmaxDerivation(TestCase):
             self.assertTrue(equal_matrices(Dz, Dy * (Diag(y_z) - y_z.T * y_z)))
             self.assertTrue(equal_matrices(Dz, hadamard(y_z, Dy) - Dy * y_z.T * y_z))
 
+    def test4(self):
+        D = 2
+        x = matrix('x', 1, D)
+        y = rows_sum(exp(x))
+        dy_dx = jacobian(y, x)
+        dy_dx_expected = exp(x)
+        self.assertEqual(dy_dx_expected, dy_dx)
+
+    def test5(self):
+        D = 2
+        x = matrix('x', 1, D)
+        y = log(rows_sum(exp(x)))
+        dy_dx = jacobian(y, x)
+        dy_dx_expected = inverse(rows_sum(exp(x))) * exp(x)
+        self.assertEqual(dy_dx_expected, dy_dx)
+
+    def test6(self):
+        D = 2
+        x = matrix('x', 1, D)
+        y = log(inverse(rows_sum(exp(x))) * exp(x))
+        y1 = x - log(rows_sum(exp(x)))  * ones(1, D)
+        y = sp.simplify(y)
+        y1 = sp.simplify(y1)
+        self.assertEqual(sp.simplify(y), sp.simplify(y1))
+
+    def test7(self):
+        D = 2
+        x = matrix('x', 1, D)
+        y = log(inverse(rows_sum(exp(x))) * exp(x))
+        y = sp.simplify(y)
+        dy_dx = jacobian(y, x)
+        dy_dx_expected = identity(D) - row_repeat(inverse(rows_sum(exp(x))) * exp(x), D)
+        dy_dx = sp.simplify(dy_dx)
+        dy_dx_expected = sp.simplify(dy_dx_expected)
+        self.assertEqual(dy_dx_expected, dy_dx)
+
 
 if __name__ == '__main__':
     import unittest
