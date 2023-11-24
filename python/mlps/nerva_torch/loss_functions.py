@@ -272,7 +272,7 @@ def negative_log_likelihood_loss_rowwise(y, t):
 
 
 def negative_log_likelihood_loss_rowwise_gradient(y, t):
-    return (-1 / dot(y, t)) * t
+    return -inverse(dot(y, t)) * t
 
 
 def Negative_log_likelihood_loss_rowwise(Y, T):
