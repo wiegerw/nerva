@@ -76,6 +76,25 @@ def matrix(name: str, rows: int, columns: int) -> Matrix:
     return Matrix(sp.symarray(name, (rows, columns), real=True))
 
 
+def to_matrix(x):
+    return sp.Matrix([[x]])
+
+
+def to_number(x: sp.Matrix):
+    assert x.shape == (1, 1)
+    return x[0, 0]
+
+
+def column_vector(variables: List[str]) -> Matrix:
+    symbols_list = sp.symbols(variables, real=True)
+    return Matrix(symbols_list)
+
+
+def row_vector(variables: List[str]) -> Matrix:
+    symbols_list = sp.symbols(variables, real=True)
+    return Matrix([symbols_list])
+
+
 def equal_matrices(A: Matrix, B: Matrix, simplify_arguments=False) -> bool:
     m, n = A.shape
     if simplify_arguments:
@@ -119,8 +138,3 @@ def substitute(expr, substitutions: Union[Tuple[Matrix, Matrix], List[Tuple[Matr
         sigma = ((X[i, j], Y[i, j]) for i in range(m) for j in range(n))
         expr = expr.subs(sigma)
     return expr
-
-
-def to_number(x: sp.Matrix):
-    assert x.shape == (1, 1)
-    return x[0, 0]

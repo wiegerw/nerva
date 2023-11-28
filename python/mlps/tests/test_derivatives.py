@@ -6,7 +6,7 @@
 from unittest import TestCase
 
 from mlps.nerva_sympy.matrix_operations import *
-from mlps.tests.utilities import matrix, pp
+from mlps.tests.utilities import column_vector, equal_matrices, matrix, pp, row_vector, to_matrix, to_number
 
 Matrix = sp.Matrix
 
@@ -95,6 +95,58 @@ class TestLemmas(TestCase):
         pp('df_dx', df_dx)
         pp('dg_dx', dg_dx)
         self.assertEqual(dg_dx, x.T * df_dx + f_x * sp.eye(3))
+
+
+class TestProductRule(TestCase):
+    def test_product_rule1(self):
+        x1, x2, x3 = sp.symbols(['x1', 'x2', 'x3'], Real=True)
+        x = Matrix([x1, x2, x3])
+        f = Matrix([2 * x1 * x2 + 3 * x1 - x2, x1 * x1 - 3 * x1 * x2 + 4 * x3])
+        g_ = x1 + 5 * x2 + x2 * x3
+        g = Matrix([g_])
+        h = f * g_
+        dh_dx = h.jacobian(x)
+        df_dx = f.jacobian(x)
+        dg_dx = to_matrix(g).jacobian(x)
+        rhs = df_dx * g_ + f * dg_dx
+        self.assertTrue(equal_matrices(dh_dx, rhs))
+
+    def test_product_rule2(self):
+        x1, x2, x3 = sp.symbols(['x1', 'x2', 'x3'], Real=True)
+        x = Matrix([x1, x2, x3])
+        f = Matrix([[2 * x1 * x2 + 3 * x1 - x2, x1 * x1 - 3 * x1 * x2 + 4 * x3]])
+        g_ = x1 + 5 * x2 + x2 * x3
+        g = Matrix([g_])
+        h = f * g_
+        dh_dx = h.jacobian(x)
+        df_dx = f.jacobian(x)
+        dg_dx = to_matrix(g).jacobian(x)
+        rhs = df_dx * g_ + f.T * dg_dx
+        self.assertTrue(equal_matrices(dh_dx, rhs))
+
+    def test_product_rule3(self):
+        m, n = 2, 3
+        x1, x2, x3 = sp.symbols(['x1', 'x2', 'x3'], Real=True)
+        x = Matrix([x1, x2, x3])
+        A = matrix('A', m, n)
+        f = Matrix([[2 * x1 * x2 + 3 * x1 - x2, x1 * x1 - 3 * x1 * x2 + 4 * x3]])
+        g = f * A
+        df_dx = f.jacobian(x)
+        dg_dx = g.jacobian(x)
+        rhs = A.T * df_dx
+        self.assertTrue(equal_matrices(dg_dx, rhs))
+
+    def test_product_rule4(self):
+        m, n = 2, 3
+        x1, x2, x3 = sp.symbols(['x1', 'x2', 'x3'], Real=True)
+        x = Matrix([x1, x2, x3])
+        A = matrix('A', m, n)
+        f = Matrix([2 * x1 * x2 + 3 * x1 - x2, x1 * x1 - 3 * x1 * x2 + 4 * x3, 2 * x1 + 3 * x2 + 4 * x3])
+        g = A * f
+        df_dx = f.jacobian(x)
+        dg_dx = g.jacobian(x)
+        rhs = A * df_dx
+        self.assertTrue(equal_matrices(dg_dx, rhs))
 
 
 if __name__ == '__main__':

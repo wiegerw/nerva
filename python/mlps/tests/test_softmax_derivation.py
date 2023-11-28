@@ -7,17 +7,9 @@ from unittest import TestCase
 
 from mlps.nerva_sympy.matrix_operations import *
 from mlps.nerva_sympy.softmax_functions import *
-from mlps.tests.utilities import equal_matrices
+from mlps.tests.utilities import equal_matrices, matrix, to_matrix
 
 Matrix = sp.Matrix
-
-
-def matrix(name: str, rows: int, columns: int) -> Matrix:
-    return Matrix(sp.symarray(name, (rows, columns), real=True))
-
-
-def to_matrix(x):
-    return sp.Matrix([[x]])
 
 
 def pp(name: str, x: sp.Matrix):
