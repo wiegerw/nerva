@@ -209,7 +209,7 @@ def softmax_cross_entropy_loss_rowwise(y, t):
 
 
 def softmax_cross_entropy_loss_rowwise_gradient(y, t):
-    return softmax_rowwise(y) * elements_sum(t) - t
+    return elements_sum(t) * softmax_rowwise(y) - t
 
 
 def softmax_cross_entropy_loss_rowwise_gradient_one_hot(y, t):
@@ -223,6 +223,7 @@ def Softmax_cross_entropy_loss_rowwise(Y, T):
 def Softmax_cross_entropy_loss_rowwise_gradient(Y, T):
     N, K = Y.shape
     return hadamard(softmax_rowwise(Y), column_repeat(rows_sum(T), K)) - T
+
 
 def Softmax_cross_entropy_loss_rowwise_gradient_one_hot(Y, T):
     return softmax_rowwise(Y) - T
@@ -270,7 +271,7 @@ def Logistic_cross_entropy_loss_rowwise_gradient(Y, T):
 
 
 def negative_log_likelihood_loss_rowwise(y, t):
-    return -sp.log(dot(y, t))  # N.B. Using log(dot(y, t)) fails. Apparently the nested call of applyfunc is problematic in this case.
+    return -sp.log(dot(y, t))  # N.B. Using log(dot(y, t)) fails with an `applyfunc` error.
 
 
 def negative_log_likelihood_loss_rowwise_gradient(y, t):

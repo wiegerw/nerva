@@ -207,7 +207,7 @@ def softmax_cross_entropy_loss_rowwise(y, t):
 
 
 def softmax_cross_entropy_loss_rowwise_gradient(y, t):
-    return softmax_rowwise(y) * elements_sum(t) - t
+    return elements_sum(t) * softmax_rowwise(y) - t
 
 
 def softmax_cross_entropy_loss_rowwise_gradient_one_hot(y, t):
