@@ -6,58 +6,47 @@
 from unittest import TestCase
 
 from mlps.nerva_sympy.matrix_operations import *
-from mlps.tests.utilities import matrix, pp, to_number
+from mlps.tests.utilities import matrix, pp, to_number, squared_error, to_matrix, equal_matrices
 
 Matrix = sp.Matrix
 
 
 class TestBatchNorm(TestCase):
-    def test1(self):
+    def test_derivation(self):
         N = 2
         x = matrix('x', N, 1)
         r = matrix('r', N, 1)
         z = matrix('z', N, 1)
 
-        X = x
-        R = lambda X: (identity(N) - ones(N, N) / N) * X
-        Sigma = lambda R: (R.T * R) / N
-        Z = lambda R: to_number(power_minus_half(Sigma(R))) * R
-        L = lambda Y: sp.Matrix([[elements_sum(Y)]])
-
-        dz_dr = Z(r).jacobian(r)
-        f_r = power_minus_half(Sigma(r))
-        dz_dr2 = r * f_r.jacobian(r) + to_number(f_r) * sp.eye(N)
-        self.assertEqual(dz_dr, dz_dr2)
-
-        L_r =  L(Z(r))
-        dL_dr = L_r.jacobian(r)
-        pp('dL_dr', dL_dr)
-
-        L_z = L(z)
-        dL_dz = L_z.jacobian(z)
-        pp('dL_dz', dL_dz)
-
-        Dr = dL_dr
-        Dz = substitute(dL_dz, (z, Z(r)))
-        self.assertEqual(Dr, Dz * dz_dr)
-
-        dsigma_dr = Sigma(r).jacobian(r)
-        dsigma_dr1 = (2 * r.T) / N
-        self.assertEqual(dsigma_dr, dsigma_dr1)
-
-        df_dr = f_r.jacobian(r)
-        power_minus_half_sigma_r = power_minus_half(Sigma(r))
-        df_dr1 = - ((power_minus_half_sigma_r * power_minus_half_sigma_r * power_minus_half_sigma_r) / 2) * dsigma_dr
-        self.assertEqual(df_dr, df_dr1)
-        df_dr2 = - ((power_minus_half_sigma_r * power_minus_half_sigma_r * power_minus_half_sigma_r) / N) * r.T
-        self.assertEqual(df_dr, df_dr2)
-
-        dz_dr3 = r * df_dr2 + to_number(power_minus_half_sigma_r) * sp.eye(N)
-        self.assertEqual(dz_dr, dz_dr3)
+        I = identity(N) - ones(N, N) / N
+        R = lambda r: I * x
+        Sigma = lambda r: (r.T * r) / N
+        Z = lambda r: to_number(power_minus_half(Sigma(r))) * r
+        L = lambda Y: to_matrix(squared_error(Y))
 
         z_r = Z(r)
-        dz_dr4 = (to_number(power_minus_half_sigma_r) / N) * (-z_r * z_r.T + N * sp.eye(N))
-        self.assertEqual(sp.simplify(dz_dr), sp.simplify(dz_dr4))
+        dz_dr = z_r.jacobian(r)
+        self.assertTrue(equal_matrices(dz_dr, to_number(power_minus_half(Sigma(r)) / N) * (N * identity(N) - z_r * z_r.T)))
+
+        L_r = L(z_r)
+        L_z = L(z)
+        dL_dr = L_r.jacobian(r)
+        dL_dz = L_z.jacobian(z)
+        Dr = dL_dr.T
+        Dz = substitute(dL_dz.T, (z, z_r))
+        self.assertTrue(equal_matrices(Dr, to_number(power_minus_half(Sigma(r)) / N) * (N * identity(N) - z_r * z_r.T) * Dz))
+
+        r_x = R(x)
+        z_x = Z(r_x)
+        L_x = L(z_x)
+        Dx = L_x.jacobian(x).T
+        Dr = substitute(Dr, (r, r_x))
+        self.assertTrue(equal_matrices(Dx, I * Dr))
+
+        sigma = Sigma(r_x)
+        Dz = substitute(dL_dz.T, (z, z_x))
+        z = z_x
+        self.assertTrue(equal_matrices(Dx, to_number(power_minus_half(sigma) / N) * (N * I * Dz - z * z.T * Dz), simplify_arguments=True))
 
 
 if __name__ == '__main__':
