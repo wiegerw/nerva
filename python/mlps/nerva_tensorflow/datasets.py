@@ -80,7 +80,7 @@ def create_npz_dataloaders(filename: str, batch_size: int, rowwise=True) -> Tupl
         raise RuntimeError(f"Could not load file '{path}'")
 
     data = dict(np.load(filename, allow_pickle=True))
-    Xtrain, Ttrain, Xtest, Ttest = tf.convert_to_tensor(data['Xtrain']), tf.convert_to_tensor(data['Ttrain']), tf.convert_to_tensor(data['Xtest']), tf.convert_to_tensor(data['Ttest'])
+    Xtrain, Ttrain, Xtest, Ttest = tf.convert_to_tensor(data['Xtrain'], dtype=tf.float32), tf.convert_to_tensor(data['Ttrain'], dtype=tf.int64), tf.convert_to_tensor(data['Xtest'], dtype=tf.float32), tf.convert_to_tensor(data['Ttest'], dtype=tf.int64)
     train_loader = MemoryDataLoader(Xtrain, Ttrain, batch_size, rowwise)
     test_loader = MemoryDataLoader(Xtest, Ttest, batch_size, rowwise)
     return train_loader, test_loader

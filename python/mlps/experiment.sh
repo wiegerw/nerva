@@ -8,7 +8,7 @@ sizes="3072,1024,512,10"
 layers="ReLU;ReLU;Linear"
 optimizer="Momentum(0.9)"
 init_weight="Xavier"
-optimizers="Momentum(mu=0.9);Momentum(mu=0.9);Momentum(mu=0.9)"
+optimizers="Momentum(0.9);Momentum(0.9);Momentum(0.9)"
 init_weights="Xavier,Xavier,Xavier"
 learning_rate="Constant(0.01)"
 loss=SoftmaxCrossEntropy
