@@ -95,12 +95,32 @@ def row_vector(variables: List[str]) -> Matrix:
     return Matrix([symbols_list])
 
 
+def substitute(expr, substitutions: Union[Tuple[Matrix, Matrix], List[Tuple[Matrix, Matrix]]]):
+    if isinstance(substitutions, tuple):
+        substitutions = [substitutions]
+    for (X, Y) in substitutions:
+        assert X.shape == Y.shape
+        m, n = X.shape
+        sigma = ((X[i, j], Y[i, j]) for i in range(m) for j in range(n))
+        expr = expr.subs(sigma)
+    return expr
+
+
 def equal_matrices(A: Matrix, B: Matrix, simplify_arguments=False) -> bool:
     m, n = A.shape
     if simplify_arguments:
         A = sp.simplify(A)
         B = sp.simplify(B)
     return A.shape == B.shape and sp.simplify(A - B) == sp.zeros(m, n)
+
+
+# A and B must depend on variables in X.
+def equal_matrices_lite(A: Matrix, B: Matrix, X: Matrix, atol=1e-5) -> bool:
+    rows, cols = X.shape
+    X0 = np.random.rand(rows, cols)
+    A0 = to_numpy(substitute(A, (X, Matrix(X0))))
+    B0 = to_numpy(substitute(B, (X, Matrix(X0))))
+    return np.allclose(A0, B0, atol=atol)
 
 
 def instantiate(X: sp.Matrix, low=0, high=10) -> sp.Matrix:
@@ -127,14 +147,3 @@ def pp(name: str, x: sp.Matrix):
                 print(', ', end='')
         print(']')
     print()
-
-
-def substitute(expr, substitutions: Union[Tuple[Matrix, Matrix], List[Tuple[Matrix, Matrix]]]):
-    if isinstance(substitutions, tuple):
-        substitutions = [substitutions]
-    for (X, Y) in substitutions:
-        assert X.shape == Y.shape
-        m, n = X.shape
-        sigma = ((X[i, j], Y[i, j]) for i in range(m) for j in range(n))
-        expr = expr.subs(sigma)
-    return expr
