@@ -122,44 +122,6 @@ class ActivationLayer(LinearLayer):
         self.DX = DX
 
 
-class SigmoidLayer(LinearLayer):
-    """
-    Linear layer with a sigmoid activation function. This is not strictly needed,
-    but it shows that the backpropagation can be calculated in a different way
-    """
-    def __init__(self, D: int, K: int):
-        super().__init__(D, K)
-        self.Z = None
-        self.DZ = None
-
-    def feedforward(self, X: Matrix) -> Matrix:
-        self.X = X
-        N, D = X.shape
-        W = self.W
-        b = self.b
-
-        Z = X @ W.T + row_repeat(b, N)
-        Y = Sigmoid(Z)
-
-        self.Z = Z
-        return Y
-
-    def backpropagate(self, Y: Matrix, DY: Matrix) -> None:
-        K, N = self.Z.shape
-        X = self.X
-        W = self.W
-
-        DZ = hadamard(DY, hadamard(Y, ones(N, K) - Y))
-        DW = DZ.T @ X
-        Db = columns_sum(DZ)
-        DX = DZ @ W
-
-        self.DZ = DZ
-        self.DW = DW
-        self.Db = Db
-        self.DX = DX
-
-
 class SReLULayer(ActivationLayer):
     """
     Linear layer with an SReLU activation function. It adds learning of the parameters
@@ -338,8 +300,6 @@ def parse_linear_layer(text: str,
                       ) -> Layer:
     if text == 'Linear':
         layer = LinearLayer(D, K)
-    elif text == 'Sigmoid':
-        layer = SigmoidLayer(D, K)
     elif text == 'Softmax':
         layer = SoftmaxLayer(D, K)
     elif text == 'LogSoftmax':
