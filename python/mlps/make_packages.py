@@ -32,6 +32,8 @@ package_dir =
   = src
 packages = find:
 python_requires = >=3.10
+install_requires =
+INSTALL_REQUIRES
 
 [options.packages.find]
 where = src
@@ -402,6 +404,7 @@ def create_setup_files():
         text = text.replace('FRAMEWORK', package_frameworks[package])
         text = text.replace('NAME', package_names[package])
         text = text.replace('VERSION', VERSION)
+        text = text.replace('INSTALL_REQUIRES', '    ' + '\n    '.join(requirements))
         save_text(dest, text)
 
         dest = Path('dist') / package_names[package] / 'pyproject.toml'
