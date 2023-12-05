@@ -475,6 +475,10 @@ def copy_scripts():
         destination_file = Path('dist') / source_file.name
         copy_file(source_file, destination_file)
 
+    for source_file in Path('scripts').glob('*.bat'):
+        destination_file = Path('dist') / source_file.name
+        copy_file(source_file, destination_file)
+
 
 def create_mlp_files():
     source_folder = Path('.')
