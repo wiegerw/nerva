@@ -10,12 +10,12 @@ import sklearn.datasets as dt
 
 from mlps.nerva_numpy.activation_functions import ReLUActivation
 from mlps.nerva_numpy.datasets import MemoryDataLoader
-from mlps.nerva_numpy.layers_rowwise import ActivationLayer
+from mlps.nerva_numpy.layers_rowwise import ActivationLayer, LinearLayer
 from mlps.nerva_numpy.learning_rate import MultiStepLRScheduler
 from mlps.nerva_numpy.loss_functions_rowwise import SoftmaxCrossEntropyLossFunction
 from mlps.nerva_numpy.multilayer_perceptron_rowwise import MultilayerPerceptron
 from mlps.nerva_numpy.training_rowwise import sgd
-from mlps.nerva_numpy.layers_rowwise import LinearLayer
+
 
 def generate_synthetic_dataset(num_train_samples, num_test_samples, num_features, num_classes, num_redundant=2, class_sep=0.8, random_state=None):
     X, T = dt.make_classification(

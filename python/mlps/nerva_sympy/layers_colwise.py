@@ -5,7 +5,7 @@
 import sympy as sp
 from sympy import Piecewise
 
-from mlps.nerva_sympy.activation_functions import ActivationFunction, SReLUActivation, Sigmoid, parse_activation
+from mlps.nerva_sympy.activation_functions import ActivationFunction, SReLUActivation, parse_activation
 from mlps.nerva_sympy.matrix_operations import column_repeat, columns_sum, diag, elements_sum, hadamard, \
     identity, ones, power_minus_half, row_repeat, rows_mean, rows_sum, vector_size, zeros
 from mlps.nerva_sympy.optimizers import CompositeOptimizer, parse_optimizer

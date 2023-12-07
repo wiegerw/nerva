@@ -5,7 +5,7 @@
 import numpy as np
 
 from mlps.nerva_numpy.matrix_operations import Diag, column_repeat, columns_max, columns_sum, exp, hadamard, identity, \
-    reciprocal, is_column_vector, is_row_vector, log, row_repeat, rows_max, rows_sum
+    is_column_vector, is_row_vector, log, reciprocal, row_repeat, rows_max, rows_sum
 
 Matrix = np.ndarray
 

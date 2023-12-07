@@ -4,7 +4,7 @@
 
 import tensorflow as tf
 
-from mlps.nerva_tensorflow.activation_functions import ActivationFunction, SReLUActivation, Sigmoid, parse_activation
+from mlps.nerva_tensorflow.activation_functions import ActivationFunction, SReLUActivation, parse_activation
 from mlps.nerva_tensorflow.matrix_operations import column_repeat, columns_mean, columns_sum, diag, elements_sum, \
     hadamard, \
     identity, ones, power_minus_half, row_repeat, rows_sum, vector_size, zeros

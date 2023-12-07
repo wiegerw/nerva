@@ -5,7 +5,7 @@
 import torch
 
 from mlps.nerva_torch.matrix_operations import Diag, column_repeat, columns_max, columns_sum, exp, hadamard, identity, \
-    reciprocal, is_column_vector, is_row_vector, log, row_repeat, rows_max, rows_sum
+    is_column_vector, is_row_vector, log, reciprocal, row_repeat, rows_max, rows_sum
 
 Matrix = torch.Tensor
 

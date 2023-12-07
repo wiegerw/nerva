@@ -6,7 +6,7 @@
 from unittest import TestCase
 
 from mlps.nerva_sympy.matrix_operations import *
-from mlps.tests.utilities import column_vector, equal_matrices, matrix, pp, row_vector, to_matrix, to_number
+from mlps.tests.utilities import equal_matrices, matrix, pp, to_matrix
 
 Matrix = sp.Matrix
 

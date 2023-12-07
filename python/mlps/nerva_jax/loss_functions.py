@@ -3,8 +3,8 @@
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
 from mlps.nerva_jax.activation_functions import Sigmoid
-from mlps.nerva_jax.matrix_operations import column_repeat, columns_sum, dot, elements_sum, hadamard, reciprocal, log, \
-    log_sigmoid, row_repeat, rows_sum
+from mlps.nerva_jax.matrix_operations import column_repeat, columns_sum, dot, elements_sum, hadamard, log, log_sigmoid, \
+    reciprocal, row_repeat, rows_sum
 from mlps.nerva_jax.softmax_functions import log_softmax_colwise, log_softmax_rowwise, softmax_colwise, softmax_rowwise, \
     stable_log_softmax_colwise, stable_log_softmax_rowwise, stable_softmax_colwise, stable_softmax_rowwise
 
