@@ -85,7 +85,7 @@ if not exist ..\data\cifar10.npz (
 
 python -u ..\tools\mlp.py ^
     --layers="ReLU;ReLU;Linear" ^
-    --sizes="784,1024,512,10" ^
+    --sizes="3072,1024,512,10" ^
     --optimizers="Momentum(0.9);Momentum(0.9);Momentum(0.9)" ^
     --init-weights="Xavier,Xavier,Xavier" ^
     --batch-size=100 ^
@@ -475,7 +475,7 @@ def copy_scripts():
         destination_file = Path('dist') / source_file.name
         copy_file(source_file, destination_file)
 
-    for source_file in Path('scripts').glob('*.bat'):
+    for source_file in Path('scripts').glob('*.ps1'):
         destination_file = Path('dist') / source_file.name
         copy_file(source_file, destination_file)
 
