@@ -14,3 +14,5 @@ ln -s ../nerva-torch/data
 
 cd ../nerva-tensorflow
 ln -s ../nerva-torch/data
+
+cd ..
