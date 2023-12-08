@@ -10,7 +10,9 @@ Set-Location ..\nerva-jax
 New-Item -ItemType SymbolicLink -Target "..\nerva-torch\data" -Path "data"
 
 Set-Location ..\nerva-numpy
-New-Item -ItemType SymbolicLink -Target "..\nerva-numpy\data" -Path "data"
+New-Item -ItemType SymbolicLink -Target "..\nerva-torch\data" -Path "data"
 
 Set-Location ..\nerva-tensorflow
-New-Item -ItemType SymbolicLink -Target "..\nerva-tensorflow\data" -Path "data"
+New-Item -ItemType SymbolicLink -Target "..\nerva-torch\data" -Path "data"
+
+Set-Location ..
