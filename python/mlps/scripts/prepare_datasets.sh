@@ -10,7 +10,7 @@ cd ../nerva-jax
 ln -s ../nerva-torch/data
 
 cd ../nerva-numpy
-ln -s ../nerva-numpy/data
+ln -s ../nerva-torch/data
 
 cd ../nerva-tensorflow
-ln -s ../nerva-tensorflow/data
+ln -s ../nerva-torch/data
