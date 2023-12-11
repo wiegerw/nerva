@@ -192,7 +192,7 @@ def join_rows(rows: List[Matrix]) -> Matrix:
     return Matrix(rows)
 
 
-def diff(f, X: Matrix) -> Matrix:
+def gradient(f, X: Matrix) -> Matrix:
     """
     Returns the derivative of a matrix function
     :param f: a real-valued function

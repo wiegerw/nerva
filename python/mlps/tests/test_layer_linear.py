@@ -31,7 +31,7 @@ class TestLinearLayers(TestCase):
         Y = W * X + column_repeat(b, N)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DW = DY * X.T
@@ -39,9 +39,9 @@ class TestLinearLayers(TestCase):
         DX = W.T * DY
 
         # test gradients
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
 
         self.assertTrue(equal_matrices(DW, DW1))
         self.assertTrue(equal_matrices(Db, Db1))
@@ -68,7 +68,7 @@ class TestLinearLayers(TestCase):
         Y = act(Z)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = hadamard(DY, act.gradient(Z))
@@ -77,10 +77,10 @@ class TestLinearLayers(TestCase):
         DX = W.T * DZ
 
         # test gradients
-        DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DZ1 = substitute(gradient(loss(act(z)), z), (z, Z))
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
 
         self.assertTrue(equal_matrices(DZ, DZ1))
         self.assertTrue(equal_matrices(DW, DW1))
@@ -107,7 +107,7 @@ class TestLinearLayers(TestCase):
         Y = Sigmoid(Z)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = hadamard(DY, hadamard(Y, ones(K, N) - Y))
@@ -117,10 +117,10 @@ class TestLinearLayers(TestCase):
 
         # test gradients
         Y_z = Sigmoid(z)
-        DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DZ1 = substitute(gradient(loss(Y_z), z), (z, Z))
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
 
         self.assertTrue(equal_matrices(DZ, DZ1))
         self.assertTrue(equal_matrices(DW, DW1))
@@ -145,7 +145,7 @@ class TestLinearLayers(TestCase):
         Y = X * W.T + row_repeat(b, N)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DW = DY.T * X
@@ -153,9 +153,9 @@ class TestLinearLayers(TestCase):
         DX = DY * W
 
         # test gradients
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
 
         self.assertTrue(equal_matrices(DW, DW1))
         self.assertTrue(equal_matrices(Db, Db1))
@@ -182,7 +182,7 @@ class TestLinearLayers(TestCase):
         Y = act(Z)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = hadamard(DY, act.gradient(Z))
@@ -191,10 +191,10 @@ class TestLinearLayers(TestCase):
         DX = DZ * W
 
         # test gradients
-        DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DZ1 = substitute(gradient(loss(act(z)), z), (z, Z))
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
 
         self.assertTrue(equal_matrices(DZ, DZ1))
         self.assertTrue(equal_matrices(DW, DW1))
@@ -222,7 +222,7 @@ class TestLinearLayers(TestCase):
         Y = Sigmoid(Z)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = hadamard(DY, hadamard(Y, ones(N, K) - Y))
@@ -232,10 +232,10 @@ class TestLinearLayers(TestCase):
 
         # test gradients
         Y_z = Sigmoid(z)
-        DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DZ1 = substitute(gradient(loss(Y_z), z), (z, Z))
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
 
         self.assertTrue(equal_matrices(DZ, DZ1))
         self.assertTrue(equal_matrices(DW, DW1))

@@ -33,7 +33,7 @@ class TestDropoutLayers(TestCase):
         Y = hadamard(W, R) * X + column_repeat(b, N)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DW = hadamard(DY * X.T, R)
@@ -41,9 +41,9 @@ class TestDropoutLayers(TestCase):
         DX = hadamard(W, R).T * DY
 
         # test gradients
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
 
         self.assertTrue(equal_matrices(DW, DW1))
         self.assertTrue(equal_matrices(Db, Db1))
@@ -73,7 +73,7 @@ class TestDropoutLayers(TestCase):
         Y = act(Z)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = hadamard(DY, act_gradient(Z))
@@ -82,10 +82,10 @@ class TestDropoutLayers(TestCase):
         DX = hadamard(W, R).T * DZ
 
         # test gradients
-        DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DZ1 = substitute(gradient(loss(act(z)), z), (z, Z))
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
 
         self.assertTrue(equal_matrices(DZ, DZ1))
         self.assertTrue(equal_matrices(DW, DW1))
@@ -114,7 +114,7 @@ class TestDropoutLayers(TestCase):
         Y = Sigmoid(Z)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = hadamard(DY, hadamard(Y, ones(K, N) - Y))
@@ -124,10 +124,10 @@ class TestDropoutLayers(TestCase):
 
         # test gradients
         Y_z = Sigmoid(z)
-        DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DZ1 = substitute(gradient(loss(Y_z), z), (z, Z))
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
 
         self.assertTrue(equal_matrices(DZ, DZ1))
         self.assertTrue(equal_matrices(DW, DW1))
@@ -154,7 +154,7 @@ class TestDropoutLayers(TestCase):
         Y = X * hadamard(W.T, R) + row_repeat(b, N)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DW = hadamard(DY.T * X, R.T)
@@ -162,9 +162,9 @@ class TestDropoutLayers(TestCase):
         DX = DY * hadamard(W, R.T)
 
         # test gradients
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
 
         self.assertTrue(equal_matrices(DW, DW1))
         self.assertTrue(equal_matrices(Db, Db1))
@@ -194,7 +194,7 @@ class TestDropoutLayers(TestCase):
         Y = act(Z)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = hadamard(DY, act_gradient(Z))
@@ -203,10 +203,10 @@ class TestDropoutLayers(TestCase):
         DX = DZ * hadamard(W, R.T)
 
         # test gradients
-        DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DZ1 = substitute(gradient(loss(act(z)), z), (z, Z))
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
 
         self.assertTrue(equal_matrices(DZ, DZ1))
         self.assertTrue(equal_matrices(DW, DW1))
@@ -236,7 +236,7 @@ class TestDropoutLayers(TestCase):
         Y = Sigmoid(Z)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = hadamard(DY, hadamard(Y, ones(N, K) - Y))
@@ -246,10 +246,10 @@ class TestDropoutLayers(TestCase):
 
         # test gradients
         Y_z = Sigmoid(z)
-        DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DZ1 = substitute(gradient(loss(Y_z), z), (z, Z))
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
 
         self.assertTrue(equal_matrices(DZ, DZ1))
         self.assertTrue(equal_matrices(DW, DW1))

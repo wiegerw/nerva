@@ -199,10 +199,10 @@ Gradient checking of the softmax layer looks like this:
     DX = W.T * DZ
 
     # check gradients using symbolic differentiation
-    DW1 = diff(loss(Y), w)
-    Db1 = diff(loss(Y), b)
-    DX1 = diff(loss(Y), x)
-    DZ1 = diff(loss(Y), z)
+    DW1 = gradient(loss(Y), w)
+    Db1 = gradient(loss(Y), b)
+    DX1 = gradient(loss(Y), x)
+    DZ1 = gradient(loss(Y), z)
     self.assertTrue(equal_matrices(DW, DW1))
     self.assertTrue(equal_matrices(Db, Db1))
     self.assertTrue(equal_matrices(DX, DX1))

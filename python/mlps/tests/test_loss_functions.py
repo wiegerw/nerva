@@ -16,7 +16,7 @@ import mlps.nerva_numpy.loss_functions as np_
 import mlps.nerva_sympy.loss_functions as sympy_
 import mlps.nerva_tensorflow.loss_functions as tf_
 import mlps.nerva_torch.loss_functions as torch_
-from mlps.nerva_sympy.matrix_operations import diff, substitute
+from mlps.nerva_sympy.matrix_operations import gradient, substitute
 from mlps.tests.utilities import check_arrays_equal, check_numbers_equal, equal_matrices, matrix, to_eigen, to_jax, \
     to_numpy, to_sympy, to_tensorflow, to_torch
 
@@ -62,12 +62,12 @@ class TestColwiseLossFunctionGradients(TestCase):
 
         loss = loss_value(y, t)
         Dy1 = loss_gradient(y, t)
-        Dy2 = diff(loss, y)
+        Dy2 = gradient(loss, y)
         self.assertTrue(equal_matrices(Dy1, Dy2))
 
         loss = Loss_value(Y, T)
         DY1 = Loss_gradient(Y, T)
-        DY2 = diff(loss, Y)
+        DY2 = gradient(loss, Y)
         self.assertTrue(equal_matrices(DY1, DY2))
 
     def _test_loss_function_one_hot(self, function_name: str):
@@ -139,12 +139,12 @@ class TestRowwiseLossFunctionGradients(TestCase):
 
         loss = loss_value(y, t)
         Dy1 = loss_gradient(y, t)
-        Dy2 = diff(loss, y)
+        Dy2 = gradient(loss, y)
         self.assertTrue(equal_matrices(Dy1, Dy2))
 
         loss = Loss_value(Y, T)
         DY1 = Loss_gradient(Y, T)
-        DY2 = diff(loss, Y)
+        DY2 = gradient(loss, Y)
         self.assertTrue(equal_matrices(DY1, DY2))
 
     def _test_loss_function_one_hot(self, function_name: str):

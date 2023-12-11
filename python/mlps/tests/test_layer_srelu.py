@@ -46,7 +46,7 @@ class TestSReLULayers(TestCase):
         Y = act(Z)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = hadamard(DY, act.gradient(Z))
@@ -59,19 +59,19 @@ class TestSReLULayers(TestCase):
         Dtr = elements_sum(hadamard(DY, Tr(Z)))
 
         # test gradients
-        DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DZ1 = substitute(gradient(loss(act(z)), z), (z, Z))
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
         self.assertTrue(equal_matrices(DZ, DZ1))
         self.assertTrue(equal_matrices(DW, DW1, simplify_arguments=True))
         self.assertTrue(equal_matrices(Db, Db1, simplify_arguments=True))
         self.assertTrue(equal_matrices(DX, DX1, simplify_arguments=True))
 
-        Dal1 = diff(loss(Y), Matrix([[al]]))
-        Dtl1 = diff(loss(Y), Matrix([[tl]]))
-        Dar1 = diff(loss(Y), Matrix([[ar]]))
-        Dtr1 = diff(loss(Y), Matrix([[tr]]))
+        Dal1 = gradient(loss(Y), Matrix([[al]]))
+        Dtl1 = gradient(loss(Y), Matrix([[tl]]))
+        Dar1 = gradient(loss(Y), Matrix([[ar]]))
+        Dtr1 = gradient(loss(Y), Matrix([[tr]]))
 
         # wrap values in a matrix to make them usable for the equal_matrices function
         Dal = Matrix([[Dal]])
@@ -117,7 +117,7 @@ class TestSReLULayers(TestCase):
         Y = act(Z)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = hadamard(DY, act.gradient(Z))
@@ -130,19 +130,19 @@ class TestSReLULayers(TestCase):
         Dtr = elements_sum(hadamard(DY, Tr(Z)))
 
         # test gradients
-        DZ1 = substitute(diff(loss(act(z)), z), (z, Z))
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DZ1 = substitute(gradient(loss(act(z)), z), (z, Z))
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
         self.assertTrue(equal_matrices(DZ, DZ1))
         self.assertTrue(equal_matrices(DW, DW1, simplify_arguments=True))
         self.assertTrue(equal_matrices(Db, Db1, simplify_arguments=True))
         self.assertTrue(equal_matrices(DX, DX1, simplify_arguments=True))
 
-        Dal1 = diff(loss(Y), Matrix([[al]]))
-        Dtl1 = diff(loss(Y), Matrix([[tl]]))
-        Dar1 = diff(loss(Y), Matrix([[ar]]))
-        Dtr1 = diff(loss(Y), Matrix([[tr]]))
+        Dal1 = gradient(loss(Y), Matrix([[al]]))
+        Dtl1 = gradient(loss(Y), Matrix([[tl]]))
+        Dar1 = gradient(loss(Y), Matrix([[ar]]))
+        Dtr1 = gradient(loss(Y), Matrix([[tr]]))
         # wrap values in a matrix to make them usable for the equal_matrices function
         Dal = Matrix([[Dal]])
         Dar = Matrix([[Dar]])

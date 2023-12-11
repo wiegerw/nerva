@@ -33,7 +33,7 @@ class TestSoftmaxLayers(TestCase):
         Y = softmax_colwise(Z)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = hadamard(Y, DY - row_repeat(diag(Y.T * DY).T, K))
@@ -42,9 +42,9 @@ class TestSoftmaxLayers(TestCase):
         DX = W.T * DZ
 
         # test gradients
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
         self.assertTrue(equal_matrices(DW, DW1))
         self.assertTrue(equal_matrices(Db, Db1))
         self.assertTrue(equal_matrices(DX, DX1))
@@ -52,9 +52,9 @@ class TestSoftmaxLayers(TestCase):
         # test DZ using Z = z
         Z = z
         Y = softmax_colwise(Z)
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
         DZ = hadamard(Y, DY - row_repeat(diag(Y.T * DY).T, K))
-        DZ1 = diff(loss(Y), z)
+        DZ1 = gradient(loss(Y), z)
         self.assertTrue(equal_matrices(DZ, DZ1))
 
     def test_log_softmax_layer_colwise(self):
@@ -77,7 +77,7 @@ class TestSoftmaxLayers(TestCase):
         Y = log_softmax_colwise(Z)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = DY - hadamard(softmax_colwise(Z), row_repeat(columns_sum(DY), K))
@@ -86,9 +86,9 @@ class TestSoftmaxLayers(TestCase):
         DX = W.T * DZ
 
         # test gradients
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
         # N.B. These tests take a long time, and are duplicates of the ones in test_log_softmax_layer_rowwise
         # self.assertTrue(equal_matrices(DW, DW1))
         # self.assertTrue(equal_matrices(Db, Db1))
@@ -97,9 +97,9 @@ class TestSoftmaxLayers(TestCase):
         # test DZ using Z = z
         Z = z
         Y = log_softmax_colwise(Z)
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
         DZ = DY - hadamard(softmax_colwise(Z), row_repeat(columns_sum(DY), K))
-        DZ1 = diff(loss(Y), z)
+        DZ1 = gradient(loss(Y), z)
         self.assertTrue(equal_matrices(DZ, DZ1))
 
     def test_softmax_layer_rowwise(self):
@@ -122,7 +122,7 @@ class TestSoftmaxLayers(TestCase):
         Y = softmax_rowwise(Z)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = hadamard(Y, DY - column_repeat(diag(DY * Y.T), N))
@@ -131,9 +131,9 @@ class TestSoftmaxLayers(TestCase):
         DX = DZ * W
 
         # test gradients
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
         self.assertTrue(equal_matrices(DW, DW1))
         self.assertTrue(equal_matrices(Db, Db1))
         self.assertTrue(equal_matrices(DX, DX1))
@@ -141,9 +141,9 @@ class TestSoftmaxLayers(TestCase):
         # test DZ using Z = z
         Z = z
         Y = softmax_rowwise(Z)
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
         DZ = hadamard(Y, DY - column_repeat(diag(DY * Y.T), N))
-        DZ1 = diff(loss(Y), z)
+        DZ1 = gradient(loss(Y), z)
         self.assertTrue(equal_matrices(DZ, DZ1))
 
     def test_log_softmax_layer_rowwise(self):
@@ -166,7 +166,7 @@ class TestSoftmaxLayers(TestCase):
         Y = log_softmax_rowwise(Z)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = DY - hadamard(softmax_rowwise(Z), column_repeat(rows_sum(DY), N))
@@ -175,9 +175,9 @@ class TestSoftmaxLayers(TestCase):
         DX = DZ * W
 
         # test gradients
-        DW1 = diff(loss(Y), w)
-        Db1 = diff(loss(Y), b)
-        DX1 = diff(loss(Y), x)
+        DW1 = gradient(loss(Y), w)
+        Db1 = gradient(loss(Y), b)
+        DX1 = gradient(loss(Y), x)
         self.assertTrue(equal_matrices(DW, DW1, True))
         self.assertTrue(equal_matrices(Db, Db1, True))
         self.assertTrue(equal_matrices(DX, DX1))
@@ -185,9 +185,9 @@ class TestSoftmaxLayers(TestCase):
         # test DZ using Z = z
         Z = z
         Y = log_softmax_rowwise(Z)
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
         DZ = DY - hadamard(softmax_rowwise(Z), column_repeat(rows_sum(DY), N))
-        DZ1 = diff(loss(Y), z)
+        DZ1 = gradient(loss(Y), z)
         self.assertTrue(equal_matrices(DZ, DZ1))
 
 

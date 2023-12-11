@@ -32,13 +32,13 @@ class TestBatchNormalizationLayers(TestCase):
         Y = hadamard(column_repeat(power_minus_half_Sigma, N), R)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Y, column_repeat(-diag(DY * Y.T), N)) + DY * (N * identity(N) - ones(N, N)))
 
         # test gradients
-        DX1 = diff(loss(Y), x)
+        DX1 = gradient(loss(Y), x)
 
         self.assertTrue(equal_matrices(DX, DX1))
 
@@ -59,7 +59,7 @@ class TestBatchNormalizationLayers(TestCase):
         Y = hadamard(column_repeat(gamma, N), X) + column_repeat(beta, N)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DX = hadamard(column_repeat(gamma, N), DY)
@@ -67,9 +67,9 @@ class TestBatchNormalizationLayers(TestCase):
         Dgamma = rows_sum(hadamard(X, DY))
 
         # test gradients
-        DX1 = diff(loss(Y), x)
-        Dbeta1 = diff(loss(Y), beta)
-        Dgamma1 = diff(loss(Y), gamma)
+        DX1 = gradient(loss(Y), x)
+        Dbeta1 = gradient(loss(Y), beta)
+        Dgamma1 = gradient(loss(Y), gamma)
 
         self.assertTrue(equal_matrices(DX, DX1))
         self.assertTrue(equal_matrices(Dbeta, Dbeta1))
@@ -97,7 +97,7 @@ class TestBatchNormalizationLayers(TestCase):
         Y = hadamard(column_repeat(gamma, N), Z) + column_repeat(beta, N)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = hadamard(column_repeat(gamma, N), DY)
@@ -106,11 +106,11 @@ class TestBatchNormalizationLayers(TestCase):
         DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Z, column_repeat(-diag(DZ * Z.T), N)) + DZ * (N * identity(N) - ones(N, N)))
 
         # test gradients
-        DX1 = diff(loss(Y), x)
-        Dbeta1 = diff(loss(Y), beta)
-        Dgamma1 = diff(loss(Y), gamma)
+        DX1 = gradient(loss(Y), x)
+        Dbeta1 = gradient(loss(Y), beta)
+        Dgamma1 = gradient(loss(Y), gamma)
         Y_z = hadamard(column_repeat(gamma, N), z) + column_repeat(beta, N)
-        DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
+        DZ1 = substitute(gradient(loss(Y_z), z), (z, Z))
 
         self.assertTrue(equal_matrices(DX, DX1))
         self.assertTrue(equal_matrices(Dbeta, Dbeta1))
@@ -135,13 +135,13 @@ class TestBatchNormalizationLayers(TestCase):
         Y = hadamard(row_repeat(power_minus_half_Sigma, N), R)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DX = hadamard(row_repeat(power_minus_half_Sigma / N, N), (N * identity(N) - ones(N, N)) * DY - hadamard(Y, row_repeat(diag(Y.T * DY).T, N)))
 
         # test gradients
-        DX1 = diff(loss(Y), x)
+        DX1 = gradient(loss(Y), x)
 
         self.assertTrue(equal_matrices(DX, DX1))
 
@@ -162,7 +162,7 @@ class TestBatchNormalizationLayers(TestCase):
         Y = hadamard(row_repeat(gamma, N), X) + row_repeat(beta, N)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DX = hadamard(row_repeat(gamma, N), DY)
@@ -170,9 +170,9 @@ class TestBatchNormalizationLayers(TestCase):
         Dgamma = columns_sum(hadamard(X, DY))
 
         # test gradients
-        DX1 = diff(loss(Y), x)
-        Dbeta1 = diff(loss(Y), beta)
-        Dgamma1 = diff(loss(Y), gamma)
+        DX1 = gradient(loss(Y), x)
+        Dbeta1 = gradient(loss(Y), beta)
+        Dgamma1 = gradient(loss(Y), gamma)
 
         self.assertTrue(equal_matrices(DX, DX1))
         self.assertTrue(equal_matrices(Dbeta, Dbeta1))
@@ -200,7 +200,7 @@ class TestBatchNormalizationLayers(TestCase):
         Y = hadamard(row_repeat(gamma, N), Z) + row_repeat(beta, N)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = hadamard(row_repeat(gamma, N), DY)
@@ -209,11 +209,11 @@ class TestBatchNormalizationLayers(TestCase):
         DX = hadamard(row_repeat(power_minus_half_Sigma / N, N), (N * identity(N) - ones(N, N)) * DZ - hadamard(Z, row_repeat(diag(Z.T * DZ).T, N)))
 
         # test gradients
-        DX1 = diff(loss(Y), x)
-        Dbeta1 = diff(loss(Y), beta)
-        Dgamma1 = diff(loss(Y), gamma)
+        DX1 = gradient(loss(Y), x)
+        Dbeta1 = gradient(loss(Y), beta)
+        Dgamma1 = gradient(loss(Y), gamma)
         Y_z = hadamard(row_repeat(gamma, N), z) + row_repeat(beta, N)
-        DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
+        DZ1 = substitute(gradient(loss(Y_z), z), (z, Z))
 
         self.assertTrue(equal_matrices(DX, DX1))
         self.assertTrue(equal_matrices(Dbeta, Dbeta1))
@@ -244,7 +244,7 @@ class TestBatchNormalizationLayers(TestCase):
         Y = hadamard(row_repeat(gamma, N), Z) + row_repeat(beta, N)
 
         # symbolic differentiation
-        DY = substitute(diff(loss(y), y), (y, Y))
+        DY = substitute(gradient(loss(y), y), (y, Y))
 
         # backpropagation
         DZ = hadamard(row_repeat(gamma, N), DY)  # this equation is not explicitly given in [Yeh 2017]
@@ -253,11 +253,11 @@ class TestBatchNormalizationLayers(TestCase):
         DX = (1 / N) * (-hadamard(row_repeat(Dgamma, N), Z) + N * DY - row_repeat(Dbeta, N)) * row_repeat(hadamard(gamma, Sigma), D) # I can't parse the equation in [Yeh 2017], but this is probably it
 
         # test gradients
-        DX1 = diff(loss(Y), x)
-        Dbeta1 = diff(loss(Y), beta)
-        Dgamma1 = diff(loss(Y), gamma)
+        DX1 = gradient(loss(Y), x)
+        Dbeta1 = gradient(loss(Y), beta)
+        Dgamma1 = gradient(loss(Y), gamma)
         Y_z = hadamard(row_repeat(gamma, N), z) + row_repeat(beta, N)
-        DZ1 = substitute(diff(loss(Y_z), z), (z, Z))
+        DZ1 = substitute(gradient(loss(Y_z), z), (z, Z))
 
         self.assertTrue(equal_matrices(DX, DX1))
         self.assertTrue(equal_matrices(Dbeta, Dbeta1))
