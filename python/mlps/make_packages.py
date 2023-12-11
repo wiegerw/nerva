@@ -31,7 +31,7 @@ classifiers =
 package_dir =
   = src
 packages = find:
-python_requires = >=3.10
+python_requires = PYTHON_VERSION
 install_requires =
 INSTALL_REQUIRES
 
@@ -162,6 +162,23 @@ package_requirements = {
     'nerva_sympy': ['numpy', 'sympy', 'scikit-learn', 'nerva-jax', 'nerva-numpy', 'nerva-tensorflow', 'nerva-torch'],
     'nerva_tensorflow': ['numpy', 'tensorflow', 'scikit-learn'],
     'nerva_torch': ['numpy', 'torch', 'torchvision', 'scikit-learn'],
+}
+
+package_versions = {
+    'python': '>= 3.10',
+    'jax': '>= 0.4',
+    'jaxlib': '>= 0.4',
+    'numpy': '>= 1.21',
+    'sympy': '>= 1.9',
+    'tensorflow': '>= 2.10',
+    'torch': '>= 1.12',
+    'torchvision': '>= 0.13',
+    'scikit-learn': '>= 1.1',
+    'nerva-jax': '>= 0.1',
+    'nerva-numpy': '>= 0.1',
+    'nerva-sympy': '>= 0.1',
+    'nerva-tensorflow': '>= 0.1',
+    'nerva-torch': '>= 0.1',
 }
 
 package_frameworks = {
@@ -403,8 +420,9 @@ def create_setup_files():
         text = SETUP_CFG.strip()
         text = text.replace('FRAMEWORK', package_frameworks[package])
         text = text.replace('NAME', package_names[package])
+        text = text.replace('PYTHON_VERSION', package_versions['python'])
         text = text.replace('VERSION', VERSION)
-        text = text.replace('INSTALL_REQUIRES', '    ' + '\n    '.join(requirements))
+        text = text.replace('INSTALL_REQUIRES', '    ' + '\n    '.join(f'{req} {package_versions[req]}' for req in requirements))
         save_text(dest, text)
 
         dest = Path('dist') / package_names[package] / 'pyproject.toml'
