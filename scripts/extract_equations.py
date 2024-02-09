@@ -80,6 +80,24 @@ def to_latex(header, feedforward, backpropagation) -> str:
     return print_header(header) + '\n' + start + feedforward + '\n\n' + backpropagation + '\n' + end
 
 
+def to_latex_rowwise(header, feedforward, backpropagation) -> str:
+    if 'colwise' in header:
+        return ''
+    else:
+        feedforward = feedforward.replace('_rowwise', '')
+        backpropagation = backpropagation.replace('_rowwise', '')
+
+    start = r'''\textsc{implementation} \vspace{-0.1cm}
+\begin{footnotesize}
+\begin{verbatim}
+'''
+
+    end = r'''\end{verbatim}
+\end{footnotesize}
+'''
+    return print_header(header) + '\n' + start + feedforward + '\n\n' + backpropagation + '\n' + end
+
+
 def to_text(header, feedforward, backpropagation) -> str:
     return print_header(header) + '\n' + feedforward + '\n\n' + backpropagation
 
@@ -93,6 +111,7 @@ def main():
     cmdline_parser = argparse.ArgumentParser()
     cmdline_parser.add_argument('--cpp', help='generate C++ output', action='store_true')
     cmdline_parser.add_argument('--latex', help='generate LaTeX output', action='store_true')
+    cmdline_parser.add_argument('--latex-rowwise', help='generate LaTeX only for rowwise functions', action='store_true')
     cmdline_parser.add_argument('--torch', help='generate PyTorch output', action='store_true')
     args = cmdline_parser.parse_args()
 
@@ -107,6 +126,8 @@ def main():
         paragraphs = [to_cpp(header, feedforward, backpropagation) for (header, feedforward, backpropagation) in processor.result]
     elif args.latex:
         paragraphs = [to_latex(header, feedforward, backpropagation) for (header, feedforward, backpropagation) in processor.result]
+    elif args.latex_rowwise:
+        paragraphs = [to_latex_rowwise(header, feedforward, backpropagation) for (header, feedforward, backpropagation) in processor.result]
     elif args.torch:
         paragraphs = [to_torch(header, feedforward, backpropagation) for (header, feedforward, backpropagation) in
                       processor.result]
