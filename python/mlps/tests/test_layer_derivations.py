@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-# Copyright 2023 Wieger Wesselink.
+
+# Copyright 2024 Wieger Wesselink.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
+
+# see also https://docs.sympy.org/latest/modules/matrices/matrices.html
 
 from unittest import TestCase
 
 from mlps.nerva_sympy.matrix_operations import *
-from mlps.tests.utilities import equal_matrices, matrix, to_matrix, to_number
+from mlps.tests.utilities import equal_matrices, matrix, to_matrix, to_number, pp, instantiate
+import sympy as sp
 
 Matrix = sp.Matrix
 
@@ -29,7 +33,72 @@ def squared_error_columns(X: Matrix):
     return sum(f(X.col(j)) for j in range(n))
 
 
-class TestBatchNorm(TestCase):
+class TestLinearLayerDerivation(TestCase):
+    def test_derivations(self):
+        N = 3
+        D = 4
+        K = 2
+
+        x = matrix('x', N, D)
+        y = matrix('y', N, K)
+        w = matrix('w', K, D)
+        b = matrix('b', 1, K)
+        X = x
+        W = w
+        B = row_repeat(b, N)
+
+        # feedforward
+        Y = X * W.T + row_repeat(b, N)
+
+        L = lambda Y: to_matrix(squared_error_columns(Y))
+
+        i = 1
+        x_i = x.row(i)  # 1 x D
+        y_i = y.row(i)  # 1 x K
+
+        DY = substitute(gradient(L(y), y), (y, Y))
+        DW = DY.T * X
+
+        L_x = L(Y)
+        L_y = L(y)
+
+        dL_dx_i = L_x.jacobian(x_i)
+        dL_dy_i = substitute(L_y.jacobian(y_i), [(y, Y)])
+        dy_i_dx_i = Y.row(i).jacobian(x_i)
+
+        # first derivation
+        self.assertTrue(equal_matrices(dL_dx_i, dL_dy_i * dy_i_dx_i))
+        self.assertTrue(equal_matrices(dL_dy_i * dy_i_dx_i, dL_dy_i * W))
+
+        # second derivation
+        dL_db = L_x.jacobian(b)
+        sum_dL_dyi = substitute(sum([L_y.jacobian(y.row(i)) * Y.row(i).jacobian(b) for i in range(N)], sp.zeros(1, K)), [(y, Y)])
+        self.assertTrue(equal_matrices(dL_db, sum_dL_dyi))
+        for i in range(N):
+            self.assertTrue(equal_matrices(Y.row(i).jacobian(b), sp.eye(K)))
+        self.assertTrue(equal_matrices(sum_dL_dyi, columns_sum(DY)))
+
+        # third derivation
+        i = 1
+        j = 2
+        k = 1
+
+        e_i = sp.Matrix([[1 if j == i else 0 for j in range(K)]]).T  # unit column vector with a 1 on the i-th position
+        y_i = Y.row(i)  # 1 x K
+        w_i = w.row(i)
+        dyi_dwi = y_i.jacobian(w_i)
+        self.assertTrue(equal_matrices(dyi_dwi, e_i * x_i))
+
+        x_k = x.row(k)
+        y_k = Y.row(k)
+        self.assertTrue(equal_matrices(y_k, x_k * w.T + b))
+
+        w_ij = to_matrix(w[i, j])
+        dyk_dwij = y_k.jacobian(w_ij)
+        self.assertTrue(equal_matrices(dyk_dwij, x[k, j] * e_i))
+
+
+class TestBatchNormDerivation(TestCase):
     def test_derivation_Dx(self):
         N = 2
         x = matrix('x', N, 1)
