@@ -273,7 +273,7 @@ class BatchNormalizationLayer(Layer):
 
         DZ = hadamard(row_repeat(gamma, N), DY)
         Dbeta = columns_sum(DY)
-        Dgamma = columns_sum(hadamard(Z, DY))
+        Dgamma = columns_sum(hadamard(DY, Z))
         DX = hadamard(row_repeat(power_minus_half_Sigma / N, N), (N * identity(N) - ones(N, N)) @ DZ - hadamard(Z, row_repeat(diag(Z.T @ DZ), N)))
 
         self.DZ = DZ
