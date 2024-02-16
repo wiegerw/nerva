@@ -167,7 +167,7 @@ def sqrt(X: Matrix) -> Matrix:
     return X.applyfunc(sp.sqrt)
 
 
-def power_minus_half(X: Matrix) -> Matrix:
+def div_sqrt(X: Matrix) -> Matrix:
     return reciprocal(sqrt(X))
 
 

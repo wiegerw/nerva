@@ -229,10 +229,10 @@ Y &= (1_N \cdot \Sigma^{-\frac{1}{2}}) \odot R
 
 R = (identity(N) - ones(N, N) / N) * X
 Sigma = diag(R.T * R).T / N
-power_minus_half_Sigma = power_minus_half(Sigma)
-Y = hadamard(repeat_row(power_minus_half_Sigma, N), R)
+div_sqrt_Sigma = div_sqrt(Sigma)
+Y = hadamard(repeat_row(div_sqrt_Sigma, N), R)
 
-DX = hadamard(repeat_row(power_minus_half_Sigma / N, N),
+DX = hadamard(repeat_row(div_sqrt_Sigma / N, N),
      (N * identity(N) - ones(N, N)) * DY -
      hadamard(Y, repeat_row(diag(Y.T * DY).T, N)))
 '''
@@ -285,16 +285,16 @@ Y &= (1_N \cdot \gamma) \odot Z + 1_N \cdot \beta
 
 R = (identity(N) - ones(N, N) / N) * X
 Sigma = diag(R.T * R).T / N
-power_minus_half_Sigma = power_minus_half(Sigma)
+div_sqrt_Sigma = div_sqrt(Sigma)
 Z = hadamard(repeat_row(
-             power_minus_half_Sigma, N), R)
+             div_sqrt_Sigma, N), R)
 Y = hadamard(repeat_row(gamma, N), Z) +
              repeat_row(beta, N)
 
 DZ = hadamard(repeat_row(gamma, N), DY)
 Dbeta = sum_columns(DY)
 Dgamma = sum_columns(hadamard(Z, DY))
-DX = hadamard(repeat_row(power_minus_half_Sigma / N, N),
+DX = hadamard(repeat_row(div_sqrt_Sigma / N, N),
      (N * identity(N) - ones(N, N)) * DZ -
      hadamard(Z, repeat_row(diag(Z.T * DZ).T, N)))
 '''

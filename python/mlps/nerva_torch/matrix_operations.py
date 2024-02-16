@@ -7,7 +7,7 @@ import torch
 Matrix = torch.Tensor
 
 
-# A constant used by power_minus_half to avoid division by zero
+# A constant used by div_sqrt to avoid division by zero
 epsilon = 1e-7
 
 
@@ -154,7 +154,7 @@ def sqrt(X: Matrix) -> Matrix:
     return torch.sqrt(X)
 
 
-def power_minus_half(X: Matrix) -> Matrix:
+def div_sqrt(X: Matrix) -> Matrix:
     return reciprocal(sqrt(X + epsilon))  # The epsilon is needed for numerical stability
 
 

@@ -153,5 +153,5 @@ def sqrt(X: torch.Tensor) -> torch.Tensor:
     return torch.sqrt(X)
 
 
-def power_minus_half(X: torch.Tensor) -> torch.Tensor:
+def div_sqrt(X: torch.Tensor) -> torch.Tensor:
     return reciprocal(sqrt(X))

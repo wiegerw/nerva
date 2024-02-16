@@ -155,5 +155,5 @@ def sqrt(X: Matrix) -> Matrix:
     return np.sqrt(X)
 
 
-def power_minus_half(X: Matrix) -> Matrix:
+def div_sqrt(X: Matrix) -> Matrix:
     return reciprocal(sqrt(X))

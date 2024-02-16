@@ -318,17 +318,17 @@ class TestMatrixOperations(TestCase):
         x5 = jnp_.sqrt(to_jax(x))
         check_arrays_equal(self, 'sqrt', [x1, x2, x3, x4, x5])
 
-    def test_power_minus_half(self):
-        # (23) power_minus_half(X: Matrix) -> Matrix:
+    def test_div_sqrt(self):
+        # (23) div_sqrt(X: Matrix) -> Matrix:
         m, n, f, X, Y, S, xc, xr = self.make_variables()
 
         x = X
-        x1 = sympy_.power_minus_half(to_sympy(x))
-        x2 = np_.power_minus_half(x)
-        x3 = tf_.power_minus_half(to_tensorflow(x))
-        x4 = torch_.power_minus_half(to_torch(x))
-        x5 = jnp_.power_minus_half(to_jax(x))
-        check_arrays_equal(self, 'power_minus_half', [x1, x2, x3, x4, x5])
+        x1 = sympy_.div_sqrt(to_sympy(x))
+        x2 = np_.div_sqrt(x)
+        x3 = tf_.div_sqrt(to_tensorflow(x))
+        x4 = torch_.div_sqrt(to_torch(x))
+        x5 = jnp_.div_sqrt(to_jax(x))
+        check_arrays_equal(self, 'div_sqrt', [x1, x2, x3, x4, x5])
 
 
     def test_log_sigmoid(self):
