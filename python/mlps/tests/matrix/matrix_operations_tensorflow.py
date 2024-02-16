@@ -155,5 +155,5 @@ def sqrt(X: Matrix) -> Matrix:
     return tf.math.sqrt(X)
 
 
-def div_sqrt(X: Matrix) -> Matrix:
+def inv_sqrt(X: Matrix) -> Matrix:
     return reciprocal(sqrt(X))

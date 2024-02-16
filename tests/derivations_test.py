@@ -84,7 +84,7 @@ def inverse(x: Matrix) -> Matrix:
     return x.applyfunc(lambda x: 1 / x)
 
 
-def power_minus_half(x: Matrix) -> Matrix:
+def inv_sqrt(x: Matrix) -> Matrix:
     return inverse(sqrt(x))
 
 
@@ -920,12 +920,12 @@ class TestBatchNormalizationLayers(TestCase):
         X = x
         R = X - repeat_column(rowwise_mean(X), N)
         Sigma = diag(R * R.T) / N
-        power_minus_half_Sigma = power_minus_half(Sigma)
-        Y = hadamard(repeat_column(power_minus_half_Sigma, N), R)
+        inv_sqrt_Sigma = inv_sqrt(Sigma)
+        Y = hadamard(repeat_column(inv_sqrt_Sigma, N), R)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DX = hadamard(repeat_column(power_minus_half_Sigma / N, N),
+        DX = hadamard(repeat_column(inv_sqrt_Sigma / N, N),
                       hadamard(Y, repeat_column(-diag(DY * Y.T), N)) + DY * (N * identity(N) - ones(N, N)))
 
         # symbolic differentiation
@@ -981,8 +981,8 @@ class TestBatchNormalizationLayers(TestCase):
         X = x
         R = X - repeat_column(rowwise_mean(X), N)
         Sigma = diag(R * R.T) / N
-        power_minus_half_Sigma = power_minus_half(Sigma)
-        Z = hadamard(repeat_column(power_minus_half_Sigma, N), R)
+        inv_sqrt_Sigma = inv_sqrt(Sigma)
+        Z = hadamard(repeat_column(inv_sqrt_Sigma, N), R)
         Y = hadamard(repeat_column(gamma, N), Z) + repeat_column(beta, N)
 
         # backpropagation
@@ -990,7 +990,7 @@ class TestBatchNormalizationLayers(TestCase):
         DZ = hadamard(repeat_column(gamma, N), DY)
         Dbeta = sum_rows(DY)
         Dgamma = sum_rows(hadamard(DY, Z))
-        DX = hadamard(repeat_column(power_minus_half_Sigma / N, N),
+        DX = hadamard(repeat_column(inv_sqrt_Sigma / N, N),
                       hadamard(Z, repeat_column(-diag(DZ * Z.T), N)) + DZ * (N * identity(N) - ones(N, N)))
 
         # symbolic differentiation
@@ -1019,12 +1019,12 @@ class TestBatchNormalizationLayers(TestCase):
         X = x
         R = (identity(N) - ones(N, N) / N) * X
         Sigma = diag(R.T * R).T / N
-        power_minus_half_Sigma = power_minus_half(Sigma)
-        Y = hadamard(repeat_row(power_minus_half_Sigma, N), R)
+        inv_sqrt_Sigma = inv_sqrt(Sigma)
+        Y = hadamard(repeat_row(inv_sqrt_Sigma, N), R)
 
         # backpropagation
         DY = substitute(diff(loss(y), y), y, Y)
-        DX = hadamard(repeat_row(power_minus_half_Sigma / N, N),
+        DX = hadamard(repeat_row(inv_sqrt_Sigma / N, N),
                       (N * identity(N) - ones(N, N)) * DY - hadamard(Y, repeat_row(diag(Y.T * DY).T, N)))
 
         # symbolic differentiation
@@ -1080,8 +1080,8 @@ class TestBatchNormalizationLayers(TestCase):
         X = x
         R = (identity(N) - ones(N, N) / N) * X
         Sigma = diag(R.T * R).T / N
-        power_minus_half_Sigma = power_minus_half(Sigma)
-        Z = hadamard(repeat_row(power_minus_half_Sigma, N), R)
+        inv_sqrt_Sigma = inv_sqrt(Sigma)
+        Z = hadamard(repeat_row(inv_sqrt_Sigma, N), R)
         Y = hadamard(repeat_row(gamma, N), Z) + repeat_row(beta, N)
 
         # backpropagation
@@ -1089,7 +1089,7 @@ class TestBatchNormalizationLayers(TestCase):
         DZ = hadamard(repeat_row(gamma, N), DY)
         Dbeta = sum_columns(DY)
         Dgamma = sum_columns(hadamard(Z, DY))
-        DX = hadamard(repeat_row(power_minus_half_Sigma / N, N),
+        DX = hadamard(repeat_row(inv_sqrt_Sigma / N, N),
                       (N * identity(N) - ones(N, N)) * DZ - hadamard(Z, repeat_row(diag(Z.T * DZ).T, N)))
 
         # symbolic differentiation

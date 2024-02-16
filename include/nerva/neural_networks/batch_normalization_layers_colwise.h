@@ -28,11 +28,11 @@ struct batch_normalization_layer: public neural_network_layer
   eigen::matrix Dgamma;
   eigen::matrix beta;
   eigen::matrix Dbeta;
-  eigen::matrix power_minus_half_Sigma;
+  eigen::matrix inv_sqrt_Sigma;
   std::shared_ptr<optimizer_function> optimizer;
 
   explicit batch_normalization_layer(std::size_t D, std::size_t N = 1)
-   : super(D, N), Z(D, N), DZ(D, N), gamma(D, 1), Dgamma(D, 1), beta(D, 1), Dbeta(D, 1), power_minus_half_Sigma(D, 1)
+   : super(D, N), Z(D, N), DZ(D, N), gamma(D, 1), Dgamma(D, 1), beta(D, 1), Dbeta(D, 1), inv_sqrt_Sigma(D, 1)
   {
     beta.array() = 0;
     gamma.array() = 1;
@@ -47,15 +47,15 @@ struct batch_normalization_layer: public neural_network_layer
   {
     using eigen::diag;
     using eigen::hadamard;
-    using eigen::power_minus_half;
+    using eigen::inv_sqrt;
     using eigen::column_repeat;
     using eigen::rows_mean;
     auto N = X.cols();
 
     auto R = (X - column_repeat(rows_mean(X), N)).eval();
     auto Sigma = diag(R * R.transpose()) / N;
-    power_minus_half_Sigma = power_minus_half(Sigma);
-    Z = hadamard(column_repeat(power_minus_half_Sigma, N), R);
+    inv_sqrt_Sigma = inv_sqrt(Sigma);
+    Z = hadamard(column_repeat(inv_sqrt_Sigma, N), R);
     result = hadamard(column_repeat(gamma, N), Z) + column_repeat(beta, N);
   }
 
@@ -67,13 +67,13 @@ struct batch_normalization_layer: public neural_network_layer
     using eigen::rows_sum;
     using eigen::identity;
     using eigen::ones;
-    using eigen::power_minus_half;
+    using eigen::inv_sqrt;
     auto N = X.cols();
 
     DZ = hadamard(column_repeat(gamma, N), DY);
     Dbeta = rows_sum(DY);
     Dgamma = rows_sum(hadamard(DY, Z));
-    DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Z, column_repeat(-diag(DZ * Z.transpose()), N)) + DZ * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
+    DX = hadamard(column_repeat(inv_sqrt_Sigma / N, N), hadamard(Z, column_repeat(-diag(DZ * Z.transpose()), N)) + DZ * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
   }
 
   void optimize(scalar eta) override
@@ -99,11 +99,11 @@ struct simple_batch_normalization_layer: public neural_network_layer
   using super::X;
   using super::DX;
 
-  eigen::matrix power_minus_half_Sigma;
+  eigen::matrix inv_sqrt_Sigma;
   std::shared_ptr<optimizer_function> optimizer;
 
   explicit simple_batch_normalization_layer(std::size_t D, std::size_t N = 1)
-    : super(D, N), power_minus_half_Sigma(D, 1)
+    : super(D, N), inv_sqrt_Sigma(D, 1)
   {}
 
   [[nodiscard]] std::string to_string() const override
@@ -115,15 +115,15 @@ struct simple_batch_normalization_layer: public neural_network_layer
   {
     using eigen::diag;
     using eigen::hadamard;
-    using eigen::power_minus_half;
+    using eigen::inv_sqrt;
     using eigen::column_repeat;
     using eigen::rows_mean;
     auto N = X.cols();
 
     auto R = (X - column_repeat(rows_mean(X), N)).eval();
     auto Sigma = diag(R * R.transpose()) / N;
-    power_minus_half_Sigma = power_minus_half(Sigma);
-    result = hadamard(column_repeat(power_minus_half_Sigma, N), R);
+    inv_sqrt_Sigma = inv_sqrt(Sigma);
+    result = hadamard(column_repeat(inv_sqrt_Sigma, N), R);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
@@ -132,11 +132,11 @@ struct simple_batch_normalization_layer: public neural_network_layer
     using eigen::hadamard;
     using eigen::identity;
     using eigen::ones;
-    using eigen::power_minus_half;
+    using eigen::inv_sqrt;
     using eigen::column_repeat;
     auto N = X.cols();
 
-    DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Y, column_repeat(-diag(DY * Y.transpose()), N)) + DY * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
+    DX = hadamard(column_repeat(inv_sqrt_Sigma / N, N), hadamard(Y, column_repeat(-diag(DY * Y.transpose()), N)) + DY * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
   }
 
   void optimize(scalar eta) override

@@ -313,17 +313,17 @@ class TestMatrixOperations(TestCase):
         x5 = jnp_.sqrt(to_jax(x))
         check_arrays_equal(self, 'sqrt', [x1, x2, x3, x4, x5])
 
-    def test_div_sqrt(self):
-        # (23) div_sqrt(X: Matrix) -> Matrix:
+    def test_inv_sqrt(self):
+        # (23) inv_sqrt(X: Matrix) -> Matrix:
         m, n, f, X, Y, S, xc, xr = self.make_variables()
 
         x = X
-        x1 = sympy_.div_sqrt(to_sympy(x))
-        x2 = np_.div_sqrt(x)
-        x3 = tf_.div_sqrt(to_tensorflow(x))
-        x4 = torch_.div_sqrt(to_torch(x))
-        x5 = jnp_.div_sqrt(to_jax(x))
-        check_arrays_equal(self, 'div_sqrt', [x1, x2, x3, x4, x5])
+        x1 = sympy_.inv_sqrt(to_sympy(x))
+        x2 = np_.inv_sqrt(x)
+        x3 = tf_.inv_sqrt(to_tensorflow(x))
+        x4 = torch_.inv_sqrt(to_torch(x))
+        x5 = jnp_.inv_sqrt(to_jax(x))
+        check_arrays_equal(self, 'inv_sqrt', [x1, x2, x3, x4, x5])
 
 
 class TestConversions(TestCase):

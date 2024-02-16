@@ -896,7 +896,7 @@ TEST_CASE("test_derivatives2")
   {
     long N = R.cols();
     eigen::vector Sigma = R.array().square().rowwise().sum() / N;
-    eigen::matrix Y = eigen::Diag(eigen::power_minus_half(Sigma)) * R;
+    eigen::matrix Y = eigen::Diag(eigen::inv_sqrt(Sigma)) * R;
     return fY(Y);
   };
 
@@ -907,10 +907,10 @@ TEST_CASE("test_derivatives2")
 
     long N = R.cols();
     eigen::vector Sigma = R.array().square().rowwise().sum() / N;
-    eigen::matrix Y = Diag(eigen::power_minus_half(Sigma)) * R;
+    eigen::matrix Y = Diag(eigen::inv_sqrt(Sigma)) * R;
     eigen::matrix DY = dfY(Y);
     eigen::matrix DiagDYY = Diag(diag(DY * Y.transpose())) * Y;
-    eigen::matrix DR = Diag(eigen::power_minus_half(Sigma)) * (-DiagDYY / N + DY);
+    eigen::matrix DR = Diag(eigen::inv_sqrt(Sigma)) * (-DiagDYY / N + DY);
     return DR;
   };
 
@@ -929,7 +929,7 @@ TEST_CASE("test_derivatives2")
   CHECK_LE((DR1 - DR2).squaredNorm(), 1e-8);
 }
 
-TEST_CASE("test_power_minus_half")
+TEST_CASE("test_inv_sqrt")
 {
   using eigen::Diag;
 
@@ -948,7 +948,7 @@ TEST_CASE("test_power_minus_half")
     {1, 4, 5},
   };
 
-  eigen::matrix Y = Diag(eigen::power_minus_half(Sigma)) * X;
+  eigen::matrix Y = Diag(eigen::inv_sqrt(Sigma)) * X;
   std::cout << "Y=\n" << Y << std::endl;
 
   CHECK_LE((expected - Y).squaredNorm(), 1e-10);

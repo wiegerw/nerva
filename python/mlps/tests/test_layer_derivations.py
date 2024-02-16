@@ -108,12 +108,12 @@ class TestBatchNormDerivation(TestCase):
         I = identity(N) - ones(N, N) / N
         R = lambda r: I * x
         Sigma = lambda r: (r.T * r) / N
-        Z = lambda r: to_number(div_sqrt(Sigma(r))) * r
+        Z = lambda r: to_number(inv_sqrt(Sigma(r))) * r
         L = lambda Y: to_matrix(squared_error_columns(Y))
 
         z_r = Z(r)
         dz_dr = z_r.jacobian(r)
-        self.assertTrue(equal_matrices(dz_dr, to_number(div_sqrt(Sigma(r)) / N) * (N * identity(N) - z_r * z_r.T)))
+        self.assertTrue(equal_matrices(dz_dr, to_number(inv_sqrt(Sigma(r)) / N) * (N * identity(N) - z_r * z_r.T)))
 
         L_r = L(z_r)
         L_z = L(z)
@@ -121,7 +121,7 @@ class TestBatchNormDerivation(TestCase):
         dL_dz = L_z.jacobian(z)
         Dr = dL_dr.T
         Dz = substitute(dL_dz.T, (z, z_r))
-        self.assertTrue(equal_matrices(Dr, to_number(div_sqrt(Sigma(r)) / N) * (N * identity(N) - z_r * z_r.T) * Dz))
+        self.assertTrue(equal_matrices(Dr, to_number(inv_sqrt(Sigma(r)) / N) * (N * identity(N) - z_r * z_r.T) * Dz))
 
         r_x = R(x)
         z_x = Z(r_x)
@@ -133,7 +133,7 @@ class TestBatchNormDerivation(TestCase):
         sigma = Sigma(r_x)
         Dz = substitute(dL_dz.T, (z, z_x))
         z = z_x
-        self.assertTrue(equal_matrices(Dx, to_number(div_sqrt(sigma) / N) * (N * I * Dz - z * z.T * Dz), simplify_arguments=True))
+        self.assertTrue(equal_matrices(Dx, to_number(inv_sqrt(sigma) / N) * (N * I * Dz - z * z.T * Dz), simplify_arguments=True))
 
     def test_derivation_DW(self):
         N = 2

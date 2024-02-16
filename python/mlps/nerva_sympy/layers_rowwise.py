@@ -7,7 +7,7 @@ from sympy import Piecewise
 
 from mlps.nerva_sympy.activation_functions import ActivationFunction, SReLUActivation, parse_activation
 from mlps.nerva_sympy.matrix_operations import column_repeat, columns_mean, columns_sum, diag, elements_sum, hadamard, \
-    identity, ones, div_sqrt, row_repeat, rows_sum, zeros
+    identity, ones, inv_sqrt, row_repeat, rows_sum, zeros
 from mlps.nerva_sympy.optimizers import CompositeOptimizer, parse_optimizer
 from mlps.nerva_sympy.softmax_functions import log_softmax_rowwise, softmax_rowwise
 from mlps.nerva_sympy.weight_initializers import set_layer_weights
@@ -248,7 +248,7 @@ class BatchNormalizationLayer(Layer):
         self.Dgamma = zeros(1, D)
         self.beta = zeros(1, D)
         self.Dbeta = zeros(1, D)
-        self.div_sqrt_Sigma = zeros(1, D)
+        self.inv_sqrt_Sigma = zeros(1, D)
         self.optimizer = None
 
     def feedforward(self, X: Matrix) -> Matrix:
@@ -259,11 +259,11 @@ class BatchNormalizationLayer(Layer):
 
         R = X - row_repeat(columns_mean(X), N)
         Sigma = diag(R.T * R).T / N
-        div_sqrt_Sigma = div_sqrt(Sigma)
-        Z = hadamard(row_repeat(div_sqrt_Sigma, N), R)
+        inv_sqrt_Sigma = inv_sqrt(Sigma)
+        Z = hadamard(row_repeat(inv_sqrt_Sigma, N), R)
         Y = hadamard(row_repeat(gamma, N), Z) + row_repeat(beta, N)
 
-        self.div_sqrt_Sigma[:] = div_sqrt_Sigma
+        self.inv_sqrt_Sigma[:] = inv_sqrt_Sigma
         self.Z = Z
         return Y
 
@@ -271,12 +271,12 @@ class BatchNormalizationLayer(Layer):
         N, D = self.X.shape
         Z = self.Z
         gamma = self.gamma
-        div_sqrt_Sigma = self.div_sqrt_Sigma
+        inv_sqrt_Sigma = self.inv_sqrt_Sigma
 
         DZ = hadamard(row_repeat(gamma, N), DY)
         Dbeta = columns_sum(DY)
         Dgamma = columns_sum(hadamard(DY, Z))
-        DX = hadamard(row_repeat(div_sqrt_Sigma / N, N), (N * identity(N) - ones(N, N)) * DZ - hadamard(Z, row_repeat(diag(Z.T * DZ).T, N)))
+        DX = hadamard(row_repeat(inv_sqrt_Sigma / N, N), (N * identity(N) - ones(N, N)) * DZ - hadamard(Z, row_repeat(diag(Z.T * DZ).T, N)))
 
         self.DZ = DZ
         self.Dbeta[:] = Dbeta

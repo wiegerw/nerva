@@ -28,11 +28,11 @@ struct batch_normalization_layer: public neural_network_layer
   eigen::matrix Dgamma;
   eigen::matrix beta;
   eigen::matrix Dbeta;
-  eigen::matrix power_minus_half_Sigma;
+  eigen::matrix inv_sqrt_Sigma;
   std::shared_ptr<optimizer_function> optimizer;
 
   explicit batch_normalization_layer(std::size_t D, std::size_t N = 1)
-   : super(D, N), Z(N, D), DZ(N, D), gamma(1, D), Dgamma(1, D), beta(1, D), Dbeta(1, D), power_minus_half_Sigma(1, D)
+   : super(D, N), Z(N, D), DZ(N, D), gamma(1, D), Dgamma(1, D), beta(1, D), Dbeta(1, D), inv_sqrt_Sigma(1, D)
   {
     beta.array() = 0;
     gamma.array() = 1;
@@ -47,15 +47,15 @@ struct batch_normalization_layer: public neural_network_layer
   {
     using eigen::diag;
     using eigen::hadamard;
-    using eigen::power_minus_half;
+    using eigen::inv_sqrt;
     using eigen::row_repeat;
     using eigen::columns_mean;
     auto N = X.rows();
 
     auto R = (X - row_repeat(columns_mean(X), N)).eval();
     auto Sigma = diag(R.transpose() * R).transpose() / N;
-    power_minus_half_Sigma = power_minus_half(Sigma);
-    Z = hadamard(row_repeat(power_minus_half_Sigma, N), R);
+    inv_sqrt_Sigma = inv_sqrt(Sigma);
+    Z = hadamard(row_repeat(inv_sqrt_Sigma, N), R);
     result = hadamard(row_repeat(gamma, N), Z) + row_repeat(beta, N);
   }
 
@@ -67,7 +67,7 @@ struct batch_normalization_layer: public neural_network_layer
     using eigen::columns_sum;
     using eigen::identity;
     using eigen::ones;
-    using eigen::power_minus_half;
+    using eigen::inv_sqrt;
     auto N = X.rows();
 
     NERVA_TIMER_START("batchnorm1")
@@ -78,7 +78,7 @@ struct batch_normalization_layer: public neural_network_layer
     Dgamma = columns_sum(hadamard(Z, DY));
     NERVA_TIMER_STOP("batchnorm2")
     NERVA_TIMER_START("batchnorm3")
-    DX = hadamard(row_repeat(power_minus_half_Sigma / N, N), (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)) * DZ - hadamard(Z, row_repeat(diag(Z.transpose() * DZ).transpose(), N)));
+    DX = hadamard(row_repeat(inv_sqrt_Sigma / N, N), (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)) * DZ - hadamard(Z, row_repeat(diag(Z.transpose() * DZ).transpose(), N)));
     NERVA_TIMER_STOP("batchnorm3")
   }
 
@@ -105,11 +105,11 @@ struct simple_batch_normalization_layer: public neural_network_layer
   using super::X;
   using super::DX;
 
-  eigen::matrix power_minus_half_Sigma;
+  eigen::matrix inv_sqrt_Sigma;
   std::shared_ptr<optimizer_function> optimizer;
 
   explicit simple_batch_normalization_layer(std::size_t D, std::size_t N = 1)
-    : super(D, N), power_minus_half_Sigma(1, D)
+    : super(D, N), inv_sqrt_Sigma(1, D)
   {}
 
   [[nodiscard]] std::string to_string() const override
@@ -121,15 +121,15 @@ struct simple_batch_normalization_layer: public neural_network_layer
   {
     using eigen::diag;
     using eigen::hadamard;
-    using eigen::power_minus_half;
+    using eigen::inv_sqrt;
     using eigen::row_repeat;
     using eigen::columns_mean;
     auto N = X.rows();
 
     auto R = (X - row_repeat(columns_mean(X), N)).eval();
     auto Sigma = diag(R.transpose() * R).transpose() / N;
-    power_minus_half_Sigma = power_minus_half(Sigma);
-    result = hadamard(row_repeat(power_minus_half_Sigma, N), R);
+    inv_sqrt_Sigma = inv_sqrt(Sigma);
+    result = hadamard(row_repeat(inv_sqrt_Sigma, N), R);
   }
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
@@ -138,11 +138,11 @@ struct simple_batch_normalization_layer: public neural_network_layer
     using eigen::hadamard;
     using eigen::identity;
     using eigen::ones;
-    using eigen::power_minus_half;
+    using eigen::inv_sqrt;
     using eigen::column_repeat;
     auto N = X.rows();
 
-    DX = hadamard(column_repeat(power_minus_half_Sigma / N, N), hadamard(Y, column_repeat(-diag(DY * Y.transpose()), N)) + DY * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
+    DX = hadamard(column_repeat(inv_sqrt_Sigma / N, N), hadamard(Y, column_repeat(-diag(DY * Y.transpose()), N)) + DY * (N * identity<eigen::matrix>(N) - ones<eigen::matrix>(N, N)));
   }
 
   void optimize(scalar eta) override

@@ -7,7 +7,7 @@ import numpy as np
 Matrix = np.ndarray
 
 
-# A constant used by div_sqrt to avoid division by zero
+# A constant used by inv_sqrt to avoid division by zero
 epsilon = 1e-7
 
 
@@ -154,7 +154,7 @@ def sqrt(X: Matrix) -> Matrix:
     return np.sqrt(X)
 
 
-def div_sqrt(X: Matrix) -> Matrix:
+def inv_sqrt(X: Matrix) -> Matrix:
     return reciprocal(sqrt(X + epsilon))  # The epsilon is needed for numerical stability
 
 

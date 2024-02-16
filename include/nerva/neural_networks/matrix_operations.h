@@ -193,7 +193,7 @@ auto sqrt(const Matrix& X)
 }
 
 template <typename Matrix>
-auto power_minus_half(const Matrix& X)
+auto inv_sqrt(const Matrix& X)
 {
   using Scalar = typename Matrix::Scalar;
   constexpr Scalar epsilon = std::is_same_v<Scalar, float> ? 1e-7 : 1e-12;

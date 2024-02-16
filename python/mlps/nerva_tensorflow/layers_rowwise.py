@@ -7,7 +7,7 @@ import tensorflow as tf
 from mlps.nerva_tensorflow.activation_functions import ActivationFunction, SReLUActivation, parse_activation
 from mlps.nerva_tensorflow.matrix_operations import column_repeat, columns_mean, columns_sum, diag, elements_sum, \
     hadamard, \
-    identity, ones, div_sqrt, row_repeat, rows_sum, vector_size, zeros
+    identity, ones, inv_sqrt, row_repeat, rows_sum, vector_size, zeros
 from mlps.nerva_tensorflow.optimizers import CompositeOptimizer, parse_optimizer
 from mlps.nerva_tensorflow.softmax_functions import log_softmax_rowwise, softmax_rowwise
 from mlps.nerva_tensorflow.weight_initializers import set_layer_weights
@@ -247,7 +247,7 @@ class BatchNormalizationLayer(Layer):
         self.Dgamma = tf.Variable(zeros(D))
         self.beta = tf.Variable(zeros(D))
         self.Dbeta = tf.Variable(zeros(D))
-        self.div_sqrt_Sigma = tf.Variable(zeros(D))
+        self.inv_sqrt_Sigma = tf.Variable(zeros(D))
         self.optimizer = None
 
     def feedforward(self, X: Matrix) -> Matrix:
@@ -258,11 +258,11 @@ class BatchNormalizationLayer(Layer):
 
         R = X - row_repeat(columns_mean(X), N)
         Sigma = diag(tf.transpose(R) @ R) / N
-        div_sqrt_Sigma = div_sqrt(Sigma)
-        Z = hadamard(row_repeat(div_sqrt_Sigma, N), R)
+        inv_sqrt_Sigma = inv_sqrt(Sigma)
+        Z = hadamard(row_repeat(inv_sqrt_Sigma, N), R)
         Y = hadamard(row_repeat(gamma, N), Z) + row_repeat(beta, N)
 
-        self.div_sqrt_Sigma.assign(div_sqrt_Sigma)
+        self.inv_sqrt_Sigma.assign(inv_sqrt_Sigma)
         self.Z = Z
         return Y
 
@@ -270,12 +270,12 @@ class BatchNormalizationLayer(Layer):
         N, D = self.X.shape
         Z = self.Z
         gamma = self.gamma
-        div_sqrt_Sigma = self.div_sqrt_Sigma
+        inv_sqrt_Sigma = self.inv_sqrt_Sigma
 
         DZ = hadamard(row_repeat(gamma, N), DY)
         Dbeta = columns_sum(DY)
         Dgamma = columns_sum(hadamard(DY, Z))
-        DX = hadamard(row_repeat(div_sqrt_Sigma / N, N), (N * identity(N) - ones(N, N)) @ DZ - hadamard(Z, row_repeat(diag(tf.transpose(Z) @ DZ), N)))
+        DX = hadamard(row_repeat(inv_sqrt_Sigma / N, N), (N * identity(N) - ones(N, N)) @ DZ - hadamard(Z, row_repeat(diag(tf.transpose(Z) @ DZ), N)))
 
         self.DZ = DZ
         self.Dbeta.assign(Dbeta)
