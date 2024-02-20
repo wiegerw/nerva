@@ -155,7 +155,7 @@ def sqrt(X: Matrix) -> Matrix:
 
 
 def inv_sqrt(X: Matrix) -> Matrix:
-    return reciprocal(sqrt(X + epsilon))  # The epsilon is needed for numerical stability
+    return 1 / np.sqrt(X + epsilon)  # The epsilon is needed for numerical stability
 
 
 def log_sigmoid(X: Matrix) -> Matrix:

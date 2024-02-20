@@ -7,7 +7,7 @@ from unittest import TestCase
 
 from mlps.nerva_sympy.matrix_operations import *
 from mlps.nerva_sympy.softmax_functions import *
-from mlps.tests.utilities import equal_matrices, matrix, to_matrix
+from mlps.tests.utilities import equal_matrices, matrix, to_matrix, to_number
 
 Matrix = sp.Matrix
 
@@ -100,6 +100,16 @@ class TestSoftmaxDerivation(TestCase):
         dy_dx_expected = sp.simplify(dy_dx_expected)
         self.assertEqual(dy_dx_expected, dy_dx)
 
+    def test_example(self):
+        from sympy import symarray
+        softmax = softmax_rowwise
+        K = 3
+        z = Matrix(symarray('z', (1, K), real=True))  # create a symbolic 1xK vector
+        y = softmax(z)
+        e = exp(z)
+        f = rows_sum(e)[0, 0]  # rows_sum returns a Matrix, so we extract the value
+        self.assertTrue(equal_matrices(softmax(z).jacobian(z), Diag(e) / f - (e.T * e) / (f * f)))
+        self.assertTrue(equal_matrices(softmax(z).jacobian(z), Diag(y) - y.T * y))
 
 if __name__ == '__main__':
     import unittest
