@@ -7,24 +7,91 @@ from unittest import TestCase
 
 from mlps.nerva_sympy.matrix_operations import *
 from mlps.nerva_sympy.softmax_functions import *
-from mlps.tests.utilities import equal_matrices, matrix, to_matrix, to_number
+from mlps.tests.utilities import equal_matrices, matrix, to_matrix, to_number, pp
 
 Matrix = sp.Matrix
 
 
-def pp(name: str, x: sp.Matrix):
-    print(f'{name} ({x.shape[0]}x{x.shape[1]})')
-    for row in x.tolist():
-        print('[', end='')
-        for i, elem in enumerate(row):
-            print(f'{elem}', end='')
-            if i < len(row) - 1:
-                print(', ', end='')
-        print(']')
-    print()
-
-
 class TestSoftmaxDerivation(TestCase):
+    # section 4
+    def test_dsoftmax_dz_derivation(self):
+        K = 3
+
+        def softmax(z: Matrix) -> Matrix:
+            return reciprocal(rows_sum(exp(z))) * exp(z)
+
+        z = matrix('z', 1, K)
+        y = softmax(z)
+
+        dsoftmax_dz = softmax(z).jacobian(z)
+        lhs = exp(z)
+        rhs = reciprocal(rows_sum(exp(z)))
+        dlhs_dz = lhs.jacobian(z)
+        drhs_dz = rhs.jacobian(z)
+        self.assertTrue(equal_matrices(dsoftmax_dz, dlhs_dz * to_number(rhs) + lhs.T * drhs_dz))
+        self.assertTrue(equal_matrices(dlhs_dz * to_number(rhs), Diag(exp(z)) * to_number(rhs)))
+        R = to_number(rows_sum(exp(z)))
+        self.assertTrue(equal_matrices(drhs_dz, - exp(z) / (R * R)))
+        self.assertTrue(equal_matrices(Diag(exp(z)) * to_number(rhs), Diag(y)))
+        self.assertTrue(equal_matrices(exp(z).T * (exp(z) / (R * R)), y.T * y))
+        self.assertTrue(equal_matrices(dsoftmax_dz, Diag(y) - y.T * y))
+
+    # appendix C.2
+    def test_softmax_derivation(self):
+        D = 3
+
+        def softmax(x: Matrix) -> Matrix:
+            return reciprocal(rows_sum(exp(x))) * exp(x)
+
+        x = matrix('x', 1, D)
+        y = softmax(x)
+
+        E = exp(x)
+        Q = rows_sum(exp(x))
+        dE_dx = E.jacobian(x)
+        dQ_dx = Q.jacobian(x)
+        self.assertTrue(equal_matrices(dQ_dx, columns_sum(dE_dx)))
+        self.assertTrue(equal_matrices(columns_sum(dE_dx), columns_sum(Diag(exp(x)))))
+        self.assertTrue(equal_matrices(columns_sum(Diag(exp(x))), exp(x)))
+
+        dsoftmax_dx = softmax(x).jacobian(x)
+        lhs = exp(x)
+        rhs = reciprocal(rows_sum(exp(x)))
+        dlhs_dx = lhs.jacobian(x)
+        drhs_dx = rhs.jacobian(x)
+        self.assertTrue(equal_matrices(dsoftmax_dx, dlhs_dx * to_number(rhs) + lhs.T * drhs_dx))
+        self.assertTrue(equal_matrices(dlhs_dx * to_number(rhs), Diag(exp(x)) * to_number(rhs)))
+        R = to_number(rows_sum(exp(x)))
+        self.assertTrue(equal_matrices(drhs_dx, - exp(x) / (R * R)))
+        self.assertTrue(equal_matrices(Diag(exp(x)) * to_number(rhs), Diag(y)))
+        self.assertTrue(equal_matrices(exp(x).T * (exp(x) / (R * R)), y.T * y))
+        self.assertTrue(equal_matrices(dsoftmax_dx, Diag(y) - y.T * y))
+
+    # appendix C.2
+    def test_log_softmax_derivation(self):
+        D = 3
+
+        def softmax(x: Matrix) -> Matrix:
+            return reciprocal(rows_sum(exp(x))) * exp(x)
+
+        def log_softmax(x: Matrix) -> Matrix:
+            return log(softmax(x))
+
+        x = matrix('x', 1, D)
+        y = softmax(x)
+        z = matrix('z', 1, D)
+
+        dsoftmax_dx = softmax(x).jacobian(x)
+        dlog_softmax_dx = log_softmax(x).jacobian(x)
+        dlog_z_dz = substitute(log(z).jacobian(z), (z, y))
+
+        self.assertTrue(equal_matrices(dlog_softmax_dx, dlog_z_dz * dsoftmax_dx))
+        self.assertTrue(equal_matrices(dlog_z_dz, Diag(reciprocal(y))))
+        self.assertTrue(equal_matrices(dsoftmax_dx, Diag(y) - y.T * y))
+        self.assertTrue(equal_matrices(dlog_softmax_dx, Diag(reciprocal(y)) * (Diag(y) - y.T * y)))
+        self.assertTrue(equal_matrices(dlog_softmax_dx, identity(D) - Diag(reciprocal(y)) * y.T * y))
+        self.assertTrue(equal_matrices(dlog_softmax_dx, identity(D) - row_repeat(y, D)))
+
     def test1(self):
         K = 3
         z = matrix('z', 1, K)
@@ -110,6 +177,7 @@ class TestSoftmaxDerivation(TestCase):
         f = rows_sum(e)[0, 0]  # rows_sum returns a Matrix, so we extract the value
         self.assertTrue(equal_matrices(softmax(z).jacobian(z), Diag(e) / f - (e.T * e) / (f * f)))
         self.assertTrue(equal_matrices(softmax(z).jacobian(z), Diag(y) - y.T * y))
+
 
 if __name__ == '__main__':
     import unittest
