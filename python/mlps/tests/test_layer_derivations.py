@@ -9,6 +9,7 @@
 from unittest import TestCase
 
 from mlps.nerva_sympy.matrix_operations import *
+from mlps.nerva_sympy.softmax_functions import softmax_rowwise
 from mlps.tests.utilities import equal_matrices, matrix, to_matrix, to_number, pp, instantiate
 import sympy as sp
 
@@ -45,7 +46,6 @@ class TestLinearLayerDerivation(TestCase):
         b = matrix('b', 1, K)
         X = x
         W = w
-        B = row_repeat(b, N)
 
         # feedforward
         Y = X * W.T + row_repeat(b, N)
@@ -96,6 +96,70 @@ class TestLinearLayerDerivation(TestCase):
         w_ij = to_matrix(w[i, j])
         dyk_dwij = y_k.jacobian(w_ij)
         self.assertTrue(equal_matrices(dyk_dwij, x[k, j] * e_i))
+
+
+class TestSoftmaxLayerDerivation(TestCase):
+    def test_dsoftmax_dz_derivation(self):
+        K = 3
+
+        def softmax(z: Matrix) -> Matrix:
+            return reciprocal(rows_sum(exp(z))) * exp(z)
+
+        z = matrix('z', 1, K)
+        y = softmax(z)
+
+        dsoftmax_dz = softmax(z).jacobian(z)
+        lhs = exp(z)
+        rhs = reciprocal(rows_sum(exp(z)))
+        dlhs_dz = lhs.jacobian(z)
+        drhs_dz = rhs.jacobian(z)
+        self.assertTrue(equal_matrices(dsoftmax_dz, dlhs_dz * to_number(rhs) + lhs.T * drhs_dz))
+        self.assertTrue(equal_matrices(dlhs_dz * to_number(rhs), Diag(exp(z)) * to_number(rhs)))
+        R = to_number(rows_sum(exp(z)))
+        self.assertTrue(equal_matrices(drhs_dz, - exp(z) / (R * R)))
+        self.assertTrue(equal_matrices(Diag(exp(z)) * to_number(rhs), Diag(y)))
+        self.assertTrue(equal_matrices(exp(z).T * (exp(z) / (R * R)), y.T * y))
+        self.assertTrue(equal_matrices(dsoftmax_dz, Diag(y) - y.T * y))
+
+    def test_dL_dzi_derivation(self):
+        N = 2
+        D = 4
+        K = 3
+
+        x = matrix('x', N, D)
+        y = matrix('y', N, K)
+        w = matrix('w', K, D)
+        z = matrix('z', N, K)
+
+        b = matrix('b', 1, K)
+        W = w
+
+        # feedforward
+        Z = x * w.T + row_repeat(b, N)
+        Y = softmax_rowwise(Z)
+
+        L = lambda Y: to_matrix(squared_error_rows(Y))
+
+        def softmax(z: Matrix) -> Matrix:
+            return reciprocal(rows_sum(exp(z))) * exp(z)
+
+        i = 1
+        y_i = y.row(i)
+        z_i = z.row(i)
+
+        L_y = L(y)
+        L_z = L(softmax_rowwise(z))
+        dL_dzi = substitute(L_z.jacobian(z_i), (z, Z))
+        dL_dyi = substitute(L_y.jacobian(y_i), (y, Y))
+        dsoftmax_dzi = substitute(softmax(z_i).jacobian(z_i), (z, Z))
+        self.assertTrue(equal_matrices(dL_dzi, dL_dyi * dsoftmax_dzi))
+
+        Dzi = dL_dzi
+        Dyi = dL_dyi
+        R1 = substitute(Dyi * (Diag(y_i) - y_i.T * y_i), (y, Y))
+        R2 = substitute(hadamard(Dyi, y_i) - Dyi * y_i.T * y_i, (y, Y))
+        self.assertTrue(equal_matrices(Dzi, R1))
+        self.assertTrue(equal_matrices(R1, R2))
 
 
 class TestBatchNormDerivation(TestCase):
