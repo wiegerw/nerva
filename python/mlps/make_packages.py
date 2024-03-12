@@ -9,7 +9,7 @@ import shutil
 from pathlib import Path
 from typing import Tuple
 
-VERSION = '0.1'
+VERSION = '0.21'
 
 SETUP_CFG = '''[metadata]
 name = NAME
@@ -461,7 +461,8 @@ def copy_source_files():
 def copy_test_files():
     destination_folder = Path('dist') / package_names['nerva_sympy'] / 'tests'
     test_folder = Path('tests')
-    for source_file in test_folder.glob('*.py'):
+    source_files = list(test_folder.glob('test*.py')) + [test_folder / 'utilities.py']
+    for source_file in source_files:
         destination_file = destination_folder / source_file.name
         copy_file(source_file, destination_file)
 
@@ -584,7 +585,7 @@ def main():
     create_setup_files()
     create_create_datasets_files()
     create_mlp_files()
-    copy_license_files()
+    # copy_license_files()
     copy_source_files()
     copy_test_files()
     copy_example_files()

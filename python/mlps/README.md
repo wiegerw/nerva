@@ -1,7 +1,5 @@
 # The PACKAGE library
 
-**_NOTE:_**  This page is a stub. The library has not yet been released!
-
 This repository contains an implementation of multilayer perceptrons in FRAMEWORK.
 It is part of a group of five Python packages that can be installed via pip:
 
@@ -34,13 +32,9 @@ backpropagation is provided in an accessible manner. Currently, the scope is
 limited to multilayer perceptrons. However, the approach can easily be
 generalized to more complex neural network architectures.
 
-## Documentation
-
-TODO
-
 ## Installation
 
-The code is available as the PyPI package [PACKAGE](https://pypi.org/project/CONEstrip/).
+The code is available as the PyPI package [PACKAGE](https://pypi.org/project/PACKAGE/).
 It can be installed using
 
 ```

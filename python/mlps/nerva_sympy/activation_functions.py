@@ -6,8 +6,8 @@ import sympy as sp
 from sympy import Lambda, Piecewise
 
 from mlps.nerva_numpy.activation_functions import AllReLUActivation, HyperbolicTangentActivation, \
-    LeakyReLUActivation, ReLUActivation, \
-    SReLUActivation, SigmoidActivation
+    LeakyReLUActivation, ReLUActivation, SReLUActivation, SigmoidActivation
+from mlps.nerva_sympy.utilities import parse_function_call
 
 Matrix = sp.Matrix
 

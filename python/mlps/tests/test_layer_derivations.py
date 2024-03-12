@@ -10,7 +10,7 @@ from unittest import TestCase
 
 from mlps.nerva_sympy.matrix_operations import *
 from mlps.nerva_sympy.softmax_functions import softmax_rowwise, log_softmax_rowwise
-from mlps.tests.utilities import equal_matrices, matrix, to_matrix, to_number, pp, instantiate
+from mlps.tests.utilities import equal_matrices, matrix, to_matrix, to_number
 import sympy as sp
 
 Matrix = sp.Matrix
@@ -118,9 +118,6 @@ class TestSoftmaxLayerDerivation(TestCase):
 
         L = lambda Y: to_matrix(squared_error_rows(Y))
 
-        def softmax(z: Matrix) -> Matrix:
-            return reciprocal(rows_sum(exp(z))) * exp(z)
-
         i = 1
         y_i = y.row(i)
         z_i = z.row(i)
@@ -129,7 +126,7 @@ class TestSoftmaxLayerDerivation(TestCase):
         L_z = L(softmax_rowwise(z))
         dL_dzi = substitute(L_z.jacobian(z_i), (z, Z))
         dL_dyi = substitute(L_y.jacobian(y_i), (y, Y))
-        dsoftmax_dzi = substitute(softmax(z_i).jacobian(z_i), (z, Z))
+        dsoftmax_dzi = substitute(softmax_rowwise(z_i).jacobian(z_i), (z, Z))
         self.assertTrue(equal_matrices(dL_dzi, dL_dyi * dsoftmax_dzi))
 
         Dzi = dL_dzi
@@ -160,12 +157,6 @@ class TestLogSoftmaxLayerDerivation(TestCase):
 
         L = lambda Y: to_matrix(squared_error_rows(Y))
 
-        def softmax(z: Matrix) -> Matrix:
-            return reciprocal(rows_sum(exp(z))) * exp(z)
-
-        def log_softmax(z: Matrix) -> Matrix:
-            return log(softmax(z))
-
         i = 1
         y_i = y.row(i)
         z_i = z.row(i)
@@ -174,12 +165,12 @@ class TestLogSoftmaxLayerDerivation(TestCase):
         L_z = L(log_softmax_rowwise(z))
         dL_dzi = substitute(L_z.jacobian(z_i), (z, Z))
         dL_dyi = substitute(L_y.jacobian(y_i), (y, Y))
-        dlog_softmax_dzi = substitute(log_softmax(z_i).jacobian(z_i), (z, Z))
+        dlog_softmax_dzi = substitute(log_softmax_rowwise(z_i).jacobian(z_i), (z, Z))
         self.assertTrue(equal_matrices(dL_dzi, dL_dyi * dlog_softmax_dzi))
 
         Dzi = dL_dzi
         Dyi = dL_dyi
-        R = substitute(identity(K) - row_repeat(softmax(z_i), K), (z, Z))
+        R = substitute(identity(K) - row_repeat(softmax_rowwise(z_i), K), (z, Z))
         self.assertTrue(equal_matrices(dlog_softmax_dzi, R))
         self.assertTrue(equal_matrices(Dzi, Dyi * R))
 
