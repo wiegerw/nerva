@@ -15,7 +15,7 @@
 #include <ratio>
 #include <string>
 
-namespace nerva::eigen {
+namespace nerva {
 
 inline
 scalar relu(scalar x)
@@ -553,5 +553,4 @@ struct srelu_activation
   }
 };
 
-} // namespace eigen::nerva
-
+} // namespace nerva

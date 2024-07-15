@@ -10,11 +10,11 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 
 #include "doctest/doctest.h"
-#include "nerva/neural_networks/batch_normalization_layers_colwise.h"
+#include "nerva/neural_networks/batch_normalization_layers.h"
 #include "nerva/neural_networks/check_gradients.h"
 #include "nerva/datasets/make_dataset.h"
-#include "nerva/neural_networks/layers_colwise.h"
-#include "nerva/neural_networks/loss_functions_colwise.h"
+#include "nerva/neural_networks/layers.h"
+#include "nerva/neural_networks/loss_functions.h"
 #include "nerva/neural_networks/mlp_algorithms.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"

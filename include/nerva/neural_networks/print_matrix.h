@@ -35,7 +35,7 @@ bool has_nan(const Matrix& A)
 }
 
 template <typename Matrix>
-auto infinity_norm(const Matrix& A)
+auto infinity_norm(const Matrix& A) -> double  // TODO: use the number type of A
 {
   using Scalar = typename Matrix::Scalar;
   auto abs = [](Scalar value)

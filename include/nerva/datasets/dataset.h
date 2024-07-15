@@ -33,34 +33,18 @@ using matrix_view = eigen::matrix_map<scalar>;
 using matrix_ref = eigen::matrix_ref<scalar>;
 using long_vector = Eigen::Matrix<long, Eigen::Dynamic, 1>;
 
-enum class dataset_orientation {
-  colwise,
-  rowwise
-};
-
-template <dataset_orientation Orientation=dataset_orientation::colwise, typename Matrix>
+template <typename Matrix>
 void dataset_info(const Matrix& Xtrain, const Matrix& Ttrain, const Matrix& Xtest, const Matrix& Ttest)
 {
-  std::cout << "dataset orientation = " << (Orientation == dataset_orientation::colwise ? "colwise" : "rowwise") << std::endl;
-  if constexpr (Orientation == dataset_orientation::colwise)
-  {
-    print_numpy_matrix("Xtrain", Xtrain.transpose());
-    print_numpy_matrix("Ttrain", Ttrain.transpose());
-    print_numpy_matrix("Xtest", Xtest.transpose());
-    print_numpy_matrix("Ttest", Ttest.transpose());
-  }
-  else
-  {
-    print_numpy_matrix("Xtrain", Xtrain);
-    print_numpy_matrix("Ttrain", Ttrain);
-    print_numpy_matrix("Xtest", Xtest);
-    print_numpy_matrix("Ttest", Ttest);
-  }
+  print_numpy_matrix("Xtrain", Xtrain);
+  print_numpy_matrix("Ttrain", Ttrain);
+  print_numpy_matrix("Xtest", Xtest);
+  print_numpy_matrix("Ttest", Ttest);
 }
 
 // Precondition: the python interpreter must be running.
 // This can be enforced using `py::scoped_interpreter guard{};`
-template <dataset_orientation Orientation=dataset_orientation::colwise, typename Matrix>
+template <typename Matrix>
 void dataset_load(const std::string& filename, Matrix& Xtrain, Matrix& Ttrain, Matrix& Xtest, Matrix& Ttest)
 {
   std::cout << "Loading dataset from file " << filename << std::endl;
@@ -72,29 +56,16 @@ void dataset_load(const std::string& filename, Matrix& Xtrain, Matrix& Ttrain, M
 
   pybind11::dict data = pybind11::module::import("numpy").attr("load")(filename);
 
-  if constexpr (Orientation == dataset_orientation::colwise)
-  {
-    Xtrain = eigen::extract_matrix<scalar>(data, "Xtrain").transpose();
-    Xtest = eigen::extract_matrix<scalar>(data, "Xtest").transpose();
-    auto Ttrain_ = eigen::extract_column_vector<long>(data, "Ttrain");
-    auto Ttest_ = eigen::extract_column_vector<long>(data, "Ttest");
-    long num_classes = Ttrain_.maxCoeff() + 1;
-    Ttrain = eigen::to_one_hot_colwise(Ttrain_, num_classes);
-    Ttest = eigen::to_one_hot_colwise(Ttest_, num_classes);
-  }
-  else
-  {
-    Xtrain = eigen::extract_matrix<scalar>(data, "Xtrain");
-    Xtest = eigen::extract_matrix<scalar>(data, "Xtest");
-    auto Ttrain_ = eigen::extract_row_vector<long>(data, "Ttrain");
-    auto Ttest_ = eigen::extract_row_vector<long>(data, "Ttest");
-    long num_classes = Ttrain_.maxCoeff() + 1;
-    Ttrain = eigen::to_one_hot_rowwise(Ttrain_, num_classes);
-    Ttest = eigen::to_one_hot_rowwise(Ttest_, num_classes);
-  }
+  Xtrain = eigen::extract_matrix<scalar>(data, "Xtrain");
+  Xtest = eigen::extract_matrix<scalar>(data, "Xtest");
+  auto Ttrain_ = eigen::extract_row_vector<long>(data, "Ttrain");
+  auto Ttest_ = eigen::extract_row_vector<long>(data, "Ttest");
+  long num_classes = Ttrain_.maxCoeff() + 1;
+  Ttrain = eigen::to_one_hot_rowwise(Ttrain_, num_classes);
+  Ttest = eigen::to_one_hot_rowwise(Ttest_, num_classes);
 }
 
-template <dataset_orientation Orientation=dataset_orientation::colwise, typename Matrix>
+template <typename Matrix>
 void dataset_save(const std::string& filename, const Matrix& Xtrain, const Matrix& Ttrain, const Matrix& Xtest, const Matrix& Ttest)
 {
   std::cout << "Saving dataset to file " << filename << std::endl;
@@ -114,7 +85,6 @@ void dataset_save(const std::string& filename, const Matrix& Xtrain, const Matri
   pybind11::module::import("numpy").attr("savez_compressed")(filename, **data);
 }
 
-template <dataset_orientation Orientation=dataset_orientation::colwise>
 struct dataset
 {
   eigen::matrix Xtrain;
@@ -132,33 +102,25 @@ struct dataset
    : Xtrain(std::move(Xtrain_)), Xtest(std::move(Xtest_))
   {
     long num_classes = Ttrain_.maxCoeff() + 1;
-    if constexpr (Orientation == dataset_orientation::colwise)
-    {
-      Ttrain = eigen::to_one_hot_colwise(Ttrain_, num_classes);
-      Ttest = eigen::to_one_hot_colwise(Ttest_, num_classes);
-    }
-    else
-    {
-      Ttrain = eigen::to_one_hot_rowwise(Ttrain_, num_classes);
-      Ttest = eigen::to_one_hot_rowwise(Ttest_, num_classes);
-    }
+    Ttrain = eigen::to_one_hot_rowwise(Ttrain_, num_classes);
+    Ttest = eigen::to_one_hot_rowwise(Ttest_, num_classes);
   }
 
   void info() const
   {
-    dataset_info<Orientation>(Xtrain, Ttrain, Xtest, Ttest);
+    dataset_info(Xtrain, Ttrain, Xtest, Ttest);
   }
 
   // Precondition: the python interpreter must be running.
   // This can be enforced using `py::scoped_interpreter guard{};`
   void load(const std::string& filename)
   {
-    dataset_load<Orientation>(filename, Xtrain, Ttrain, Xtest, Ttest);
+    dataset_load(filename, Xtrain, Ttrain, Xtest, Ttest);
   }
 
   void save(const std::string& filename) const
   {
-    dataset_save<Orientation>(filename, Xtrain, Ttrain, Xtest, Ttest);
+    dataset_save(filename, Xtrain, Ttrain, Xtest, Ttest);
   }
 
   void transpose()
@@ -171,7 +133,6 @@ struct dataset
 };
 
 // contains references to matrices
-template <dataset_orientation Orientation=dataset_orientation::colwise>
 struct dataset_view
 {
   matrix_ref Xtrain;
@@ -192,19 +153,19 @@ struct dataset_view
 
   void info() const
   {
-    dataset_info<Orientation>(Xtrain, Ttrain, Xtest, Ttest);
+    dataset_info(Xtrain, Ttrain, Xtest, Ttest);
   }
 
   // Precondition: the python interpreter must be running.
   // This can be enforced using `py::scoped_interpreter guard{};`
   void load(const std::string& filename)
   {
-    dataset_load<Orientation>(filename, Xtrain, Ttrain, Xtest, Ttest);
+    dataset_load(filename, Xtrain, Ttrain, Xtest, Ttest);
   }
 
   void save(const std::string& filename) const
   {
-    dataset_save<Orientation>(filename, Xtrain, Ttrain, Xtest, Ttest);
+    dataset_save(filename, Xtrain, Ttrain, Xtest, Ttest);
   }
 };
 
@@ -214,8 +175,8 @@ matrix_view make_matrix_view(eigen::matrix& X)
   return {X.data(), X.rows(), X.cols()};
 }
 
-template <dataset_orientation Orientation=dataset_orientation::colwise>
-dataset_view<Orientation> make_dataset_view(dataset<Orientation>& data)
+inline
+dataset_view make_dataset_view(dataset& data)
 {
   return {make_matrix_view(data.Xtrain),
           make_matrix_view(data.Ttrain),

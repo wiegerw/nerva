@@ -11,65 +11,38 @@
 
 #include "doctest/doctest.h"
 #include "nerva/neural_networks/eigen.h"
-#include "nerva/neural_networks/softmax_functions_colwise.h"
-#include "nerva/neural_networks/softmax_functions_rowwise.h"
+#include "nerva/neural_networks/softmax_functions.h"
 #include <iostream>
 
 using namespace nerva;
+
+void test_stable_softmax(const eigen::matrix& X)
+{
+  eigen::matrix Y = stable_softmax()(X);
+
+  auto N = X.rows();
+  for (auto i = 0; i < N; i++)
+  {
+    eigen::matrix x_i = X.row(i);
+    eigen::matrix y_i = stable_softmax()(x_i);
+    CHECK_EQ(y_i, Y.row(i));
+  }
+}
 
 TEST_CASE("test_softmax")
 {
   std::cout << "\n=== test_softmax ===" << std::endl;
 
-  eigen::matrix X {
+  eigen::matrix X1 {
     {1.0, 2.0, 7.0},
     {3.0, 4.0, 9.0}
   };
+  test_stable_softmax(X1);
 
-  eigen::matrix Y = stable_softmax()(X);
-
-  eigen::matrix x1 = X.col(0);
-  eigen::matrix x2 = X.col(1);
-  eigen::matrix x3 = X.col(2);
-
-  eigen::matrix y1 = stable_softmax()(x1);
-  eigen::matrix y2 = stable_softmax()(x2);
-  eigen::matrix y3 = stable_softmax()(x3);
-
-  print_numpy_matrix("Y", Y);
-  print_numpy_matrix("y1", y1);
-  print_numpy_matrix("y2", y2);
-  print_numpy_matrix("y3", y3);
-
-  CHECK_EQ(y1, Y.col(0));
-  CHECK_EQ(y2, Y.col(1));
-  CHECK_EQ(y3, Y.col(2));
-}
-
-template <typename Matrix>
-void check_close(const Matrix& Xc, const Matrix& Xr)
-{
-  scalar tolerance = 1e-6;
-  Matrix Yc = Xr.transpose();
-
-  print_numpy_matrix("Xc", Xc);
-  print_numpy_matrix("Yc", Yc);
-
-  REQUIRE(Xc.isApprox(Yc, tolerance));
-}
-
-TEST_CASE("test_softmax_rowwise_colwise")
-{
-  std::cout << "\n=== test_softmax ===" << std::endl;
-
-  eigen::matrix Xc {
-    {1.0, 2.0, 7.0},
-    {3.0, 4.0, 9.0}
+  eigen::matrix X2 {
+    {1.0, 2.0},
+    {2.0, 4.0},
+    {6.0, 2.0}
   };
-
-  eigen::matrix Xr = Xc.transpose();
-  check_close(colwise::softmax()(Xc), rowwise::softmax()(Xr));
-  check_close(colwise::stable_softmax()(Xc), rowwise::stable_softmax()(Xr));
-  check_close(colwise::log_softmax()(Xc), rowwise::log_softmax()(Xr));
-  check_close(colwise::stable_log_softmax()(Xc), rowwise::stable_log_softmax()(Xr));
+  test_stable_softmax(X2);
 }
