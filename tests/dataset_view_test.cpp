@@ -22,26 +22,26 @@ using namespace nerva;
 TEST_CASE("test_mlp")
 {
   std::mt19937 rng{std::random_device{}()};
-  datasets::dataset<> data = datasets::make_dataset("chessboard", 100, rng);
-  datasets::dataset_view<> data1 = datasets::make_dataset_view(data);
+  datasets::dataset data = datasets::make_dataset("chessboard", 100, rng);
+  datasets::dataset_view data1 = datasets::make_dataset_view(data);
 
   eigen::matrix W1 {
     {3, 4},
     {0, 6}
   };
-  eigen::vector b1 {{7, 2}};
+  eigen::matrix b1 {{7, 2}};
 
   eigen::matrix W2 {
     {1, 0},
     {2, 9}
   };
-  eigen::vector b2 {{1, 4}};
+  eigen::matrix b2 {{1, 4}};
 
   eigen::matrix W3 {
     {4, 1},
     {2, 0}
   };
-  eigen::vector b3 {{3, 2}};
+  eigen::matrix b3 {{3, 2}};
 
   long batch_size = 5;
 
