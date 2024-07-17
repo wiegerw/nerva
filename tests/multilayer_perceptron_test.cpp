@@ -1,4 +1,4 @@
-// Copyright: Wieger Wesselink 2022
+// Copyright: Wieger Wesselink 2022 - 2024
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -18,202 +18,356 @@
 using namespace nerva;
 
 inline
-void print_vector(std::ostream& out, const std::string& name, const eigen::vector& x)
+void check_equal_matrices(const std::string& name1, const eigen::matrix& X1, const std::string& name2, const eigen::matrix& X2, scalar epsilon = 1e-5)
 {
-  out << name << ' ';
-  for (auto i = 0; i < x.size(); i++)
+  scalar error = (X2 - X1).squaredNorm();
+  if (error > epsilon)
   {
-    if (i != 0)
-    {
-      out << ' ';
-    }
-    out << std::setprecision(8) << x(i);
+    CHECK_LE(error, epsilon);
+    print_cpp_matrix(name1, X1);
+    print_cpp_matrix(name2, X2);
   }
-  out << '\n';
-}
-
-bool compare_output(std::string output1, std::string output2)
-{
-#ifdef NERVA_USE_NERVA_USE_EIGEN_PRODUCT
-  float epsilon = 0.000001;
-#else
-  float epsilon = 0.0001;
-#endif
-
-  utilities::trim(output1);
-  utilities::trim(output2);
-  std::vector<std::string> lines1 = utilities::regex_split(output1, "\n");
-  std::vector<std::string> lines2 = utilities::regex_split(output2, "\n");
-
-  if (lines1.size() != lines2.size())
-  {
-    std::cout << "size difference " << lines1.size() << " " << lines2.size() << std::endl;
-    return false;
-  }
-
-  for (unsigned int i = 0; i < lines1.size(); i++)
-  {
-    std::stringstream ss1(lines1[i]);
-    std::stringstream ss2(lines2[i]);
-    std::cout << lines1[i] << std::endl;
-    std::cout << lines2[i] << std::endl;
-
-    std::string name1;
-    std::string name2;
-    ss1 >> name1;
-    ss2 >> name2;
-    if (name1 != name2)
-    {
-      std::cout << "name difference " << name1 << " " << name2 << std::endl;
-      return false;
-    }
-
-    while (true)
-    {
-      double value1;
-      double value2;
-      ss1 >> value1;
-      ss2 >> value2;
-      if (ss1.good() != ss2.good())
-      {
-        std::cout << "lines do not match" << std::endl;
-        return false;
-      }
-      if (!ss1.good())
-      {
-        break;
-      }
-      if (std::abs(value1 - value2) > epsilon)
-      {
-        std::cout << "value difference " << value1 << " " << value2 << std::endl;
-        return false;
-      }
-    }
-  }
-  return true;
 }
 
 void construct_mlp(multilayer_perceptron& M,
-                   const eigen::matrix& w1,
-                   const eigen::vector& b1,
-                   const eigen::matrix& w2,
-                   const eigen::vector& b2,
-                   const eigen::matrix& w3,
-                   const eigen::vector& b3,
+                   const eigen::matrix& W1,
+                   const eigen::matrix& b1,
+                   const eigen::matrix& W2,
+                   const eigen::matrix& b2,
+                   const eigen::matrix& W3,
+                   const eigen::matrix& b3,
                    std::size_t batch_size = 1
                   )
 {
-  std::size_t N1 = w1.cols();
-  std::size_t N2 = w2.cols();
-  std::size_t N3 = w3.cols();
-  std::size_t N4 = w3.rows();
+  std::size_t N1 = W1.cols();
+  std::size_t N2 = W2.cols();
+  std::size_t N3 = W3.cols();
+  std::size_t N4 = W3.rows();
 
   auto layer1 = std::make_shared<relu_layer<eigen::matrix>>(N1, N2, batch_size);
   M.layers.push_back(layer1);
   layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
-  layer1->W = w1;
+  layer1->W = W1;
   layer1->b = b1;
 
   auto layer2 = std::make_shared<relu_layer<eigen::matrix>>(N2, N3, batch_size);
   M.layers.push_back(layer2);
   layer2->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer2->W, layer2->DW, layer2->b, layer2->Db);
-  layer2->W = w2;
+  layer2->W = W2;
   layer2->b = b2;
 
   auto layer3 = std::make_shared<linear_layer<eigen::matrix>>(N3, N4, batch_size);
   M.layers.push_back(layer3);
   layer3->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer3->W, layer3->DW, layer3->b, layer3->Db);
-  layer3->W = w3;
+  layer3->W = W3;
   layer3->b = b3;
 }
 
-void test_case(const eigen::matrix& X,
-               const eigen::matrix& T,
-               const eigen::matrix& w1,
-               const eigen::vector& b1,
-               const eigen::matrix& w2,
-               const eigen::vector& b2,
-               const eigen::matrix& w3,
-               const eigen::vector& b3,
-               const std::string& expected_output
-               )
+void test_mlp_execution(const eigen::matrix& X,
+                        const eigen::matrix& T,
+                        const eigen::matrix& W1,
+                        const eigen::matrix& b1,
+                        const eigen::matrix& W2,
+                        const eigen::matrix& b2,
+                        const eigen::matrix& W3,
+                        const eigen::matrix& b3,
+                        const eigen::matrix& Y1,
+                        const eigen::matrix& DY1,
+                        const eigen::matrix& Y2,
+                        const eigen::matrix& DY2,
+                        scalar lr
+                       )
 {
   multilayer_perceptron M;
-  std::size_t batch_size = 1;
-  construct_mlp(M, w1, b1, w2, b2, w3, b3, batch_size);
+  std::size_t K = W3.cols(); // the output size of the MLP
+  std::size_t N = X.rows();  // the number of examples in the dataset
+  std::size_t batch_size = N;
+  construct_mlp(M, W1, b1, W2, b2, W3, b3, batch_size);
 
-  long N = X.cols();
-  std::size_t N4 = w3.rows();
-  eigen::matrix y(N4, 1);
-  eigen::matrix dy(N4, 1);
+  eigen::matrix Y(N, K);
+  eigen::matrix DY(N, K);
 
   softmax_cross_entropy_loss loss;
-  float eta = 0.001;
 
-  std::ostringstream out;
-  out << '\n';
-  auto epochs = 2;
-  for (auto epoch = 0; epoch < epochs; epoch++)
-  {
-    for (long i = 0; i < N; i++)
-    {
-      eigen::matrix x = X.col(i);
-      eigen::matrix t = T.col(i);
-      M.feedforward(x, y);
-      dy = loss.gradient(y, t);
-      print_vector(out, " y", y);
-      print_vector(out, "dy", dy);
-      M.backpropagate(y, dy);
-      M.optimize(eta);
-    }
-  }
-  CHECK(compare_output(expected_output, out.str()));
+  M.feedforward(X, Y);
+  DY = loss.gradient(Y, T) / N; // take the average of the gradients in the batch
+
+  check_equal_matrices("Y", Y, "Y1", Y1);
+  check_equal_matrices("DY", DY, "DY1", DY1);
+
+  M.backpropagate(Y, DY);
+  M.optimize(lr);
+  M.feedforward(X, Y);
+  M.backpropagate(Y, DY);
+
+  check_equal_matrices("Y", Y, "Y2", Y2);
+  check_equal_matrices("DY", DY, "DY2", DY2);
 }
 
 TEST_CASE("test_mlp1")
 {
-  eigen::matrix X
-    {{0.5199999809265137, 0.9300000071525574, 0.15000000596046448, 0.7200000286102295}};
+  eigen::matrix X {
+          {0.37454012, 0.95071429},
+          {0.73199391, 0.59865850},
+          {0.15601864, 0.15599452},
+          {0.05808361, 0.86617613},
+          {0.60111499, 0.70807260},
+  };
 
-  eigen::matrix T
-    {{1.0, 1.0, 1.0, 0.0},
-     {0.0, 0.0, 0.0, 1.0}};
+  eigen::matrix T {
+          {0.00000000, 1.00000000, 0.00000000},
+          {1.00000000, 0.00000000, 0.00000000},
+          {0.00000000, 1.00000000, 0.00000000},
+          {0.00000000, 1.00000000, 0.00000000},
+          {0.00000000, 1.00000000, 0.00000000},
+  };
 
-  eigen::matrix w1
-    {{-0.8133288621902466},
-     {0.3976917266845703}};
+  eigen::matrix W1 {
+          {0.40477765, -0.69623971},
+          {-0.16085446, -0.31759310},
+          {0.21863602, 0.14130995},
+          {0.14570646, -0.50260431},
+          {-0.28642559, 0.39994881},
+          {0.65231007, -0.37977478},
+  };
 
-  eigen::vector b1 {{-0.6363444328308105, -0.2981985807418823}};
+  eigen::matrix b1 {
+          {-0.69803518, -0.16952103, 0.09379140, -0.53395641, -0.37675884, -0.68047416},
+  };
 
-  eigen::matrix w2
-    {{0.5963594317436218, 0.5629172325134277},
-     {-0.09182517230510712, -0.6868335604667664}};
+  eigen::matrix W2 {
+          {0.16654126, -0.26667184, -0.38079575, 0.39186627, -0.15753900, -0.30247420},
+          {0.31225482, 0.23813790, 0.28410625, 0.19605930, -0.34278911, -0.36008739},
+          {0.29400483, -0.19699089, 0.16444799, -0.15642598, -0.33687934, -0.27927041},
+          {0.07527659, 0.26284146, -0.05087886, -0.23064679, 0.28456056, 0.14722875},
+  };
 
-  eigen::vector b2 {{0.318002849817276, -0.5409443974494934}};
+  eigen::matrix b2 {
+          {0.36797330, -0.13065271, -0.02031219, -0.01930011},
+  };
 
-  eigen::matrix w3
-    {{0.6574600338935852, -0.4956347942352295},
-     {0.25072064995765686, -0.24014270305633545}};
+  eigen::matrix W3 {
+          {-0.03571868, 0.18264884, -0.07839197, 0.10039091},
+          {0.17783433, -0.19139969, 0.26470900, -0.44604021},
+          {0.32995528, 0.39532137, 0.31083906, 0.00336301},
+  };
 
-  eigen::vector b3 {{0.48356249928474426, -0.353687584400177}};
+  eigen::matrix b3 {
+          {-0.41274250, -0.42114729, -0.10100931},
+  };
 
-  std::string expected_output{R"(
- y 0.69263667 -0.27395770
-dy -0.27555990 0.27555984
- y 0.71953642 -0.26412356
-dy -0.27216613 0.27216616
- y 0.69338977 -0.27450848
-dy -0.27529967 0.27529961
- y 0.69376671 -0.27478361
-dy 0.72483051 -0.72483045
- y 0.69277436 -0.27405933
-dy -0.27551210 0.27551204
- y 0.71971917 -0.26421034
-dy -0.27211273 0.27211279
- y 0.69352746 -0.27461004
-dy -0.27525187 0.27525190
- y 0.69390428 -0.27488512
-dy 0.72487813 -0.72487813
-)"};
-  test_case(X, T, w1, b1, w2, b2, w3, b3, expected_output);
+  eigen::matrix Y1 {
+          {-0.42407355, -0.36858460, -0.00901414},
+          {-0.42405337, -0.36927161, -0.01113100},
+          {-0.42418721, -0.36471269, 0.00291631},
+          {-0.42413116, -0.36662215, -0.00296727},
+          {-0.42406273, -0.36895347, -0.01015069},
+  };
+
+  eigen::matrix DY1 {
+          {0.05599860, -0.14080627, 0.08480767},
+          {-0.14393893, 0.05921788, 0.08472105},
+          {0.05564691, -0.14094311, 0.08529621},
+          {0.05582025, -0.14087547, 0.08505522},
+          {0.05603213, -0.14079331, 0.08476117},
+  };
+
+  eigen::matrix Y2 {
+          {-0.42492086, -0.36327705, -0.01372177},
+          {-0.42489764, -0.36397934, -0.01582783},
+          {-0.42505193, -0.35931459, -0.00183886},
+          {-0.42498729, -0.36126921, -0.00770053},
+          {-0.42490840, -0.36365402, -0.01485226},
+  };
+
+  eigen::matrix DY2 {
+          {0.05598776, -0.14045234, 0.08446458},
+          {-0.14394979, 0.05957085, 0.08437894},
+          {0.05563583, -0.14058393, 0.08494810},
+          {0.05580935, -0.14051886, 0.08470953},
+          {0.05602128, -0.14043988, 0.08441861},
+  };
+
+  scalar lr = 0.01;
+  test_mlp_execution(X, T, W1, b1, W2, b2, W3, b3, Y1, DY1, Y2, DY2, lr);
+}
+
+TEST_CASE("test_mlp2")
+{
+  eigen::matrix X {
+          {0.00077877, 0.99221158, 0.61748153},
+          {0.61165315, 0.00706631, 0.02306242},
+          {0.52477467, 0.39986098, 0.04666566},
+          {0.97375554, 0.23277134, 0.09060644},
+  };
+
+  eigen::matrix T {
+          {0.00000000, 1.00000000, 0.00000000, 0.00000000},
+          {0.00000000, 0.00000000, 1.00000000, 0.00000000},
+          {0.00000000, 0.00000000, 0.00000000, 1.00000000},
+          {0.00000000, 0.00000000, 1.00000000, 0.00000000},
+  };
+
+  eigen::matrix W1 {
+          {-0.45105985, 0.29854706, 0.16683738},
+          {-0.30287033, -0.00814997, -0.32612115},
+          {-0.26305303, 0.53626770, 0.08086998},
+          {-0.09739863, 0.21775182, 0.19285005},
+          {-0.20258749, 0.32706511, -0.47645426},
+  };
+
+  eigen::matrix b1 {
+          {0.03939215, -0.08932664, -0.53760475, -0.07322484, -0.37727505},
+  };
+
+  eigen::matrix W2 {
+          {0.06530178, 0.17864722, -0.04572038, -0.00040144, 0.41011563},
+          {-0.09490189, -0.33556640, 0.17871168, -0.39829758, -0.04883946},
+  };
+
+  eigen::matrix b2 {
+          {0.11345048, -0.03292364},
+  };
+
+  eigen::matrix W3 {
+          {0.54775178, -0.65060544},
+          {0.36532778, 0.16289495},
+          {0.57816786, -0.32509559},
+          {0.10874898, -0.54542083},
+  };
+
+  eigen::matrix b3 {
+          {0.46806577, 0.31039113, 0.41047961, 0.67198151},
+  };
+
+  eigen::matrix Y1 {
+          {0.54472053, 0.36151668, 0.49139091, 0.68720031},
+          {0.53020847, 0.35183775, 0.47607303, 0.68431914},
+          {0.53020847, 0.35183775, 0.47607303, 0.68431914},
+          {0.53020847, 0.35183775, 0.47607303, 0.68431914},
+  };
+
+  eigen::matrix DY1 {
+          {0.06355186, -0.19708683, 0.06025145, 0.07328354},
+          {0.06328224, 0.05294396, -0.19005251, 0.07382632},
+          {0.06328224, 0.05294396, 0.05994750, -0.17617369},
+          {0.06328224, 0.05294396, -0.19005251, 0.07382632},
+  };
+
+  eigen::matrix Y2 {
+          {0.54224807, 0.36198211, 0.49413902, 0.68676353},
+          {0.52775264, 0.35230631, 0.47882277, 0.68388593},
+          {0.52775264, 0.35230631, 0.47882277, 0.68388593},
+          {0.52775264, 0.35230631, 0.47882277, 0.68388593},
+  };
+
+  eigen::matrix DY2 {
+          {0.06339454, -0.19706252, 0.06041689, 0.07325109},
+          {0.06312633, 0.05296820, -0.18988807, 0.07379355},
+          {0.06312633, 0.05296820, 0.06011193, -0.17620644},
+          {0.06312633, 0.05296820, -0.18988807, 0.07379355},
+  };
+
+  scalar lr = 0.01;
+  test_mlp_execution(X, T, W1, b1, W2, b2, W3, b3, Y1, DY1, Y2, DY2, lr);
+}
+
+TEST_CASE("test_mlp3")
+{
+  eigen::matrix X {
+          {0.98323089, 0.46676290, 0.85994041, 0.68030757, 0.45049927, 0.01326496},
+          {0.94220173, 0.56328821, 0.38541651, 0.01596625, 0.23089382, 0.24102546},
+          {0.68326354, 0.60999668, 0.83319491, 0.17336465, 0.39106062, 0.18223609},
+          {0.75536144, 0.42515588, 0.20794167, 0.56770033, 0.03131329, 0.84228480},
+          {0.44975412, 0.39515024, 0.92665887, 0.72727197, 0.32654077, 0.57044399},
+          {0.52083427, 0.96117204, 0.84453386, 0.74732012, 0.53969210, 0.58675116},
+          {0.96525532, 0.60703427, 0.27599919, 0.29627350, 0.16526695, 0.01563641},
+          {0.42340147, 0.39488152, 0.29348817, 0.01407982, 0.19884241, 0.71134198},
+  };
+
+  eigen::matrix T {
+          {0.00000000, 0.00000000, 1.00000000},
+          {1.00000000, 0.00000000, 0.00000000},
+          {0.00000000, 0.00000000, 1.00000000},
+          {1.00000000, 0.00000000, 0.00000000},
+          {0.00000000, 1.00000000, 0.00000000},
+          {0.00000000, 0.00000000, 1.00000000},
+          {0.00000000, 1.00000000, 0.00000000},
+          {1.00000000, 0.00000000, 0.00000000},
+  };
+
+  eigen::matrix W1 {
+          {0.37848276, 0.40502641, 0.22491372, 0.05884963, -0.39159039, 0.37229499},
+          {-0.18624610, 0.30602354, -0.19620073, -0.39198768, 0.21975307, 0.02032124},
+  };
+
+  eigen::matrix b1 {
+          {0.09105019, 0.19104461},
+  };
+
+  eigen::matrix W2 {
+          {-0.60521197, 0.66329926},
+          {0.41767138, -0.43619350},
+  };
+
+  eigen::matrix b2 {
+          {0.70126605, -0.04930119},
+  };
+
+  eigen::matrix W3 {
+          {0.48064071, 0.27255860},
+          {0.62828392, -0.46361473},
+          {0.03374799, 0.31900334},
+  };
+
+  eigen::matrix b3 {
+          {0.63513678, 0.38339269, 0.55160141},
+  };
+
+  eigen::matrix Y1 {
+          {0.83230519, 0.43696851, 0.64011365},
+          {0.85604012, 0.50920480, 0.62670803},
+          {0.85494912, 0.50720882, 0.62683982},
+          {0.79398775, 0.31276742, 0.66452909},
+          {0.82472241, 0.41238976, 0.64494532},
+          {0.80814302, 0.35690492, 0.65614766},
+          {0.84344560, 0.47123733, 0.63368857},
+          {0.88660920, 0.60636216, 0.60793507},
+  };
+
+  eigen::matrix DY1 {
+          {0.05002797, 0.03369150, -0.08371948},
+          {-0.07503969, 0.03531802, 0.03972166},
+          {0.04995365, 0.03528138, -0.08523503},
+          {-0.07493190, 0.03094352, 0.04398838},
+          {0.05004884, -0.09186246, 0.04181362},
+          {0.05008351, 0.03189514, -0.08197865},
+          {0.05000016, -0.09053935, 0.04053919},
+          {-0.07524645, 0.03759364, 0.03765282},
+  };
+
+  eigen::matrix Y2 {
+          {0.83174109, 0.43568948, 0.64085758},
+          {0.85534370, 0.50746590, 0.62753892},
+          {0.85415339, 0.50516939, 0.62772632},
+          {0.79347223, 0.31169033, 0.66524172},
+          {0.82417202, 0.41116396, 0.64568043},
+          {0.80719775, 0.35445732, 0.65712065},
+          {0.84276420, 0.46957892, 0.63450277},
+          {0.88595855, 0.60472357, 0.60874206},
+  };
+
+  eigen::matrix DY2 {
+          {0.05001599, 0.03365936, -0.08367534},
+          {-0.07504924, 0.03527448, 0.03977477},
+          {0.04994442, 0.03523102, -0.08517544},
+          {-0.07494659, 0.03091708, 0.04402951},
+          {0.05003627, -0.09189315, 0.04185689},
+          {0.05006960, 0.03183842, -0.08190802},
+          {0.04998935, -0.09058045, 0.04059109},
+          {-0.07525353, 0.03755116, 0.03770237},
+  };
+
+  scalar lr = 0.01;
+  test_mlp_execution(X, T, W1, b1, W2, b2, W3, b3, Y1, DY1, Y2, DY2, lr);
 }
