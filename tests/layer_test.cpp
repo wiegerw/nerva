@@ -281,50 +281,13 @@ void test_mlp(multilayer_perceptron& M1, multilayer_perceptron& M2, const eigen:
   print_cpp_matrix("Y1", Y1);
 }
 
-inline
-eigen::matrix random_matrix(long rows, long cols, scalar a = 1, scalar b = 5)
-{
-  eigen::matrix ones = eigen::ones<eigen::matrix>(rows, cols);
-  scalar factor = (b - a) / scalar(2);
-
-  eigen::matrix A = eigen::matrix::Random(rows, cols);   // Range [-1, 1]
-  return factor * (A + ones) + a * ones;                 // Range [a, b]
-}
-
-inline
-Eigen::VectorXi random_integer_vector(long size, long N, std::mt19937& gen)
-{
-  if (size <= 0 || N <= 0)
-  {
-    throw std::invalid_argument("Size and N must be positive integers.");
-  }
-
-  std::uniform_int_distribution<> dist(0, N-1);
-  Eigen::VectorXi result(size);
-  for (int i = 0; i < size; ++i)
-  {
-    result[i] = dist(gen);
-  }
-  return result;
-}
-
-// Creates a one hot encoding. Each column contains one value 1 and all other values 0.
-inline
-eigen::matrix random_target(long rows, long cols)
-{
-  long size = rows;
-  long num_classes = cols;
-  Eigen::VectorXi targets = random_integer_vector(size, num_classes, nerva_rng);
-  return eigen::to_one_hot_rowwise(targets, num_classes);
-}
-
 void test_layers(long D, long N, long K)
 {
-  eigen::matrix X = random_matrix(N, D);
-  eigen::matrix Y = random_matrix(N, K);
-  eigen::matrix DY = random_matrix(N, K);
-  eigen::matrix W = random_matrix(K, D);
-  eigen::matrix b = random_matrix(1, K);
+  eigen::matrix X = eigen::random_matrix(N, D);
+  eigen::matrix Y = eigen::random_matrix(N, K);
+  eigen::matrix DY = eigen::random_matrix(N, K);
+  eigen::matrix W = eigen::random_matrix(K, D);
+  eigen::matrix b = eigen::random_matrix(1, K);
   test_layers(W, b, X, Y, DY);
 }
 
@@ -338,11 +301,11 @@ TEST_CASE("test_layers")
 template <typename LossFunction>
 void test_mlp(long D, long K1, long K2, long K3, long N, LossFunction loss)
 {
-  eigen::matrix X = random_matrix(N, D, 0.0, 1.0);  // the input of the MLP
-  eigen::matrix T = random_target(N, K3);  // the target
-  eigen::matrix W1 = random_matrix(K1, D, 0.0, 1.0);
-  eigen::matrix W2 = random_matrix(K2, K1, 0.0, 1.0);
-  eigen::matrix W3 = random_matrix(K3, K2, 0.0, 1.0);
+  eigen::matrix X = eigen::random_matrix(N, D, 0.0, 1.0);  // the input of the MLP
+  eigen::matrix T = eigen::random_target_rowwise(N, K3, nerva_rng);  // the target
+  eigen::matrix W1 = eigen::random_matrix(K1, D, 0.0, 1.0);
+  eigen::matrix W2 = eigen::random_matrix(K2, K1, 0.0, 1.0);
+  eigen::matrix W3 = eigen::random_matrix(K3, K2, 0.0, 1.0);
   eigen::matrix b1 = eigen::matrix::Zero(1, K1);
   eigen::matrix b2 = eigen::matrix::Zero(1, K2);
   eigen::matrix b3 = eigen::matrix::Zero(1, K3);

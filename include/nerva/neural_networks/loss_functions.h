@@ -731,7 +731,7 @@ auto parse_loss_function(const std::string& text) -> std::shared_ptr<loss_functi
   {
     return std::make_shared<softmax_cross_entropy_loss>();
   }
-  else if (text == "NegativeLogLikelyhood")
+  else if (text == "NegativeLogLikelihood")
   {
     return std::make_shared<negative_log_likelihood_loss>();
   }

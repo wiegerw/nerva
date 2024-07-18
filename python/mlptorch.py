@@ -70,7 +70,6 @@ class MLPPyTorch(nn.Module):
         self.layers = nn.ModuleList()
         for i in range(n):
             self.layers.append(nn.Linear(layer_sizes[i], layer_sizes[i + 1]))
-        #self._set_masks(layer_densities)
 
     def _set_masks(self, layer_densities, device):
         self.masks = []
@@ -252,7 +251,7 @@ def compute_loss_torch(M: MLPPyTorch, data_loader, device):
     return batch_size * total_loss / N
 
 
-def train_torch(M, train_loader, test_loader, epochs, device, debug=False):
+def train_torch(M: MLPPyTorch, train_loader, test_loader, epochs, device, debug=False):
     M.train()  # Set model in training mode
     watch = StopWatch()
     total_time = 0.0
@@ -493,7 +492,7 @@ def main():
         linear_layer_densities = [1.0] * (len(linear_layer_sizes) - 1)
 
     M = make_torch_model(args, linear_layer_sizes, linear_layer_densities, device)
-    #M = M.to(device)
+
     print('=== PyTorch model ===')
     print(M)
 
