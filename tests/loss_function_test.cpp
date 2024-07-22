@@ -29,104 +29,104 @@ void test_loss(const std::string& name, LossFunction loss, scalar expected, cons
 TEST_CASE("test_loss1")
 {
   eigen::matrix Y {
-          {5.774050024830831, 9.71037071742633, 9.126565598124968, 5.475153342545609},
-          {5.681969245023855, 8.530089783461575, 1.822699552668345, 4.805757511235067},
-          {4.239018833467587, 3.988667829565915, 3.083551447650138, 9.96952517674302}
+          {3.74540181, 9.50714311, 7.31993969, 5.98658524},
+          {1.56018725, 1.55994605, 0.58083706, 8.66176159},
+          {6.01115052, 7.08072607, 0.20584592, 9.69909855},
   };
 
   eigen::matrix T {
-          {0, 0, 0, 1},
-          {0, 0, 0, 1},
-          {0, 0, 0, 1}
+          {0.00000000, 0.00000000, 0.00000000, 1.00000000},
+          {0.00000000, 1.00000000, 0.00000000, 0.00000000},
+          {0.00000000, 1.00000000, 0.00000000, 0.00000000},
   };
 
-  test_loss("squared_error_loss", squared_error_loss(), 477.6448059082031, Y, T);
-  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 8.511181831359863, Y, T);
-  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -5.569567680358887, Y, T);
-  test_loss("cross_entropy_loss", cross_entropy_loss(), -5.569567680358887, Y, T);
-  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.012376843020319939, Y, T);
+  test_loss("squared_error_loss", squared_error_loss(), 428.19659423828125, Y, T);
+  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 13.471577644348145, Y, T);
+  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -4.191548824310303, Y, T);
+  test_loss("cross_entropy_loss", cross_entropy_loss(), -4.191548824310303, Y, T);
+  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.1940920650959015, Y, T);
 }
 
 TEST_CASE("test_loss2")
 {
   eigen::matrix Y {
-          {0.6757806856333822, 4.264501534853461, 5.375741750827645, 9.268165527321143},
-          {3.6768296513919405, 9.397688574768441, 7.715683430762863, 2.521534730815391},
-          {1.2469074064358607, 0.7608470966516776, 7.857775979827943, 3.6492335526277095}
+          {0.00778866, 9.92211560, 6.17481548, 6.11653199},
+          {0.07066405, 0.23062523, 5.24774708, 3.99861032},
+          {0.46665759, 9.73755521, 2.32771417, 0.90606525},
   };
 
   eigen::matrix T {
-          {1, 0, 0, 0},
-          {0, 0, 0, 1},
-          {1, 0, 0, 0}
+          {0.00000000, 1.00000000, 0.00000000, 0.00000000},
+          {0.00000000, 0.00000000, 1.00000000, 0.00000000},
+          {0.00000000, 0.00000000, 0.00000000, 1.00000000},
   };
 
-  test_loss("squared_error_loss", squared_error_loss(), 372.4724426269531, Y, T);
-  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 22.297447204589844, Y, T);
-  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -0.7536474466323853, Y, T);
-  test_loss("cross_entropy_loss", cross_entropy_loss(), -0.7536474466323853, Y, T);
-  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.7411784529685974, Y, T);
+  test_loss("squared_error_loss", squared_error_loss(), 289.69976806640625, Y, T);
+  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 9.138801574707031, Y, T);
+  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -3.8539209365844727, Y, T);
+  test_loss("cross_entropy_loss", cross_entropy_loss(), -3.8539209365844727, Y, T);
+  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.3446991443634033, Y, T);
 }
 
 TEST_CASE("test_loss3")
 {
   eigen::matrix Y {
-          {4.69019727804932, 5.512077572700557, 7.099039193062168, 9.95250032630546},
-          {4.500814898177444, 8.318578433650654, 8.608042984219857, 9.432328470144075},
-          {2.078325695323124, 3.8092099449870687, 9.574345266733257, 5.876624288834855}
+          {5.14234487, 5.92414610, 0.46450508, 6.07544891},
+          {1.70524207, 0.65051686, 9.48885542, 9.65632037},
+          {8.08397367, 3.04613839, 0.97672204, 6.84233058},
   };
 
   eigen::matrix T {
-          {0, 1, 0, 0},
-          {0, 0, 0, 1},
-          {0, 0, 1, 0}
+          {0.00000000, 0.00000000, 1.00000000, 0.00000000},
+          {0.00000000, 0.00000000, 0.00000000, 1.00000000},
+          {0.00000000, 0.00000000, 1.00000000, 0.00000000},
   };
 
-  test_loss("squared_error_loss", squared_error_loss(), 553.34765625, Y, T);
-  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 5.113748550415039, Y, T);
-  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -6.210171699523926, Y, T);
-  test_loss("cross_entropy_loss", cross_entropy_loss(), -6.210171699523926, Y, T);
-  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.004179154988378286, Y, T);
+  test_loss("squared_error_loss", squared_error_loss(), 388.4859619140625, Y, T);
+  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 14.40466594696045, Y, T);
+  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -1.4772768020629883, Y, T);
+  test_loss("cross_entropy_loss", cross_entropy_loss(), -1.4772768020629883, Y, T);
+  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.8072657585144043, Y, T);
 }
 
 TEST_CASE("test_loss4")
 {
   eigen::matrix Y {
-          {3.9599045725261064, 3.102108414298299, 7.699659225449492, 8.739525149622137},
-          {9.120160549855212, 4.9084471407520365, 8.453526188475614, 1.2784161679711974},
-          {1.7002435652586707, 0.8969082286872924, 2.33111232688162, 8.488613335489225}
+          {6.09996697, 8.33194928, 1.73364736, 3.91060668},
+          {1.82236170, 7.55361435, 4.25155932, 2.07941742},
+          {5.67700371, 0.31313389, 8.42284790, 4.49754188},
   };
 
   eigen::matrix T {
-          {0, 0, 1, 0},
-          {0, 0, 1, 0},
-          {0, 1, 0, 0}
+          {0.00000000, 1.00000000, 0.00000000, 0.00000000},
+          {0.00000000, 1.00000000, 0.00000000, 0.00000000},
+          {0.00000000, 0.00000000, 0.00000000, 1.00000000},
   };
 
-  test_loss("squared_error_loss", squared_error_loss(), 391.4203186035156, Y, T);
-  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 10.037822723388672, Y, T);
-  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -4.066957950592041, Y, T);
-  test_loss("cross_entropy_loss", cross_entropy_loss(), -4.066957950592041, Y, T);
-  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.3427145183086395, Y, T);
+  test_loss("squared_error_loss", squared_error_loss(), 293.43963623046875, Y, T);
+  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 4.163419723510742, Y, T);
+  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -5.645654201507568, Y, T);
+  test_loss("cross_entropy_loss", cross_entropy_loss(), -5.645654678344727, Y, T);
+  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.011839533224701881, Y, T);
 }
 
 TEST_CASE("test_loss5")
 {
   eigen::matrix Y {
-          {9.488208192808452, 0.8361163988866238, 6.222898432752989, 6.293502931619666},
-          {7.7647597814242975, 7.807260374698173, 3.7651580770745503, 7.719384322881056},
-          {4.853109172687492, 0.1442898395256863, 3.705933253579412, 0.10395986333454686}
+          {5.97900019, 9.21874243, 0.88492593, 1.95982943},
+          {0.45227384, 3.25330398, 3.88677351, 2.71349105},
+          {8.28737526, 3.56753391, 2.80934582, 5.42696129},
   };
 
   eigen::matrix T {
-          {1, 0, 0, 0},
-          {0, 0, 1, 0},
-          {1, 0, 0, 0}
+          {1.00000000, 0.00000000, 0.00000000, 0.00000000},
+          {1.00000000, 0.00000000, 0.00000000, 0.00000000},
+          {0.00000000, 0.00000000, 1.00000000, 0.00000000},
   };
 
-  test_loss("squared_error_loss", squared_error_loss(), 368.1732177734375, Y, T);
-  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 5.469424724578857, Y, T);
-  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -5.155459403991699, Y, T);
-  test_loss("cross_entropy_loss", cross_entropy_loss(), -5.155459403991699, Y, T);
-  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.030749253928661346, Y, T);
+  test_loss("squared_error_loss", squared_error_loss(), 261.8872375488281, Y, T);
+  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 12.886770248413086, Y, T);
+  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -2.027737617492676, Y, T);
+  test_loss("cross_entropy_loss", cross_entropy_loss(), -2.027737617492676, Y, T);
+  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.5533918142318726, Y, T);
 }
