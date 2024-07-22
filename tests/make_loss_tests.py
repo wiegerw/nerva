@@ -14,17 +14,15 @@ from nerva_torch.loss_functions_torch import *
 from test_utilities import random_float_matrix, print_cpp_matrix_declaration, make_target_rowwise, insert_text_in_file
 
 
-def make_loss_test(out: StringIO, name: int, K: int, a: float, b: float, index=0, rowwise=True):
+def make_loss_test(out: StringIO, N: int, K: int, a: float, b: float, index=0, rowwise=True):
     out.write(f'TEST_CASE("test_loss{index}")\n')
     out.write('{\n')
 
-    rows, cols = (N, K) if rowwise else (K, N)
+    Y = random_float_matrix(N, K, a, b)
+    print_cpp_matrix_declaration(out, 'Y', Y if rowwise else Y.T)
 
-    Y = random_float_matrix(rows, cols, a, b)
-    print_cpp_matrix_declaration(out, 'Y', Y)
-
-    T = make_target_rowwise(rows, cols) if rowwise else make_target_rowwise(rows, cols)
-    print_cpp_matrix_declaration(out, 'T', T)
+    T = make_target_rowwise(N, K)
+    print_cpp_matrix_declaration(out, 'T', T if rowwise else T.T)
 
     T = T.astype(float)
 
@@ -53,7 +51,7 @@ def make_loss_test(out: StringIO, name: int, K: int, a: float, b: float, index=0
     name = 'logistic_cross_entropy_loss'
     out.write(f'  test_loss("{name}", {name}(), {loss}, Y, T);\n')
 
-    out.write('}\n')
+    out.write('}\n\n')
 
 
 if __name__ == '__main__':
@@ -69,6 +67,6 @@ if __name__ == '__main__':
     for i in range(1, 6):
         N = 3  # the number of examples
         K = 4  # the number of outputs
-        make_loss_test(out, N, K, 0.000001, 10.0, index=i, rowwise=rowwise)
+        make_loss_test(out, N, K, 0.000001, 1.0, index=i, rowwise=rowwise)
     text = out.getvalue()
     insert_text_in_file('loss_function_test.cpp', text)

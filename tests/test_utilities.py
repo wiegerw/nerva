@@ -65,7 +65,7 @@ def print_cpp_matrix_declaration(out: StringIO, name: str, x: np.ndarray, num_de
     if x.ndim == 1:
         x = x.reshape(1, -1) if rowwise else x.reshape(-1, 1)
 
-    out.write(f"  eigen::matrix {name} {{")
+    out.write(f"  eigen::matrix {name} {{\n")
     for row in x:
         out.write(f"    {{")
         out.write(f"{row[0]:.{num_decimal_places}f}")
