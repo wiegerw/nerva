@@ -4,17 +4,17 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-/// \file nerva/neural_networks/batch_normalization_layers_colwise.h
+/// \file nerva/neural_networks/batch_normalization_layers.h
 /// \brief add your file description here.
 
 #pragma once
 
 #include "nerva/neural_networks/nerva_timer.h"
-#include "nerva/neural_networks/layers_colwise.h"
+#include "nerva/neural_networks/layers.h"
 #include "fmt/format.h"
 #include <random>
 
-namespace nerva::colwise {
+namespace nerva {
 
 struct batch_normalization_layer: public neural_network_layer
 {
@@ -208,6 +208,4 @@ void set_batch_normalization_layer_optimizer(BatchNormalizationLayer& layer, con
   layer.optimizer = make_composite_optimizer(optimizer_beta, optimizer_gamma);
 }
 
-} // namespace nerva::colwise
-
-#include "nerva/neural_networks/rowwise_colwise.inc"
+} // namespace nerva

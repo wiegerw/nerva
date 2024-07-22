@@ -9,10 +9,26 @@
 
 #pragma once
 
+// supported layers:
+//
+// Linear
+// Sigmoid
+// ReLU
+// Softmax
+// LogSoftmax
+// HyperbolicTangent
+// AllRelu(<alpha>)
+// LeakyRelu(<alpha>)
+// TReLU(<epsilon>)
+// SReLU(<al>,<tl>,<ar>,<tr>)
+//
+// BatchNorm
+// Dropout(<rate>)
+
 #include "nerva/neural_networks/parse_layer_utilities.h"
-#include "nerva/neural_networks/layers_colwise.h"
-#include "nerva/neural_networks/batch_normalization_layers_colwise.h"
-#include "nerva/neural_networks/dropout_layers_colwise.h"
+#include "nerva/neural_networks/layers.h"
+#include "nerva/neural_networks/batch_normalization_layers.h"
+#include "nerva/neural_networks/dropout_layers.h"
 #include "nerva/neural_networks/sgd_options.h"
 #include "nerva/utilities/parse_numbers.h"
 #include "nerva/utilities/parse.h"
@@ -22,7 +38,7 @@
 #include <numeric>
 #include <random>
 
-namespace nerva::colwise {
+namespace nerva {
 
 inline
 std::shared_ptr<dense_linear_layer> make_dense_linear_layer(std::size_t D,
@@ -496,6 +512,4 @@ std::shared_ptr<neural_network_layer> make_layer(const std::map<std::string, std
   throw std::runtime_error(fmt::format("Unknown layer type '{}'", type));
 }
 
-} // namespace nerva::colwise
-
-#include "nerva/neural_networks/rowwise_colwise.inc"
+} // namespace nerva

@@ -1,20 +1,20 @@
-// Copyright: Wieger Wesselink 2023
+// Copyright: Wieger Wesselink 2022
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-/// \file nerva/neural_networks/multilayer_perceptron_colwise.h
+/// \file nerva/neural_networks/multilayer_perceptron.h
 /// \brief add your file description here.
 
 #pragma once
 
-#include "nerva/neural_networks/batch_normalization_layers_colwise.h"
+#include "nerva/neural_networks/batch_normalization_layers.h"
 #include "nerva/neural_networks/check_gradients.h"
-#include "nerva/neural_networks/layers_colwise.h"
+#include "nerva/neural_networks/layers.h"
 #include "nerva/neural_networks/nerva_timer.h"
 
-namespace nerva::colwise {
+namespace nerva {
 
 struct multilayer_perceptron
 {
@@ -129,6 +129,4 @@ struct multilayer_perceptron
   }
 };
 
-} // namespace nerva::colwise
-
-#include "nerva/neural_networks/rowwise_colwise.inc"
+} // namespace nerva

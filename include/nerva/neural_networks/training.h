@@ -4,7 +4,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-/// \file nerva/neural_networks/training_colwise.h
+/// \file nerva/neural_networks/training.h
 /// \brief add your file description here.
 
 #pragma once
@@ -13,7 +13,7 @@
 #include "nerva/datasets/dataset.h"
 #include "nerva/neural_networks/eigen.h"
 #include "nerva/neural_networks/learning_rate_schedulers.h"
-#include "nerva/neural_networks/loss_function.h"
+#include "nerva/neural_networks/loss_functions.h"
 #include "nerva/neural_networks/mlp_algorithms.h"
 #include "nerva/neural_networks/nerva_timer.h"
 #include "nerva/neural_networks/regrow.h"
@@ -26,7 +26,7 @@
 #include <algorithm>
 #include <iomanip>
 
-namespace nerva::colwise {
+namespace nerva {
 
 template <typename Matrix>
 long example_count(const Matrix& X)
@@ -136,12 +136,11 @@ void compute_statistics(multilayer_perceptron& M,
   std::cout << std::endl;
 }
 
-template <typename DataSet = datasets::dataset<datasets::dataset_orientation::colwise>>
 class stochastic_gradient_descent_algorithm
 {
   protected:
     multilayer_perceptron& M;
-    DataSet& data;
+    datasets::dataset& data;
     const sgd_options& options;
     const std::shared_ptr<loss_function>& loss;
     const std::shared_ptr<learning_rate_scheduler>& learning_rate;
@@ -150,7 +149,7 @@ class stochastic_gradient_descent_algorithm
 
   public:
     stochastic_gradient_descent_algorithm(multilayer_perceptron& M_,
-                                          DataSet& data_,
+                                          datasets::dataset& data_,
                                           const sgd_options& options_,
                                           const std::shared_ptr<loss_function>& loss_,
                                           const std::shared_ptr<learning_rate_scheduler>& learning_rate_,
@@ -285,6 +284,4 @@ class stochastic_gradient_descent_algorithm
     }
 };
 
-} // namespace nerva::colwise
-
-#include "nerva/neural_networks/rowwise_colwise.inc"
+} // namespace nerva

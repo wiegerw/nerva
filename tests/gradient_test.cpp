@@ -9,19 +9,37 @@
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 
+// Gradient tests are done with double precision
+#define NERVA_USE_DOUBLE
+
 #include "doctest/doctest.h"
-#include "nerva/neural_networks/batch_normalization_layers_colwise.h"
+#include "nerva/neural_networks/batch_normalization_layers.h"
 #include "nerva/neural_networks/check_gradients.h"
 #include "nerva/datasets/make_dataset.h"
-#include "nerva/neural_networks/layers_colwise.h"
-#include "nerva/neural_networks/loss_functions_colwise.h"
+#include "nerva/neural_networks/layers.h"
+#include "nerva/neural_networks/loss_functions.h"
 #include "nerva/neural_networks/mlp_algorithms.h"
+#include "nerva/neural_networks/parse_layer.h"
+#include "nerva/neural_networks/random.h"
 #include "nerva/neural_networks/weights.h"
 #include "nerva/utilities/logger.h"
 #include <random>
 #include <type_traits>
 
 using namespace nerva;
+
+inline
+void print_mlp(const std::string& name, const multilayer_perceptron& M)
+{
+  std::cout << "==================================\n";
+  std::cout << "   " << name << "\n";
+  std::cout << "==================================\n";
+  for (const auto& layer: M.layers)
+  {
+    std::cout << layer->to_string() << std::endl;
+  }
+  std::cout << std::endl;
+}
 
 template <typename Layer, typename LossFunction>
 void test_linear_layer(Layer& layer, const eigen::matrix& X, const eigen::matrix& T, LossFunction loss)
@@ -33,8 +51,8 @@ void test_linear_layer(Layer& layer, const eigen::matrix& X, const eigen::matrix
   layer.X = X;
   eigen::matrix Y(K, N);
   layer.feedforward(Y);
-  eigen::matrix dY = loss.gradient(Y, T);
-  layer.backpropagate(Y, dY);
+  eigen::matrix DY = loss.gradient(Y, T);
+  layer.backpropagate(Y, DY);
 
   auto f = [&]()
   {
@@ -59,8 +77,8 @@ void test_affine_layer(Layer& layer, const eigen::matrix& X, const eigen::matrix
   layer.X = X;
   eigen::matrix Y(K, N);
   layer.feedforward(Y);
-  eigen::matrix dY = loss.gradient(Y, T);
-  layer.backpropagate(Y, dY);
+  eigen::matrix DY = loss.gradient(Y, T);
+  layer.backpropagate(Y, DY);
 
   auto f = [&]()
   {
@@ -73,13 +91,8 @@ void test_affine_layer(Layer& layer, const eigen::matrix& X, const eigen::matrix
   CHECK(check_gradient("Dgamma", f, layer.gamma, layer.Dgamma, h));
 }
 
-template <typename LossFunction>
-void test_mlp(multilayer_perceptron& M, const eigen::matrix& X, const eigen::matrix& T, LossFunction loss)
+void test_mlp(multilayer_perceptron& M, const eigen::matrix& X, const eigen::matrix& T, std::shared_ptr<loss_function> loss)
 {
-  std::cout << "=================" << std::endl;
-  std::cout << "=== test_mlp ===" << std::endl;
-  std::cout << "=================" << std::endl;
-
   long K = T.rows();
   long N = X.cols();
   eigen::matrix Y(K, N);
@@ -87,21 +100,13 @@ void test_mlp(multilayer_perceptron& M, const eigen::matrix& X, const eigen::mat
   // do a feedforward + backpropagate pass to compute Db and DW
   M.layers.front()->X = X;
   M.feedforward(Y);
-  eigen::matrix dY = loss.gradient(Y, T);
-  M.backpropagate(Y, dY);
-
-  if (false)
-  {
-    print_cpp_matrix("X", X);
-    print_cpp_matrix("T", T);
-    print_cpp_matrix("Y", Y);
-    print_cpp_matrix("dY", dY);
-  }
+  eigen::matrix DY = loss->gradient(Y, T);
+  M.backpropagate(Y, DY);
 
   auto f = [&]()
   {
     M.feedforward(Y);
-    return loss(Y, T);
+    return loss->value(Y, T);
   };
 
   // check the gradients of b and W
@@ -127,742 +132,379 @@ void test_mlp(multilayer_perceptron& M, const eigen::matrix& X, const eigen::mat
   }
 }
 
-TEST_CASE("test_linear_layer1")
+template <typename LossFunction>
+void test_linear_layer(long D, long K, long N, LossFunction loss)
 {
-  eigen::matrix X {
-    {1, 2, 7},
-    {3, 4, 5}
-  };
+  eigen::matrix X = eigen::random_matrix(N, D);
+  eigen::matrix Y = eigen::random_matrix(N, K);
+  eigen::matrix T = eigen::random_target_rowwise(N, K, nerva_rng);
+  eigen::matrix W = eigen::random_matrix(K, D);
+  eigen::matrix b = eigen::random_matrix(1, K);
 
-  eigen::matrix T {
-    {1, 1, 0},
-    {0, 0, 1}
-  };
+  {
+    linear_layer<eigen::matrix> layer(D, K, N);
+    layer.W = W;
+    layer.b = b;
+    test_linear_layer(layer, X, T, loss);
+  }
 
-  eigen::matrix W {
-    {3, 4},
-    {5, 6}
-  };
+  {
+    relu_layer<eigen::matrix> layer(D, K, N);
+    layer.W = W;
+    layer.b = b;
+    test_linear_layer(layer, X, T, loss);
+  }
 
-  eigen::vector b {{7, 2}};
+  {
+    sigmoid_layer<eigen::matrix> layer(D, K, N);
+    layer.W = W;
+    layer.b = b;
+    test_linear_layer(layer, X, T, loss);
+  }
 
-  long D = X.rows();
-  long N = X.cols();
-  long K = W.cols();
-
-  squared_error_loss loss1;
-  cross_entropy_loss loss2;
-  logistic_cross_entropy_loss loss3;
-  softmax_cross_entropy_loss loss4;
-
-  linear_layer<eigen::matrix> layer1(D, K, N);
-  layer1.W = W;
-  layer1.b = b;
-  test_linear_layer(layer1, X, T, loss1);
-  test_linear_layer(layer1, X, T, loss2);
-  test_linear_layer(layer1, X, T, loss3);
-  test_linear_layer(layer1, X, T, loss4);
-
-  relu_layer<eigen::matrix> layer2(D, K, N);
-  layer2.W = W;
-  layer2.b = b;
-  test_linear_layer(layer2, X, T, loss1);
-  test_linear_layer(layer2, X, T, loss2);
-  test_linear_layer(layer2, X, T, loss3);
-  test_linear_layer(layer2, X, T, loss4);
-
-  sigmoid_layer<eigen::matrix> layer3(D, K, N);
-  layer3.W = W;
-  layer3.b = b;
-  test_linear_layer(layer3, X, T, loss1);
-  test_linear_layer(layer3, X, T, loss2);
-  test_linear_layer(layer3, X, T, loss3);
-  test_linear_layer(layer3, X, T, loss4);
-
-  softmax_layer<eigen::matrix> layer4(D, K, N);
-  layer4.W = W;
-  layer4.b = b;
-  test_linear_layer(layer4, X, T, loss1);
-  test_linear_layer(layer4, X, T, loss2);
-  test_linear_layer(layer4, X, T, loss3);
-  test_linear_layer(layer4, X, T, loss4);
+  {
+    softmax_layer<eigen::matrix> layer(D, K, N);
+    layer.W = W;
+    layer.b = b;
+    test_linear_layer(layer, X, T, loss);
+  }
 }
 
-TEST_CASE("test_linear_layer2")
+TEST_CASE("test_linear_layer")
 {
-  eigen::matrix X {
-    {-0.602793, 1,     -1    },
-    {  -1,      1,  0.0728062}
-  };
-
-  eigen::matrix T {
-    {0, 1, 1},
-    {1, 0, 0}
-  };
-
-  eigen::matrix W {
-    {0.047371,  0.465252},
-    {-0.511825,  0.401837}
-  };
-
-  eigen::vector b {{0, 0}};
-
-  long D = X.rows();
-  long N = X.cols();
-  long K = W.cols();
-
-  squared_error_loss loss1;
-
-  relu_layer<eigen::matrix> layer1(D, K, N);
-  layer1.W = W;
-  layer1.b = b;
-  test_linear_layer(layer1, X, T, loss1);
+  std::vector<std::tuple<long, long, long>> parameters = { {3, 2, 2}, {2, 3, 2}, {2, 2, 3} };
+  for (const auto& param : parameters)
+  {
+    auto [D, K, N] = param;
+    test_linear_layer(D, K, N, squared_error_loss());
+    test_linear_layer(D, K, N, cross_entropy_loss());
+    test_linear_layer(D, K, N, logistic_cross_entropy_loss());
+    test_linear_layer(D, K, N, softmax_cross_entropy_loss());
+    test_linear_layer(D, K, N, negative_log_likelihood_loss());
+  }
 }
 
-TEST_CASE("test_dropout_layer1")
+template <typename LossFunction>
+void test_dropout_layer(long D, long K, long N, scalar p, LossFunction loss)
 {
-  eigen::matrix X {
-    {1, 2, 7},
-    {3, 4, 5}
-  };
-
-  eigen::matrix T {
-    {1, 1, 0},
-    {0, 0, 1}
-  };
-
-  eigen::matrix W {
-    {3, 4},
-    {5, 6}
-  };
-
-  eigen::vector b {{7, 2}};
-
-  long D = X.rows();
-  long N = X.cols();
-  long K = W.cols();
-
-  squared_error_loss loss1;
-  cross_entropy_loss loss2;
-  logistic_cross_entropy_loss loss3;
-  softmax_cross_entropy_loss loss4;
-
-  scalar p = 0.8;
+  eigen::matrix X = eigen::random_matrix(N, D);
+  eigen::matrix T = eigen::random_target_rowwise(N, K, nerva_rng);
+  eigen::matrix W = eigen::random_matrix(K, D);
+  eigen::matrix b = eigen::random_matrix(1, K);
 
   linear_dropout_layer<eigen::matrix> layer1(D, K, N, p);
   layer1.W = W;
   layer1.b = b;
-  test_linear_layer(layer1, X, T, loss1);
-  // test_linear_layer(layer1, X, T, loss2);  // TODO: fails with NaN
-  test_linear_layer(layer1, X, T, loss3);
-  test_linear_layer(layer1, X, T, loss4);
+  test_linear_layer(layer1, X, T, loss);
 
   relu_dropout_layer<eigen::matrix> layer2(D, K, N, p);
   layer2.W = W;
   layer2.b = b;
-  test_linear_layer(layer2, X, T, loss1); // DW[1,1] =    3.95816e-10    4.26326e-10              0              0              0              0
-  test_linear_layer(layer2, X, T, loss2); // DW[1,1] =   -5.20811e-11   -4.44089e-11              0              0              0              0
-  test_linear_layer(layer2, X, T, loss3);
-  test_linear_layer(layer2, X, T, loss4);
+  test_linear_layer(layer2, X, T, loss);
 
   sigmoid_dropout_layer<eigen::matrix> layer3(D, K, N, p);
   layer3.W = W;
   layer3.b = b;
-  test_linear_layer(layer3, X, T, loss1);
-  test_linear_layer(layer3, X, T, loss2);
-  test_linear_layer(layer3, X, T, loss3);
-  test_linear_layer(layer3, X, T, loss4);
+  test_linear_layer(layer3, X, T, loss);
 }
 
-TEST_CASE("test_batch_normalization_layer1")
+TEST_CASE("test_dropout_layer")
 {
-  eigen::matrix X {
-    {1, 2, 7},
-    {3, 4, 5}
-  };
+  scalar p = 0.8;
 
-  eigen::matrix T {
-    {1, 1, 0},
-    {0, 0, 1}
-  };
-
-  eigen::matrix W {
-    {3, 4},
-    {5, 6}
-  };
-
-  eigen::vector b {{7, 2}};
-
-  long D = X.rows();
-  long N = X.cols();
-
-  squared_error_loss loss1;
-  cross_entropy_loss loss2;
-  logistic_cross_entropy_loss loss3;
-  softmax_cross_entropy_loss loss4;
-
-  batch_normalization_layer layer1(D, N);
-  test_affine_layer(layer1, X, T, loss1);
-  // test_affine_layer(layer1, X, T, loss2); // TODO: this fails with NaN
-  test_affine_layer(layer1, X, T, loss3);
-  test_affine_layer(layer1, X, T, loss4);
+  std::vector<std::tuple<long, long, long>> parameters = { {3, 2, 2}, {2, 3, 2}, {2, 2, 3} };
+  for (const auto& param : parameters)
+  {
+    auto [D, K, N] = param;
+    test_dropout_layer(D, K, N, p, squared_error_loss());
+    test_dropout_layer(D, K, N, p, cross_entropy_loss());
+    test_dropout_layer(D, K, N, p, logistic_cross_entropy_loss());
+    test_dropout_layer(D, K, N, p, softmax_cross_entropy_loss());
+    test_dropout_layer(D, K, N, p, negative_log_likelihood_loss());
+  }
 }
 
-TEST_CASE("test_affine_layer1")
+template <typename LossFunction>
+void test_batch_normalization_layer(long D, long N, LossFunction loss)
 {
-  eigen::matrix X {
-    {1, 2, 7},
-    {3, 4, 5}
-  };
+  long K = D;
+  eigen::matrix X = eigen::random_matrix(N, D);
+  eigen::matrix T = eigen::random_target_rowwise(N, K, nerva_rng);
+  eigen::matrix beta = eigen::random_matrix(1, K);
+  eigen::matrix gamma = eigen::random_matrix(1, K);
 
-  eigen::matrix T {
-    {1, 1, 0},
-    {0, 0, 1}
-  };
+  {
+    affine_layer layer(D, N);
+    layer.beta = beta;
+    layer.gamma = gamma;
+    test_affine_layer(layer, X, T, loss);
+  }
 
-  eigen::matrix beta {
-    {3},
-    {1}
-  };
-
-  eigen::matrix gamma {
-    {2},
-    {5}
-  };
-
-  long D = X.rows();
-  long N = X.cols();
-
-  squared_error_loss loss1;
-  cross_entropy_loss loss2;
-  logistic_cross_entropy_loss loss3;
-  softmax_cross_entropy_loss loss4;
-
-  affine_layer layer1(D, N);
-  layer1.beta = beta;
-  layer1.gamma = gamma;
-
-  test_affine_layer(layer1, X, T, loss1);
-  test_affine_layer(layer1, X, T, loss2);
-  test_affine_layer(layer1, X, T, loss3);
-  test_affine_layer(layer1, X, T, loss4);
+  {
+    batch_normalization_layer layer(D, N);
+    layer.beta = beta;
+    layer.gamma = gamma;
+    test_affine_layer(layer, X, T, loss);
+  }
 }
 
-TEST_CASE("test_mlp1")
+TEST_CASE("test_batch_normalization_layer")
 {
-  eigen::matrix X {
-    {1, 2, 7, 8},
-    {3, 4, 5, 2}
-  };
+  std::vector<std::tuple<long, long>> parameters = { {2, 3}, {3, 2} };
+  for (const auto& param : parameters)
+  {
+    auto [D, N] = param;
+    test_batch_normalization_layer(D, N, squared_error_loss());
+    test_batch_normalization_layer(D, N, logistic_cross_entropy_loss());
+    test_batch_normalization_layer(D, N, softmax_cross_entropy_loss());
+    // test_batch_normalization_layer(D, N,  cross_entropy_loss());
+    // test_batch_normalization_layer(D, N, negative_log_likelihood_loss());
+  }
+}
 
-  eigen::matrix T {
-    {1, 1, 0, 1},
-    {0, 0, 1, 0}
-  };
+inline
+void construct_mlp(multilayer_perceptron& M,
+                   const std::vector<std::string>& layer_specifications,
+                   const std::vector<std::size_t>& linear_layer_sizes,
+                   const std::vector<double>& linear_layer_densities,
+                   const std::vector<double>& linear_layer_dropouts,
+                   const std::vector<std::string>& linear_layer_weights,
+                   const std::vector<std::string>& optimizers,
+                   long batch_size
+                  )
+{
+  M.layers = make_layers(layer_specifications, linear_layer_sizes, linear_layer_densities, linear_layer_dropouts, linear_layer_weights, optimizers, batch_size, nerva_rng);
+}
 
-  eigen::matrix W1 {
-    {3, 4},
-    {5, 6}
-  };
-  eigen::vector b1 {{7, 2}};
-
-  eigen::matrix W2 {
-    {1, 1},
-    {2, 9}
-  };
-  eigen::vector b2 {{1, 4}};
-
-  eigen::matrix W3 {
-    {4, 1},
-    {2, 4}
-  };
-  eigen::vector b3 {{3, 2}};
-
-  long batch_size = 4;
+TEST_CASE("test_mlp0")
+{
   multilayer_perceptron M;
+  std::vector<std::size_t> linear_layer_sizes = {2, 2, 2, 2};
+  long N = 5; // the number of examples
+  long batch_size = N;
+  long D = linear_layer_sizes.front();
+  long K = linear_layer_sizes.back();
 
-  auto layer1 = std::make_shared<relu_layer<eigen::matrix>>(2, 2, batch_size);
-  M.layers.push_back(layer1);
-  layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
-  layer1->W = W1;
-  layer1->b = b1;
+  construct_mlp(M,
+                {"ReLU", "ReLU", "Linear"},
+                linear_layer_sizes,
+                {1.0, 1.0, 1.0},
+                {0.0, 0.0, 0.0},
+                {"XavierNormalized", "XavierNormalized", "XavierNormalized"},
+                {"GradientDescent", "GradientDescent", "GradientDescent"},
+                batch_size
+                );
+  print_mlp("test_mlp0", M);
 
-  auto layer2 = std::make_shared<relu_layer<eigen::matrix>>(2, 2, batch_size);
-  M.layers.push_back(layer2);
-  layer2->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer2->W, layer2->DW, layer2->b, layer2->Db);
-  layer2->W = W2;
-  layer2->b = b2;
+  eigen::matrix X = eigen::random_matrix(N, D);
+  eigen::matrix T = eigen::random_target_rowwise(N, K, nerva_rng);
 
-  auto layer3 = std::make_shared<linear_layer<eigen::matrix>>(2, 2, batch_size);
-  M.layers.push_back(layer3);
-  layer3->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer3->W, layer3->DW, layer3->b, layer3->Db);
-  layer3->W = W3;
-  layer3->b = b3;
-
-  squared_error_loss loss1;
-  cross_entropy_loss loss2;
-  logistic_cross_entropy_loss loss3;
-  softmax_cross_entropy_loss loss4;
-
-  test_linear_layer(*layer1, X, T, loss1);
-  test_linear_layer(*layer1, X, T, loss2);
-  test_linear_layer(*layer1, X, T, loss3);
-  test_linear_layer(*layer1, X, T, loss4);
-
-  test_mlp(M, X, T, loss1);
-  test_mlp(M, X, T, loss2);
-  test_mlp(M, X, T, loss3);
-  // test_mlp(M, X, T, loss4); // TODO: this leads to numerical problems: log(0)
+  std::vector<std::string> loss_functions = {"SquaredError", "LogisticCrossEntropy", "SoftmaxCrossEntropy"};
+  for (const std::string& loss_function_text: loss_functions)
+  {
+    std::cout << "loss = " << loss_function_text << std::endl;
+    std::shared_ptr<loss_function> loss = parse_loss_function(loss_function_text);
+    test_mlp(M, X, T, loss);
+  }
 }
 
 TEST_CASE("test_dropout_relu")
 {
-  std::mt19937 rng{78147218};
-  scalar p = 0.8;
-
-  eigen::matrix X {
-    {1, 2, 5},
-    {3, 4, 1}
-  };
-
-  eigen::matrix T {
-    {1, 0, 0},
-    {0, 1, 1}
-  };
-
-  eigen::matrix W1 {
-    {3, 4},
-    {5, 6}
-  };
-  eigen::vector b1 {{7, 2}};
-
-  eigen::matrix W2 {
-    {1, 1},
-    {2, 9}
-  };
-  eigen::vector b2 {{1, 4}};
-
-  eigen::matrix W3 {
-    {4, 1},
-    {2, 4}
-  };
-  eigen::vector b3 {{3, 2}};
-
-  long N = X.cols();
   multilayer_perceptron M;
+  std::vector<std::size_t> linear_layer_sizes = {2, 2, 2, 2};
+  long N = 3; // the number of examples
+  long batch_size = N;
+  long D = linear_layer_sizes.front();
+  long K = linear_layer_sizes.back();
 
-  auto layer1 = std::make_shared<relu_dropout_layer<eigen::matrix>>(2, 2, N, p);
-  M.layers.push_back(layer1);
-  layer1->W = W1;
-  layer1->b = b1;
+  construct_mlp(M,
+                {"ReLU", "ReLU", "Linear"},
+                linear_layer_sizes,
+                {1.0, 1.0, 1.0},
+                {0.5, 0.0, 0.0},
+                {"XavierNormalized", "XavierNormalized", "XavierNormalized"},
+                {"GradientDescent", "GradientDescent", "GradientDescent"},
+                batch_size
+  );
+  renew_dropout_masks(M, nerva_rng);  // TODO: is this needed?
 
-  auto layer2 = std::make_shared<relu_layer<eigen::matrix>>(2, 2, N);
-  M.layers.push_back(layer2);
-  layer2->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer2->W, layer2->DW, layer2->b, layer2->Db);
-  layer2->W = W2;
-  layer2->b = b2;
+  eigen::matrix X = eigen::random_matrix(N, D);
+  eigen::matrix T = eigen::random_target_rowwise(N, K, nerva_rng);
 
-  auto layer3 = std::make_shared<linear_layer<eigen::matrix>>(2, 2, N);
-  M.layers.push_back(layer3);
-  layer3->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer3->W, layer3->DW, layer3->b, layer3->Db);
-  layer3->W = W3;
-  layer3->b = b3;
-
-  renew_dropout_masks(M, rng);
-  auto dlayer = dynamic_cast<relu_dropout_layer<eigen::matrix>*>(M.layers[0].get());
-  if (dlayer)
+  print_mlp("test_dropout_relu", M);
+  std::vector<std::string> loss_functions = {"SquaredError", "LogisticCrossEntropy", "SoftmaxCrossEntropy"};
+  for (const std::string& loss_function_text: loss_functions)
   {
-    std::cout << "relu dropout layer" << std::endl;
-    std::cout << dlayer->R << std::endl;
+    std::cout << "loss = " << loss_function_text << std::endl;
+    std::shared_ptr<loss_function> loss = parse_loss_function(loss_function_text);
+    test_mlp(M, X, T, loss);
   }
-
-  squared_error_loss loss1;
-  cross_entropy_loss loss2;
-  logistic_cross_entropy_loss loss3;
-  softmax_cross_entropy_loss loss4;
-
-  test_mlp(M, X, T, loss1);
-  test_mlp(M, X, T, loss2);
-  test_mlp(M, X, T, loss3);
-  // test_mlp(M, X, T, loss4); // TODO: fails due to overflow
 }
 
 TEST_CASE("test_dropout_linear")
 {
-  std::mt19937 rng{78147218};
-  scalar p = 0.8;
-
-  eigen::matrix X {
-    {1, 2, 5},
-    {3, 4, 1}
-  };
-
-  eigen::matrix T {
-    {1, 0, 0},
-    {0, 1, 1}
-  };
-
-  eigen::matrix W1 {
-    {3, 4},
-    {5, 6}
-  };
-  eigen::vector b1 {{7, 2}};
-
-  eigen::matrix W2 {
-    {1, 1},
-    {2, 9}
-  };
-  eigen::vector b2 {{1, 4}};
-
-  eigen::matrix W3 {
-    {4, 1},
-    {2, 4}
-  };
-  eigen::vector b3 {{3, 2}};
-
-  long N = X.cols();
   multilayer_perceptron M;
+  std::vector<std::size_t> linear_layer_sizes = {2, 2, 2, 2};
+  long N = 3; // the number of examples
+  long batch_size = N;
+  long D = linear_layer_sizes.front();
+  long K = linear_layer_sizes.back();
+  double p = 0.8;
 
-  auto layer1 = std::make_shared<relu_layer<eigen::matrix>>(2, 2, N);
-  M.layers.push_back(layer1);
-  layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
-  layer1->W = W1;
-  layer1->b = b1;
+  construct_mlp(M,
+                {"ReLU", "ReLU", "Linear"},
+                linear_layer_sizes,
+                {1.0, 1.0, 1.0},
+                {0.0, 0.0, p},
+                {"Xavier", "Xavier", "Xavier"},
+                {"GradientDescent", "GradientDescent", "GradientDescent"},
+                batch_size
+  );
+  renew_dropout_masks(M, nerva_rng);  // TODO: is this needed?
 
-  auto layer2 = std::make_shared<relu_layer<eigen::matrix>>(2, 2, N);
-  M.layers.push_back(layer2);
-  layer2->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer2->W, layer2->DW, layer2->b, layer2->Db);
-  layer2->W = W2;
-  layer2->b = b2;
+  eigen::matrix X = eigen::random_matrix(N, D);
+  eigen::matrix T = eigen::random_target_rowwise(N, K, nerva_rng);
 
-  auto layer3 = std::make_shared<linear_dropout_layer<eigen::matrix>>(2, 2, N, p);
-  M.layers.push_back(layer3);
-  layer3->W = W3;
-  layer3->b = b3;
-
-  renew_dropout_masks(M, rng);
-  auto dlayer = dynamic_cast<linear_dropout_layer<eigen::matrix>*>(M.layers[2].get());
-  if (dlayer)
+  print_mlp("test_dropout_linear", M);
+  std::vector<std::string> loss_functions = {"SquaredError", "LogisticCrossEntropy", "SoftmaxCrossEntropy"};
+  for (const std::string& loss_function_text: loss_functions)
   {
-    std::cout << "linear dropout layer" << std::endl;
-    std::cout << dlayer->R << std::endl;
+    std::cout << "loss = " << loss_function_text << std::endl;
+    std::shared_ptr<loss_function> loss = parse_loss_function(loss_function_text);
+    test_mlp(M, X, T, loss);
   }
-
-  squared_error_loss loss1;
-  cross_entropy_loss loss2;
-  logistic_cross_entropy_loss loss3;
-  softmax_cross_entropy_loss loss4;
-
-  test_mlp(M, X, T, loss1);
-  test_mlp(M, X, T, loss2);
-  test_mlp(M, X, T, loss3);
-  // test_mlp(M, X, T, loss4); // TODO: fails due to overflow
 }
 
 TEST_CASE("test_dropout_sigmoid")
 {
-  std::mt19937 rng{78147218};
-  scalar p = 0.8;
-
-  eigen::matrix X {
-    {1, 2, 5},
-    {3, 4, 1}
-  };
-
-  eigen::matrix T {
-    {1, 0, 0},
-    {0, 1, 1}
-  };
-
-  eigen::matrix W1 {
-    {3, 4},
-    {5, 6}
-  };
-  eigen::vector b1 {{7, 2}};
-
-  eigen::matrix W2 {
-    {1, 1},
-    {2, 9}
-  };
-  eigen::vector b2 {{1, 4}};
-
-  eigen::matrix W3 {
-    {4, 1},
-    {2, 4}
-  };
-  eigen::vector b3 {{3, 2}};
-
-  long N = X.cols();
   multilayer_perceptron M;
+  std::vector<std::size_t> linear_layer_sizes = {2, 2, 2, 2};
+  long N = 3; // the number of examples
+  long batch_size = N;
+  long D = linear_layer_sizes.front();
+  long K = linear_layer_sizes.back();
+  double p = 0.8;
 
-  auto layer1 = std::make_shared<sigmoid_dropout_layer<eigen::matrix>>(2, 2, N, p);
-  M.layers.push_back(layer1);
-  layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
-  layer1->W = W1;
-  layer1->b = b1;
+  construct_mlp(M,
+                {"Sigmoid", "Sigmoid", "Linear"},
+                linear_layer_sizes,
+                {1.0, 1.0, 1.0},
+                {p, 0.0, 0.0},
+                {"Xavier", "Xavier", "Xavier"},
+                {"GradientDescent", "GradientDescent", "GradientDescent"},
+                batch_size
+  );
+  renew_dropout_masks(M, nerva_rng);  // TODO: is this needed?
 
-  auto layer2 = std::make_shared<sigmoid_layer<eigen::matrix>>(2, 2, N);
-  M.layers.push_back(layer2);
-  layer2->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer2->W, layer2->DW, layer2->b, layer2->Db);
-  layer2->W = W2;
-  layer2->b = b2;
+  eigen::matrix X = eigen::random_matrix(N, D);
+  eigen::matrix T = eigen::random_target_rowwise(N, K, nerva_rng);
 
-  auto layer3 = std::make_shared<linear_layer<eigen::matrix>>(2, 2, N);
-  M.layers.push_back(layer3);
-  layer3->W = W3;
-  layer3->b = b3;
-
-  renew_dropout_masks(M, rng);
-  auto dlayer = dynamic_cast<sigmoid_dropout_layer<eigen::matrix>*>(M.layers[0].get());
-  if (dlayer)
+  print_mlp("test_dropout_sigmoid", M);
+  std::vector<std::string> loss_functions = {"SquaredError", "LogisticCrossEntropy", "SoftmaxCrossEntropy"};
+  for (const std::string& loss_function_text: loss_functions)
   {
-    std::cout << "sigmoid dropout layer" << std::endl;
-    std::cout << dlayer->R << std::endl;
+    std::cout << "loss = " << loss_function_text << std::endl;
+    std::shared_ptr<loss_function> loss = parse_loss_function(loss_function_text);
+    test_mlp(M, X, T, loss);
   }
-
-  squared_error_loss loss1;
-  cross_entropy_loss loss2;
-  logistic_cross_entropy_loss loss3;
-  softmax_cross_entropy_loss loss4;
-
-  test_mlp(M, X, T, loss1);
-  test_mlp(M, X, T, loss2);
-  test_mlp(M, X, T, loss3);
-  // test_mlp(M, X, T, loss4); // TODO: fails due to overflow
 }
 
 TEST_CASE("test_batch_normalization1")
 {
-  eigen::matrix X {
-    {1, 2, 7, 8},
-    {3, 4, 5, 2}
-  };
-
-  eigen::matrix T {
-    {1, 1, 0, 1},
-    {0, 0, 1, 0}
-  };
-
-  eigen::matrix W1 {
-    {3, 4},
-    {5, 6}
-  };
-  eigen::vector b1 {{7, 2}};
-
-  eigen::matrix W2 {
-    {1, 1},
-    {2, 9}
-  };
-  eigen::vector b2 {{1, 4}};
-
-  eigen::matrix W3 {
-    {4, 1},
-    {2, 4}
-  };
-  eigen::vector b3 {{3, 2}};
-
-  long N = X.cols();
   multilayer_perceptron M;
+  std::vector<std::size_t> linear_layer_sizes = {2, 2, 2, 2};
+  long N = 4; // the number of examples
+  long batch_size = N;
+  long D = linear_layer_sizes.front();
+  long K = linear_layer_sizes.back();
 
-  M.layers.push_back(std::make_shared<batch_normalization_layer>(2, N));
+  construct_mlp(M,
+                {"BatchNorm", "ReLU", "ReLU", "Linear"},
+                linear_layer_sizes,
+                {1.0, 1.0, 1.0},
+                {0.0, 0.0, 0.0},
+                {"Xavier", "Xavier", "Xavier"},
+                {"GradientDescent", "GradientDescent", "GradientDescent", "GradientDescent"},
+                batch_size
+  );
 
-  auto layer1 = std::make_shared<relu_layer<eigen::matrix>>(2, 2, N);
-  M.layers.push_back(layer1);
-  layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
-  layer1->W = W1;
-  layer1->b = b1;
+  eigen::matrix X = eigen::random_matrix(N, D);
+  eigen::matrix T = eigen::random_target_rowwise(N, K, nerva_rng);
 
-  auto layer2 = std::make_shared<relu_layer<eigen::matrix>>(2, 2, N);
-  M.layers.push_back(layer2);
-  layer2->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer2->W, layer2->DW, layer2->b, layer2->Db);
-  layer2->W = W2;
-  layer2->b = b2;
-
-  auto layer3 = std::make_shared<linear_layer<eigen::matrix>>(2, 2, N);
-  M.layers.push_back(layer3);
-  layer3->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer3->W, layer3->DW, layer3->b, layer3->Db);
-  layer3->W = W3;
-  layer3->b = b3;
-
-  squared_error_loss loss1;
-  cross_entropy_loss loss2;
-  logistic_cross_entropy_loss loss3;
-  softmax_cross_entropy_loss loss4;
-
-  test_mlp(M, X, T, loss1);
-  test_mlp(M, X, T, loss2);
-  test_mlp(M, X, T, loss3);
-  test_mlp(M, X, T, loss4);
+  print_mlp("test_batch_normalization1", M);
+  std::vector<std::string> loss_functions = {"SquaredError", "LogisticCrossEntropy", "SoftmaxCrossEntropy"};
+  for (const std::string& loss_function_text: loss_functions)
+  {
+    std::cout << "loss = " << loss_function_text << std::endl;
+    std::shared_ptr<loss_function> loss = parse_loss_function(loss_function_text);
+    test_mlp(M, X, T, loss);
+  }
 }
 
 TEST_CASE("test_batch_normalization2")
 {
-  eigen::matrix X {
-    {1, 2},
-    {3, 4}
-  };
-
-  eigen::matrix T {
-    {1, 0},
-    {0, 1}
-  };
-
-  eigen::matrix W1 {
-    {3, 4},
-    {5, 6}
-  };
-  eigen::vector b1 {{7, 2}};
-
-  eigen::matrix W2 {
-    {1, 1},
-    {2, 9}
-  };
-  eigen::vector b2 {{1, 4}};
-
-  eigen::matrix W3 {
-    {4, 1},
-    {2, 4}
-  };
-  eigen::vector b3 {{3, 2}};
-
-  long N = X.cols();
   multilayer_perceptron M;
+  std::vector<std::size_t> linear_layer_sizes = {2, 2, 2, 2};
+  long N = 4; // the number of examples
+  long batch_size = N;
+  long D = linear_layer_sizes.front();
+  long K = linear_layer_sizes.back();
 
-  auto layer1 = std::make_shared<relu_layer<eigen::matrix>>(2, 2, N);
-  M.layers.push_back(layer1);
-  layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
-  layer1->W = W1;
-  layer1->b = b1;
+  construct_mlp(M,
+                {"ReLU", "BatchNorm", "ReLU", "Linear"},
+                linear_layer_sizes,
+                {1.0, 1.0, 1.0},
+                {0.0, 0.0, 0.0},
+                {"Xavier", "Xavier", "Xavier"},
+                {"GradientDescent", "GradientDescent", "GradientDescent", "GradientDescent"},
+                batch_size
+  );
 
-  M.layers.push_back(std::make_shared<batch_normalization_layer>(2, N));
+  eigen::matrix X = eigen::random_matrix(N, D);
+  eigen::matrix T = eigen::random_target_rowwise(N, K, nerva_rng);
 
-  squared_error_loss loss1;
-  cross_entropy_loss loss2;
-  logistic_cross_entropy_loss loss3;
-  softmax_cross_entropy_loss loss4;
-
-  test_mlp(M, X, T, loss1);
-//  test_mlp(M, X, T, loss2);
-  test_mlp(M, X, T, loss3);
-  test_mlp(M, X, T, loss4);
-}
-
-TEST_CASE("test_simple_batch_normalization1")
+  print_mlp("test_batch_normalization2", M);
+  std::vector<std::string> loss_functions = {"SquaredError", "LogisticCrossEntropy", "SoftmaxCrossEntropy"};
+  for (const std::string& loss_function_text: loss_functions)
 {
-  eigen::matrix X {
-    {1, 2, 7, 8},
-    {3, 4, 5, 2}
-  };
-
-  eigen::matrix T {
-    {1, 1, 0, 1},
-    {0, 0, 1, 0}
-  };
-
-  eigen::matrix W1 {
-    {3, 4},
-    {5, 6}
-  };
-  eigen::vector b1 {{7, 2}};
-
-  long N = X.cols();
-  multilayer_perceptron M;
-
-  auto layer1 = std::make_shared<linear_layer<eigen::matrix>>(2, 2, N);
-  M.layers.push_back(layer1);
-  layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
-  layer1->W = W1;
-  layer1->b = b1;
-
-  M.layers.push_back(std::make_shared<simple_batch_normalization_layer>(2, N));
-
-  squared_error_loss loss1;
-  cross_entropy_loss loss2;
-  logistic_cross_entropy_loss loss3;
-  softmax_cross_entropy_loss loss4;
-
-  test_mlp(M, X, T, loss1);
-  // test_mlp(M, X, T, loss2); // TODO: this fails with NaN!
-  test_mlp(M, X, T, loss3);
-  test_mlp(M, X, T, loss4);
+    std::cout << "loss = " << loss_function_text << std::endl;
+    std::shared_ptr<loss_function> loss = parse_loss_function(loss_function_text);
+    test_mlp(M, X, T, loss);
+}
 }
 
-TEST_CASE("test_simple_batch_normalization2")
-{
-  eigen::matrix X {
-    {1, 2, 7, 8},
-    {3, 4, 5, 2}
-  };
-
-  eigen::matrix T {
-    {1, 1, 0, 1},
-    {0, 0, 1, 0}
-  };
-
-  eigen::matrix W1 {
-    {3, 4},
-    {5, 6}
-  };
-  eigen::vector b1 {{7, 2}};
-
-  long N = X.cols();
-  multilayer_perceptron M;
-
-  M.layers.push_back(std::make_shared<simple_batch_normalization_layer>(2, N));
-
-  auto layer1 = std::make_shared<linear_layer<eigen::matrix>>(2, 2, N);
-  M.layers.push_back(layer1);
-  layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
-  layer1->W = W1;
-  layer1->b = b1;
-
-  squared_error_loss loss1;
-  cross_entropy_loss loss2;
-  logistic_cross_entropy_loss loss3;
-  softmax_cross_entropy_loss loss4;
-
-  test_mlp(M, X, T, loss1);
-  // test_mlp(M, X, T, loss2); // TODO: this fails with NaN!
-  test_mlp(M, X, T, loss3);
-  test_mlp(M, X, T, loss4);
-}
-
+/* TODO
 TEST_CASE("test_chessboard")
 {
-  log::logger::set_reporting_level(log::debug);
-
-  long batch_size = 3;
-  long N = 3;
-  std::mt19937 rng{1885661379};
-  auto [X, T] = datasets::make_dataset_chessboard(N, rng);
-
   multilayer_perceptron M;
+  std::vector<std::size_t> linear_layer_sizes = {2, 2, 2, 2};
+  long N = 3; // the number of examples
+  long batch_size = N;
+  long D = linear_layer_sizes.front();
+  long K = linear_layer_sizes.back();
 
-  auto layer1 = std::make_shared<relu_layer<eigen::matrix>>(2, 2, batch_size);
-  M.layers.push_back(layer1);
-  layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
-  initialize_weights(weight_initialization::xavier, layer1->W, layer1->b, rng);
+  construct_mlp(M,
+                {"ReLU", "ReLU", "Linear"},
+                linear_layer_sizes,
+                {1.0, 1.0, 1.0},
+                {0.0, 0.0, 0.0},
+                {"Xavier", "Xavier", "Xavier"},
+                {"GradientDescent", "GradientDescent", "GradientDescent"},
+                batch_size
+  );
 
-  auto layer2 = std::make_shared<relu_layer<eigen::matrix>>(2, 2, batch_size);
-  M.layers.push_back(layer2);
-  layer2->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer2->W, layer2->DW, layer2->b, layer2->Db);
-  initialize_weights(weight_initialization::xavier, layer2->W, layer2->b, rng);
+  auto [X, T] = datasets::make_dataset_chessboard(N, nerva_rng);
 
-  auto layer3 = std::make_shared<linear_layer<eigen::matrix>>(2, 2, batch_size);
-  M.layers.push_back(layer3);
-  layer3->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer3->W, layer3->DW, layer3->b, layer3->Db);
-  initialize_weights(weight_initialization::xavier, layer3->W, layer3->b, rng);
-
-  squared_error_loss loss1;
-  logistic_cross_entropy_loss loss3;
-  softmax_cross_entropy_loss loss4;
-
-  test_mlp(M, X, T, loss1);
-  test_mlp(M, X, T, loss3);
-  test_mlp(M, X, T, loss4);
-
-  // N.B. Do not use cross_entropy_loss, since it doesn't work with this architecture.
+  print_mlp("test_chessboard", M);
+  std::vector<std::string> loss_functions = {"SquaredError", "LogisticCrossEntropy", "SoftmaxCrossEntropy"};
+  for (const std::string& loss_function_text: loss_functions)
+  {
+    std::cout << "loss = " << loss_function_text << std::endl;
+    std::shared_ptr<loss_function> loss = parse_loss_function(loss_function_text);
+    test_mlp(M, X, T, loss);
 }
+}
+*/
 
 TEST_CASE("test_derivatives2")
 {
@@ -895,7 +537,7 @@ TEST_CASE("test_derivatives2")
   auto fR = [fY](const eigen::matrix& R)
   {
     long N = R.cols();
-    eigen::vector Sigma = R.array().square().rowwise().sum() / N;
+    eigen::matrix Sigma = R.array().square().rowwise().sum() / N;
     eigen::matrix Y = eigen::Diag(eigen::inv_sqrt(Sigma)) * R;
     return fY(Y);
   };
@@ -906,7 +548,7 @@ TEST_CASE("test_derivatives2")
     using eigen::Diag;
 
     long N = R.cols();
-    eigen::vector Sigma = R.array().square().rowwise().sum() / N;
+    eigen::matrix Sigma = R.array().square().rowwise().sum() / N;
     eigen::matrix Y = Diag(eigen::inv_sqrt(Sigma)) * R;
     eigen::matrix DY = dfY(Y);
     eigen::matrix DiagDYY = Diag(diag(DY * Y.transpose())) * Y;

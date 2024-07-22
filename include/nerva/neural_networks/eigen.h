@@ -40,11 +40,7 @@ namespace nerva::eigen {
 // the default storage format for many numerical libraries, including LAPACK
 // and BLAS, as well as many high-level languages like Fortran.
 
-#ifdef NERVA_COLWISE
 static constexpr Eigen::StorageOptions default_matrix_layout = Eigen::ColMajor;
-#else
-static constexpr Eigen::StorageOptions default_matrix_layout = Eigen::RowMajor;
-#endif
 
 using vector = Eigen::Matrix<scalar, Eigen::Dynamic, 1>;
 using matrix = Eigen::Matrix<scalar, Eigen::Dynamic, Eigen::Dynamic, default_matrix_layout>;
@@ -573,6 +569,43 @@ template <typename Derived, typename Scalar>
 void clip(Eigen::MatrixBase<Derived>& A, Scalar epsilon)
 {
   A = A.unaryExpr([epsilon](auto x) { return (std::fabs(x) < epsilon) ? 0 : x; });
+}
+
+inline
+eigen::matrix random_matrix(long rows, long cols, scalar a = 1, scalar b = 5)
+{
+  eigen::matrix ones = eigen::ones<eigen::matrix>(rows, cols);
+  scalar factor = (b - a) / scalar(2);
+
+  eigen::matrix A = eigen::matrix::Random(rows, cols);   // Range [-1, 1]
+  return factor * (A + ones) + a * ones;                 // Range [a, b]
+}
+
+inline
+Eigen::VectorXi random_integer_vector(long size, long N, std::mt19937& gen)
+{
+  if (size <= 0 || N <= 0)
+  {
+    throw std::invalid_argument("Size and N must be positive integers.");
+  }
+
+  std::uniform_int_distribution<> dist(0, N-1);
+  Eigen::VectorXi result(size);
+  for (int i = 0; i < size; ++i)
+  {
+    result[i] = dist(gen);
+  }
+  return result;
+}
+
+// Creates a one hot encoding. Each column contains one value 1 and all other values 0.
+inline
+eigen::matrix random_target_rowwise(long rows, long cols, std::mt19937& gen)
+{
+  long size = rows;
+  long num_classes = cols;
+  Eigen::VectorXi targets = random_integer_vector(size, num_classes, gen);
+  return eigen::to_one_hot_rowwise(targets, num_classes);
 }
 
 } // namespace nerva::eigen

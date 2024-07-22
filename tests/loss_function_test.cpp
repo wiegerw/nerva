@@ -11,15 +11,14 @@
 
 #include "doctest/doctest.h"
 #include "nerva/neural_networks/check_gradients.h"
-#include "nerva/neural_networks/loss_functions_colwise.h"
-#include "nerva/neural_networks/loss_functions_rowwise.h"
+#include "nerva/neural_networks/loss_functions.h"
 #include <iostream>
 #include <type_traits>
 
 using namespace nerva;
 
 template <typename LossFunction>
-void test_loss(const std::string& name, LossFunction loss, const eigen::matrix& Y, const eigen::matrix& T)
+void test_loss(const std::string& name, LossFunction loss, scalar expected, const eigen::matrix& Y, const eigen::matrix& T)
 {
   std::cout << "\n=== test_loss " << name << " ===" << std::endl;
   eigen::vector y0 = Y.col(0);
@@ -87,20 +86,15 @@ TEST_CASE("test_loss1")
     {0, 1, 1}
   };
 
-  squared_error_loss loss1;
-  cross_entropy_loss loss2;
-  logistic_cross_entropy_loss loss3;
-  softmax_cross_entropy_loss loss4;
-  test_loss("squared_error_loss", loss1, Y, T);
-  test_loss("cross_entropy_loss", loss2, Y, T);
-  test_loss("logistic_cross_entropy_loss", loss3, Y, T);
-  test_loss("softmax_cross_entropy_loss", loss4, Y, T);
+  test_loss("squared_error_loss", squared_error_loss(), 477.6448059082031, Y, T);
+  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 8.511181831359863, Y, T);
+  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -5.569567680358887, Y, T);
+  test_loss("cross_entropy_loss", cross_entropy_loss(), -5.569567680358887, Y, T);
+  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.012376843020319939, Y, T);
 }
 
 TEST_CASE("test_loss2")
 {
-  // TODO: The eigen::matrix Y must contain strictly positive numbers, otherwise
-  // some of the loss functions will fail.
   eigen::matrix Y {
     {1, 5, 3},
     {2, 1, 3},
@@ -115,84 +109,10 @@ TEST_CASE("test_loss2")
     {0, 0, 0}
   };
 
-  squared_error_loss loss1;
-  cross_entropy_loss loss2;
-  logistic_cross_entropy_loss loss3;
-  softmax_cross_entropy_loss loss4;
-  test_loss("squared_error_loss", loss1, Y, T);
-  test_loss("cross_entropy_loss", loss2, Y, T);
-  test_loss("logistic_cross_entropy_loss", loss3, Y, T);
-  test_loss("softmax_cross_entropy_loss", loss4, Y, T);
+  test_loss("squared_error_loss", squared_error_loss(), 372.4724426269531, Y, T);
+  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 22.297447204589844, Y, T);
+  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -0.7536474466323853, Y, T);
+  test_loss("cross_entropy_loss", cross_entropy_loss(), -0.7536474466323853, Y, T);
+  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.7411784529685974, Y, T);
 }
 
-TEST_CASE("test_softmax_cross_entropy")
-{
-  std::cout << "\n=== test_softmax_cross_entropy ===" << std::endl;
-
-  // PyTorch output
-  // y: tensor([[ 1., -2.,  3.,  1.]], requires_grad=True)
-  // t: tensor([1])
-  // output: tensor(5.2448, grad_fn=<NllLossBackward0>)
-  // dy tensor([[ 0.1059, -0.9947,  0.7828,  0.1059]])
-
-  eigen::vector y {{ 1., -2.,  3.,  1. }};
-  eigen::vector t {{ 0, 1, 0, 0}};
-
-  softmax_cross_entropy_loss loss;
-  auto L = loss(y, t);
-  auto dy = loss.gradient(y, t);
-
-  std::cout << "L = " << L << std::endl;
-  std::cout << "dy = " << dy << std::endl;
-
-  scalar L_expected = 5.2448;
-  eigen::vector dy_expected {{ 0.1059, -0.9947,  0.7828,  0.1059 }};
-
-  scalar epsilon = std::is_same<scalar, double>::value ? scalar(0.0001) : scalar(0.01);
-  CHECK(std::abs(L - L_expected) < epsilon);
-  CHECK((dy - dy_expected).squaredNorm() < epsilon);
-}
-
-void check_close(scalar x, scalar y)
-{
-  scalar tolerance = std::is_same<scalar, double>::value ? scalar(1e-6) : scalar(1e-12);
-  REQUIRE(doctest::Approx(x).epsilon(tolerance) == y);
-}
-
-template <typename Matrix>
-void check_close(const Matrix& Xc, const Matrix& Xr)
-{
-  scalar tolerance = 1e-6;
-  Matrix Yc = Xr.transpose();
-  REQUIRE(Xc.isApprox(Yc, tolerance));
-}
-
-TEST_CASE("test_loss_rowwise_colwise")
-{
-  std::cout << "\n=== test_loss_rowwise_colwise ===" << std::endl;
-
-  eigen::matrix Yc {
-    {1.0, 2.0, 7.0},
-    {3.0, 4.0, 9.0}
-  };
-
-  eigen::matrix Tc {
-    {1.0, 0.0, 0.0},
-    {0.0, 1.0, 1.0}
-  };
-
-  eigen::matrix Yr = Yc.transpose();
-  eigen::matrix Tr = Tc.transpose();
-
-  check_close(colwise::squared_error_loss().value(Yc, Tc), rowwise::squared_error_loss().value(Yr, Tr));
-  check_close(colwise::cross_entropy_loss().value(Yc, Tc), rowwise::cross_entropy_loss().value(Yr, Tr));
-  check_close(colwise::softmax_cross_entropy_loss().value(Yc, Tc), rowwise::softmax_cross_entropy_loss().value(Yr, Tr));
-  check_close(colwise::logistic_cross_entropy_loss().value(Yc, Tc), rowwise::logistic_cross_entropy_loss().value(Yr, Tr));
-  check_close(colwise::negative_log_likelihood_loss().value(Yc, Tc), rowwise::negative_log_likelihood_loss().value(Yr, Tr));
-
-  check_close(colwise::squared_error_loss().gradient(Yc, Tc), rowwise::squared_error_loss().gradient(Yr, Tr));
-  check_close(colwise::cross_entropy_loss().gradient(Yc, Tc), rowwise::cross_entropy_loss().gradient(Yr, Tr));
-  check_close(colwise::softmax_cross_entropy_loss().gradient(Yc, Tc), rowwise::softmax_cross_entropy_loss().gradient(Yr, Tr));
-  check_close(colwise::logistic_cross_entropy_loss().gradient(Yc, Tc), rowwise::logistic_cross_entropy_loss().gradient(Yr, Tr));
-  check_close(colwise::negative_log_likelihood_loss().gradient(Yc, Tc), rowwise::negative_log_likelihood_loss().gradient(Yr, Tr));
-}

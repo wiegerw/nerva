@@ -1,10 +1,10 @@
-// Copyright: Wieger Wesselink 2022-present
+// Copyright: Wieger Wesselink 2023-present
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-/// \file nerva/neural_networks/dropout_layers_colwise.h
+/// \file nerva/neural_networks/dropout_layers.h
 /// \brief add your file description here.
 
 #pragma once
@@ -14,7 +14,7 @@
 #include "fmt/format.h"
 #include <random>
 
-namespace nerva::colwise {
+namespace nerva {
 
 template <typename Matrix>
 struct dropout_layer
@@ -55,7 +55,8 @@ struct linear_dropout_layer: public linear_layer<Matrix>, dropout_layer<Matrix>
 
   linear_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
    : super(D, K, N), dropout_layer<Matrix>(D, K, p)
-  {}
+  {
+  }
 
   void feedforward(eigen::matrix& result) override
   {
@@ -161,6 +162,7 @@ struct relu_dropout_layer: public activation_dropout_layer<Matrix, eigen::relu_a
    : super(D, K, N, p, eigen::relu_activation())
   {}
 };
+
 using dense_relu_dropout_layer = relu_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
@@ -174,6 +176,7 @@ struct sigmoid_dropout_layer: public activation_dropout_layer<Matrix, eigen::sig
     : super(D, K, N, p, eigen::sigmoid_activation())
   {}
 };
+
 using dense_sigmoid_dropout_layer = sigmoid_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
@@ -187,6 +190,7 @@ struct softmax_dropout_layer: public softmax_layer<Matrix>, dropout_layer<Matrix
     : super(D, K, N), dropout_layer<Matrix>(D, K, p)
   {}
 };
+
 using dense_softmax_dropout_layer = softmax_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
@@ -200,6 +204,7 @@ struct log_softmax_dropout_layer: public log_softmax_layer<Matrix>, dropout_laye
     : super(D, K, N), dropout_layer<Matrix>(D, K, p)
   {}
 };
+
 using dense_log_softmax_dropout_layer = log_softmax_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
@@ -213,6 +218,7 @@ struct hyperbolic_tangent_dropout_layer: public activation_dropout_layer<Matrix,
       : super(D, K, N, p, eigen::hyperbolic_tangent_activation())
   {}
 };
+
 using dense_hyperbolic_tangent_dropout_layer = hyperbolic_tangent_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
@@ -226,6 +232,7 @@ struct all_relu_dropout_layer: public activation_dropout_layer<Matrix, eigen::al
     : super(D, K, N, p, eigen::all_relu_activation(alpha))
   {}
 };
+
 using dense_all_relu_dropout_layer = all_relu_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
@@ -239,6 +246,7 @@ struct leaky_relu_dropout_layer: public activation_dropout_layer<Matrix, eigen::
     : super(D, K, N, p, eigen::leaky_relu_activation(alpha))
   {}
 };
+
 using dense_leaky_relu_dropout_layer = leaky_relu_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
@@ -252,6 +260,7 @@ struct trelu_dropout_layer: public activation_dropout_layer<Matrix, eigen::trimm
     : super(D, K, N, p, eigen::trimmed_relu_activation(epsilon))
   {}
 };
+
 using dense_trelu_dropout_layer = trelu_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
@@ -265,8 +274,7 @@ struct srelu_dropout_layer: public activation_dropout_layer<Matrix, eigen::srelu
     : super(D, K, N, p, eigen::srelu_activation(al, tl, ar, tr))
   {}
 };
+
 using dense_srelu_dropout_layer = srelu_dropout_layer<eigen::matrix>;
 
-} // namespace nerva::colwise
-
-#include "nerva/neural_networks/rowwise_colwise.inc"
+} // namespace nerva
