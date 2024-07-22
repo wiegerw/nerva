@@ -100,8 +100,8 @@ void test_mlp(multilayer_perceptron& M, const eigen::matrix& X, const eigen::mat
   // do a feedforward + backpropagate pass to compute Db and DW
   M.layers.front()->X = X;
   M.feedforward(Y);
-  eigen::matrix dY = loss->gradient(Y, T);
-  M.backpropagate(Y, dY);
+  eigen::matrix DY = loss->gradient(Y, T);
+  M.backpropagate(Y, DY);
 
   auto f = [&]()
   {

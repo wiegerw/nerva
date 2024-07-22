@@ -45,6 +45,10 @@ template <typename Matrix>
 auto stable_softmax_colwise(const Matrix& X)
 {
   using eigen::columns_max;
+  using eigen::columns_sum;
+  using eigen::exp;
+  using eigen::hadamard;
+  using eigen::inverse;
   using eigen::row_repeat;
 
   auto D = X.rows();
@@ -80,6 +84,7 @@ auto stable_log_softmax_colwise(const Matrix& X)
 {
   using eigen::columns_sum;
   using eigen::columns_max;
+  using eigen::exp;
   using eigen::log;
   using eigen::row_repeat;
 
@@ -260,7 +265,6 @@ struct stable_log_softmax
   [[nodiscard]] auto value(const eigen::vector& x) const -> eigen::vector
   {
     using eigen::exp;
-    using eigen::log;
 
     auto c = x.array().maxCoeff();
     auto E = std::log(exp(x.array() - c).sum());
@@ -274,3 +278,4 @@ struct stable_log_softmax
 };
 
 } // namespace nerva
+

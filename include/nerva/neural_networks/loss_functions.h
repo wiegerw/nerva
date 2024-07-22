@@ -1,4 +1,4 @@
-// Copyright: Wieger Wesselink 2023
+// Copyright: Wieger Wesselink 2022
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -223,6 +223,7 @@ template <typename Vector1, typename Vector2>
 auto logistic_cross_entropy_loss_colwise_gradient(const Vector1& y, const Vector2& t)
 {
   using eigen::hadamard;
+  using eigen::Sigmoid;
 
   return hadamard(t, Sigmoid(y)) - t;
 }
@@ -241,6 +242,7 @@ template <typename Matrix1, typename Matrix2>
 auto Logistic_cross_entropy_loss_colwise_gradient(const Matrix1& Y, const Matrix2& T)
 {
   using eigen::hadamard;
+  using eigen::Sigmoid;
 
   return hadamard(T, Sigmoid(Y)) - T;
 }
@@ -567,23 +569,23 @@ struct squared_error_loss: public loss_function
   template <typename Target>
   auto operator()(const eigen::vector& y, const Target& t) const -> scalar
   {
-    return nerva::squared_error_loss_rowwise(y, t);
+    return squared_error_loss_rowwise(y, t);
   }
 
   template <typename Target>
   auto operator()(const eigen::matrix& Y, const Target& T) const -> scalar
   {
-    return nerva::Squared_error_loss_rowwise(Y, T);
+    return Squared_error_loss_rowwise(Y, T);
   }
 
   [[nodiscard]] auto value(const eigen::matrix& Y, const eigen::matrix& T) const -> scalar override
   {
-    return nerva::Squared_error_loss_rowwise(Y, T);
+    return Squared_error_loss_rowwise(Y, T);
   }
 
   [[nodiscard]] auto gradient(const eigen::matrix& Y, const eigen::matrix& T) const -> eigen::matrix override
   {
-    return nerva::Squared_error_loss_rowwise_gradient(Y, T);
+    return Squared_error_loss_rowwise_gradient(Y, T);
   }
 
   [[nodiscard]] auto to_string() const -> std::string override
@@ -597,23 +599,23 @@ struct cross_entropy_loss: public loss_function
   template <typename Target>
   auto operator()(const eigen::vector& y, const Target& t) const -> scalar
   {
-    return nerva::cross_entropy_loss_rowwise(y, t);
+    return cross_entropy_loss_rowwise(y, t);
   }
 
   template <typename Target>
   auto operator()(const eigen::matrix& Y, const Target& T) const -> scalar
   {
-    return nerva::Cross_entropy_loss_rowwise(Y, T);
+    return Cross_entropy_loss_rowwise(Y, T);
   }
 
   [[nodiscard]] auto value(const eigen::matrix& Y, const eigen::matrix& T) const -> scalar override
   {
-    return nerva::Cross_entropy_loss_rowwise(Y, T);
+    return Cross_entropy_loss_rowwise(Y, T);
   }
 
   [[nodiscard]] auto gradient(const eigen::matrix& Y, const eigen::matrix& T) const -> eigen::matrix override
   {
-    return nerva::Cross_entropy_loss_rowwise_gradient(Y, T);
+    return Cross_entropy_loss_rowwise_gradient(Y, T);
   }
 
   [[nodiscard]] auto to_string() const -> std::string override
@@ -627,23 +629,23 @@ struct softmax_cross_entropy_loss: public loss_function
   template <typename Target>
   auto operator()(const eigen::vector& y, const Target& t) const -> scalar
   {
-    return nerva::softmax_cross_entropy_loss_rowwise(y, t);
+    return softmax_cross_entropy_loss_rowwise(y, t);
   }
 
   template <typename Target>
   auto operator()(const eigen::matrix& Y, const Target& T) const -> scalar
   {
-    return nerva::Softmax_cross_entropy_loss_rowwise(Y, T);
+    return Softmax_cross_entropy_loss_rowwise(Y, T);
   }
 
   [[nodiscard]] auto value(const eigen::matrix& Y, const eigen::matrix& T) const -> scalar override
   {
-    return nerva::Softmax_cross_entropy_loss_rowwise(Y, T);
+    return Softmax_cross_entropy_loss_rowwise(Y, T);
   }
 
   [[nodiscard]] auto gradient(const eigen::matrix& Y, const eigen::matrix& T) const -> eigen::matrix override
   {
-    return nerva::Softmax_cross_entropy_loss_rowwise_gradient(Y, T);
+    return Softmax_cross_entropy_loss_rowwise_gradient(Y, T);
   }
 
   [[nodiscard]] auto to_string() const -> std::string override
@@ -657,23 +659,23 @@ struct logistic_cross_entropy_loss: public loss_function
   template <typename Target>
   auto operator()(const eigen::vector& y, const Target& t) const -> scalar
   {
-    return nerva::logistic_cross_entropy_loss_rowwise(y, t);
+    return logistic_cross_entropy_loss_rowwise(y, t);
   }
 
   template <typename Target>
   auto operator()(const eigen::matrix& Y, const Target& T) const -> scalar
   {
-    return nerva::Logistic_cross_entropy_loss_rowwise(Y, T);
+    return Logistic_cross_entropy_loss_rowwise(Y, T);
   }
 
   [[nodiscard]] auto value(const eigen::matrix& Y, const eigen::matrix& T) const -> scalar override
   {
-    return nerva::Logistic_cross_entropy_loss_rowwise(Y, T);
+    return Logistic_cross_entropy_loss_rowwise(Y, T);
   }
 
   [[nodiscard]] auto gradient(const eigen::matrix& Y, const eigen::matrix& T) const -> eigen::matrix override
   {
-    return nerva::Logistic_cross_entropy_loss_rowwise_gradient(Y, T);
+    return Logistic_cross_entropy_loss_rowwise_gradient(Y, T);
   }
 
   [[nodiscard]] auto to_string() const -> std::string override
@@ -687,23 +689,23 @@ struct negative_log_likelihood_loss: public loss_function
   template <typename Target>
   auto operator()(const eigen::vector& y, const Target& t) const -> scalar
   {
-    return nerva::negative_log_likelihood_loss_rowwise(y, t);
+    return negative_log_likelihood_loss_rowwise(y, t);
   }
 
   template <typename Target>
   auto operator()(const eigen::matrix& Y, const Target& T) const -> scalar
   {
-    return nerva::Negative_log_likelihood_loss_rowwise(Y, T);
+    return Negative_log_likelihood_loss_rowwise(Y, T);
   }
 
   [[nodiscard]] auto value(const eigen::matrix& Y, const eigen::matrix& T) const -> scalar override
   {
-    return nerva::Negative_log_likelihood_loss_rowwise(Y, T);
+    return Negative_log_likelihood_loss_rowwise(Y, T);
   }
 
   [[nodiscard]] auto gradient(const eigen::matrix& Y, const eigen::matrix& T) const -> eigen::matrix override
   {
-    return nerva::Negative_log_likelihood_loss_rowwise_gradient(Y, T);
+    return Negative_log_likelihood_loss_rowwise_gradient(Y, T);
   }
 
   [[nodiscard]] auto to_string() const -> std::string override
