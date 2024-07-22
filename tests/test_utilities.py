@@ -2,6 +2,8 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
+from io import StringIO
+from pathlib import Path
 import numpy as np
 
 
@@ -49,11 +51,12 @@ def make_target_colwise(rows, cols) -> np.ndarray:
     return make_target_rowwise(cols, rows).T
 
 
-def print_cpp_matrix_declaration(name: str, x: np.ndarray, num_decimal_places: int=8, rowwise=True):
+def print_cpp_matrix_declaration(out: StringIO, name: str, x: np.ndarray, num_decimal_places: int=8, rowwise=True) -> None:
     """
     Prints a NumPy array in an Eigen matrix format.
 
     Args:
+        out: Where the output is written.
         name: The name of the matrix (e.g., "A").
         x: The NumPy array to be printed.
         num_decimal_places: The precision.
@@ -62,11 +65,21 @@ def print_cpp_matrix_declaration(name: str, x: np.ndarray, num_decimal_places: i
     if x.ndim == 1:
         x = x.reshape(1, -1) if rowwise else x.reshape(-1, 1)
 
-    print(f"  eigen::matrix {name} {{")
+    out.write(f"  eigen::matrix {name} {{")
     for row in x:
-        print(f"    {{", end="")
-        print(f"{row[0]:.{num_decimal_places}f}", end="")
+        out.write(f"    {{")
+        out.write(f"{row[0]:.{num_decimal_places}f}")
         for element in row[1:]:
-            print(f", {element:.{num_decimal_places}f}", end="")
-        print("},")
-    print("  };\n")
+            out.write(f", {element:.{num_decimal_places}f}")
+        out.write("},\n")
+    out.write("  };\n\n")
+
+
+def insert_text_in_file(filename: str, text: str, begin_label='//--- begin generated code ---//', end_label='//--- end generated code ---//'):
+    lines = Path(filename).read_text().split('\n')
+    first = lines.index(begin_label)
+    last = lines.index(end_label) + 1
+    text1 = '\n'.join(lines[:first])
+    text2 = '\n'.join(lines[last:])
+    Path(filename).write_text(f'{text1}\n{begin_label}\n{text}\n{end_label}\n{text2}')
+    pass
