@@ -553,5 +553,5 @@ struct srelu_activation
   }
 };
 
-} // namespace eigen::nerva
+} // namespace nerva::eigen
 
