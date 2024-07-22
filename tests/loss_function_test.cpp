@@ -21,98 +21,122 @@ template <typename LossFunction>
 void test_loss(const std::string& name, LossFunction loss, scalar expected, const eigen::matrix& Y, const eigen::matrix& T)
 {
   std::cout << "\n=== test_loss " << name << " ===" << std::endl;
-  eigen::vector y0 = Y.col(0);
-  eigen::vector y1 = Y.col(1);
-  eigen::vector y2 = Y.col(2);
-
-  eigen::vector t0 = T.col(0);
-  eigen::vector t1 = T.col(1);
-  eigen::vector t2 = T.col(2);
-
   scalar L = loss(Y, T);
-  scalar L0 = loss(y0, t0);
-  scalar L1 = loss(y1, t1);
-  scalar L2 = loss(y2, t2);
-  eigen::matrix L012 {{ L0, L1, L2 }};
-
-  std::cout << "L: " << L << std::endl;
-  std::cout << "L0: " << L0 << std::endl;
-  std::cout << "L1: " << L1 << std::endl;
-  std::cout << "L2: " << L2 << std::endl;
-
-  scalar epsilon = std::is_same<scalar, double>::value ? scalar(0.00001) : scalar(0.01);
-  // CHECK((L - L012).squaredNorm() < epsilon);
-
-  auto dL = loss.gradient(Y, T);
-  auto dL0 = loss.gradient(y0, t0);
-  auto dL1 = loss.gradient(y1, t1);
-  auto dL2 = loss.gradient(y2, t2);
-
-  scalar h = std::is_same<scalar, double>::value ? scalar(0.000001) : scalar(0.001);
-  auto f0 = [&]() { return loss(y0, t0); };
-  auto f1 = [&]() { return loss(y1, t1); };
-  auto f2 = [&]() { return loss(y2, t2); };
-
-  auto dL0_approx = approximate_derivative(f0, y0, h);
-  auto dL1_approx = approximate_derivative(f1, y1, h);
-  auto dL2_approx = approximate_derivative(f2, y2, h);
-
-  std::cout << "\ndL:\n" << dL << std::endl;
-  std::cout << "\ndL0:\n" << dL0 << std::endl;
-  std::cout << "\ndL1:\n" << dL1 << std::endl;
-  std::cout << "\ndL2:\n" << dL2 << std::endl;
-  std::cout << "\ndL0_approx:\n" << dL0_approx << std::endl;
-  std::cout << "\ndL1_approx:\n" << dL1_approx << std::endl;
-  std::cout << "\ndL2_approx:\n" << dL2_approx << std::endl;
-
-  CHECK((dL0 - dL0_approx).squaredNorm() < epsilon);
-  CHECK((dL1 - dL1_approx).squaredNorm() < epsilon);
-  CHECK((dL2 - dL2_approx).squaredNorm() < epsilon);
-
-  CHECK((dL.col(0) - dL0).squaredNorm() < epsilon);
-  CHECK((dL.col(1) - dL1).squaredNorm() < epsilon);
-  CHECK((dL.col(2) - dL2).squaredNorm() < epsilon);
+  scalar epsilon = std::is_same<scalar, double>::value ? scalar(0.000001) : scalar(0.001);
+  CHECK(expected == doctest::Approx(L).epsilon(epsilon));
 }
 
 TEST_CASE("test_loss1")
 {
   eigen::matrix Y {
-    {1, 5, 3},
-    {2, 1, 3}
+          {3.74540181, 9.50714311, 7.31993969},
+          {5.98658524, 1.56018725, 1.55994605},
+          {0.58083706, 8.66176159, 6.01115052},
+          {7.08072607, 0.20584592, 9.69909855},
   };
 
   eigen::matrix T {
-    {1, 0, 0},
-    {0, 1, 1}
+          {0.00000000, 1.00000000, 0.00000000},
+          {0.00000000, 1.00000000, 0.00000000},
+          {0.00000000, 1.00000000, 0.00000000},
+          {1.00000000, 0.00000000, 0.00000000},
   };
 
-  test_loss("squared_error_loss", squared_error_loss(), 477.6448059082031, Y, T);
-  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 8.511181831359863, Y, T);
-  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -5.569567680358887, Y, T);
-  test_loss("cross_entropy_loss", cross_entropy_loss(), -5.569567680358887, Y, T);
-  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.012376843020319939, Y, T);
+  test_loss("squared_error_loss", squared_error_loss(), 404.83148193359375, Y, T);
+  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 7.316563606262207, Y, T);
+  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -6.813143730163574, Y, T);
+  test_loss("cross_entropy_loss", cross_entropy_loss(), -6.813143730163574, Y, T);
+  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.1917884796857834, Y, T);
 }
 
 TEST_CASE("test_loss2")
 {
   eigen::matrix Y {
-    {1, 5, 3},
-    {2, 1, 3},
-    {4, 3, 7},
-    {1, 5, 2}
+          {6.17481548, 6.11653199, 0.07066405},
+          {0.23062523, 5.24774708, 3.99861032},
+          {0.46665759, 9.73755521, 2.32771417},
+          {0.90606525, 6.18386047, 3.82462053},
   };
 
   eigen::matrix T {
-    {1, 0, 0},
-    {0, 0, 1},
-    {0, 1, 0},
-    {0, 0, 0}
+          {1.00000000, 0.00000000, 0.00000000},
+          {0.00000000, 0.00000000, 1.00000000},
+          {1.00000000, 0.00000000, 0.00000000},
+          {0.00000000, 0.00000000, 1.00000000},
   };
 
-  test_loss("squared_error_loss", squared_error_loss(), 372.4724426269531, Y, T);
-  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 22.297447204589844, Y, T);
-  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -0.7536474466323853, Y, T);
-  test_loss("cross_entropy_loss", cross_entropy_loss(), -0.7536474466323853, Y, T);
-  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.7411784529685974, Y, T);
+  test_loss("squared_error_loss", squared_error_loss(), 248.34161376953125, Y, T);
+  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 13.897750854492188, Y, T);
+  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -3.7857255935668945, Y, T);
+  test_loss("cross_entropy_loss", cross_entropy_loss(), -3.7857253551483154, Y, T);
+  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.5286419987678528, Y, T);
 }
 
+TEST_CASE("test_loss3")
+{
+  eigen::matrix Y {
+          {6.80307571, 4.50499307, 0.13265060},
+          {9.42201761, 5.63288262, 3.85416564},
+          {0.15966351, 2.30893903, 2.41025542},
+          {6.83263550, 6.09996697, 8.33194928},
+  };
+
+  eigen::matrix T {
+          {0.00000000, 0.00000000, 1.00000000},
+          {0.00000000, 1.00000000, 0.00000000},
+          {1.00000000, 0.00000000, 0.00000000},
+          {0.00000000, 1.00000000, 0.00000000},
+  };
+
+  test_loss("squared_error_loss", squared_error_loss(), 346.3843688964844, Y, T);
+  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 16.048355102539062, Y, T);
+  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), 0.31781864166259766, Y, T);
+  test_loss("cross_entropy_loss", cross_entropy_loss(), 0.3178187608718872, Y, T);
+  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 1.2513306140899658, Y, T);
+}
+
+TEST_CASE("test_loss4")
+{
+  eigen::matrix Y {
+          {6.62522318, 3.11711145, 5.20068069},
+          {5.46710325, 1.84854537, 9.69584631},
+          {7.75132846, 9.39498948, 8.94827361},
+          {5.97900019, 9.21874243, 0.88492593},
+  };
+
+  eigen::matrix T {
+          {0.00000000, 0.00000000, 1.00000000},
+          {1.00000000, 0.00000000, 0.00000000},
+          {0.00000000, 1.00000000, 0.00000000},
+          {1.00000000, 0.00000000, 0.00000000},
+  };
+
+  test_loss("squared_error_loss", squared_error_loss(), 509.8265380859375, Y, T);
+  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 9.79195499420166, Y, T);
+  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -7.3759684562683105, Y, T);
+  test_loss("cross_entropy_loss", cross_entropy_loss(), -7.375967979431152, Y, T);
+  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.01232351828366518, Y, T);
+}
+
+TEST_CASE("test_loss5")
+{
+  eigen::matrix Y {
+          {3.88677351, 2.71349105, 8.28737526},
+          {3.56753391, 2.80934582, 5.42696129},
+          {1.40924311, 8.02197001, 0.74550736},
+          {9.86886938, 7.72244792, 1.98715762},
+  };
+
+  eigen::matrix T {
+          {0.00000000, 0.00000000, 1.00000000},
+          {0.00000000, 0.00000000, 1.00000000},
+          {0.00000000, 0.00000000, 1.00000000},
+          {1.00000000, 0.00000000, 0.00000000},
+  };
+
+  test_loss("squared_error_loss", squared_error_loss(), 324.43817138671875, Y, T);
+  test_loss("softmax_cross_entropy_loss", softmax_cross_entropy_loss(), 7.6113176345825195, Y, T);
+  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -5.801807880401611, Y, T);
+  test_loss("cross_entropy_loss", cross_entropy_loss(), -5.801807880401611, Y, T);
+  test_loss("logistic_cross_entropy_loss", logistic_cross_entropy_loss(), 0.39300477504730225, Y, T);
+}

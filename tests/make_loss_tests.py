@@ -4,24 +4,26 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
 
-from typing import Tuple
+import argparse
+
 import numpy as np
 
 import nerva_torch.loss_functions
 from nerva_torch.loss_functions_torch import *
+from test_utilities import random_float_matrix, print_cpp_matrix_declaration, make_target_rowwise
 
-from tests.test_utilities import random_float_matrix, print_cpp_matrix_declaration, make_target_rowwise
 
-
-def make_loss_test(rows: int, cols: int, a: float, b: float, rowwise=True, index=0):
+def make_loss_test(N: int, K: int, a: float, b: float, index=0, rowwise=True):
     print(f'TEST_CASE("test_loss{index}")')
     print('{')
 
-    Y = random_float_matrix(rows, cols, a, b)
-    print_cpp_matrix_declaration('Y', Y if rowwise else Y.T)
+    rows, cols = (N, K) if rowwise else (K, N)
 
-    T = make_target_rowwise(rows, cols)
-    print_cpp_matrix_declaration('T', T if rowwise else T.T)
+    Y = random_float_matrix(rows, cols, a, b)
+    print_cpp_matrix_declaration('Y', Y)
+
+    T = make_target_rowwise(rows, cols) if rowwise else make_target_rowwise(rows, cols)
+    print_cpp_matrix_declaration('T', T)
 
     T = T.astype(float)
 
@@ -54,7 +56,15 @@ def make_loss_test(rows: int, cols: int, a: float, b: float, rowwise=True, index
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Convert and publish analysis files')
+    parser.add_argument('--colwise', help='Generate tests for colwise layout', action='store_true')
+    args = parser.parse_args()
+
+    np.random.seed(42)
+    np.set_printoptions(precision=6)
+    rowwise = not args.colwise
+
     for i in range(1, 6):
-        rows = 3
-        cols = 4
-        make_loss_test(rows, cols, 0.000001, 10.0, index=i)
+        N = 3  # the number of examples
+        K = 4  # the number of outputs
+        make_loss_test(N, K, 0.000001, 10.0, index=i, rowwise=rowwise)

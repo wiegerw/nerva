@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
 
 import torch
@@ -75,7 +76,7 @@ def make_testcase(name: str, sizes: list[int], N: int, rowwise=False):
     M = MLP(sizes).to(device)
 
     for i, layer in enumerate(M.layers):
-        print_cpp_matrix_declaration(f'W{i+1}', layer.weight.detach().numpy(), rowwise=rowwise)
+        print_cpp_matrix_declaration(f'W{i+1}', layer.weight.detach().numpy())
         print_cpp_matrix_declaration(f'b{i+1}', layer.bias.detach().numpy(), rowwise=rowwise)
 
     loss_fn = nn.CrossEntropyLoss()
@@ -90,9 +91,13 @@ def make_testcase(name: str, sizes: list[int], N: int, rowwise=False):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Convert and publish analysis files')
+    parser.add_argument('--colwise', help='Generate tests for colwise layout', action='store_true')
+    args = parser.parse_args()
+
     np.random.seed(42)
     np.set_printoptions(precision=6)
-    rowwise=True
+    rowwise = not args.colwise
 
     make_testcase("test_mlp1", sizes=[2, 6, 4, 3], N=5, rowwise=rowwise)
     make_testcase("test_mlp2", sizes=[3, 5, 2, 4], N=4, rowwise=rowwise)
