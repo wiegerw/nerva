@@ -12,15 +12,15 @@ import torchvision
 from torch.nn import functional as F
 from torchvision import transforms, datasets
 
-import nervalibrowwise
-from nerva.utilities import flatten_numpy
+import nervalibcolwise
+from nervacolwise.utilities import flatten_numpy
 
 
-class DataSet(nervalibrowwise.DataSetView):
+class DataSet(nervalibcolwise.DataSetView):
     def __init__(self, Xtrain, Ttrain, Xtest, Ttest):
         super().__init__(Xtrain.T, Ttrain.T, Xtest.T, Ttest.T)
         # store references to the original data to make sure it is not destroyed
-        self.keep_alive = [Xtrain, Ttrain, Xtest, Ttest]
+        self._keep_alive = [Xtrain, Ttrain, Xtest, Ttest]
 
 
 def create_cifar10_augmented_datasets(datadir='./data'):
@@ -184,7 +184,7 @@ def extract_tensors_from_dataloader(dataloader: DataLoader) -> Tuple[torch.Tenso
     dataset = torch.cat(dataset, dim=0)
     targets = torch.cat(targets, dim=0)
 
-    return dataset, targets
+    return dataset.T, targets
 
 
 def create_npz_dataloaders(filename: str, batch_size: int) -> Tuple[TorchDataLoader, TorchDataLoader]:

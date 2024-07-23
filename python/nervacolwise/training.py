@@ -4,20 +4,26 @@
 
 from typing import List
 
+import numpy as np
 import torch
 
-from nerva.datasets_rowwise import DataLoader
-from nerva.learning_rate_rowwise import LearningRateScheduler
-from nerva.loss_rowwise import LossFunction
-from nerva.layers_rowwise import Sequential, print_model_info
-from nerva.utilities import MapTimer, pp
-import nervalibrowwise
+from nervacolwise.datasets_colwise import DataLoader
+from nervacolwise.learning_rate_colwise import LearningRateScheduler
+from nervacolwise.loss_colwise import LossFunction
+from nervacolwise.layers_colwise import Sequential, print_model_info
+from nervacolwise.utilities import MapTimer, pp
+import nervalibcolwise
 
 
-def to_one_hot(x: torch.LongTensor, num_classes: int):
-    one_hot = torch.zeros(len(x), num_classes, dtype=torch.float)
-    one_hot.scatter_(1, x.unsqueeze(1), 1)
+def to_numpy(x: torch.Tensor) -> np.ndarray:
+    return np.asfortranarray(x.detach().numpy().T)
+
+
+def to_one_hot(x: torch.LongTensor, n_classes: int):
+    one_hot = torch.zeros(n_classes, len(x), dtype=torch.float)
+    one_hot.scatter_(0, x.unsqueeze(0), 1)
     return one_hot
+
 
 def print_epoch(epoch, lr, loss, train_accuracy, test_accuracy, elapsed):
     print(f'epoch {epoch:3}  '
@@ -30,29 +36,31 @@ def print_epoch(epoch, lr, loss, train_accuracy, test_accuracy, elapsed):
 
 
 def compute_accuracy(M, data_loader: DataLoader):
-    nervalibrowwise.nerva_timer_suspend()
+    nervalibcolwise.nerva_timer_suspend()
     N = len(data_loader.dataset)  # N is the number of examples
     total_correct = 0
     for X, T in data_loader:
+        X = to_numpy(X)
         Y = torch.Tensor(M.feedforward(X))  # TODO: this conversion should be eliminated
-        predicted = Y.argmax(dim=1)  # the predicted classes for the batch
+        predicted = Y.argmax(dim=0)  # the predicted classes for the batch
         total_correct += (predicted == T).sum().item()
 
-    nervalibrowwise.nerva_timer_resume()
+    nervalibcolwise.nerva_timer_resume()
     return total_correct / N
 
 
 def compute_loss(M, data_loader: DataLoader, loss: LossFunction):
-    nervalibrowwise.nerva_timer_suspend()
+    nervalibcolwise.nerva_timer_suspend()
     N = len(data_loader.dataset)  # N is the number of examples
     total_loss = 0.0
     num_classes = M.layers[-1].output_size
     for X, T in data_loader:
+        X = to_numpy(X)
         T = to_one_hot(T, num_classes)
         Y = M.feedforward(X)
         total_loss += loss.value(Y, T)
 
-    nervalibrowwise.nerva_timer_resume()
+    nervalibcolwise.nerva_timer_resume()
     return total_loss / N
 
 
@@ -73,10 +81,10 @@ def compute_sparse_layer_densities(overall_density: float, sizes: List[int], erk
     :param sizes: the input and output sizes of  the layers
     :param erk_power_scale:
     """
-    return nervalibrowwise.compute_sparse_layer_densities(overall_density, sizes, erk_power_scale)
+    return nervalibcolwise.compute_sparse_layer_densities(overall_density, sizes, erk_power_scale)
 
 
-class SGDOptions(nervalibrowwise.sgd_options):
+class SGDOptions(nervalibcolwise.sgd_options):
     def __init__(self):
         super().__init__()
         self.epochs = 100
@@ -171,6 +179,7 @@ class StochasticGradientDescentAlgorithm(object):
 
             for k, (X, T) in enumerate(self.train_loader):
                 self.on_start_batch()
+                X = to_numpy(X)
                 T = to_one_hot(T, num_classes)
                 Y = M.feedforward(X)
                 DY = self.loss.gradient(Y, T) / options.batch_size
@@ -178,9 +187,9 @@ class StochasticGradientDescentAlgorithm(object):
                 if options.debug:
                     print(f'epoch: {epoch} batch: {k}')
                     print_model_info(M)
-                    pp("X", X)
-                    pp("Y", Y)
-                    pp("DY", DY)
+                    pp("X", X.T)
+                    pp("Y", Y.T)
+                    pp("DY", DY.T)
 
                 M.backpropagate(Y, DY)
                 M.optimize(lr)

@@ -4,9 +4,9 @@
 
 from typing import Optional, List, Union, Tuple
 
-from nerva.activation import Activation, NoActivation
-from nerva.optimizers import Optimizer, GradientDescent
-from nerva.weights import WeightInitializer, Xavier
+from nervacolwise.activation import Activation, NoActivation
+from nervacolwise.optimizers import Optimizer, GradientDescent
+from nervacolwise.weights import WeightInitializer, Xavier
 import nervalibcolwise
 
 

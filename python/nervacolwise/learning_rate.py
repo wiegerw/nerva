@@ -5,7 +5,7 @@
 from typing import List
 import nervalibcolwise
 
-from nerva.utilities import parse_function_call
+from nervacolwise.utilities import parse_function_call
 
 
 class LearningRateScheduler(nervalibcolwise.learning_rate_scheduler):

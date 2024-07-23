@@ -1,9 +1,10 @@
 # Copyright 2022 Wieger Wesselink.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE or http://www.boost.org/LICENSE_1_0.txt)
+
 from typing import Tuple
 
-from nerva.utilities import parse_function_call
+from nervacolwise.utilities import parse_function_call
 
 
 class Activation(object):
