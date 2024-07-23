@@ -29,19 +29,19 @@ TEST_CASE("test_mlp")
     {3, 4},
     {0, 6}
   };
-  eigen::matrix b1 {{7, 2}};
+  eigen::matrix b1 {{7}, {2}};
 
   eigen::matrix W2 {
     {1, 0},
     {2, 9}
   };
-  eigen::matrix b2 {{1, 4}};
+  eigen::matrix b2 {{1}, {4}};
 
   eigen::matrix W3 {
     {4, 1},
     {2, 0}
   };
-  eigen::matrix b3 {{3, 2}};
+  eigen::matrix b3 {{3}, {2}};
 
   long batch_size = 5;
 
