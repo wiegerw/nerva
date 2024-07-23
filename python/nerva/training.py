@@ -6,10 +6,10 @@ from typing import List
 
 import torch
 
-from nerva.datasets_rowwise import DataLoader
-from nerva.learning_rate_rowwise import LearningRateScheduler
-from nerva.loss_rowwise import LossFunction
-from nerva.layers_rowwise import Sequential, print_model_info
+from nerva.datasets import DataLoader
+from nerva.learning_rate import LearningRateScheduler
+from nerva.loss import LossFunction
+from nerva.layers import Sequential, print_model_info
 from nerva.utilities import MapTimer, pp
 import nervalibrowwise
 
