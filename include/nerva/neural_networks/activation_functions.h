@@ -554,3 +554,4 @@ struct srelu_activation
 };
 
 } // namespace nerva
+

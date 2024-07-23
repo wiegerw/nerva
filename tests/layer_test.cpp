@@ -118,11 +118,8 @@ TEST_CASE("test_linear_layer2")
 }
 
 template <typename Layer1, typename Layer2>
-void test_feedforward(Layer1& layer1, Layer2& layer2, const eigen::matrix& X)
+void test_feedforward(long D, long K, long N, Layer1& layer1, Layer2& layer2, const eigen::matrix& X)
 {
-  long N = X.rows();
-  long K = layer1.output_size();
-
   print_cpp_matrix("X", X);
 
   // do a feedforward pass
@@ -154,7 +151,7 @@ void test_backpropagate(Layer1& layer1, Layer2& layer2, const eigen::matrix& Y, 
   check_equal_matrices("W1", W1, "W2", W2);
 }
 
-void test_layers(const eigen::matrix& W, const eigen::matrix& b, const eigen::matrix& X, const eigen::matrix& Y, const eigen::matrix& DY)
+void test_layers(long D, long K, long N, const eigen::matrix& W, const eigen::matrix& b, const eigen::matrix& X, const eigen::matrix& Y, const eigen::matrix& DY)
 {
   std::cout << "=================" << std::endl;
   std::cout << "=== test_layers ===" << std::endl;
@@ -162,10 +159,6 @@ void test_layers(const eigen::matrix& W, const eigen::matrix& b, const eigen::ma
 
   auto seed = std::random_device{}();
   std::mt19937 rng{seed};
-
-  long D = X.cols();
-  long N = X.rows();
-  long K = W.rows();
 
   sparse_linear_layer linear_layer1(D, K, N);
   linear_layer1.W = mkl::to_csr<scalar>(W);
@@ -176,7 +169,7 @@ void test_layers(const eigen::matrix& W, const eigen::matrix& b, const eigen::ma
   linear_layer2.W = W;
   linear_layer2.b = b;
 
-  test_feedforward(linear_layer1, linear_layer2, X);
+  test_feedforward(D, K, N, linear_layer1, linear_layer2, X);
   test_backpropagate(linear_layer1, linear_layer2, Y, DY);
 
   sparse_linear_layer linear_layer3(D, K, N);
@@ -186,7 +179,7 @@ void test_layers(const eigen::matrix& W, const eigen::matrix& b, const eigen::ma
   linear_layer4.W = mkl::to_eigen<scalar>(linear_layer3.W);
   linear_layer4.b = linear_layer3.b;
 
-  test_feedforward(linear_layer3, linear_layer4, X);
+  test_feedforward(D, K, N, linear_layer3, linear_layer4, X);
   test_backpropagate(linear_layer3, linear_layer4, Y, DY);
 
   relu_layer<mkl::sparse_matrix_csr<scalar>> relu_layer1(D, K, N);
@@ -198,7 +191,7 @@ void test_layers(const eigen::matrix& W, const eigen::matrix& b, const eigen::ma
   relu_layer2.W = W;
   relu_layer2.b = b;
 
-  test_feedforward(relu_layer1, relu_layer2, X);
+  test_feedforward(D, K, N, relu_layer1, relu_layer2, X);
   test_backpropagate(relu_layer1, relu_layer2, Y, DY);
 
   sigmoid_layer<mkl::sparse_matrix_csr<scalar>> sigmoid_layer1(D, K, N);
@@ -210,7 +203,7 @@ void test_layers(const eigen::matrix& W, const eigen::matrix& b, const eigen::ma
   sigmoid_layer2.W = W;
   sigmoid_layer2.b = b;
 
-  test_feedforward(sigmoid_layer1, sigmoid_layer2, X);
+  test_feedforward(D, K, N, sigmoid_layer1, sigmoid_layer2, X);
   test_backpropagate(sigmoid_layer1, sigmoid_layer2, Y, DY);
 
   softmax_layer<mkl::sparse_matrix_csr<scalar>> softmax_layer1(D, K, N);
@@ -222,12 +215,12 @@ void test_layers(const eigen::matrix& W, const eigen::matrix& b, const eigen::ma
   softmax_layer2.W = W;
   softmax_layer2.b = b;
 
-  test_feedforward(softmax_layer1, softmax_layer2, X);
+  test_feedforward(D, K, N, softmax_layer1, softmax_layer2, X);
   test_backpropagate(softmax_layer1, softmax_layer2, Y, DY);
 }
 
 template <typename LossFunction>
-void test_mlp(multilayer_perceptron& M1, multilayer_perceptron& M2, const eigen::matrix& X, const eigen::matrix& T, LossFunction loss)
+void test_mlp(multilayer_perceptron& M1, multilayer_perceptron& M2, const eigen::matrix& X, const eigen::matrix& T, LossFunction loss, const std::vector<long>& sizes, long N)
 {
   std::cout << "=================" << std::endl;
   std::cout << "=== test_mlp ===" << std::endl;
@@ -239,8 +232,7 @@ void test_mlp(multilayer_perceptron& M1, multilayer_perceptron& M2, const eigen:
   M1.info("M1 before");
   M2.info("M2 before");
 
-  long K = T.cols();
-  long N = X.rows();
+  long K = sizes.back();
 
   eigen::matrix Y1(N, K);
   eigen::matrix Y2(N, K);
@@ -281,14 +273,14 @@ void test_mlp(multilayer_perceptron& M1, multilayer_perceptron& M2, const eigen:
   print_cpp_matrix("Y1", Y1);
 }
 
-void test_layers(long D, long N, long K)
+void test_layers(long D, long K, long N)
 {
   eigen::matrix X = eigen::random_matrix(N, D);
   eigen::matrix Y = eigen::random_matrix(N, K);
   eigen::matrix DY = eigen::random_matrix(N, K);
   eigen::matrix W = eigen::random_matrix(K, D);
   eigen::matrix b = eigen::random_matrix(1, K);
-  test_layers(W, b, X, Y, DY);
+  test_layers(D, K, N, W, b, X, Y, DY);
 }
 
 TEST_CASE("test_layers")
@@ -299,8 +291,11 @@ TEST_CASE("test_layers")
 }
 
 template <typename LossFunction>
-void test_mlp(long D, long K1, long K2, long K3, long N, LossFunction loss)
+void test_mlp(const std::vector<long>& sizes, long N, LossFunction loss)
 {
+  long D = sizes.front();
+  long K = sizes.back();
+
   eigen::matrix X = eigen::random_matrix(N, D, 0.0, 1.0);  // the input of the MLP
   eigen::matrix T = eigen::random_target_rowwise(N, K3, nerva_rng);  // the target
   eigen::matrix W1 = eigen::random_matrix(K1, D, 0.0, 1.0);
@@ -314,19 +309,19 @@ void test_mlp(long D, long K1, long K2, long K3, long N, LossFunction loss)
   // Create dense MLP M1
   multilayer_perceptron M1;
   {
-    auto layer1 = std::make_shared<relu_layer<eigen::matrix>>(D, K1, batch_size);
+    auto layer1 = std::make_shared<relu_layer<eigen::matrix>>(sizes[0], sizes[1], batch_size);
     layer1->W = W1;
     layer1->b = b1;
     layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
     M1.layers.push_back(layer1);
 
-    auto layer2 = std::make_shared<relu_layer<eigen::matrix>>(K1, K2, batch_size);
+    auto layer2 = std::make_shared<relu_layer<eigen::matrix>>(sizes[1], sizes[2], batch_size);
     layer2->W = W2;
     layer2->b = b2;
     layer2->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer2->W, layer2->DW, layer2->b, layer2->Db);
     M1.layers.push_back(layer2);
 
-    auto layer3 = std::make_shared<linear_layer<eigen::matrix>>(K2, K3, batch_size);
+    auto layer3 = std::make_shared<linear_layer<eigen::matrix>>(sizes[2], sizes[3], batch_size);
     layer3->W = W3;
     layer3->b = b3;
     layer3->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer3->W, layer3->DW,layer3->b, layer3->Db);
@@ -337,21 +332,21 @@ void test_mlp(long D, long K1, long K2, long K3, long N, LossFunction loss)
   multilayer_perceptron M2;
   {
     using matrix_t = mkl::sparse_matrix_csr<scalar>;
-    auto layer1 = std::make_shared<relu_layer<matrix_t>>(D, K1, batch_size);
+    auto layer1 = std::make_shared<relu_layer<matrix_t>>(sizes[0], sizes[1], batch_size);
     layer1->W = mkl::to_csr<scalar>(W1);
     layer1->DW = layer1->W;
     layer1->b = b1;
     layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<matrix_t>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
     M2.layers.push_back(layer1);
 
-    auto layer2 = std::make_shared<relu_layer<matrix_t>>(K1, K2, batch_size);
+    auto layer2 = std::make_shared<relu_layer<matrix_t>>(sizes[1], sizes[2], batch_size);
     layer2->W = mkl::to_csr<scalar>(W2);
     layer2->DW = layer2->W;
     layer2->b = b2;
     layer2->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<matrix_t>>(layer2->W, layer2->DW, layer2->b, layer2->Db);
     M2.layers.push_back(layer2);
 
-    auto layer3 = std::make_shared<linear_layer<matrix_t>>(K2, K3, batch_size);
+    auto layer3 = std::make_shared<linear_layer<matrix_t>>(sizes[2], sizes[3], batch_size);
     layer3->W = mkl::to_csr<scalar>(W3);
     layer3->DW = layer3->W;
     layer3->b = b3;
@@ -359,7 +354,7 @@ void test_mlp(long D, long K1, long K2, long K3, long N, LossFunction loss)
     M2.layers.push_back(layer3);
   }
 
-  test_mlp(M1, M2, X, T, loss);
+  test_mlp(M1, M2, X, T, loss, sizes, N);
 }
 
 TEST_CASE("test_mlp")
@@ -369,12 +364,13 @@ TEST_CASE("test_mlp")
   logistic_cross_entropy_loss loss3;
   softmax_cross_entropy_loss loss4;
 
-  test_mlp(4, 2, 3, 2, 5, loss1);
-  test_mlp(4, 2, 3, 2, 5, loss2);
-  test_mlp(4, 2, 3, 2, 5, loss3);
-  test_mlp(4, 2, 3, 2, 5, loss4);
-  test_mlp(6, 5, 7, 3, 10, loss1);  // TODO: check the results of the second call to feedforward
-  test_mlp(6, 5, 7, 3, 10, loss2);
-  test_mlp(6, 5, 7, 3, 10, loss3);
-  test_mlp(6, 5, 7, 3, 10, loss4);
+  test_mlp({4, 2, 3, 2}, 5, loss1);
+  test_mlp({4, 2, 3, 2}, 5, loss2);
+  test_mlp({4, 2, 3, 2}, 5, loss3);
+  test_mlp({4, 2, 3, 2}, 5, loss4);
+
+  test_mlp({6, 5, 7, 3}, 10, loss1);
+  test_mlp({6, 5, 7, 3}, 10, loss2);
+  test_mlp({6, 5, 7, 3}, 10, loss3);
+  test_mlp({6, 5, 7, 3}, 10, loss4);
 }

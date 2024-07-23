@@ -136,11 +136,12 @@ void compute_statistics(multilayer_perceptron& M,
   std::cout << std::endl;
 }
 
+template <typename DataSet>
 class stochastic_gradient_descent_algorithm
 {
   protected:
     multilayer_perceptron& M;
-    datasets::dataset& data;
+    DataSet& data;
     const sgd_options& options;
     const std::shared_ptr<loss_function>& loss;
     const std::shared_ptr<learning_rate_scheduler>& learning_rate;
@@ -149,7 +150,7 @@ class stochastic_gradient_descent_algorithm
 
   public:
     stochastic_gradient_descent_algorithm(multilayer_perceptron& M_,
-                                          datasets::dataset& data_,
+                                          DataSet& data_,
                                           const sgd_options& options_,
                                           const std::shared_ptr<loss_function>& loss_,
                                           const std::shared_ptr<learning_rate_scheduler>& learning_rate_,

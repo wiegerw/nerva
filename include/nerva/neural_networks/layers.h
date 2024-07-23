@@ -1,4 +1,4 @@
-// Copyright: Wieger Wesselink 2023
+// Copyright: Wieger Wesselink 2022 - present
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -549,7 +549,6 @@ struct log_softmax_layer : public linear_layer<Matrix>
 
   void backpropagate(const eigen::matrix& Y, const eigen::matrix& DY) override
   {
-    using eigen::diag;
     using eigen::hadamard;
     using eigen::column_repeat;
     using eigen::columns_sum;

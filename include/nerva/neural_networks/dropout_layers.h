@@ -1,4 +1,4 @@
-// Copyright: Wieger Wesselink 2023
+// Copyright: Wieger Wesselink 2023-present
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -96,8 +96,7 @@ struct linear_dropout_layer : public linear_layer<Matrix>, dropout_layer<Matrix>
 
   [[nodiscard]] std::string to_string() const override
   {
-    return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation=NoActivation(), dropout={})",
-                       input_size(), output_size(), optimizer->to_string(), p);
+    return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation=NoActivation(), dropout={})", input_size(), output_size(), optimizer->to_string(), p);
   }
 };
 
@@ -169,8 +168,7 @@ struct activation_dropout_layer : public activation_layer<Matrix, ActivationFunc
 
   [[nodiscard]] std::string to_string() const override
   {
-    return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation={}, dropout={})", input_size(),
-                       output_size(), optimizer->to_string(), act.to_string(), p);
+    return fmt::format("Dense(input_size={}, output_size={}, optimizer={}, activation={}, dropout={})", input_size(), output_size(), optimizer->to_string(), act.to_string(), p);
   }
 };
 
@@ -301,8 +299,7 @@ struct srelu_dropout_layer : public activation_dropout_layer<Matrix, srelu_activ
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
-  srelu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, scalar al = 1, scalar tl = 0,
-                      scalar ar = 1, scalar tr = 0)
+  srelu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, scalar al = 1, scalar tl = 0, scalar ar = 1, scalar tr = 0)
     : super(D, K, N, p, srelu_activation(al, tl, ar, tr))
   {
   }

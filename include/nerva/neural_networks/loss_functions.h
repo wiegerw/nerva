@@ -197,6 +197,7 @@ auto Stable_softmax_cross_entropy_loss_colwise(const Matrix1& Y, const Matrix2& 
 template <typename Matrix1, typename Matrix2>
 auto Stable_softmax_cross_entropy_loss_colwise_gradient(const Matrix1& Y, const Matrix2& T)
 {
+  using eigen::columns_sum;
   using eigen::hadamard;
   using eigen::row_repeat;
 
@@ -223,7 +224,6 @@ template <typename Vector1, typename Vector2>
 auto logistic_cross_entropy_loss_colwise_gradient(const Vector1& y, const Vector2& t)
 {
   using eigen::hadamard;
-  using eigen::Sigmoid;
 
   return hadamard(t, Sigmoid(y)) - t;
 }
@@ -242,7 +242,6 @@ template <typename Matrix1, typename Matrix2>
 auto Logistic_cross_entropy_loss_colwise_gradient(const Matrix1& Y, const Matrix2& T)
 {
   using eigen::hadamard;
-  using eigen::Sigmoid;
 
   return hadamard(T, Sigmoid(Y)) - T;
 }

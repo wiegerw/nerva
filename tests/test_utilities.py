@@ -28,9 +28,10 @@ def random_float_matrix(rows: int, cols: int, a: float, b: float):
     return scaled_array
 
 
-def make_target_rowwise(rows, cols) -> np.ndarray:
+def make_target_rowwise(rows, cols, cover_all_classes=False) -> np.ndarray:
     """
     Creates a boolean matrix T where each row of T has exactly one value set to 1.
+    If cover_classes is True, ensures that every column in the result has at least one value set to 1.
     """
 
     T = np.zeros((rows, cols), dtype=bool)
@@ -40,15 +41,27 @@ def make_target_rowwise(rows, cols) -> np.ndarray:
         j = np.random.randint(0, cols)
         T[i, j] = True
 
+    if cover_all_classes:
+        for j in range(cols):
+            # Check if column j has at least one True value
+            if not T[:, j].any():
+                # If not, set a random row in column j to True
+                i = np.random.randint(0, rows)
+                # To maintain the constraint that each row has exactly one True value,
+                # find the current True value in row i and set it to False
+                current_true_index = np.where(T[i])[0][0]
+                T[i, current_true_index] = False
+                T[i, j] = True
+
     return T
 
 
-def make_target_colwise(rows, cols) -> np.ndarray:
+def make_target_colwise(rows, cols, cover_all_classes=False) -> np.ndarray:
     """
     Creates a boolean matrix T where each column of T has exactly one value set to 1.
     """
 
-    return make_target_rowwise(cols, rows).T
+    return make_target_rowwise(cols, rows, cover_all_classes).T
 
 
 def print_cpp_matrix_declaration(out: StringIO, name: str, x: np.ndarray, num_decimal_places: int=8, rowwise=True) -> None:
@@ -65,7 +78,7 @@ def print_cpp_matrix_declaration(out: StringIO, name: str, x: np.ndarray, num_de
     if x.ndim == 1:
         x = x.reshape(1, -1) if rowwise else x.reshape(-1, 1)
 
-    out.write(f"  eigen::matrix {name} {{")
+    out.write(f"  eigen::matrix {name} {{\n")
     for row in x:
         out.write(f"    {{")
         out.write(f"{row[0]:.{num_decimal_places}f}")

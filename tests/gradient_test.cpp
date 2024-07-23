@@ -42,14 +42,11 @@ void print_mlp(const std::string& name, const multilayer_perceptron& M)
 }
 
 template <typename Layer, typename LossFunction>
-void test_linear_layer(Layer& layer, const eigen::matrix& X, const eigen::matrix& T, LossFunction loss)
+void test_linear_layer(long D, long K, long N, Layer& layer, const eigen::matrix& X, const eigen::matrix& T, LossFunction loss)
 {
-  long K = layer.output_size();
-  long N = X.rows();
-
   // do a feedforward + backpropagate pass to compute Db and DW
   layer.X = X;
-  eigen::matrix Y(K, N);
+  eigen::matrix Y(N, K);
   layer.feedforward(Y);
   eigen::matrix DY = loss.gradient(Y, T);
   layer.backpropagate(Y, DY);
@@ -61,21 +58,18 @@ void test_linear_layer(Layer& layer, const eigen::matrix& X, const eigen::matrix
   };
 
   // check the gradients of b and W
-  scalar h = std::is_same<scalar, double>::value ? scalar(0.0001) : scalar(0.01);
+  scalar h{0.0001};
   CHECK(check_gradient("Db", f, layer.b, layer.Db, h));
   CHECK(check_gradient("DW", f, layer.W, layer.DW, h));
 }
 
 // test a layer with parameters beta and gamma
 template <typename Layer, typename LossFunction>
-void test_affine_layer(Layer& layer, const eigen::matrix& X, const eigen::matrix& T, LossFunction loss)
+void test_affine_layer(long D, long K, long N, Layer& layer, const eigen::matrix& X, const eigen::matrix& T, LossFunction loss)
 {
-  long K = T.cols();
-  long N = X.rows();
-
   // do a feedforward + backpropagate pass to compute Db and DW
   layer.X = X;
-  eigen::matrix Y(K, N);
+  eigen::matrix Y(N, K);
   layer.feedforward(Y);
   eigen::matrix DY = loss.gradient(Y, T);
   layer.backpropagate(Y, DY);
@@ -86,15 +80,13 @@ void test_affine_layer(Layer& layer, const eigen::matrix& X, const eigen::matrix
     return loss(Y, T);
   };
 
-  scalar h = std::is_same<scalar, double>::value ? scalar(0.0001) : scalar(0.01);
+  scalar h{0.0001};
   CHECK(check_gradient("Dbeta", f, layer.beta, layer.Dbeta, h));
   CHECK(check_gradient("Dgamma", f, layer.gamma, layer.Dgamma, h));
 }
 
-void test_mlp(multilayer_perceptron& M, const eigen::matrix& X, const eigen::matrix& T, std::shared_ptr<loss_function> loss)
+void test_mlp(long D, long K, long N, multilayer_perceptron& M, const eigen::matrix& X, const eigen::matrix& T, std::shared_ptr<loss_function> loss)
 {
-  long N = X.rows();
-  long K = T.cols();
   eigen::matrix Y(N, K);
 
   // do a feedforward + backpropagate pass to compute Db and DW
@@ -110,7 +102,7 @@ void test_mlp(multilayer_perceptron& M, const eigen::matrix& X, const eigen::mat
   };
 
   // check the gradients of b and W
-  scalar h = std::is_same<scalar, double>::value ? scalar(0.0001) : scalar(0.01);
+  scalar h{0.0001};
 
   unsigned int index = 1;
   for (const auto& layer: M.layers)
@@ -145,28 +137,28 @@ void test_linear_layer(long D, long K, long N, LossFunction loss)
     linear_layer<eigen::matrix> layer(D, K, N);
     layer.W = W;
     layer.b = b;
-    test_linear_layer(layer, X, T, loss);
+    test_linear_layer(D, K, N, layer, X, T, loss);
   }
 
   {
     relu_layer<eigen::matrix> layer(D, K, N);
     layer.W = W;
     layer.b = b;
-    test_linear_layer(layer, X, T, loss);
+    test_linear_layer(D, K, N, layer, X, T, loss);
   }
 
   {
     sigmoid_layer<eigen::matrix> layer(D, K, N);
     layer.W = W;
     layer.b = b;
-    test_linear_layer(layer, X, T, loss);
+    test_linear_layer(D, K, N, layer, X, T, loss);
   }
 
   {
     softmax_layer<eigen::matrix> layer(D, K, N);
     layer.W = W;
     layer.b = b;
-    test_linear_layer(layer, X, T, loss);
+    test_linear_layer(D, K, N, layer, X, T, loss);
   }
 }
 
@@ -195,17 +187,17 @@ void test_dropout_layer(long D, long K, long N, scalar p, LossFunction loss)
   linear_dropout_layer<eigen::matrix> layer1(D, K, N, p);
   layer1.W = W;
   layer1.b = b;
-  test_linear_layer(layer1, X, T, loss);
+  test_linear_layer(D, K, N, layer1, X, T, loss);
 
   relu_dropout_layer<eigen::matrix> layer2(D, K, N, p);
   layer2.W = W;
   layer2.b = b;
-  test_linear_layer(layer2, X, T, loss);
+  test_linear_layer(D, K, N, layer2, X, T, loss);
 
   sigmoid_dropout_layer<eigen::matrix> layer3(D, K, N, p);
   layer3.W = W;
   layer3.b = b;
-  test_linear_layer(layer3, X, T, loss);
+  test_linear_layer(D, K, N, layer3, X, T, loss);
 }
 
 TEST_CASE("test_dropout_layer")
@@ -225,9 +217,8 @@ TEST_CASE("test_dropout_layer")
 }
 
 template <typename LossFunction>
-void test_batch_normalization_layer(long D, long N, LossFunction loss)
+void test_batch_normalization_layer(long D, long K, long N, LossFunction loss)
 {
-  long K = D;
   eigen::matrix X = eigen::random_matrix(N, D);
   eigen::matrix T = eigen::random_target_rowwise(N, K, nerva_rng);
   eigen::matrix beta = eigen::random_matrix(1, K);
@@ -237,14 +228,14 @@ void test_batch_normalization_layer(long D, long N, LossFunction loss)
     affine_layer layer(D, N);
     layer.beta = beta;
     layer.gamma = gamma;
-    test_affine_layer(layer, X, T, loss);
+    test_affine_layer(D, K, N, layer, X, T, loss);
   }
 
   {
     batch_normalization_layer layer(D, N);
     layer.beta = beta;
     layer.gamma = gamma;
-    test_affine_layer(layer, X, T, loss);
+    test_affine_layer(D, K, N, layer, X, T, loss);
   }
 }
 
@@ -254,9 +245,10 @@ TEST_CASE("test_batch_normalization_layer")
   for (const auto& param : parameters)
   {
     auto [D, N] = param;
-    test_batch_normalization_layer(D, N, squared_error_loss());
-    test_batch_normalization_layer(D, N, logistic_cross_entropy_loss());
-    test_batch_normalization_layer(D, N, softmax_cross_entropy_loss());
+    long K = D;
+    test_batch_normalization_layer(D, K, N, squared_error_loss());
+    test_batch_normalization_layer(D, K, N, logistic_cross_entropy_loss());
+    test_batch_normalization_layer(D, K, N, softmax_cross_entropy_loss());
     // test_batch_normalization_layer(D, N,  cross_entropy_loss());
     // test_batch_normalization_layer(D, N, negative_log_likelihood_loss());
   }
@@ -304,7 +296,7 @@ TEST_CASE("test_mlp0")
   {
     std::cout << "loss = " << loss_function_text << std::endl;
     std::shared_ptr<loss_function> loss = parse_loss_function(loss_function_text);
-    test_mlp(M, X, T, loss);
+    test_mlp(D, K, N, M, X, T, loss);
   }
 }
 
@@ -337,7 +329,7 @@ TEST_CASE("test_dropout_relu")
   {
     std::cout << "loss = " << loss_function_text << std::endl;
     std::shared_ptr<loss_function> loss = parse_loss_function(loss_function_text);
-    test_mlp(M, X, T, loss);
+    test_mlp(D, K, N, M, X, T, loss);
   }
 }
 
@@ -371,7 +363,7 @@ TEST_CASE("test_dropout_linear")
   {
     std::cout << "loss = " << loss_function_text << std::endl;
     std::shared_ptr<loss_function> loss = parse_loss_function(loss_function_text);
-    test_mlp(M, X, T, loss);
+    test_mlp(D, K, N, M, X, T, loss);
   }
 }
 
@@ -405,7 +397,7 @@ TEST_CASE("test_dropout_sigmoid")
   {
     std::cout << "loss = " << loss_function_text << std::endl;
     std::shared_ptr<loss_function> loss = parse_loss_function(loss_function_text);
-    test_mlp(M, X, T, loss);
+    test_mlp(D, K, N, M, X, T, loss);
   }
 }
 
@@ -437,7 +429,7 @@ TEST_CASE("test_batch_normalization1")
   {
     std::cout << "loss = " << loss_function_text << std::endl;
     std::shared_ptr<loss_function> loss = parse_loss_function(loss_function_text);
-    test_mlp(M, X, T, loss);
+    test_mlp(D, K, N, M, X, T, loss);
   }
 }
 
@@ -469,7 +461,7 @@ TEST_CASE("test_batch_normalization2")
   {
     std::cout << "loss = " << loss_function_text << std::endl;
     std::shared_ptr<loss_function> loss = parse_loss_function(loss_function_text);
-    test_mlp(M, X, T, loss);
+    test_mlp(D, K, N, M, X, T, loss);
   }
 }
 
@@ -501,7 +493,7 @@ TEST_CASE("test_chessboard")
   {
     std::cout << "loss = " << loss_function_text << std::endl;
     std::shared_ptr<loss_function> loss = parse_loss_function(loss_function_text);
-    test_mlp(M, X, T, loss);
+    test_mlp(D, K, N, M, X, T, loss);
   }
 }
 */
