@@ -65,7 +65,7 @@ else:
                        ]
 
 ext_modules = [
-    Pybind11Extension('nervalibcolwise',
+    Pybind11Extension('nervalibrowwise',
         [ "src/logger.cpp", "src/python-bindings.cpp", "src/utilities.cpp" ],
         define_macros=define_macros,
         extra_compile_args=extra_compile_args + ['-DNERVA_COLWISE'],

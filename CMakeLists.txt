@@ -26,15 +26,15 @@ include_directories(include)
 add_compile_definitions(FMT_HEADER_ONLY EIGEN_USE_MKL_ALL MKL_ILP64)
 add_compile_options(-m64 -march=native)
 
-add_library(nervalib STATIC src/logger.cpp src/utilities.cpp)
-target_link_libraries(nervalib PUBLIC MKL::MKL Eigen3::Eigen Python3::Python)
+add_library(nervalibrowwise STATIC src/logger.cpp src/utilities.cpp)
+target_link_libraries(nervalibrowwise PUBLIC MKL::MKL Eigen3::Eigen Python3::Python)
 
 add_library(nervalib_shared SHARED src/logger.cpp src/utilities.cpp)
 target_link_libraries(nervalib_shared PUBLIC MKL::MKL Eigen3::Eigen Python3::Python)
 
 pybind11_add_module(nerva src/python-bindings.cpp)
 target_link_libraries(nerva LINK_PUBLIC nervalib_shared MKL::MKL Eigen3::Eigen Python3::Python)
-target_compile_definitions(nerva PUBLIC NERVA_COLWISE)
+target_compile_definitions(nerva PUBLIC nervalibrowwise)
 
 enable_testing()
 add_subdirectory(examples)
