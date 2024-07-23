@@ -20,12 +20,10 @@ void test_stable_softmax(const eigen::matrix& X)
 {
   eigen::matrix Y = stable_softmax()(X);
 
-  auto N = X.rows();
-  for (auto i = 0; i < N; i++)
+  auto N = X.cols();
+  for (auto j = 0; j < N; j++)
   {
-    eigen::matrix x_i = X.row(i);
-    eigen::matrix y_i = stable_softmax()(x_i);
-    CHECK_EQ(y_i, Y.row(i));
+    CHECK_EQ(stable_softmax()(X.col(j)), Y.col(j));
   }
 }
 
