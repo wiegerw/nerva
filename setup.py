@@ -68,9 +68,10 @@ ext_modules = [
     Pybind11Extension('nervalibcolwise',
         [ "src/logger.cpp", "src/python-bindings.cpp", "src/utilities.cpp" ],
         define_macros=define_macros,
+        extra_compile_args=extra_compile_args,
         extra_link_args=extra_link_args,
         include_dirs=include_dirs,
-        cxx_std=17
+        cxx_std=20
     )
 ]
 
@@ -86,3 +87,4 @@ setup(
     package_dir = {'': 'python'},
     packages=['nervacolwise']
 )
+

@@ -7,10 +7,10 @@ from typing import List
 import numpy as np
 import torch
 
-from nervacolwise.datasets_colwise import DataLoader
-from nervacolwise.learning_rate_colwise import LearningRateScheduler
-from nervacolwise.loss_colwise import LossFunction
-from nervacolwise.layers_colwise import Sequential, print_model_info
+from nervacolwise.datasets import DataLoader
+from nervacolwise.learning_rate import LearningRateScheduler
+from nervacolwise.loss import LossFunction
+from nervacolwise.layers import Sequential, print_model_info
 from nervacolwise.utilities import MapTimer, pp
 import nervalibcolwise
 

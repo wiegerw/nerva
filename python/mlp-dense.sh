@@ -26,21 +26,8 @@ train_cpp --dataset=cifar10 --clip=1e-20
 tool="../tools/dist/mlp_colwise"
 train_cpp --dataset=cifar10 --computation=mkl --clip=1e-20
 
-tool=mlprowwise.py
+tool=mlp.py
 train_python --datadir=./data
-
-tool=mlprowwise.py
 train_python --datadir=./data --computation=mkl
-
-tool=mlpcolwise.py
-train_python --datadir=./data
-
-tool=mlpcolwise.py
-train_python --datadir=./data --computation=mkl
-
 name="dense-manual"
-tool=mlprowwise.py
-train_python --datadir=./data --manual
-
-tool=mlpcolwise.py
 train_python --datadir=./data --manual
