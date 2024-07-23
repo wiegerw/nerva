@@ -16,6 +16,13 @@ from test_utilities import random_float_matrix, make_target_colwise, make_target
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 
+def pp(name: str, x: torch.Tensor):
+    if x.dim() == 1:
+        print(f'{name} ({x.shape[0]})\n{x.data}')
+    else:
+        print(f'{name} ({x.shape[0]}x{x.shape[1]})\n{x.data}')
+
+
 class MLP(nn.Module):
     def __init__(self, sizes):
         super().__init__()
@@ -29,6 +36,14 @@ class MLP(nn.Module):
             x = F.relu(self.layers[i](x))
         x = self.layers[-1](x)
         return x
+
+    def info(self):
+        index = 1
+        for layer in self.layers:
+            if isinstance(layer, nn.Linear):
+                pp(f'W{index}', layer.weight.data)
+                pp(f'b{index}', layer.bias.data)
+                index += 1
 
 
 def train(M, X, T, optimizer, loss_fn, epochs):
@@ -70,20 +85,21 @@ def make_testcase(out: StringIO, name: str, sizes: list[int], N: int, rowwise=Fa
 
     device = torch.device("cpu")
     M = MLP(sizes).to(device)
+    # M.info()
 
     loss_fn = nn.CrossEntropyLoss()
     optimizer = optim.SGD(M.parameters(), lr=lr)
     epochs = 2
 
+    W1 = M.layers[0].weight.detach().numpy().copy()
+    b1 = M.layers[0].bias.detach().numpy().copy()
+    W2 = M.layers[1].weight.detach().numpy().copy()
+    b2 = M.layers[1].bias.detach().numpy().copy()
+    W3 = M.layers[2].weight.detach().numpy().copy()
+    b3 = M.layers[2].bias.detach().numpy().copy()
     Y1, DY1, Y2, DY2 = train(M, X, T, optimizer, loss_fn, epochs)
     X = X.detach().numpy()
     T = T.detach().numpy()
-    W1 = M.layers[0].weight.detach().numpy()
-    b1 = M.layers[0].bias.detach().numpy()
-    W2 = M.layers[1].weight.detach().numpy()
-    b2 = M.layers[1].bias.detach().numpy()
-    W3 = M.layers[2].weight.detach().numpy()
-    b3 = M.layers[2].bias.detach().numpy()
 
     if not rowwise:
         X = X.T
@@ -122,6 +138,7 @@ def main():
 
     np.random.seed(42)
     np.set_printoptions(precision=6)
+    torch.set_printoptions(precision=8, edgeitems=3, threshold=5, sci_mode=False, linewidth=160)
     rowwise = not args.colwise
 
     layer_sizes = [[2, 6, 4, 3], [3, 5, 2, 4], [6, 2, 2, 3]]
@@ -130,7 +147,6 @@ def main():
     out = StringIO()
     for i in range(3):
         make_testcase(out, f"test_mlp{i+1}", sizes=layer_sizes[i], N=example_counts[i], rowwise=rowwise)
-        break
     text = out.getvalue()
     insert_text_in_file('multilayer_perceptron_test.cpp', text)
 

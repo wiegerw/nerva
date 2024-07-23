@@ -81,6 +81,7 @@ void test_mlp_execution(const eigen::matrix& X,
   multilayer_perceptron M;
   long K = sizes.back(); // the output size of the MLP
   construct_mlp(M, W1, b1, W2, b2, W3, b3, sizes, N);
+  // M.info("M");
 
   eigen::matrix Y(K, N);
   eigen::matrix DY(K, N);
