@@ -641,5 +641,5 @@ PYBIND11_MODULE(nervalibrowwise, m)
   //                       version
   /////////////////////////////////////////////////////////////////////////
 
-  m.attr("__version__") = "0.20";
+  m.attr("__version__") = "0.30";
 }
