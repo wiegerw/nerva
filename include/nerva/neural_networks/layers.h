@@ -4,7 +4,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-/// \file nerva/neural_networks/layers_colwise.h
+/// \file nerva/neural_networks/layers.h
 /// \brief add your file description here.
 
 #pragma once

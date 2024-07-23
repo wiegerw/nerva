@@ -160,7 +160,8 @@ struct relu_dropout_layer: public activation_dropout_layer<Matrix, relu_activati
 
   relu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
    : super(D, K, N, p, relu_activation())
-  {}
+  {
+  }
 };
 
 using dense_relu_dropout_layer = relu_dropout_layer<eigen::matrix>;
@@ -174,7 +175,8 @@ struct sigmoid_dropout_layer: public activation_dropout_layer<Matrix, sigmoid_ac
 
   sigmoid_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
     : super(D, K, N, p, sigmoid_activation())
-  {}
+  {
+  }
 };
 
 using dense_sigmoid_dropout_layer = sigmoid_dropout_layer<eigen::matrix>;
@@ -188,7 +190,8 @@ struct softmax_dropout_layer: public softmax_layer<Matrix>, dropout_layer<Matrix
 
   softmax_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
     : super(D, K, N), dropout_layer<Matrix>(D, K, p)
-  {}
+  {
+  }
 };
 
 using dense_softmax_dropout_layer = softmax_dropout_layer<eigen::matrix>;
@@ -202,7 +205,8 @@ struct log_softmax_dropout_layer: public log_softmax_layer<Matrix>, dropout_laye
 
   log_softmax_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
     : super(D, K, N), dropout_layer<Matrix>(D, K, p)
-  {}
+  {
+  }
 };
 
 using dense_log_softmax_dropout_layer = log_softmax_dropout_layer<eigen::matrix>;
@@ -216,7 +220,8 @@ struct hyperbolic_tangent_dropout_layer: public activation_dropout_layer<Matrix,
 
   hyperbolic_tangent_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
       : super(D, K, N, p, hyperbolic_tangent_activation())
-  {}
+  {
+  }
 };
 
 using dense_hyperbolic_tangent_dropout_layer = hyperbolic_tangent_dropout_layer<eigen::matrix>;
@@ -230,7 +235,8 @@ struct all_relu_dropout_layer: public activation_dropout_layer<Matrix, all_relu_
 
   all_relu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, scalar alpha)
     : super(D, K, N, p, all_relu_activation(alpha))
-  {}
+  {
+  }
 };
 
 using dense_all_relu_dropout_layer = all_relu_dropout_layer<eigen::matrix>;
@@ -244,7 +250,8 @@ struct leaky_relu_dropout_layer: public activation_dropout_layer<Matrix, leaky_r
 
   leaky_relu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, scalar alpha)
     : super(D, K, N, p, leaky_relu_activation(alpha))
-  {}
+  {
+  }
 };
 
 using dense_leaky_relu_dropout_layer = leaky_relu_dropout_layer<eigen::matrix>;
@@ -258,7 +265,8 @@ struct trelu_dropout_layer: public activation_dropout_layer<Matrix, trimmed_relu
 
   trelu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, scalar epsilon)
     : super(D, K, N, p, trimmed_relu_activation(epsilon))
-  {}
+  {
+  }
 };
 
 using dense_trelu_dropout_layer = trelu_dropout_layer<eigen::matrix>;
@@ -272,7 +280,8 @@ struct srelu_dropout_layer: public activation_dropout_layer<Matrix, srelu_activa
 
   srelu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, scalar al = 1, scalar tl = 0, scalar ar = 1, scalar tr = 0)
     : super(D, K, N, p, srelu_activation(al, tl, ar, tr))
-  {}
+  {
+  }
 };
 
 using dense_srelu_dropout_layer = srelu_dropout_layer<eigen::matrix>;
