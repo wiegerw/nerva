@@ -152,28 +152,28 @@ struct activation_dropout_layer: public activation_layer<Matrix, ActivationFunct
 };
 
 template <typename Matrix>
-struct relu_dropout_layer: public activation_dropout_layer<Matrix, eigen::relu_activation>
+struct relu_dropout_layer: public activation_dropout_layer<Matrix, relu_activation>
 {
-  using super = activation_dropout_layer<Matrix, eigen::relu_activation>;
+  using super = activation_dropout_layer<Matrix, relu_activation>;
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
   relu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
-   : super(D, K, N, p, eigen::relu_activation())
+   : super(D, K, N, p, relu_activation())
   {}
 };
 
 using dense_relu_dropout_layer = relu_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
-struct sigmoid_dropout_layer: public activation_dropout_layer<Matrix, eigen::sigmoid_activation>
+struct sigmoid_dropout_layer: public activation_dropout_layer<Matrix, sigmoid_activation>
 {
-  using super = activation_dropout_layer<Matrix, eigen::sigmoid_activation>;
+  using super = activation_dropout_layer<Matrix, sigmoid_activation>;
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
   sigmoid_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
-    : super(D, K, N, p, eigen::sigmoid_activation())
+    : super(D, K, N, p, sigmoid_activation())
   {}
 };
 
@@ -208,70 +208,70 @@ struct log_softmax_dropout_layer: public log_softmax_layer<Matrix>, dropout_laye
 using dense_log_softmax_dropout_layer = log_softmax_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
-struct hyperbolic_tangent_dropout_layer: public activation_dropout_layer<Matrix, eigen::hyperbolic_tangent_activation>
+struct hyperbolic_tangent_dropout_layer: public activation_dropout_layer<Matrix, hyperbolic_tangent_activation>
 {
-  using super = activation_dropout_layer<Matrix, eigen::hyperbolic_tangent_activation>;
+  using super = activation_dropout_layer<Matrix, hyperbolic_tangent_activation>;
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
   hyperbolic_tangent_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p)
-      : super(D, K, N, p, eigen::hyperbolic_tangent_activation())
+      : super(D, K, N, p, hyperbolic_tangent_activation())
   {}
 };
 
 using dense_hyperbolic_tangent_dropout_layer = hyperbolic_tangent_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
-struct all_relu_dropout_layer: public activation_dropout_layer<Matrix, eigen::all_relu_activation>
+struct all_relu_dropout_layer: public activation_dropout_layer<Matrix, all_relu_activation>
 {
-  using super = activation_dropout_layer<Matrix, eigen::all_relu_activation>;
+  using super = activation_dropout_layer<Matrix, all_relu_activation>;
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
   all_relu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, scalar alpha)
-    : super(D, K, N, p, eigen::all_relu_activation(alpha))
+    : super(D, K, N, p, all_relu_activation(alpha))
   {}
 };
 
 using dense_all_relu_dropout_layer = all_relu_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
-struct leaky_relu_dropout_layer: public activation_dropout_layer<Matrix, eigen::leaky_relu_activation>
+struct leaky_relu_dropout_layer: public activation_dropout_layer<Matrix, leaky_relu_activation>
 {
-  using super = activation_dropout_layer<Matrix, eigen::leaky_relu_activation>;
+  using super = activation_dropout_layer<Matrix, leaky_relu_activation>;
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
   leaky_relu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, scalar alpha)
-    : super(D, K, N, p, eigen::leaky_relu_activation(alpha))
+    : super(D, K, N, p, leaky_relu_activation(alpha))
   {}
 };
 
 using dense_leaky_relu_dropout_layer = leaky_relu_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
-struct trelu_dropout_layer: public activation_dropout_layer<Matrix, eigen::trimmed_relu_activation>
+struct trelu_dropout_layer: public activation_dropout_layer<Matrix, trimmed_relu_activation>
 {
-  using super = activation_dropout_layer<Matrix, eigen::trimmed_relu_activation>;
+  using super = activation_dropout_layer<Matrix, trimmed_relu_activation>;
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
   trelu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, scalar epsilon)
-    : super(D, K, N, p, eigen::trimmed_relu_activation(epsilon))
+    : super(D, K, N, p, trimmed_relu_activation(epsilon))
   {}
 };
 
 using dense_trelu_dropout_layer = trelu_dropout_layer<eigen::matrix>;
 
 template <typename Matrix>
-struct srelu_dropout_layer: public activation_dropout_layer<Matrix, eigen::srelu_activation>
+struct srelu_dropout_layer: public activation_dropout_layer<Matrix, srelu_activation>
 {
-  using super = activation_dropout_layer<Matrix, eigen::srelu_activation>;
+  using super = activation_dropout_layer<Matrix, srelu_activation>;
   using super::to_string;
   using dropout_layer<Matrix>::p;
 
   srelu_dropout_layer(std::size_t D, std::size_t K, std::size_t N, scalar p, scalar al = 1, scalar tl = 0, scalar ar = 1, scalar tr = 0)
-    : super(D, K, N, p, eigen::srelu_activation(al, tl, ar, tr))
+    : super(D, K, N, p, srelu_activation(al, tl, ar, tr))
   {}
 };
 

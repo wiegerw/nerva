@@ -10,7 +10,6 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 
 #include "doctest/doctest.h"
-#include "nerva/neural_networks/check_gradients.h"
 #include "nerva/neural_networks/loss_functions.h"
 #include <iostream>
 #include <type_traits>
@@ -30,20 +29,22 @@ void test_loss(const std::string& name, LossFunction loss, scalar expected, cons
 TEST_CASE("test_loss1")
 {
   eigen::matrix Y {
-    {0.37454074, 0.15601948, 0.60111541},
-    {0.95071436, 0.15599536, 0.70807287},
-    {0.73199421, 0.05808455, 0.02058547},
-    {0.59865889, 0.86617628, 0.96990988},
+    {0.23759169, 0.42272727, 0.33968104},
+    {0.43770149, 0.28115265, 0.28114586},
+    {0.20141643, 0.45190243, 0.34668113},
+    {0.35686849, 0.17944701, 0.46368450},
+    {0.48552814, 0.26116029, 0.25331157},
   };
 
   eigen::matrix T {
-    {0.00000000, 0.00000000, 0.00000000},
-    {0.00000000, 1.00000000, 1.00000000},
-    {0.00000000, 0.00000000, 0.00000000},
+    {1.00000000, 0.00000000, 0.00000000},
+    {1.00000000, 0.00000000, 0.00000000},
+    {0.00000000, 1.00000000, 0.00000000},
+    {0.00000000, 0.00000000, 1.00000000},
     {1.00000000, 0.00000000, 0.00000000},
   };
 
-  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), -1.4627270698547363, Y, T);
+  test_loss("negative_log_likelihood_loss", negative_log_likelihood_loss(), 4.5487775802612305, Y, T);
 }
 
 

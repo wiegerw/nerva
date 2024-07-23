@@ -608,5 +608,15 @@ eigen::matrix random_target_rowwise(long rows, long cols, std::mt19937& gen)
   return eigen::to_one_hot_rowwise(targets, num_classes);
 }
 
+// Creates a one hot encoding. Each row contains one value 1 and all other values 0.
+inline
+eigen::matrix random_target_colwise(long rows, long cols, std::mt19937& gen)
+{
+  long size = cols;
+  long num_classes = rows;
+  Eigen::VectorXi targets = random_integer_vector(size, num_classes, gen);
+  return eigen::to_one_hot_colwise(targets, num_classes);
+}
+
 } // namespace nerva::eigen
 

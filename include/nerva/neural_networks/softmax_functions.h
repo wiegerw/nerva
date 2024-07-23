@@ -35,6 +35,7 @@ template <typename Vector>
 auto softmax_colwise_jacobian(const Vector& x)
 {
   using eigen::is_column_vector;
+  using eigen::Diag;
   assert(is_column_vector(x));
 
   auto y = softmax_colwise(x);
@@ -61,6 +62,7 @@ template <typename Vector>
 auto stable_softmax_colwise_jacobian(const Vector& x)
 {
   using eigen::is_column_vector;
+  using eigen::Diag;
   assert(is_column_vector(x));
 
   auto y = stable_softmax_colwise(x);
@@ -129,6 +131,7 @@ template <typename Vector>
 auto softmax_rowwise_jacobian(const Vector& x)
 {
   using eigen::is_row_vector;
+  using eigen::Diag;
   assert(is_row_vector(x));
 
   auto y = softmax_rowwise(x);
@@ -154,6 +157,7 @@ auto stable_softmax_rowwise(const Matrix& X)
 template <typename Vector>
 auto stable_softmax_rowwise_jacobian(const Vector& x)
 {
+  using eigen::Diag;
   assert(is_row_vector(x));
 
   auto y = stable_softmax_rowwise(x);
