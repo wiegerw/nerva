@@ -33,11 +33,11 @@ def make_loss_test(out: StringIO, N: int, K: int, a: float, b: float, index=0, r
 
     loss = squared_error_loss_torch(Y, T)
     name = 'squared_error_loss'
-    #out.write(f'  test_loss("{name}", {name}(), {loss}, Y, T);\n')
+    out.write(f'  test_loss("{name}", {name}(), {loss}, Y, T);\n')
 
     loss = softmax_cross_entropy_loss_torch(Y, T)
     name = 'softmax_cross_entropy_loss'
-    #out.write(f'  test_loss("{name}", {name}(), {loss}, Y, T);\n')
+    out.write(f'  test_loss("{name}", {name}(), {loss}, Y, T);\n')
 
     # No PyTorch equivalent available (PyTorch's NLLLoss does not apply the log)
     loss = nerva_torch.loss_functions.Negative_log_likelihood_loss(Y, T)
@@ -47,12 +47,12 @@ def make_loss_test(out: StringIO, N: int, K: int, a: float, b: float, index=0, r
     # No PyTorch equivalent available
     loss = nerva_torch.loss_functions.Cross_entropy_loss(Y, T)
     name = 'cross_entropy_loss'
-    #out.write(f'  test_loss("{name}", {name}(), {loss}, Y, T);\n')
+    out.write(f'  test_loss("{name}", {name}(), {loss}, Y, T);\n')
 
     # No PyTorch equivalent available(?)
     loss = nerva_torch.loss_functions.Logistic_cross_entropy_loss(Y, T)
     name = 'logistic_cross_entropy_loss'
-    #out.write(f'  test_loss("{name}", {name}(), {loss}, Y, T);\n')
+    out.write(f'  test_loss("{name}", {name}(), {loss}, Y, T);\n')
 
     out.write('}\n\n')
 
@@ -62,12 +62,12 @@ if __name__ == '__main__':
     parser.add_argument('--colwise', help='Generate tests for colwise layout', action='store_true')
     args = parser.parse_args()
 
-    np.random.seed(42)
+    # np.random.seed(42)
     np.set_printoptions(precision=6)
     rowwise = not args.colwise
 
     out = StringIO()
-    for i in range(1, 2):
+    for i in range(1, 6):
         N = 5  # the number of examples
         K = 3  # the number of classes
         make_loss_test(out, N, K, 0.000001, 1.0, index=i, rowwise=rowwise)
