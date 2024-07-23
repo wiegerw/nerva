@@ -297,13 +297,13 @@ void test_mlp(const std::vector<long>& sizes, long N, LossFunction loss)
   long K = sizes.back();
 
   eigen::matrix X = eigen::random_matrix(N, D, 0.0, 1.0);  // the input of the MLP
-  eigen::matrix T = eigen::random_target_rowwise(N, K3, nerva_rng);  // the target
-  eigen::matrix W1 = eigen::random_matrix(K1, D, 0.0, 1.0);
-  eigen::matrix W2 = eigen::random_matrix(K2, K1, 0.0, 1.0);
-  eigen::matrix W3 = eigen::random_matrix(K3, K2, 0.0, 1.0);
-  eigen::matrix b1 = eigen::matrix::Zero(1, K1);
-  eigen::matrix b2 = eigen::matrix::Zero(1, K2);
-  eigen::matrix b3 = eigen::matrix::Zero(1, K3);
+  eigen::matrix T = eigen::random_target_rowwise(N, K, nerva_rng);  // the target
+  eigen::matrix W1 = eigen::random_matrix(sizes[1], sizes[0], 0.0, 1.0);
+  eigen::matrix W2 = eigen::random_matrix(sizes[2], sizes[1], 0.0, 1.0);
+  eigen::matrix W3 = eigen::random_matrix(sizes[3], sizes[2], 0.0, 1.0);
+  eigen::matrix b1 = eigen::matrix::Zero(1, sizes[1]);
+  eigen::matrix b2 = eigen::matrix::Zero(1, sizes[2]);
+  eigen::matrix b3 = eigen::matrix::Zero(1, sizes[3]);
   long batch_size = N;
 
   // Create dense MLP M1
