@@ -146,18 +146,6 @@ PYBIND11_MODULE(nervalibrowwise, m)
     .def("update", &optimizer_function::update)
     ;
 
-  py::class_<gradient_descent_linear_layer_optimizer<eigen::matrix>, optimizer_function, std::shared_ptr<gradient_descent_linear_layer_optimizer<eigen::matrix>>>(m, "gradient_descent_optimizer")
-    .def(py::init<eigen::matrix&, eigen::matrix&, eigen::matrix&, eigen::matrix&>(), py::return_value_policy::copy)
-    ;
-
-  py::class_<momentum_linear_layer_optimizer<eigen::matrix>, optimizer_function, std::shared_ptr<momentum_linear_layer_optimizer<eigen::matrix>>>(m, "momentum_optimizer")
-    .def(py::init<eigen::matrix&, eigen::matrix&, eigen::matrix&, eigen::matrix&, scalar>(), py::return_value_policy::copy)
-    ;
-
-  py::class_<nesterov_linear_layer_optimizer<eigen::matrix>, optimizer_function, std::shared_ptr<nesterov_linear_layer_optimizer<eigen::matrix>>>(m, "nesterov_optimizer")
-    .def(py::init<eigen::matrix&, eigen::matrix&, eigen::matrix&, eigen::matrix&, scalar>(), py::return_value_policy::copy)
-    ;
-
   /////////////////////////////////////////////////////////////////////////
   //                       layers
   /////////////////////////////////////////////////////////////////////////
