@@ -44,19 +44,19 @@ void construct_mlp(multilayer_perceptron& M,
 
   auto layer1 = std::make_shared<relu_layer<eigen::matrix>>(sizes[0], sizes[1], batch_size);
   M.layers.push_back(layer1);
-  layer1->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer1->W, layer1->DW, layer1->b, layer1->Db);
+  set_linear_layer_optimizer(*layer1, "GradientDescent");
   layer1->W = W1;
   layer1->b = b1;
 
   auto layer2 = std::make_shared<relu_layer<eigen::matrix>>(sizes[1], sizes[2], batch_size);
   M.layers.push_back(layer2);
-  layer2->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer2->W, layer2->DW, layer2->b, layer2->Db);
+  set_linear_layer_optimizer(*layer2, "GradientDescent");
   layer2->W = W2;
   layer2->b = b2;
 
   auto layer3 = std::make_shared<linear_layer<eigen::matrix>>(sizes[2], sizes[3], batch_size);
   M.layers.push_back(layer3);
-  layer3->optimizer = std::make_shared<gradient_descent_linear_layer_optimizer<eigen::matrix>>(layer3->W, layer3->DW, layer3->b, layer3->Db);
+  set_linear_layer_optimizer(*layer3, "GradientDescent");
   layer3->W = W3;
   layer3->b = b3;
 }
