@@ -11,18 +11,18 @@ from pathlib import Path
 from typing import List, Union
 
 import torch
-from nerva.activation import parse_activation, Activation
-from nerva.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, \
+from nervacolwise.activation import parse_activation, Activation
+from nervacolwise.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, \
     create_npz_dataloaders, extract_tensors_from_dataloader
-from nerva.layers import print_model_info, BatchNormalization, Dense, Sparse, Layer, Sequential
-from nerva.learning_rate import LearningRateScheduler, parse_learning_rate
-from nerva.loss import LossFunction, parse_loss_function
-from nerva.optimizers import Optimizer, GradientDescent, parse_optimizer
-from nerva.pruning import PruneFunction, GrowFunction, PruneGrow, parse_prune_function, parse_grow_function
-from nerva.training import StochasticGradientDescentAlgorithm, SGDOptions, compute_sparse_layer_densities, \
+from nervacolwise.layers import print_model_info, BatchNormalization, Dense, Sparse, Layer, Sequential
+from nervacolwise.learning_rate import LearningRateScheduler, parse_learning_rate
+from nervacolwise.loss import LossFunction, parse_loss_function
+from nervacolwise.optimizers import Optimizer, GradientDescent, parse_optimizer
+from nervacolwise.pruning import PruneFunction, GrowFunction, PruneGrow, parse_prune_function, parse_grow_function
+from nervacolwise.training import StochasticGradientDescentAlgorithm, SGDOptions, compute_sparse_layer_densities, \
     to_one_hot, compute_statistics
-from nerva.utilities import manual_seed, nerva_timer_enable, pp, set_nerva_computation
-from nerva.weights import WeightInitializer, parse_weight_initializer
+from nervacolwise.utilities import manual_seed, nerva_timer_enable, pp, set_nerva_computation
+from nervacolwise.weights import WeightInitializer, parse_weight_initializer
 
 
 def make_linear_layer(input_size: int,
