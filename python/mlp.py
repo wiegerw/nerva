@@ -11,25 +11,18 @@ from pathlib import Path
 from typing import List, Union
 
 import torch
-
-import nervacolwise.activation
-import nervacolwise.optimizers
-import nervacolwise.utilities
-import nervacolwise.weights
-import nervalibcolwise
-from nervacolwise.activation import parse_activation, Activation
-from nervacolwise.optimizers import Optimizer
-from nervacolwise.pruning import PruneFunction, GrowFunction, PruneGrow, parse_prune_function, parse_grow_function
-from nervacolwise.training import StochasticGradientDescentAlgorithm, SGDOptions, compute_sparse_layer_densities, \
-    to_one_hot, compute_statistics
-from nervacolwise.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, \
+from nerva.activation import parse_activation, Activation
+from nerva.datasets import create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, \
     create_npz_dataloaders, extract_tensors_from_dataloader
-from nervacolwise.layers import print_model_info, BatchNormalization, Dense, Sparse, Layer, Sequential
-from nervacolwise.weights import WeightInitializer
-from nervacolwise.utilities import pp
-from nervacolwise.utilities import manual_seed, nerva_timer_enable
-from nervacolwise.loss import LossFunction, parse_loss_function
-from nervacolwise.learning_rate import LearningRateScheduler, parse_learning_rate
+from nerva.layers import print_model_info, BatchNormalization, Dense, Sparse, Layer, Sequential
+from nerva.learning_rate import LearningRateScheduler, parse_learning_rate
+from nerva.loss import LossFunction, parse_loss_function
+from nerva.optimizers import Optimizer, GradientDescent, parse_optimizer
+from nerva.pruning import PruneFunction, GrowFunction, PruneGrow, parse_prune_function, parse_grow_function
+from nerva.training import StochasticGradientDescentAlgorithm, SGDOptions, compute_sparse_layer_densities, \
+    to_one_hot, compute_statistics
+from nerva.utilities import manual_seed, nerva_timer_enable, pp, set_nerva_computation
+from nerva.weights import WeightInitializer, parse_weight_initializer
 
 
 def make_linear_layer(input_size: int,
@@ -145,13 +138,13 @@ def parse_init_weights(text: str, linear_layer_count: int) -> List[WeightInitial
     n = linear_layer_count
 
     if len(words) == 1:
-        init = nervacolwise.weights.parse_weight_initializer(words[0])
+        init = parse_weight_initializer(words[0])
         return [init] * n
 
     if len(words) != n:
         raise RuntimeError(f'the number of weight initializers ({len(words)}) does not match with the number of linear layers ({n})')
 
-    return [nervacolwise.weights.parse_weight_initializer(word) for word in words]
+    return [parse_weight_initializer(word) for word in words]
 
 
 def parse_optimizers(text: str, layer_count: int) -> List[Optimizer]:
@@ -159,17 +152,17 @@ def parse_optimizers(text: str, layer_count: int) -> List[Optimizer]:
     n = layer_count
 
     if len(words) == 0:
-        optimizer = nervacolwise.optimizers.GradientDescent()
+        optimizer = GradientDescent()
         return [optimizer] * n
 
     if len(words) == 1:
-        optimizer = nervacolwise.optimizers.parse_optimizer(words[0])
+        optimizer = parse_optimizer(words[0])
         return [optimizer] * n
 
     if len(words) != n:
         raise RuntimeError(f'the number of weight initializers ({len(words)}) does not match with the number of linear layers ({n})')
 
-    return [nervacolwise.optimizers.parse_optimizer(word) for word in words]
+    return [parse_optimizer(word) for word in words]
 
 
 def make_argument_parser():
@@ -200,7 +193,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--optimizers", type=str, help="The optimizer (GradientDescent, Momentum(<mu>), Nesterov(<mu>))", default="GradientDescent")
 
     # dataset
-    cmdline_parser.add_argument('--datadir', type=str, default='', help='the data directory (default: ./data)')
+    cmdline_parser.add_argument('--datadir', type=str, default='', help='the data directory')
     cmdline_parser.add_argument('--dataset', type=str, help='An .npz file containing train and test data')
     cmdline_parser.add_argument("--augmented", help="use data loaders with augmentation", action="store_true")
     cmdline_parser.add_argument("--preprocessed", help="folder with preprocessed datasets for each epoch")
@@ -391,7 +384,7 @@ def main():
     print_command_line_arguments(args)
 
     initialize_frameworks(args)
-    nervalibcolwise.set_nerva_computation(args.computation)
+    set_nerva_computation(args.computation)
 
     if args.datadir:
         if args.augmented:
@@ -454,7 +447,7 @@ def main():
         options.debug = args.debug
         options.gradient_step = 0
         prune = parse_prune_function(args.prune) if args.prune else None
-        grow = parse_grow_function(args.grow, nervacolwise.weights.parse_weight_initializer(args.grow_weights)) if args.grow else None
+        grow = parse_grow_function(args.grow, parse_weight_initializer(args.grow_weights)) if args.grow else None
         algorithm = SGD(M, train_loader, test_loader, options, M.loss, M.learning_rate, args.preprocessed, prune, grow)
         if args.manual:
             algorithm.run_manual()

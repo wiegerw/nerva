@@ -72,7 +72,7 @@ ext_modules = [
         extra_link_args=extra_link_args,
         include_dirs=include_dirs,
         cxx_std=20
-    )
+    ),
 ]
 
 setup(
