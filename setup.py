@@ -76,7 +76,7 @@ ext_modules = [
 ]
 
 setup(
-    name="nerva",
+    name="nervacolwise",
     version=__version__,
     author="Wieger Wesselink",
     author_email="j.w.wesselink@tue.nl",
