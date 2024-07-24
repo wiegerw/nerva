@@ -47,7 +47,7 @@ struct gradient_descent_optimizer: public optimizer_function
 
   [[nodiscard]] auto to_string() const -> std::string override
   {
-    return "gradient_descent";
+    return "GradientDescent";
   }
 
   void update(scalar eta) override
@@ -65,7 +65,7 @@ struct gradient_descent_optimizer: public optimizer_function
       else
       {
         auto x_view = mkl::make_dense_matrix_view(x);
-        auto Dx_view = mkl::make_dense_matrix_view(x);
+        auto Dx_view = mkl::make_dense_matrix_view(Dx);
         mkl::cblas_axpy(-eta, Dx_view, x_view);
       }
     }
