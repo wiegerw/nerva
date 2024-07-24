@@ -14,10 +14,6 @@ ECHO "EIGEN_INCLUDE_DIR = $(EIGEN_INCLUDE_DIR)" ;
 feature.feature scalar : float double : composite optional propagated ;
 feature.compose <scalar>double : <define>NERVA_USE_DOUBLE ;
 
-# Define a feature for the orientation
-feature.feature orientation : colwise rowwise : composite optional propagated ;
-feature.compose <orientation>colwise : <define>NERVA_COLWISE ;
-
 project nerva
    : requirements
        <include>include
