@@ -136,13 +136,13 @@ void set_optimizers(multilayer_perceptron& M, const std::string& optimizer)
   }
 }
 
-class sgd_algorithm: public stochastic_gradient_descent_algorithm
+class sgd_algorithm: public stochastic_gradient_descent_algorithm<datasets::dataset>
 {
   protected:
     std::filesystem::path preprocessed_dir;
     std::shared_ptr<prune_and_grow> regrow;
 
-    using super = stochastic_gradient_descent_algorithm;
+    using super = stochastic_gradient_descent_algorithm<datasets::dataset>;
     using super::data;
     using super::M;
     using super::rng;
