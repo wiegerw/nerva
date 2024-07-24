@@ -316,11 +316,11 @@ class SGD(StochasticGradientDescentAlgorithm):
         if epoch > 0:
             self.reload_data(epoch)
 
-        if epoch > 0 and self.regrow:
-            self.regrow(self.M)
-
         if epoch > 0:
             self.M.renew_dropout_masks()
+
+        if epoch > 0 and self.regrow:
+            self.regrow(self.M)
 
         if epoch > 0 and self.clip > 0:
             self.M.compiled_model.clip(self.clip)
