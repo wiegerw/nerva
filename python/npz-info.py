@@ -6,7 +6,7 @@
 
 import argparse
 import torch
-from nerva.datasets_colwise import load_dict_from_npz
+from nerva.datasets import load_dict_from_npz
 from nerva.utilities import pp
 
 

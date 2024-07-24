@@ -298,6 +298,8 @@ class SGD(StochasticGradientDescentAlgorithm):
         self.preprocessed_dir = preprocessed_dir
         self.regrow = PruneGrow(prune, grow) if prune else None
         self.clip = options.clip
+        self.train_loader = train_loader
+        self.test_loader = test_loader
 
     def reload_data(self, epoch) -> None:
         """
