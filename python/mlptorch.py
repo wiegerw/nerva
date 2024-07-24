@@ -17,9 +17,9 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.nn import Linear
 
-from nerva.datasets_rowwise import create_npz_dataloaders, create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, \
+from nerva.datasets import create_npz_dataloaders, create_cifar10_augmented_dataloaders, create_cifar10_dataloaders, \
     save_dict_to_npz, load_dict_from_npz
-from nerva.training_rowwise import compute_sparse_layer_densities, print_epoch
+from nerva.training import compute_sparse_layer_densities, print_epoch
 from nerva.utilities import StopWatch, pp, parse_function_call
 
 
