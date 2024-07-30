@@ -407,7 +407,7 @@ def make_argument_parser():
     cmdline_parser.add_argument("--threads", help="The number of threads being used", type=int)
 
     # gpu
-    cmdline_parser.add_argument('--no-cuda', action='store_true', default=True, help='disables CUDA training')
+    cmdline_parser.add_argument('--no-cuda', action='store_true', help='disables CUDA training')
     cmdline_parser.add_argument("--gpu", help="use the GPU (if available)", type=str, default='0')
 
     # timer
