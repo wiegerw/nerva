@@ -40,6 +40,7 @@ if sys.platform.startswith("win"):
                         f'{ONEAPI_ROOT}/compiler/latest/windows/compiler/lib/intel64_win/libiomp5md.lib'
                        ]
 else:
+    ONEAPI_ROOT = os.getenv('ONEAPI_ROOT')
     MKLROOT = os.getenv('MKLROOT')
     if not MKLROOT:
         if os.path.exists('/usr/include/mkl'):
@@ -57,8 +58,8 @@ else:
                         f'{MKL_LIB_DIR}/libmkl_intel_ilp64.a',
                         f'{MKL_LIB_DIR}/libmkl_intel_thread.a',
                         f'{MKL_LIB_DIR}/libmkl_core.a',
+                        f'{ONEAPI_ROOT}/latest/lib/libiomp5.a',
                         '-Wl,--end-group',
-                        '-liomp5',
                         '-lpthread',
                         '-lm',
                         '-ldl'
