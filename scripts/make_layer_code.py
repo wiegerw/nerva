@@ -324,23 +324,6 @@ def make_equations(equations, text):
     print('\n')
 
 
-TEMPLATE='''\\
-\addlinespace[2ex]
-\begin{minipage}[t]{0.5\textwidth}
-\small\begin{verbatim}
-FEEDFORWARD
-\end{verbatim}
-\end{minipage}
-&
-\begin{minipage}[t]{0.5\textwidth}
-\small\begin{verbatim}
-BACKPROPAGATE
-\end{verbatim}
-\end{minipage} \\
-\end{array}
-\]
-'''
-
 def run():
     paragraphs = split_paragraphs(CODE)
     for header, feedforward, backpropagate in zip(paragraphs[0::3], paragraphs[1::3], paragraphs[2::3]):
