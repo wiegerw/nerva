@@ -1,19 +1,20 @@
 ![Nerva Logo](images/nerva-logo.png)
 # Nerva
+
+> **Note:**  
+> N.B. The original `main` branch of this repository has been renamed to `main_old`. This branch contains the historical development of the code base, including the sparse neural network experiments that are reported in [1]. All important functionality has been separated into a number of independent repositories. Moreover, a substantial amount of documentation has been added to the C++ libraries. Similar documentation for the Python libraries is on the way.
+
 The Nerva framework consists of a collection of C++ and Python libraries for neural networks. Originally the library was developed for experimenting with truly sparse neural networks in C++. In the meantime, several Python implementations have been added. The following repositories are available:
 
 | Repository                                  | Description                                              |
 |---------------------------------------------|----------------------------------------------------------|
-| https://github.com/wiegerw/nerva-colwise    | A C++ implementation with data in column-wise layout     |
 | https://github.com/wiegerw/nerva-rowwise    | A C++ implementation with data in row-wise layout        |
+| https://github.com/wiegerw/nerva-colwise    | A C++ implementation with data in column-wise layout     |
 | https://github.com/wiegerw/nerva-jax        | A Python implementation using JAX data structures        |
 | https://github.com/wiegerw/nerva-numpy      | A Python implementation using NumPy data structures      |
 | https://github.com/wiegerw/nerva-tensorflow | A Python implementation using TensorFlow data structures |
 | https://github.com/wiegerw/nerva-torch      | A Python implementation using PyTorch data structures    |
-| https://github.com/wiegerw/nerva-sympy      | A symbolic Python implementation using for validation    |
-
-> **Note:**  
-> N.B. The original `main` branch of this repository has been renamed to `main_old`. This branch contains the historical development of the code base, and the sparse neural network experiments corresponding to [1]. All important functionality has been copied to the repositories mentioned above.
+| https://github.com/wiegerw/nerva-sympy      | A symbolic Python implementation used for validation     |
 
 ## Features
 The Nerva libraries have the following features:
