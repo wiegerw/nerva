@@ -6,15 +6,15 @@
 
 The Nerva framework consists of a collection of C++ and Python libraries for neural networks. Originally the library was developed for experimenting with truly sparse neural networks in C++. In the meantime, several Python implementations have been added. The following repositories are available:
 
-| Repository                                  | Description                                              |
-|---------------------------------------------|----------------------------------------------------------|
-| https://github.com/wiegerw/nerva-rowwise    | A C++ implementation with data in row-wise layout        |
-| https://github.com/wiegerw/nerva-colwise    | A C++ implementation with data in column-wise layout     |
-| https://github.com/wiegerw/nerva-jax        | A Python implementation using JAX data structures        |
-| https://github.com/wiegerw/nerva-numpy      | A Python implementation using NumPy data structures      |
-| https://github.com/wiegerw/nerva-tensorflow | A Python implementation using TensorFlow data structures |
-| https://github.com/wiegerw/nerva-torch      | A Python implementation using PyTorch data structures    |
-| https://github.com/wiegerw/nerva-sympy      | A symbolic Python implementation used for validation     |
+| Repository                                                      | Description                                              |
+|-----------------------------------------------------------------|----------------------------------------------------------|
+| [nerva-rowwise](https://github.com/wiegerw/nerva-rowwise)       | A C++ implementation with data in row-wise layout        |
+| [nerva-colwise](https://github.com/wiegerw/nerva-colwise)       | A C++ implementation with data in column-wise layout     |
+| [nerva-jax](https://github.com/wiegerw/nerva-jax)               | A Python implementation using JAX data structures        |
+| [nerva-numpy](https://github.com/wiegerw/nerva-numpy)           | A Python implementation using NumPy data structures      |
+| [nerva-tensorflow](https://github.com/wiegerw/nerva-tensorflow) | A Python implementation using TensorFlow data structures |
+| [nerva-torch](https://github.com/wiegerw/nerva-torch)           | A Python implementation using PyTorch data structures    |
+| [nerva-sympy](https://github.com/wiegerw/nerva-sympy)           | A symbolic Python implementation used for validation     |
 
 ## Features
 The Nerva libraries have the following features:
