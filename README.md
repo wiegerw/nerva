@@ -1,42 +1,72 @@
 ![Nerva Logo](images/nerva-logo.png)
+
 # Nerva
 
+[![License: BSL-1.0](https://img.shields.io/badge/License-Boost%201.0-lightblue.svg)](LICENSE)
+
+**Nerva** is a collection of modular C++ and Python libraries for building and experimenting with neural networks. Originally developed for research on **truly sparse neural networks**, the Nerva libraries have evolved into a set of well-documented, flexible components that emphasize mathematical clarity and transparent implementation.
+
 > **Note:**  
-> N.B. The original `main` branch of this repository has been renamed to `main_old`. This branch contains the historical development of the code base, including the sparse neural network experiments that are reported in [1]. All important functionality has been separated into a number of independent repositories. Moreover, a substantial amount of documentation has been added to the C++ libraries. Similar documentation for the Python libraries is on the way.
+> The original development history can be found on the [`main_old`](https://github.com/wiegerw/nerva/tree/main_old) branch. This includes all sparse training experiments reported in [1]. The functionality has since been split into independent repositories, each with focused documentation and clean interfaces.
 
-The Nerva framework consists of a collection of C++ and Python libraries for neural networks. Originally the library was developed for experimenting with truly sparse neural networks in C++. In the meantime, several Python implementations have been added. The following repositories are available:
+---
 
-| Repository                                                      | Description                                              |
-|-----------------------------------------------------------------|----------------------------------------------------------|
-| [nerva-rowwise](https://github.com/wiegerw/nerva-rowwise)       | A C++ implementation with data in row-wise layout        |
-| [nerva-colwise](https://github.com/wiegerw/nerva-colwise)       | A C++ implementation with data in column-wise layout     |
-| [nerva-jax](https://github.com/wiegerw/nerva-jax)               | A Python implementation using JAX data structures        |
-| [nerva-numpy](https://github.com/wiegerw/nerva-numpy)           | A Python implementation using NumPy data structures      |
-| [nerva-tensorflow](https://github.com/wiegerw/nerva-tensorflow) | A Python implementation using TensorFlow data structures |
-| [nerva-torch](https://github.com/wiegerw/nerva-torch)           | A Python implementation using PyTorch data structures    |
-| [nerva-sympy](https://github.com/wiegerw/nerva-sympy)           | A symbolic Python implementation used for validation     |
+## Repositories
+
+The Nerva project is organized into a set of focused libraries, each targeting a specific language or data layout:
+
+| Repository                                                      | Description                                                  |
+|-----------------------------------------------------------------|--------------------------------------------------------------|
+| [**nerva-rowwise**](https://github.com/wiegerw/nerva-rowwise)       | C++ backend with row-major layout (like PyTorch)             |
+| [**nerva-colwise**](https://github.com/wiegerw/nerva-colwise)       | C++ backend with column-major layout (like MATLAB)           |
+| [**nerva-jax**](https://github.com/wiegerw/nerva-jax)               | Python implementation using JAX                              |
+| [**nerva-numpy**](https://github.com/wiegerw/nerva-numpy)           | Python implementation using NumPy                            |
+| [**nerva-tensorflow**](https://github.com/wiegerw/nerva-tensorflow) | Python implementation using TensorFlow                       |
+| [**nerva-torch**](https://github.com/wiegerw/nerva-torch)           | Python implementation using PyTorch                          |
+| [**nerva-sympy**](https://github.com/wiegerw/nerva-sympy)           | Symbolic Python backend for specification and validation     |
+
+---
 
 ## Features
-The Nerva libraries have the following features:
-* They support common layers, loss functions and activation functions.
-* They support mini-batches, and all equations (including backpropagation!) are given in matrix form.
-* Precise mathematical specifications of the equations are available in this [specification document](https://wiegerw.github.io/nerva-rowwise/pdf/nerva-library-specifications.pdf). 
 
-The `nerva-colwise` and `nerva-rowwise` libraries have the following additional features:
-* They support truly sparse layers. The weight matrices of these layers are stored using a sparse matrix representation (CSR).
-* They include Python bindings.
+The Nerva libraries share a common design:
+
+- ✅ Support for common layers, activation functions, and loss functions  
+- ✅ Matrix-form equations for all operations, including **explicit backpropagation**  
+- ✅ Mini-batch training via matrix algebra  
+- ✅ Shared [mathematical specification document](https://wiegerw.github.io/nerva-rowwise/pdf/nerva-library-specifications.pdf)
+
+**C++ Libraries Only** (`nerva-rowwise`, `nerva-colwise`):
+
+- ✅ Native CPU performance using Intel MKL  
+- ✅ Support for **truly sparse** layers (using CSR representation)  
+- ✅ Python bindings available for easy integration
+
+---
 
 ## Limitations
-* Only multilayer perceptrons are supported.
-* Only the CPU is supported.
+
+- ⚠️ Currently limited to **multilayer perceptrons** (MLPs)  
+- ⚠️ **GPU support** is not yet available  
+- ⚠️ No convolutional or transformer layers (planned)
+
+---
 
 ## References
-The following papers about Nerva are available:
 
-[1] *Nerva: a Truly Sparse Implementation of Neural Networks*,  https://arxiv.org/abs/2407.17437. It introduces the library, and describes a number of static sparse training experiments.
+1. **Nerva: a Truly Sparse Implementation of Neural Networks**  
+   [arXiv:2407.17437](https://arxiv.org/abs/2407.17437)  
+   Introduces the library and reports sparse training experiments.
 
-[2] *Batch Matrix-form Equations and Implementation
-of Multilayer Perceptrons*, https://arxiv.org/abs/TODO. It describes the implementation of the Nerva libraries in great detail.
+2. **Batch Matrix-form Equations and Implementation of Multilayer Perceptrons** (🔗 TODO) 
+   Provides mathematical details and implementation principles.
+
+---
 
 ## Contact
-If you have questions, or if you would like to contribute to the Nerva libraries, you can email Wieger Wesselink (j.w.wesselink@tue.nl).
+
+Questions or contributions are welcome!  
+Contact: **Wieger Wesselink** (j.w.wesselink@tue.nl)
+
+---
+
