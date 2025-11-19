@@ -34,7 +34,8 @@ The Nerva libraries share a common design:
 - ✅ Support for common layers, activation functions, and loss functions  
 - ✅ Matrix-form equations for all operations, including **explicit backpropagation**  
 - ✅ Mini-batch training via matrix algebra  
-- ✅ Shared [mathematical specification document](https://wiegerw.github.io/nerva-rowwise/pdf/nerva-library-specifications.pdf)
+- ✅ Symbolic validation of equations using SymPy
+- ✅ Uniform implementations grounded in a small set of matrix primitives
 
 **C++ Libraries Only** (`nerva-rowwise`, `nerva-colwise`):
 
@@ -54,12 +55,15 @@ The Nerva libraries share a common design:
 
 ## References
 
-1. **Nerva: a Truly Sparse Implementation of Neural Networks**  
-   [arXiv:2407.17437](https://arxiv.org/abs/2407.17437)  
+1. **Nerva: a Truly Sparse Implementation of Neural Networks**
+
+   [arXiv:2407.17437](https://arxiv.org/abs/2407.17437)
    Introduces the library and reports sparse training experiments.
 
-2. **Batch Matrix-form Equations and Implementation of Multilayer Perceptrons** (🔗 TODO) 
-   Provides mathematical details and implementation principles.
+2. **Batch Matrix-form Equations and Implementation of Multilayer Perceptrons**
+
+   [arXiv:2511.11918](https://arxiv.org/abs/2511.11918)
+   Includes mathematical specifications and derivations.
 
 ---
 
