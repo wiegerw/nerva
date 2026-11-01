@@ -1,0 +1,115 @@
+--- a/main.tex
++++ b/main.tex
+@@ -91,6 +91,10 @@
+ 
+ % real numbers
+ \newcommand{\Reals}{\mathbb{R}}
++%% BN-PATCH: changes that remove diag(.)^T from the batch normalization equations are marked
++%% with \bnchange{...} and with comments that start with "%% BN-PATCH". Use \showbnpatchfalse to hide the colors.
++\newif\ifshowbnpatch \showbnpatchtrue
++\newcommand{\bnchange}[1]{\ifshowbnpatch\textcolor{red}{#1}\else#1\fi}
+ 
+ \lstset{
+   keywordstyle=\color{blue}\bfseries,
+@@ -413,13 +417,15 @@
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ We will slightly rewrite the formulation of \citet{DBLP:conf/icml/IoffeS15}, and convert it into matrix-form. Note that the input and output size of a batch normalization layer are the same, i.e., $\const{D} = \const{K}$. Let $X \in \Reals^{\const{N} \times \const{D}}$ be an input batch.
+ Each row of $X$ corresponds with an example, and each column with a feature. Let $\mu = (1_\const{N}^\top \cdot X) / \const{N}$, i.e., the row vector $\mu \in \Reals^{1 \times \const{D}}$ contains the averages of the columns in the batch. For a given example $x_i$, we write $r_i = x_i - \mu \in \Reals^{1 \times \const{D}}$, which represents the centered feature vector of that example. For a given feature $j$, we define $\sigma_j^2 = ((r^j)^\top \cdot r^j) / \const{N}$, which is the variance of the $j$-th feature across the batch.
+-The variance vector $\Sigma \in \Reals^{1 \times \const{D}}$ that contains $\sigma_j^2$ as its elements can then be formulated as $\Sigma = \func{diag}(R^\top R)^\top/\const{N}$, where $R$ is the $\const{N} \times \const{D}$ matrix with rows $r_1, \ldots, r_\const{N}$.
++The variance vector $\Sigma \in \Reals^{1 \times \const{D}}$ that contains $\sigma_j^2$ as its elements %% BN-PATCH: was: can then be formulated as $\Sigma = \func{diag}(R^\top R)^\top/\const{N}$, where ...
++can then be formulated as $\Sigma = \bnchange{1_\const{N}^\top \cdot (R \odot R)}/\const{N}$, where $R$ is the $\const{N} \times \const{D}$ matrix with rows $r_1, \ldots, r_\const{N}$\bnchange{, i.e., $\const{N} \cdot \Sigma$ contains the column sums of $R \odot R$}.
+ The first part of batch normalization, which standardizes the input $X$ to a matrix $Z$ with mean 0 and standard deviation 1, is then given by the equations
+ \begin{align}
+ \begin{split}
+ R &= X - \frac{1_\const{N} \cdot 1_\const{N}^\top}{\const{N}} \cdot X
+ \\
+-\Sigma &= \frac{1}{\const{N}} \cdot \func{diag}(R^\top R)^\top
++%% BN-PATCH: was: \Sigma &= \frac{1}{\const{N}} \cdot \func{diag}(R^\top R)^\top
++\Sigma &= \frac{1}{\const{N}} \cdot \bnchange{1_\const{N}^\top \cdot (R \odot R)}
+ \\
+ Z &= (1_\const{N} \cdot \Sigma^{-\frac{1}{2}}) \odot R.
+ \end{split}
+@@ -1091,7 +1097,8 @@
+ \begin{aligned}[t]
+ R &= X - \frac{1_\const{N} \cdot 1_\const{N}^\top}{\const{N}} \cdot X
+ \\
+-\Sigma &= \frac{1}{\const{N}} \cdot \func{diag}(R^\top R)^\top
++%% BN-PATCH: was: \Sigma &= \frac{1}{\const{N}} \cdot \func{diag}(R^\top R)^\top
++\Sigma &= \frac{1}{\const{N}} \cdot \bnchange{1_\const{N}^\top \cdot (R \odot R)}
+ \\
+ Z &= (1_\const{N} \cdot \Sigma^{-\frac{1}{2}}) \odot R
+ \\
+@@ -1114,27 +1121,30 @@
+            - 1_\const{N} \cdot 1_\const{N}^\top) \cdot \Gradient Z
+ \\[-0.3ex]
+      &\qquad
+-           {}- Z \odot (1_\const{N} \cdot \func{diag}(Z^\top \cdot \Gradient Z)^\top)
++%% BN-PATCH: was: {}- Z \odot (1_\const{N} \cdot \func{diag}(Z^\top \cdot \Gradient Z)^\top)
++           {}- Z \odot (1_\const{N} \cdot \bnchange{1_\const{N}^\top \cdot (Z \odot \Gradient Z)})
+        \Big)
+ \end{aligned}
+ \\
+ \addlinespace[2ex]
++%% BN-PATCH: was: Sigma = diag(R.T * R).T / N
+ \begin{minipage}[t]{0.5\textwidth}
+ \small\begin{lstlisting}
+ R = X - row_repeat(columns_mean(X), N)
+-Sigma = diag(R.T * R).T / N
++Sigma = columns_sum(hadamard(R, R)) / N
+ inv_sqrt_Sigma = inv_sqrt(Sigma)
+ Z = hadamard(row_repeat(inv_sqrt_Sigma, N), R)
+ Y = hadamard(row_repeat(gamma, N), Z) + row_repeat(beta, N)
+ \end{lstlisting}
+ \end{minipage}
+ &
++%% BN-PATCH: was: DX = ... - hadamard(Z, row_repeat(diag(Z.T * DZ).T, N)))
+ \begin{minipage}[t]{0.5\textwidth}
+ \small\begin{lstlisting}
+ DZ = hadamard(row_repeat(gamma, N), DY)
+ Dbeta = columns_sum(DY)
+ Dgamma = columns_sum(hadamard(DY, Z))
+-DX = hadamard(row_repeat(inv_sqrt_Sigma / N, N), (N * identity(N) - ones(N, N)) * DZ - hadamard(Z, row_repeat(diag(Z.T * DZ).T, N)))
++DX = hadamard(row_repeat(inv_sqrt_Sigma / N, N), (N * identity(N) - ones(N, N)) * DZ - hadamard(Z, row_repeat(columns_sum(hadamard(Z, DZ)), N)))
+ \end{lstlisting}
+ \end{minipage} \\
+ \end{array}
+@@ -1281,13 +1291,15 @@
+ &\text{If }
+   z^j = x^j \cdot (x^j)^\top \cdot y^j \quad (1 \leq j \leq n),
+ &&\text{ then }
+-  Z = X \odot (1_m \cdot \func{diag}(X^\top \cdot Y)^\top).
++%% BN-PATCH: was: Z = X \odot (1_m \cdot \func{diag}(X^\top \cdot Y)^\top).
++  Z = X \odot (1_m \cdot \bnchange{1_m^\top \cdot (X \odot Y)}).
+ \label{eq:matrix-property1}
+ \\  
+ &\text{If }
+   z^j = 1_m \cdot (x^j)^\top \cdot y^j \quad (1 \leq j \leq n),
+ &&\text{ then }
+-  Z = 1_m \cdot \func{diag}(X^\top Y)^\top.
++%% BN-PATCH: was: Z = 1_m \cdot \func{diag}(X^\top Y)^\top.
++  Z = 1_m \cdot \bnchange{1_m^\top \cdot (X \odot Y)}.
+ \label{eq:matrix-property2}
+ \\  
+ &\text{If }
+@@ -1317,7 +1329,10 @@
+ \end{property}
+ 
+ \noindent
+-All properties have been validated with SymPy. Naturally there is a lot of symmetry between the row and column properties. By means of example we will prove equation \eqref{eq:matrix-property5}. From $z_i = x_i \cdot y_i^\top \cdot y_i$ we derive that $z_{ij} = (x_i \cdot y_i^\top) y_{ij}$ for $1 \leq j \leq n$. Hence we can write $Z = R \odot Y$, where $R$ is defined using $r_{ij} = (x_i \cdot y_i^\top)$. We observe that $\func{diag}(X \cdot Y^\top) = (x_1 \cdot y_1^\top, \ldots, x_m \cdot y_m^\top)^\top$. From the definition of $R$ we can see that it consists of $n$ copies of the column vector $\func{diag}(X \cdot Y^\top)$. Hence we have $R = \func{diag}(X \cdot Y^\top) \cdot 1_n^\top$.
++All properties have been validated with SymPy.
++%% BN-PATCH: new sentence
++\bnchange{In properties \eqref{eq:matrix-property1} and \eqref{eq:matrix-property2} we use that $(x^j)^\top \cdot y^j$ is the $j^\text{th}$ column sum of $X \odot Y$, hence the row vector with elements $(x^j)^\top \cdot y^j$ equals $1_m^\top \cdot (X \odot Y)$. This is equal to $\func{diag}(X^\top Y)^\top$, but it avoids the computation of the $n \times n$ matrix $X^\top Y$.}
++Naturally there is a lot of symmetry between the row and column properties. By means of example we will prove equation \eqref{eq:matrix-property5}. From $z_i = x_i \cdot y_i^\top \cdot y_i$ we derive that $z_{ij} = (x_i \cdot y_i^\top) y_{ij}$ for $1 \leq j \leq n$. Hence we can write $Z = R \odot Y$, where $R$ is defined using $r_{ij} = (x_i \cdot y_i^\top)$. We observe that $\func{diag}(X \cdot Y^\top) = (x_1 \cdot y_1^\top, \ldots, x_m \cdot y_m^\top)^\top$. From the definition of $R$ we can see that it consists of $n$ copies of the column vector $\func{diag}(X \cdot Y^\top)$. Hence we have $R = \func{diag}(X \cdot Y^\top) \cdot 1_n^\top$.
+ 
+ \paragraph{linear layer}
+ We have $Y = X \cdot W^\top + 1_\const{N} \cdot b$. Let $x_i, y_i, b_i$ be the $i^\text{th}$ row of $X$, $Y$, $1_\const{N} \cdot b$ for $1 \leq i \leq \const{N}$, hence $y_i = x_i W^\top + b_i$, where $b_i = b$. Furthermore, let $w_j$ be the $j^\text{th}$ row of $W$, and let $e^i$ be the $i^\text{th}$ column of the unit matrix $\mathbb{I}_\const{K}$. Let $\mathcal{L}(Y) = \sum_{i=1}^\const{N} \mathcal{L}(y_i)$ be the corresponding loss. We calculate
+@@ -1491,7 +1506,8 @@
+       \left(
+               (\const{N} \cdot \mathbb{I}_\const{N} - 1_\const{N} \cdot 1_\const{N}^\top) \cdot \Gradient Z
+               -
+-              Z \odot (1_\const{N} \cdot \func{diag}(Z^\top \cdot \Gradient Z)^\top)
++%% BN-PATCH: was: Z \odot (1_\const{N} \cdot \func{diag}(Z^\top \cdot \Gradient Z)^\top)
++              Z \odot (1_\const{N} \cdot \bnchange{1_\const{N}^\top \cdot (Z \odot \Gradient Z)})
+        \right).
+ \end{align}
+ For the remaining equations, let 
