@@ -17,6 +17,7 @@ files here, and run the script.
 | Directory | Copied to | Contents |
 |-----------|-----------|----------|
 | `python` | `doc/asciidoc/include` of nerva-jax, nerva-numpy, nerva-tensorflow and nerva-torch | The AsciiDoc manual of the Python backends |
+| `readme` | `README.md` of nerva-jax, nerva-numpy, nerva-tensorflow and nerva-torch | The README of the Python backends (rendered, see below) |
 
 The C++ repositories (nerva-rowwise and nerva-colwise) have their own copies of some of these files, such as `io.adoc`,
 `introduction.adoc` and `matrix-operations.adoc`. They will be added here later.
@@ -37,3 +38,17 @@ repository defines in `doc/asciidoc/settings.adoc`:
 
 In source blocks, attributes are only replaced if the block has `subs="attributes+"`, e.g.
 `[source,bash,subs="attributes+"]`.
+
+## The README of the Python backends
+
+`readme/README.md` is a template. For each backend, `sync_docs.py` replaces the following tokens:
+
+| Token | Replaced by | Example (nerva-torch) |
+|-------|-------------|-----------------------|
+| `nerva-BACKEND` | The name of the repository and the PyPI package | `nerva-torch` |
+| `nerva_BACKEND` | The name of the Python package | `nerva_torch` |
+| `{{FRAMEWORK}}` | The name of the framework | `PyTorch` |
+| `{{CPU_GPU}}` | The contents of `readme/cpu-gpu/<backend>.md` | Installation of the CPU-only PyTorch |
+
+Text that differs between the backends in other ways should be put in a separate file per backend, like
+`readme/cpu-gpu/<backend>.md`, with a token in the template.

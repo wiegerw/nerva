@@ -68,6 +68,12 @@ The Nerva libraries share a common design:
 
 ---
 
+## Shared documentation
+
+Documentation that is used by several repositories is maintained in [`doc/shared`](doc/shared): the AsciiDoc manual
+and the README of the Python backends. The script `scripts/sync_docs.py` copies it to the repositories, which stay
+self-contained, and a CI check verifies that the copies are up to date. See [`doc/shared/README.md`](doc/shared/README.md).
+
 ## References
 
 1. **Nerva: a Truly Sparse Implementation of Neural Networks**
