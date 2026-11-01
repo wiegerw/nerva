@@ -62,7 +62,14 @@ repository.
 | `output_directory/nerva-<b>.html` (manual) | `bash doc/build_asciidoc_documentation.sh` | [Asciidoctor](https://asciidoctor.org) with `asciidoctor-bibtex` and `rouge` (`gem install asciidoctor asciidoctor-bibtex rouge`) |
 | `output_directory/sphinx/` (API reference) | `bash doc/build_sphinx_documentation.sh` | `pip install sphinx sphinx-rtd-theme`; the script installs them if needed |
 
-Both scripts also copy `doc/index.html` to `output_directory/`.
+Both scripts also copy `doc/index.html` to `output_directory/`, which is ignored by git (like the generated
+`doc/sphinx/_autosummary/`). To treat warnings as errors, as the CI does, pass extra options through the
+environment:
+
+```bash
+ASCIIDOCTOR_EXTRA_OPTS=--failure-level=WARN bash doc/build_asciidoc_documentation.sh
+SPHINX_EXTRA_OPTS="-W --keep-going" bash doc/build_sphinx_documentation.sh
+```
 
 ## Publication
 
@@ -71,7 +78,7 @@ Each backend has two workflows that publish the documentation to GitHub Pages, a
 | Workflow | Builds | Environment |
 |----------|--------|-------------|
 | `deploy-asciidoc.yml` | The manual | Container `asciidoctor/docker-asciidoctor` |
-| `deploy-sphinx.yml` | The API reference | Python with Sphinx; nerva-jax uses the container `ghcr.io/wiegerw/jax-sphinx` |
+| `deploy-sphinx.yml` | The API reference | Python with Sphinx; nerva-jax and nerva-tensorflow use the containers `ghcr.io/wiegerw/jax-sphinx` and `ghcr.io/wiegerw/tf-sphinx` |
 
 They run on every push to `main`, and can be started by hand from the Actions tab ("Run workflow"). They publish
 `output_directory/` to the `gh-pages` branch with `keep_files: true`, so the two workflows do not remove each
@@ -82,14 +89,17 @@ other's files.
 | Repository | Workflow | Checks |
 |------------|----------|--------|
 | `nerva-<b>` | `tests.yml` | The tests, on all supported Python versions and with the minimum versions of the dependencies |
+| `nerva-<b>` | `docs.yml` | On pull requests: builds the manual and the API reference without publishing them, with warnings treated as errors |
 | nerva-sympy | `tests.yml` | The symbolic tests, and (with the four backends checked out) the equation checks, the one-layer test cases and `sync_backend_tests.py --check` |
 | nerva | `docs-sync.yml` | `sync_docs.py --check` |
 
 The workflows that check other repositories (in nerva-sympy and nerva) check out the branch with the same name in
 those repositories if it exists, and `main` otherwise.
 
-**The documentation is not built on pull requests.** A broken include, a renamed tag, or an AsciiDoc or Sphinx error
-only shows up in the deploy workflows, after merging into `main`.
+`docs.yml` builds the documentation in the same way as the deploy workflows (the manual in the same container),
+so a broken include, a missing tag, or an AsciiDoc or Sphinx warning makes the pull request fail. The Sphinx build
+in `docs.yml` uses plain Python for all backends, since the frameworks are mocked in `conf.py`; the deploy workflows
+of nerva-jax and nerva-tensorflow use their own containers.
 
 ## Before changing documentation
 
@@ -99,14 +109,14 @@ only shows up in the deploy workflows, after merging into `main`.
    (AsciiDoc), or with tokens and per-backend fragments (README), see [below](#details-of-the-shared-files).
    Attributes in source blocks are only replaced with `subs="attributes+"`, e.g. `[source,bash,subs="attributes+"]`.
 3. **Mind the included code.** Tagged regions in examples and source files are part of the manual. When you rename,
-   move or delete such a file or tag, update the include in the shared AsciiDoc files. Include paths are relative to
-   `doc/asciidoc/include`.
+   move or delete such a file or tag, update the include in the shared AsciiDoc files (`docs.yml` reports a missing
+   tag or file). Include paths are relative to `doc/asciidoc/include`.
 4. **New modules** must be added to `doc/sphinx/index.rst` of each backend.
 5. **Sync, and use the same branch name everywhere.** After editing a source, run the sync script, and commit the
    result in every affected repository on a branch with the same name, so that the cross-repository CI checks match.
    Merge the pull requests together.
-6. **Build locally** before merging (see [Building the documentation locally](#building-the-documentation-locally)),
-   since the CI does not build the documentation on pull requests.
+6. **Check the build.** `docs.yml` builds the documentation of each backend on pull requests. To find problems
+   earlier, build locally (see [Building the documentation locally](#building-the-documentation-locally)).
 
 ## Details of the shared files
 
