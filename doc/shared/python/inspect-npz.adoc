@@ -1,0 +1,51 @@
+// Maintained in doc/shared/python of https://github.com/wiegerw/nerva and copied by scripts/sync_docs.py. Do not edit this copy.
+=== The tool inspect_npz.py
+The tool `inspect_npz.py` can be used to inspect the contents of a dataset stored in `.npz` format.
+
+An example invocation of the `inspect_npz.py` tool is
+
+[.small-code]
+[source,bash,subs="attributes+"]
+----
+python tools/inspect_npz.py {datasets-dir}/cifar10-flattened.npz
+----
+
+The output may look like this:
+[.small-code]
+[listing]
+----
+Xtrain   (50000x3072  )  inf-norm = 1.00000000
+[[0.23137255 0.16862745 0.19607843 ... 0.54901961 0.32941176 0.28235294]
+ [0.60392157 0.49411765 0.41176471 ... 0.54509804 0.55686275 0.56470588]
+ [1.         0.99215686 0.99215686 ... 0.3254902  0.3254902  0.32941176]
+ ...
+ [0.1372549  0.15686275 0.16470588 ... 0.30196078 0.25882353 0.19607843]
+ [0.74117647 0.72941176 0.7254902  ... 0.6627451  0.67058824 0.67058824]
+ [0.89803922 0.9254902  0.91764706 ... 0.67843137 0.63529412 0.63137255]]
+
+Ttrain   (50000       )  inf-norm = 9.00000000
+[6 9 9 ... 9 1 1]
+
+Xtest    (10000x3072  )  inf-norm = 1.00000000
+[[0.61960784 0.62352941 0.64705882 ... 0.48627451 0.50588235 0.43137255]
+ [0.92156863 0.90588235 0.90980392 ... 0.69803922 0.74901961 0.78039216]
+ [0.61960784 0.61960784 0.54509804 ... 0.03137255 0.01176471 0.02745098]
+ ...
+ [0.07843137 0.0745098  0.05882353 ... 0.19607843 0.20784314 0.18431373]
+ [0.09803922 0.05882353 0.09019608 ... 0.31372549 0.31764706 0.31372549]
+ [0.28627451 0.38431373 0.38823529 ... 0.36862745 0.22745098 0.10196078]]
+
+Ttest    (10000       )  inf-norm = 9.00000000
+[3 8 8 ... 5 1 7]
+----
+
+With the command line option `--shapes-only` a summary can be obtained:
+
+[.small-code]
+[listing]
+----
+Xtrain   (50000x3072  )  inf-norm = 1.00000000
+Ttrain   (50000       )  inf-norm = 9.00000000
+Xtest    (10000x3072  )  inf-norm = 1.00000000
+Ttest    (10000       )  inf-norm = 9.00000000
+----

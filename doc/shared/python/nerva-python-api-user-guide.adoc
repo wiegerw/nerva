@@ -1,0 +1,130 @@
+// Maintained in doc/shared/python of https://github.com/wiegerw/nerva and copied by scripts/sync_docs.py. Do not edit this copy.
+include::../settings.adoc[]
+
+== API / User guide
+
+=== Classes
+
+==== Class Layer
+The class `Layer` is the base class of all neural network layers. There are several different types of layers:
+
+|===
+|Layer |Description
+
+|`LinearLayer`
+|A linear layer.
+
+|`ActivationLayer`
+|A linear layer followed by a pointwise activation function.
+
+|`SReLULayer`
+|A linear layer followed by a SReLU activation function.
+
+|`SoftmaxLayer`
+|A linear layer followed by a softmax activation function.
+
+|`LogSoftmaxLayer`
+|A linear layer followed by a logsoftmax activation function.
+
+|`BatchNormalizationLayer`
+|A batch normalization layer.
+|===
+
+==== Class MultilayerPerceptron
+A multilayer perceptron (MLP) is modeled using the class `MultilayerPerceptron`. It contains a list of layers, and has member functions `feedforward`, `backpropagate` and `optimize` that can be used for training the neural network. Constructing an MLP can be done as follows:
+[[construct_mlp1]]
+[.small-code]
+[source,cpp]
+----
+include::../../../examples/mlp_construction.py[tag=construct1]
+----
+This creates an MLP with three linear layers, and various activation functions, weight initializers and optimizers.
+
+Another way to construct MLPs is provided by the function `parse_multilayer_perceptron`, that parses an MLP from textual specifications:
+[[construct_mlp2]]
+[.small-code]
+[source,cpp]
+----
+include::../../../examples/mlp_construction.py[tag=construct2]
+----
+Note that optimizers should not only be specified for linear layers, but also for batch normalization layers.
+
+==== Class LossFunction
+The class `LossFunction` is the base class of all loss functions. There are five loss functions available:
+
+* `SquaredErrorLoss`
+
+* `CrossEntropyLoss`
+
+* `LogisticCrossEntropyLoss`
+
+* `NegativeLogLikelihoodLoss`
+
+* `SoftmaxCrossEntropyLoss`
+
+See the paper https://arxiv.org/abs/2511.11918[Batch Matrix-form Equations and Implementation of Multilayer Perceptrons] for precise definitions of these loss functions.
+
+==== Class ActivationFunction
+The class `ActivationFunction` is the base class of all activation functions. The following activation functions are available:
+
+* `ReLU`
+* `Sigmoid`
+* `Softmax`
+* `LogSoftmax`
+* `LeakyReLU`
+* `AllReLU`
+* `SReLU`
+* `HyperbolicTangent`
+
+See the paper https://arxiv.org/abs/2511.11918[Batch Matrix-form Equations and Implementation of Multilayer Perceptrons] for precise definitions of these activation functions.
+
+=== Training a neural network
+
+The library provides two variants of stochastic gradient descent (SGD) training for multilayer perceptrons.
+The preferred interface is `stochastic_gradient_descent`, which accepts PyTorch-style `DataLoader` instances for
+training and test sets. This approach is the easiest in practice, since the `DataLoader` abstraction automatically
+handles batching, shuffling, and iteration over the dataset.
+
+[.small-code]
+[source,python]
+----
+include::../../../src/{module}/training.py[tag=sgd]
+----
+
+For educational purposes, a lower-level variant `stochastic_gradient_descent_plain` is also available.
+It operates directly on raw tensors in row layout (samples as rows), giving full control over batching and
+shuffling, but at the cost of additional boilerplate.
+
+[.small-code]
+[source,python]
+----
+include::../../../src/{module}/training.py[tag=sgd_plain]
+----
+
+Both functions support targets provided either as a one-dimensional tensor of class indices (the default
+convention used in PyTorch’s classification losses) or as a one-hot encoded matrix with as many columns
+as the output `Y`. If class indices are provided, they are internally converted to one-hot encoding using `to_one_hot`.
+
+Batching of the training data depends on the chosen interface. With `stochastic_gradient_descent`, batching and
+shuffling are handled automatically by the `DataLoader`. With `stochastic_gradient_descent_plain`, batching is
+implemented manually inside the training loop.
+
+In each epoch, every batch `(X, T)` goes through the three standard steps of stochastic gradient descent:
+
+. *Feedforward:* Given an input batch `X` and the current neural network parameters `Θ`, compute the outputs `Y`. In the code, this corresponds to `Y = M.feedforward(X)`.
+
+. *Backpropagation:* Given the outputs `Y` and the targets `T`, compute the gradient `DY` of `Y` with respect to the loss function. Then, using `Y` and `DY`, compute the gradients of the model parameters `DΘ`. These parameter gradients are stored internally in the model rather than returned. In the code, this step is performed by `M.backpropagate(Y, DY)`.
+
+. *Optimization:* Use the internally stored parameter gradients to update the parameters `Θ`. In the code, this corresponds to `M.optimize(lr)`.
+
+=== A complete example
+
+The following example trains an MLP on the synthetic shapes dataset (see <<shapes-dataset>>), using a training loop
+that shows the feedforward, backpropagation and optimization steps explicitly. The function `sgd` is defined in
+the file `examples/train_shapes.py`.
+
+[.small-code]
+[source,python]
+----
+include::../../../examples/train_shapes.py[tag=train]
+----

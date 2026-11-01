@@ -1,0 +1,37 @@
+// Maintained in doc/shared/python of https://github.com/wiegerw/nerva and copied by scripts/sync_docs.py. Do not edit this copy.
+include::../settings.adoc[]
+
+=== Synthetic shapes dataset [[shapes-dataset]]
+
+The module `{module}.shapes_dataset` generates a synthetic image classification dataset on the fly. It needs no
+downloads and no packages other than NumPy, so it is used by the examples in the `examples` directory and by the tests.
+
+Each example is a 28x28 grayscale image that contains one of ten shapes: a disk, a ring, a filled square, a square
+outline, a triangle, a cross, a plus, horizontal bars, vertical bars or an ellipse. The position, size, stroke width,
+rotation and brightness of the shapes are random, and noise is added to the pixels. The images are flattened to 784
+features with values between 0 and 1, and the targets are class indices. This is the same format as the flattened
+MNIST dataset. The dataset is deterministic for a given seed.
+
+The task is easy enough for a small MLP, but not trivial: a linear model reaches about 40% test accuracy, while an
+MLP with two hidden layers reaches about 85% after a few epochs, with a clear gap between training and test accuracy.
+
+Data loaders for a training and a test set can be created as follows:
+
+[source,python,subs="attributes+"]
+----
+from {module}.shapes_dataset import create_shapes_dataloaders
+
+train_loader, test_loader = create_shapes_dataloaders(batch_size=100)  # 50000 training and 10000 test examples
+----
+
+The function `make_shapes_dataset` returns the arrays `Xtrain`, `Ttrain`, `Xtest` and `Ttest` as NumPy arrays, and
+`create_array_dataloaders` in `{module}.datasets` creates data loaders for arbitrary NumPy arrays.
+To save the dataset in `.npz` format, for example for the `{mlptool}` tool, use
+
+[source,bash,subs="attributes+"]
+----
+python -m {module}.shapes_dataset --output shapes.npz
+----
+
+Run `python -m {module}.shapes_dataset --help` for the available options, such as the number of examples, the image
+size, the amount of noise and the seed.
