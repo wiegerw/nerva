@@ -1,0 +1,932 @@
+\documentclass[twoside,11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{bm}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage[svgnames]{xcolor}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{mathtools}
+\usepackage{array}
+\usepackage{float}
+\usepackage{inconsolata}
+\usepackage{hyperref}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{example}{Example}
+\newtheorem{remark}{Remark}
+\newtheorem{definition}{Definition}
+
+% for tables with feedforward + backpropagation equations (as in the MLP paper)
+\newcolumntype{L}{>{\displaystyle}l}
+
+\newcommand{\const}[1]{\ensuremath{\mathrm{#1}}} % constants
+\newcommand{\func}[1]{\ensuremath{\textsf{#1}}}  % functions
+\newcommand{\set}[1]{\ensuremath{\{ #1 \} }}     % sets
+
+% derivatives
+\newcommand{\Gradient}{\textsf{D}}
+\newcommand{\Derivative}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
+
+% real numbers
+\newcommand{\Reals}{\mathbb{R}}
+
+% notation specific for this document
+\newcommand{\Hin}{\const{H}}         % input height and width: H_1, H_2
+\newcommand{\Hout}{\const{H}'}       % output height and width: H'_1, H'_2
+\newcommand{\Fs}{\const{F}}          % window size F_1, F_2; number of window positions F
+\newcommand{\Pb}{\const{P}^{-}}      % padding before (top / left)
+\newcommand{\Pa}{\const{P}^{+}}      % padding after (bottom / right)
+\newcommand{\cstr}{\const{s}}         % stride
+\newcommand{\dil}{\const{d}}         % dilation
+\newcommand{\im}{\func{im2col}}
+\newcommand{\ci}{\func{col2im}}
+\newcommand{\bsum}{\func{blocks\_sum}}
+\newcommand{\brep}{\func{blocks\_repeat}}
+\newcommand{\bmax}{\func{blocks\_max}}
+\newcommand{\bmask}{\func{blocks\_max\_mask}}
+\newcommand{\Pos}{\mathcal{F}}       % the set of window positions
+\newcommand{\pix}{\mathcal{H}}       % the set of pixels of an input image
+\newcommand{\outpix}{\mathcal{H}'}   % the set of pixels of an output image
+\newcommand{\Jm}{\mathbb{J}}         % stacked identity matrices
+
+\lstset{
+  keywordstyle=\color{blue}\bfseries,
+  commentstyle=\color{ForestGreen},
+  stringstyle=\color{red},
+  language=Python,
+  columns=fullflexible,
+  basicstyle=\ttfamily\footnotesize,
+  frame=none,
+  keepspaces=true,
+  breaklines=true
+}
+
+\definecolor[named]{ACMDarkBlue}{cmyk}{1,0.58,0,0.21}
+\hypersetup{
+  colorlinks,
+  linkcolor=ACMDarkBlue,
+  citecolor=ACMDarkBlue,
+  urlcolor=black,
+  filecolor=ACMDarkBlue,
+}
+
+\begin{document}
+
+\title{Batch Matrix-form Equations of\\ Convolutional and Pooling Layers\\[1ex] \large Draft design document for the Nerva libraries}
+\author{Nerva project}
+\date{\today}
+\maketitle
+
+\begin{abstract}
+This document gives a precise specification, in matrix-form, of the feedforward and backpropagation equations of convolutional layers, max pooling layers and average pooling layers. It follows the style of the paper \emph{Batch Matrix-form Equations and Implementation of Multilayer Perceptrons} (arXiv:2511.11918), which we refer to as the MLP paper.
+A batch of images is represented by a matrix with one row per pixel and one column per channel.
+All equations are expressed in terms of named matrix operations. These are the operations of the MLP paper, plus two new operations \im{} and \ci{} that are defined by means of 0/1 selection matrices, and four simple operations on blocks of columns.
+With these operations, a convolutional layer has the same equations as a linear layer, except that its input is first replaced by a matrix that contains the contents of all positions of a sliding window.
+We derive all backpropagation equations, give small worked examples, and discuss how the operations can be implemented efficiently.
+\end{abstract}
+
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+
+A linear layer computes $Y = X W^\top + 1_\const{N} \cdot b$, which means that every output feature is a weighted sum of \emph{all} input features.
+For images this is wasteful, and it ignores which pixels are neighbours.
+A \emph{convolutional layer} works differently:
+\begin{itemize}
+\item every output value is computed from a small square \emph{window} of neighbouring pixels only, typically $3 \times 3$ pixels;
+\item the \emph{same} weights are used at every position of the image.
+\end{itemize}
+The window is moved over the image, and every position of the window produces one output pixel.
+A \emph{pooling layer} also moves a window over the image. Instead of a weighted sum, it takes the maximum or the average of the values in the window.
+Pooling layers have no parameters. They are used to reduce the size of an image.
+
+Descriptions of these layers in the literature usually use multidimensional arrays and informal pictures.
+Here we follow the approach of the MLP paper: all computations are written as equations in terms of a small number of named matrix operations, each with a precise definition.
+The main idea is the following.
+We collect the contents of all window positions in a matrix $\hat X = \im(X)$, with one row for every position of the window.
+A convolutional layer is then a linear layer applied to $\hat X$:
+\[
+Z = \hat X \cdot W^\top + 1_\const{M} \cdot b.
+\]
+Its backpropagation equations are those of a linear layer, except for the gradient of the input. That gradient needs the operation \ci{}, which puts values from the windows back into the image and adds them where windows overlap.
+
+The document is organised as follows.
+\begin{itemize}
+\item Section~\ref{section:images} defines how a batch of images is represented as a matrix.
+\item Section~\ref{section:convolution} explains convolution with index formulas.
+\item Section~\ref{section:selection-matrices} introduces selection matrices, which Section~\ref{section:im2col} uses to define \im{} and \ci.
+\item Section~\ref{section:blocks} defines the operations on blocks of columns that pooling needs.
+\item Section~\ref{section:operations-table} summarises all new operations in a table.
+\item Section~\ref{section:layers} gives the layer equations, and Section~\ref{section:derivations} derives them.
+\item Section~\ref{section:efficiency} discusses efficient implementations.
+\item Section~\ref{section:example} gives a complete example network for the CIFAR-10 dataset.
+\end{itemize}
+
+\paragraph{Notation.}
+We use the notation of the MLP paper, with the following additions.
+\begin{itemize}
+\item \textbf{All indices in this document start at 0.} This keeps the formulas for strides and padding short.
+\item The element in row $i$ and column $j$ of a matrix $A$ is denoted $a_{ij}$.
+\item Pairs of integers are written $h = (h_1, h_2)$. The first component is the vertical coordinate (the row of the image) and the second is the horizontal coordinate (the column of the image).
+\item Arithmetic on pairs is component-wise; for example, $\cstr \odot i = (\cstr_1 i_1, \cstr_2 i_2)$.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Images as matrices} \label{section:images}
+
+An image of height $\Hin_1$ and width $\Hin_2$ has $\Hin_1 \Hin_2$ pixels.
+Each pixel has $\const{C}$ values, called \emph{channels}; for example, a colour image has $\const{C} = 3$ channels (red, green and blue).
+The set of pixels of an image is
+\[
+\pix = \set{ (h_1, h_2) \mid 0 \leq h_1 < \Hin_1,\ 0 \leq h_2 < \Hin_2 }.
+\]
+Inside a convolutional network the number of channels is usually much larger than 3, for example 32 or 64.
+An image with many channels is also called a \emph{feature map}.
+
+\begin{definition}[Pixel matrix] \label{def:pixel-matrix}
+A batch of $\const{N}$ images of size $\Hin_1 \times \Hin_2$ with $\const{C}$ channels is represented by a matrix
+\[
+X \in \Reals^{\const{R} \times \const{C}}, \qquad \const{R} = \const{N} \Hin_1 \Hin_2,
+\]
+with one row for every pixel of every image and one column for every channel.
+Pixel $h = (h_1, h_2)$ of image $n$ is stored in row
+\[
+\rho(n, h) = (n \Hin_1 + h_1) \Hin_2 + h_2.
+\]
+That is, the pixels are numbered image by image, and within an image row by row.
+So $x_{\rho(n,h),\,c}$ is the value of channel $c$ of pixel $h$ of image $n$.
+\end{definition}
+
+\begin{example} \label{example:pixel-matrix}
+A batch with one colour image of $2 \times 2$ pixels ($\const{N} = 1$, $\Hin_1 = \Hin_2 = 2$, $\const{C} = 3$) is represented by the $4 \times 3$ matrix
+\[
+X =
+\begin{bmatrix}
+r_{00} & g_{00} & b_{00} \\
+r_{01} & g_{01} & b_{01} \\
+r_{10} & g_{10} & b_{10} \\
+r_{11} & g_{11} & b_{11}
+\end{bmatrix}
+\quad
+\begin{matrix}
+\leftarrow \text{pixel } (0,0) \\
+\leftarrow \text{pixel } (0,1) \\
+\leftarrow \text{pixel } (1,0) \\
+\leftarrow \text{pixel } (1,1)
+\end{matrix}
+\]
+where $r_{h_1 h_2}$, $g_{h_1 h_2}$ and $b_{h_1 h_2}$ are the red, green and blue values of pixel $(h_1, h_2)$.
+\end{example}
+
+\begin{remark}
+The pixel matrix plays the same role for convolutional layers as the row layout plays for the layers of an MLP, where each row of $X \in \Reals^{\const{N} \times \const{D}}$ is one example.
+A dataset of images is usually stored in row layout, with one row of $\const{D} = \Hin_1 \Hin_2 \const{C}$ values per image.
+Section~\ref{section:flatten} shows that the operations \im{} and \ci{} convert between the two representations.
+\end{remark}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Convolution} \label{section:convolution}
+
+\subsection{A single channel and a single filter}
+We first consider the simplest case: one image with one channel, and a window of $2 \times 2$ pixels.
+Let the image and the weights of the window be
+\[
+\begin{bmatrix}
+x_{00} & x_{01} & x_{02} \\
+x_{10} & x_{11} & x_{12} \\
+x_{20} & x_{21} & x_{22}
+\end{bmatrix}
+\qquad\text{and}\qquad
+\begin{bmatrix}
+w_{00} & w_{01} \\
+w_{10} & w_{11}
+\end{bmatrix}.
+\]
+The window fits inside the image at four positions, with its top left corner at pixel $(0,0)$, $(0,1)$, $(1,0)$ or $(1,1)$.
+Each position gives one pixel of the output image $z$, which therefore has $2 \times 2$ pixels:
+\begin{align*}
+z_{00} &= w_{00} x_{00} + w_{01} x_{01} + w_{10} x_{10} + w_{11} x_{11}, \\
+z_{01} &= w_{00} x_{01} + w_{01} x_{02} + w_{10} x_{11} + w_{11} x_{12}, \\
+z_{10} &= w_{00} x_{10} + w_{01} x_{11} + w_{10} x_{20} + w_{11} x_{21}, \\
+z_{11} &= w_{00} x_{11} + w_{01} x_{12} + w_{10} x_{21} + w_{11} x_{22}.
+\end{align*}
+In short, $z_{i_1 i_2} = \sum_{p_1 = 0}^{1} \sum_{p_2 = 0}^{1} w_{p_1 p_2}\, x_{i_1 + p_1,\, i_2 + p_2}$.
+Here $i = (i_1, i_2)$ is a pixel of the output image and $p = (p_1, p_2)$ is a position inside the window.
+Note that the same four weights are used for every output pixel.
+
+\begin{remark}
+In mathematics this operation is called a \emph{cross-correlation}.
+A convolution in the mathematical sense would use $x_{i_1 - p_1,\, i_2 - p_2}$, which amounts to flipping the window in both directions.
+All neural network frameworks call the cross-correlation a convolution, and we follow that convention.
+The weights are learned, so the difference does not matter.
+\end{remark}
+
+\subsection{The general case}
+In general, a convolutional layer has the following parameters.
+\begin{itemize}
+\item \textbf{Window size} $\Fs_1 \times \Fs_2$. We write
+  \[
+  \Pos = \set{ (p_1, p_2) \mid 0 \leq p_1 < \Fs_1,\ 0 \leq p_2 < \Fs_2 }
+  \]
+  for the set of window positions, and $\Fs = \Fs_1 \Fs_2$ for their number.
+  The window positions are numbered row by row: position $p$ has number $\varphi(p) = p_1 \Fs_2 + p_2$.
+\item \textbf{Stride} $\cstr = (\cstr_1, \cstr_2)$: how far the window moves between neighbouring output pixels.
+  The default is $\cstr = (1, 1)$.
+  With stride $(2, 2)$ the window skips every other position, so the output image is about half as high and half as wide.
+\item \textbf{Dilation} $\dil = (\dil_1, \dil_2)$: the spacing between the pixels that the window reads.
+  The default $\dil = (1, 1)$ means the window reads adjacent pixels.
+  With dilation $(2, 2)$, a $3 \times 3$ window reads every other pixel of a $5 \times 5$ area.
+\item \textbf{Padding} $\Pb = (\Pb_1, \Pb_2)$ and $\Pa = (\Pa_1, \Pa_2)$:
+  $\Pb_1$ and $\Pa_1$ rows of zeros are added above and below the image, and $\Pb_2$ and $\Pa_2$ columns of zeros to its left and right.
+  The default is no padding.
+  Padding is used to keep the output image the same size as the input image; for a $3 \times 3$ window, for example, one row or column of zeros is added on every side.
+\item \textbf{Number of filters} $\const{K}$. Each filter has its own weights and produces one channel of the output image.
+\end{itemize}
+These parameters, together with the batch size $\const{N}$ and the image size $\Hin_1 \times \Hin_2$, are called the \emph{geometry} $g$ of the layer.
+
+For output pixel $i$, window position $p$ reads the input pixel
+\begin{equation} \label{eq:source-pixel}
+\eta(i, p) = \cstr \odot i + \dil \odot p - \Pb,
+\qquad\text{i.e.}\qquad
+\eta(i,p)_r = \cstr_r i_r + \dil_r p_r - \Pb_r \quad (r = 1, 2).
+\end{equation}
+If $\eta(i, p) \notin \pix$, the window reads a zero of the padding.
+The output image has size $\Hout_1 \times \Hout_2$, the number of window placements that fit in the padded image:
+\begin{equation} \label{eq:output-size}
+\Hout_r = \left\lfloor \frac{\Hin_r + \Pb_r + \Pa_r - \dil_r (\Fs_r - 1) - 1}{\cstr_r} \right\rfloor + 1 \qquad (r = 1, 2).
+\end{equation}
+For example, a $5 \times 5$ image with a $3 \times 3$ window, stride $(2,2)$ and no padding gives $\Hout_1 = \Hout_2 = \lfloor (5 - 2 - 1) / 2 \rfloor + 1 = 2$.
+
+Further notation:
+\begin{itemize}
+\item $\outpix$ is the set of output pixels.
+\item $\const{M} = \const{N} \Hout_1 \Hout_2$ is the number of rows of the output pixel matrix.
+\item $\rho'(n, i) = (n \Hout_1 + i_1) \Hout_2 + i_2$ is the row of output pixel $i$ of image $n$.
+\end{itemize}
+
+\paragraph{Weights.}
+The weight of filter $k$ for channel $c$ at window position $p$ is denoted $w^{p}_{kc}$.
+For each window position $p$ these weights form a matrix $W_p \in \Reals^{\const{K} \times \const{C}}$.
+The weight matrix of the layer concatenates these matrices, ordered by window position:
+\[
+W = \begin{bmatrix} W_{(0,0)} & W_{(0,1)} & \cdots & W_{(\Fs_1 - 1, \Fs_2 - 1)} \end{bmatrix} \in \Reals^{\const{K} \times \Fs \const{C}}.
+\]
+So row $k$ of $W$ contains all weights of filter $k$, and $w^{p}_{kc}$ is stored in column $\varphi(p)\, \const{C} + c$.
+In addition, each filter $k$ has a bias $b_k$; together these form $b = (b_0, \ldots, b_{\const{K}-1}) \in \Reals^{1 \times \const{K}}$.
+
+\begin{definition}[Convolution] \label{def:convolution}
+Let $X \in \Reals^{\const{R} \times \const{C}}$ be a pixel matrix.
+The output $Z \in \Reals^{\const{M} \times \const{K}}$ of a convolutional layer is the pixel matrix of the output images. It is defined by
+\begin{equation} \label{eq:convolution-index}
+z_{\rho'(n,i),\, k} = b_k + \sum_{p \in \Pos} \sum_{c = 0}^{\const{C}-1} w^{p}_{kc}\; x_{\rho(n, \eta(i,p)),\, c}
+\end{equation}
+for $0 \leq n < \const{N}$, $i \in \outpix$ and $0 \leq k < \const{K}$.
+Terms with $\eta(i,p) \notin \pix$ are omitted, because they are multiplied by a zero of the padding.
+\end{definition}
+\noindent
+So output channel $k$ at output pixel $i$ is a weighted sum of all channels of all pixels in the window, plus a bias.
+The output is again a pixel matrix, now with $\const{K}$ channels, so it can be the input of another convolutional layer.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Selection matrices} \label{section:selection-matrices}
+
+For every window position $p$, equation~\eqref{eq:convolution-index} reads one input pixel per output pixel.
+This can be written as a product with a matrix of zeros and ones.
+
+\begin{definition}[Selection matrix] \label{def:selection-matrix}
+For a geometry $g$ and a window position $p \in \Pos$, the \emph{selection matrix} $S_p \in \Reals^{\const{M} \times \const{R}}$ is defined by
+\[
+(S_p)_{\rho'(n,i),\; \rho(n',h)} =
+\begin{cases}
+1, & \text{if } n' = n \text{ and } h = \eta(i, p), \\
+0, & \text{otherwise.}
+\end{cases}
+\]
+\end{definition}
+\noindent
+Each row of $S_p$ corresponds to an output pixel $i$ of an image $n$.
+It contains a single 1, in the column of the input pixel $\eta(i,p)$ that window position $p$ reads; if $\eta(i,p)$ lies in the padding, the row contains only zeros.
+Multiplying a pixel matrix by $S_p$ therefore selects rows:
+
+\begin{lemma} \label{lemma:selection}
+Let $X \in \Reals^{\const{R} \times \const{C}}$ be a pixel matrix. Then $S_p X \in \Reals^{\const{M} \times \const{C}}$.
+Row $\rho'(n,i)$ of $S_p X$ equals row $\rho(n, \eta(i,p))$ of $X$ if $\eta(i,p) \in \pix$, and is zero otherwise.
+\end{lemma}
+\begin{proof}
+Row $\rho'(n,i)$ of $S_p X$ equals $\sum_{j} (S_p)_{\rho'(n,i), j}\, x_j$, where $x_j$ is row $j$ of $X$.
+By Definition~\ref{def:selection-matrix} at most one term is nonzero: the one with $j = \rho(n, \eta(i,p))$, if $\eta(i,p) \in \pix$.
+\end{proof}
+
+\begin{example} \label{example:selection}
+Take one image ($\const{N} = 1$) of $3 \times 3$ pixels with one channel, a $2 \times 2$ window, stride $(1,1)$, dilation $(1,1)$ and no padding.
+Then $\Hout_1 = \Hout_2 = 2$, $\const{M} = 4$ and $\const{R} = 9$.
+Number the pixels of the input image $0, \ldots, 8$, so that the pixel matrix is the column vector $X = (x_0, \ldots, x_8)^\top$.
+For the window position $p = (0,1)$, the top right corner of the window, we get:
+\[
+\text{image}\ \
+\begin{bmatrix}
+x_0 & x_1 & x_2 \\
+x_3 & x_4 & x_5 \\
+x_6 & x_7 & x_8
+\end{bmatrix}
+\qquad
+S_{(0,1)} =
+\begin{bmatrix}
+0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0
+\end{bmatrix}
+\qquad
+S_{(0,1)} X =
+\begin{bmatrix}
+x_1 \\ x_2 \\ x_4 \\ x_5
+\end{bmatrix}
+\begin{matrix}
+\leftarrow \text{output pixel } (0,0) \\
+\leftarrow \text{output pixel } (0,1) \\
+\leftarrow \text{output pixel } (1,0) \\
+\leftarrow \text{output pixel } (1,1)
+\end{matrix}
+\]
+For example, output pixel $(1,0)$ is computed from the window with top left corner at pixel $(1,0)$, i.e.\ $x_3$. The top right corner of that window is pixel $(1,1)$, i.e.\ $x_4$.
+\end{example}
+
+\begin{example} \label{example:selection-padding}
+Take the same image and window, but add one row of zeros above the image and one column of zeros to its left: $\Pb = (1,1)$ and $\Pa = (0,0)$.
+Then $\Hout_1 = \Hout_2 = 3$, and $\eta(i, (0,0)) = i - (1,1)$.
+For output pixels in the top row or the left column, $\eta(i, (0,0))$ lies in the padding, so the corresponding rows of $S_{(0,0)}$ are zero:
+\[
+S_{(0,0)} =
+\begin{bmatrix}
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0
+\end{bmatrix},
+\qquad
+S_{(0,0)} X = (0, 0, 0, 0, x_0, x_1, 0, x_3, x_4)^\top.
+\]
+\end{example}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The operations \im{} and \ci} \label{section:im2col}
+
+\begin{definition}[\im] \label{def:im2col}
+Let $X \in \Reals^{\const{R} \times \const{C}}$ be a pixel matrix and $g$ a geometry. Then
+\[
+\im(X) = \begin{bmatrix} S_{(0,0)} X & S_{(0,1)} X & \cdots & S_{(\Fs_1-1, \Fs_2-1)} X \end{bmatrix} \in \Reals^{\const{M} \times \Fs \const{C}},
+\]
+i.e.\ $\im(X)$ consists of $\Fs$ blocks of $\const{C}$ columns, one block for each window position, ordered by window position.
+\end{definition}
+\noindent
+By Lemma~\ref{lemma:selection}, row $\rho'(n,i)$ of $\im(X)$ contains everything the window sees when it is placed for output pixel $i$ of image $n$: first the $\const{C}$ channels of the pixel at window position $(0,0)$, then those at window position $(0,1)$, and so on.
+The operation only copies values; it does no arithmetic.
+The name stands for \emph{image to columns}.
+
+\begin{example} \label{example:im2col}
+For the image and window of Example~\ref{example:selection} we get
+\[
+\im(X) =
+\begin{bmatrix}
+x_0 & x_1 & x_3 & x_4 \\
+x_1 & x_2 & x_4 & x_5 \\
+x_3 & x_4 & x_6 & x_7 \\
+x_4 & x_5 & x_7 & x_8
+\end{bmatrix}
+\begin{matrix}
+\leftarrow \text{window for output pixel } (0,0) \\
+\leftarrow \text{window for output pixel } (0,1) \\
+\leftarrow \text{window for output pixel } (1,0) \\
+\leftarrow \text{window for output pixel } (1,1)
+\end{matrix}
+\]
+The four columns correspond to the window positions $(0,0)$, $(0,1)$, $(1,0)$ and $(1,1)$; the second column is $S_{(0,1)} X$ from Example~\ref{example:selection}.
+With the padding of Example~\ref{example:selection-padding}, $\im(X)$ is the $9 \times 4$ matrix
+\[
+\im(X) =
+\begin{bmatrix}
+0 & 0 & 0 & x_0 \\
+0 & 0 & x_0 & x_1 \\
+0 & 0 & x_1 & x_2 \\
+0 & x_0 & 0 & x_3 \\
+x_0 & x_1 & x_3 & x_4 \\
+x_1 & x_2 & x_4 & x_5 \\
+0 & x_3 & 0 & x_6 \\
+x_3 & x_4 & x_6 & x_7 \\
+x_4 & x_5 & x_7 & x_8
+\end{bmatrix}.
+\]
+\end{example}
+
+The following theorem is the key observation of this document: convolution is a matrix product with $\im(X)$.
+
+\begin{theorem}[Convolution in matrix-form] \label{theorem:convolution}
+The output of a convolutional layer (Definition~\ref{def:convolution}) is
+\[
+Z = \sum_{p \in \Pos} S_p X W_p^\top + 1_\const{M} \cdot b = \im(X) \cdot W^\top + 1_\const{M} \cdot b.
+\]
+\end{theorem}
+\begin{proof}
+By Lemma~\ref{lemma:selection}, element $(\rho'(n,i), k)$ of $S_p X W_p^\top$ equals $\sum_c x_{\rho(n,\eta(i,p)), c}\, w^p_{kc}$ if $\eta(i,p) \in \pix$, and 0 otherwise.
+Summing over $p$ and adding $b_k$ gives exactly equation~\eqref{eq:convolution-index}.
+The second equality is the rule for multiplying block matrices: if $A = [A_0 \ \cdots \ A_{\Fs-1}]$ and $B = [B_0 \ \cdots \ B_{\Fs-1}]$ have blocks with the same number of columns, then $A B^\top = \sum_j A_j B_j^\top$.
+\end{proof}
+
+\begin{definition}[\ci] \label{def:col2im}
+Let $U \in \Reals^{\const{M} \times \Fs \const{C}}$, divided into blocks $U = [U_{(0,0)} \ \cdots \ U_{(\Fs_1-1, \Fs_2-1)}]$ of $\const{C}$ columns each, ordered by window position. Then
+\[
+\ci(U) = \sum_{p \in \Pos} S_p^\top U_p \in \Reals^{\const{R} \times \const{C}}.
+\]
+\end{definition}
+\noindent
+The matrix $S_p^\top$ sends row $\rho'(n,i)$ of $U_p$ back to the input pixel $\eta(i,p)$ from which it was read.
+A pixel that is read by several windows receives the \emph{sum} of the corresponding values.
+Values that belong to padding are dropped, because the zero rows of $S_p$ become zero columns of $S_p^\top$.
+The name stands for \emph{columns to image}.
+In index notation:
+\begin{equation} \label{eq:col2im-index}
+\ci(U)_{\rho(n,h),\, c} = \sum_{i \in \outpix} \sum_{\substack{p \in \Pos \\ \eta(i,p) = h}} u_{\rho'(n,i),\; \varphi(p)\const{C} + c}.
+\end{equation}
+
+\begin{example} \label{example:col2im}
+For the geometry of Example~\ref{example:selection} and a matrix $U = (u_{mj}) \in \Reals^{4 \times 4}$, the centre pixel $x_4$ appears in all four windows (see Example~\ref{example:im2col}), each time at a different window position. Hence
+\[
+\ci(U)_{4} = u_{03} + u_{12} + u_{21} + u_{30}.
+\]
+If $U = 1_{44}$ is the matrix of ones, then $\ci(U)$ counts for each pixel how many windows contain it. Shown as an image:
+\[
+\ci(1_{44}) \ \hat{=} \
+\begin{bmatrix}
+1 & 2 & 1 \\
+2 & 4 & 2 \\
+1 & 2 & 1
+\end{bmatrix}.
+\]
+\end{example}
+
+The operation \ci{} is the \emph{transpose} of \im, in the following sense. This is the reason it appears in backpropagation.
+
+\begin{lemma} \label{lemma:adjoint}
+For all $X \in \Reals^{\const{R} \times \const{C}}$ and $U \in \Reals^{\const{M} \times \Fs \const{C}}$:
+\[
+1_\const{M}^\top \cdot \big(\im(X) \odot U\big) \cdot 1_{\Fs\const{C}}
+= 1_\const{R}^\top \cdot \big(X \odot \ci(U)\big) \cdot 1_\const{C}.
+\]
+\end{lemma}
+\begin{proof}
+Both sides are sums of products of corresponding elements, which we write using the trace: $1^\top (A \odot B) 1 = \func{tr}(A^\top B)$. So the left-hand side is
+$\sum_p \func{tr}((S_p X)^\top U_p) = \sum_p \func{tr}(X^\top S_p^\top U_p) = \func{tr}(X^\top \sum_p S_p^\top U_p)$, which is the right-hand side.
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Operations on blocks of columns} \label{section:blocks}
+
+Pooling layers treat every channel separately: the maximum or average is taken over the window positions, channel by channel.
+In $\im(X)$, the values of channel $c$ at the different window positions are in column $c$ of the different blocks.
+We therefore need operations that combine the blocks of a matrix element-wise.
+
+Let $U = [U_0 \ U_1 \ \cdots \ U_{\Fs-1}] \in \Reals^{\const{M} \times \Fs\const{C}}$ consist of $\Fs$ blocks $U_j \in \Reals^{\const{M} \times \const{C}}$.
+Let $\Jm_{\Fs\const{C}} \in \Reals^{\Fs\const{C} \times \const{C}}$ be the matrix that consists of $\Fs$ identity matrices $\mathbb{I}_\const{C}$ stacked on top of each other.
+
+\begin{definition}[Block operations] \label{def:blocks}
+\begin{align*}
+\bsum(U) &= U_0 + U_1 + \cdots + U_{\Fs-1} = U \cdot \Jm_{\Fs\const{C}} &&\in \Reals^{\const{M} \times \const{C}}, \\
+\brep(Y) &= \begin{bmatrix} Y & Y & \cdots & Y \end{bmatrix} = Y \cdot \Jm_{\Fs\const{C}}^\top \quad (\Fs \text{ copies of } Y \in \Reals^{\const{M} \times \const{C}}) &&\in \Reals^{\const{M} \times \Fs\const{C}}, \\
+\bmax(U) &= \text{the matrix with elements } \max_{0 \leq j < \Fs} (U_j)_{mc} &&\in \Reals^{\const{M} \times \const{C}}, \\
+\bmask(U) &= \begin{bmatrix} E_0 & E_1 & \cdots & E_{\Fs-1} \end{bmatrix} &&\in \Reals^{\const{M} \times \Fs\const{C}},
+\end{align*}
+where $(E_j)_{mc} = 1$ if $j$ is the \emph{smallest} index with $(U_j)_{mc} = \bmax(U)_{mc}$, and $(E_j)_{mc} = 0$ otherwise.
+\end{definition}
+\noindent
+So $\bmask(U)$ marks, for every element of $\bmax(U)$, the block in which the maximum was found.
+If the maximum occurs in several blocks (a \emph{tie}), only the first of them is marked.
+For $\const{C} = 1$ every block is a single column, and the block operations coincide with existing operations of the MLP paper: $\bsum(U) = U \cdot 1_\Fs$ is \func{rows\_sum}, $\brep(y) = y \cdot 1_\Fs^\top$ is \func{column\_repeat}, and $\bmax(U)$ is \func{rows\_max}.
+
+\begin{example} \label{example:blocks}
+For $\Fs = 2$ blocks of $\const{C} = 2$ columns:
+\[
+U = \left[\begin{array}{cc|cc} 1 & 5 & 3 & 5 \\ 4 & 0 & 2 & 0 \end{array}\right],
+\qquad
+\bmax(U) = \begin{bmatrix} 3 & 5 \\ 4 & 0 \end{bmatrix},
+\qquad
+\bmask(U) = \left[\begin{array}{cc|cc} 0 & 1 & 1 & 0 \\ 1 & 1 & 0 & 0 \end{array}\right].
+\]
+The values 5 in the first row and 0 in the second row are ties; the first block receives the 1.
+\end{example}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Overview of the new operations} \label{section:operations-table}
+
+Table~\ref{table:conv-operations} extends Table~1 of the MLP paper with the operations of this document.
+The geometry $g$ is passed as an argument to the operations that depend on it.
+
+\begin{table*}[thbp]
+\centering
+\caption{Matrix operations for convolutional and pooling layers. Here $X \in \Reals^{\const{R} \times \const{C}}$ is a pixel matrix, $U \in \Reals^{\const{M} \times \Fs\const{C}}$ consists of $\Fs$ blocks $U_j \in \Reals^{\const{M} \times \const{C}}$, and $Y \in \Reals^{\const{M} \times \const{C}}$. The selection matrices $S_p$ are defined in Definition~\ref{def:selection-matrix}, and $\Jm_{\Fs\const{C}}$ in Section~\ref{section:blocks}.}
+\label{table:conv-operations}
+{
+\small
+\begin{align*}
+\toprule
+    \textsc{operation} &\quad \textsc{Nerva API} & \textsc{definition}
+    \\
+    \midrule
+    \im(X) &\quad \texttt{im2col(X, g)} & \begin{bmatrix} S_{(0,0)} X & \cdots & S_{(\Fs_1-1,\Fs_2-1)} X \end{bmatrix} \text{: the contents of all windows}
+    \\
+    \ci(U) &\quad \texttt{col2im(U, g)} & \textstyle\sum_{p \in \Pos} S_p^\top U_p \text{: the window contents summed back into the image}
+    \\
+    \bsum(U) &\quad \texttt{blocks\_sum(U, F)} & U_0 + \cdots + U_{\Fs-1} = U \cdot \Jm_{\Fs\const{C}}
+    \\
+    \brep(Y) &\quad \texttt{blocks\_repeat(Y, F)} & [Y \ \cdots \ Y] = Y \cdot \Jm_{\Fs\const{C}}^\top
+    \\
+    \bmax(U) &\quad \texttt{blocks\_max(U, F)} & \text{element-wise maximum of the blocks } U_0, \ldots, U_{\Fs-1}
+    \\
+    \bmask(U) &\quad \texttt{blocks\_max\_mask(U, F)} & \text{0/1 matrix that marks, element-wise, the first block that attains the maximum}
+    \\
+    \bottomrule
+\end{align*}
+}
+\end{table*}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Layer equations} \label{section:layers}
+
+We use the conventions of Appendix~A of the MLP paper.
+\begin{itemize}
+\item The input of a layer is a pixel matrix $X \in \Reals^{\const{R} \times \const{C}}$. The output is a pixel matrix $Y \in \Reals^{\const{M} \times \const{K}}$, where $\const{K} = \const{C}$ for pooling layers.
+\item Every matrix $A$ has a gradient $\Gradient A$ of the same size.
+\item $\hat X = \im(X)$ is stored by the layer in the feedforward pass, because it is needed again for backpropagation.
+\item In the code, $\Fs$ is written \texttt{F} and $\const{M}$ is written \texttt{M}; both follow from the geometry \texttt{g}. As in the MLP paper, \texttt{*} denotes the matrix product.
+\end{itemize}
+
+\paragraph{convolutional layer}
+Let $\func{act}: \Reals \rightarrow \Reals$ be an activation function, for example \func{relu}, applied element-wise. Without an activation function, take $Y = Z$ and $\Gradient Z = \Gradient Y$.
+\[
+\begin{array}{@{} *{2}{L} @{}}
+\textsc{feedforward equations} & \textsc{backpropagation equations} \\
+\addlinespace[1ex]
+\begin{aligned}[t]
+\hat X &= \im(X) \\
+Z &= \hat X W^\top + 1_\const{M} \cdot b \\
+Y &= \func{act}(Z)
+\end{aligned}
+&
+\begin{aligned}[t]
+\Gradient Z &= \Gradient Y \odot \func{act}'(Z)
+\\
+\Gradient W &= \Gradient Z^\top \cdot \hat X
+\\
+\Gradient b &= 1_\const{M}^\top \cdot \Gradient Z
+\\
+\Gradient X &= \ci(\Gradient Z \cdot W)
+\end{aligned}
+\\
+\addlinespace[2ex]
+\begin{minipage}[t]{0.45\textwidth}
+\small\begin{lstlisting}
+Xc = im2col(X, g)
+Z = Xc * W.T + row_repeat(b, M)
+Y = act(Z)
+\end{lstlisting}
+\end{minipage}
+&
+\begin{minipage}[t]{0.45\textwidth}
+\small\begin{lstlisting}
+DZ = hadamard(DY, act.gradient(Z))
+DW = DZ.T * Xc
+Db = columns_sum(DZ)
+DX = col2im(DZ * W, g)
+\end{lstlisting}
+\end{minipage} \\
+\end{array}
+\]
+Apart from the first line of each column, these are exactly the equations of the activation layer of the MLP paper, with $X$ replaced by $\hat X$ and $\const{N}$ replaced by $\const{M}$.
+
+\paragraph{max pooling layer}
+The geometry has no padding ($\Pb = \Pa = (0,0)$), because padding with zeros would change the maximum. The default stride equals the window size, so that the windows do not overlap.
+\[
+\begin{array}{@{} *{2}{L} @{}}
+\textsc{feedforward equations} & \textsc{backpropagation equations} \\
+\addlinespace[1ex]
+\begin{aligned}[t]
+\hat X &= \im(X) \\
+Y &= \bmax(\hat X)
+\end{aligned}
+&
+\begin{aligned}[t]
+\Gradient X &= \ci\big(\bmask(\hat X) \odot \brep(\Gradient Y)\big)
+\end{aligned}
+\\
+\addlinespace[2ex]
+\begin{minipage}[t]{0.45\textwidth}
+\small\begin{lstlisting}
+Xc = im2col(X, g)
+Y = blocks_max(Xc, F)
+\end{lstlisting}
+\end{minipage}
+&
+\begin{minipage}[t]{0.45\textwidth}
+\small\begin{lstlisting}
+DX = col2im(hadamard(blocks_max_mask(Xc, F), blocks_repeat(DY, F)), g)
+\end{lstlisting}
+\end{minipage} \\
+\end{array}
+\]
+
+\paragraph{average pooling layer}
+As for max pooling, the geometry has no padding.
+\[
+\begin{array}{@{} *{2}{L} @{}}
+\textsc{feedforward equations} & \textsc{backpropagation equations} \\
+\addlinespace[1ex]
+\begin{aligned}[t]
+Y &= \tfrac{1}{\Fs}\, \bsum(\im(X))
+\end{aligned}
+&
+\begin{aligned}[t]
+\Gradient X &= \tfrac{1}{\Fs}\, \ci(\brep(\Gradient Y))
+\end{aligned}
+\\
+\addlinespace[2ex]
+\begin{minipage}[t]{0.45\textwidth}
+\small\begin{lstlisting}
+Y = blocks_sum(im2col(X, g), F) / F
+\end{lstlisting}
+\end{minipage}
+&
+\begin{minipage}[t]{0.45\textwidth}
+\small\begin{lstlisting}
+DX = col2im(blocks_repeat(DY, F), g) / F
+\end{lstlisting}
+\end{minipage} \\
+\end{array}
+\]
+
+\begin{example} \label{example:max-pooling}
+Take one image of $4 \times 4$ pixels with one channel, a $2 \times 2$ window and stride $(2,2)$, so that $\Hout_1 = \Hout_2 = 2$.
+Each row of $\hat X = \im(X)$ contains one window, and with $\const{C} = 1$ the blocks are single columns:
+\[
+\text{image}\ \
+\left[\begin{array}{cc|cc}
+1 & 3 & 2 & 6 \\
+0 & 7 & 4 & 1 \\ \hline
+5 & 2 & 3 & 1 \\
+8 & 0 & 2 & 9
+\end{array}\right]
+\qquad
+\hat X =
+\begin{bmatrix}
+1 & 3 & 0 & 7 \\
+2 & 6 & 4 & 1 \\
+5 & 2 & 8 & 0 \\
+3 & 1 & 2 & 9
+\end{bmatrix}
+\qquad
+Y =
+\begin{bmatrix} 7 \\ 6 \\ 8 \\ 9 \end{bmatrix}
+\qquad
+\bmask(\hat X) =
+\begin{bmatrix}
+0 & 0 & 0 & 1 \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1
+\end{bmatrix}.
+\]
+With $\Gradient Y = (\delta_0, \delta_1, \delta_2, \delta_3)^\top$, the backpropagation equation sends each $\delta_m$ to the pixel where the maximum of window $m$ was found. Shown as an image:
+\[
+\Gradient X \ \hat{=} \
+\begin{bmatrix}
+0 & 0 & 0 & \delta_1 \\
+0 & \delta_0 & 0 & 0 \\
+0 & 0 & 0 & 0 \\
+\delta_2 & 0 & 0 & \delta_3
+\end{bmatrix}.
+\]
+\end{example}
+
+\subsection{From images to rows and back} \label{section:flatten}
+At the end of a convolutional network, the pixel matrix of the last layer has to be converted to the row layout of the MLP paper, with one row per image, so that linear layers and a softmax layer can follow.
+The datasets, on the other hand, are stored in row layout, so the input of the first convolutional layer has to be converted to a pixel matrix.
+Both conversions can be done with \im{} and \ci, using the \emph{full-image geometry} $g_\text{full}$.
+This geometry has a window of the size of the whole image ($\Fs_1 = \Hin_1$, $\Fs_2 = \Hin_2$), stride $(1,1)$, dilation $(1,1)$ and no padding.
+Then $\Hout_1 = \Hout_2 = 1$ and $\const{M} = \const{N}$: the window fits exactly once in every image.
+
+\begin{lemma} \label{lemma:flatten}
+For the geometry $g_\text{full}$, $\im(X) \in \Reals^{\const{N} \times \Hin_1 \Hin_2 \const{C}}$ is the row layout of the images: row $n$ contains all pixels of image $n$, row by row, each with its $\const{C}$ channels.
+Moreover, $\ci(\im(X)) = X$ and $\im(\ci(U)) = U$, i.e.\ the two operations are each other's inverse.
+\end{lemma}
+\begin{proof}
+The window position $p$ reads the pixel $\eta(0, p) = p$, so block $\varphi(p)$ of row $n$ contains the channels of pixel $p$ of image $n$.
+Every pixel of an image is read by exactly one window position. Hence the matrix $\Pi \in \Reals^{\const{R} \times \const{R}}$ obtained by stacking $S_{(0,0)}, \ldots, S_{(\Fs_1-1,\Fs_2-1)}$ on top of each other has exactly one 1 in every row and in every column, i.e.\ it is a permutation matrix, and $\Pi^\top \Pi = \Pi \Pi^\top = \mathbb{I}_\const{R}$.
+Written in blocks, $\Pi^\top \Pi = \sum_p S_p^\top S_p$, and block $(q, p)$ of $\Pi \Pi^\top$ is $S_q S_p^\top$, which is therefore $\mathbb{I}_\const{N}$ if $q = p$ and zero otherwise.
+Hence $\ci(\im(X)) = \sum_p S_p^\top S_p X = X$, and block $q$ of $\im(\ci(U))$ is $S_q \sum_p S_p^\top U_p = U_q$.
+\end{proof}
+
+\paragraph{flatten layer}
+The flatten layer converts a pixel matrix to the row layout. It has no parameters.
+\[
+\begin{array}{@{} *{2}{L} @{}}
+\textsc{feedforward equations} & \textsc{backpropagation equations} \\
+\addlinespace[1ex]
+\begin{aligned}[t]
+Y &= \im(X) \quad \text{(geometry } g_\text{full})
+\end{aligned}
+&
+\begin{aligned}[t]
+\Gradient X &= \ci(\Gradient Y) \quad \text{(geometry } g_\text{full})
+\end{aligned}
+\\
+\addlinespace[2ex]
+\begin{minipage}[t]{0.45\textwidth}
+\small\begin{lstlisting}
+Y = im2col(X, g_full)
+\end{lstlisting}
+\end{minipage}
+&
+\begin{minipage}[t]{0.45\textwidth}
+\small\begin{lstlisting}
+DX = col2im(DY, g_full)
+\end{lstlisting}
+\end{minipage} \\
+\end{array}
+\]
+Similarly, a batch $X_\text{rows} \in \Reals^{\const{N} \times \Hin_1\Hin_2\const{C}}$ of images in row layout is converted to a pixel matrix with $\ci(X_\text{rows})$, using the geometry $g_\text{full}$.
+This happens once, before the first layer, for example in the data loader.
+
+\begin{remark}
+A flatten layer followed by a linear layer with $\const{K}$ outputs computes the same as a convolutional layer with geometry $g_\text{full}$ and $\const{K}$ filters. Its weight matrix $W \in \Reals^{\const{K} \times \Hin_1\Hin_2\const{C}}$ is the same in both cases.
+\end{remark}
+
+\begin{remark}
+The batch normalization layer of the MLP paper normalises each column of its input over all rows. Applied to a pixel matrix, it normalises each channel over all pixels of all images. This is exactly the batch normalization that is used in convolutional networks, so no new equations are needed.
+\end{remark}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Derivations} \label{section:derivations}
+
+All backpropagation equations follow from one lemma about products with fixed matrices, together with the equations of the linear layer from the MLP paper.
+
+\begin{lemma} \label{lemma:product-gradient}
+Let $A \in \Reals^{m \times r}$ and $B \in \Reals^{q \times c}$ be constant matrices, and let $Z = A X B^\top$ with $X \in \Reals^{r \times c}$, so $Z \in \Reals^{m \times q}$. Then
+\[
+\Gradient X = A^\top \cdot \Gradient Z \cdot B.
+\]
+\end{lemma}
+\begin{proof}
+We have $z_{ik} = \sum_{j,l} a_{ij}\, x_{jl}\, b_{kl}$, so $\partial z_{ik} / \partial x_{jl} = a_{ij} b_{kl}$. Using the chain rule,
+\[
+\Derivative{\mathcal{L}}{x_{jl}} = \sum_{i,k} \Derivative{\mathcal{L}}{z_{ik}}\, a_{ij}\, b_{kl} = \big(A^\top \cdot \Gradient Z \cdot B\big)_{jl}. \qedhere
+\]
+\end{proof}
+
+\paragraph{convolutional layer}
+$\Gradient Z = \Gradient Y \odot \func{act}'(Z)$ is derived as for the activation layer of the MLP paper.
+By Theorem~\ref{theorem:convolution}, $Z = \hat X W^\top + 1_\const{M} \cdot b$ with $\hat X = \im(X)$, which has the form of a linear layer with input $\hat X$. The derivation of the linear layer in the MLP paper therefore gives
+\[
+\Gradient W = \Gradient Z^\top \cdot \hat X, \qquad
+\Gradient b = 1_\const{M}^\top \cdot \Gradient Z.
+\]
+For the gradient of $X$ we write $Z = \sum_p S_p X W_p^\top + 1_\const{M} \cdot b$ (Theorem~\ref{theorem:convolution}).
+By Lemma~\ref{lemma:product-gradient}, applied to every term with $A = S_p$ and $B = W_p$,
+\[
+\Gradient X = \sum_{p \in \Pos} S_p^\top \cdot \Gradient Z \cdot W_p.
+\]
+The block multiplication rule gives $\Gradient Z \cdot W = [\Gradient Z \cdot W_{(0,0)} \ \cdots \ \Gradient Z \cdot W_{(\Fs_1-1,\Fs_2-1)}]$. Hence, by Definition~\ref{def:col2im}, $\Gradient X = \ci(\Gradient Z \cdot W)$.
+
+\paragraph{max pooling layer}
+Let $U_p = S_p X$, so that $\hat X = [U_{(0,0)} \ \cdots]$ and $Y = \bmax(\hat X)$, i.e.\ $y_{mc} = \max_{p} (U_p)_{mc}$.
+Suppose first that the maximum is attained for a unique window position $p^*$.
+Then $y_{mc} = (U_{p^*})_{mc}$ in a neighbourhood of $X$, so $\partial y_{mc} / \partial (U_p)_{mc} = 1$ if $p = p^*$ and 0 otherwise; this is $(E_p)_{mc}$, with $E = \bmask(\hat X)$.
+The element $y_{mc}$ does not depend on other elements of $U_p$. Hence
+\[
+\Gradient U_p = E_p \odot \Gradient Y.
+\]
+Since $U_p = S_p X$, Lemma~\ref{lemma:product-gradient} (with $B = \mathbb{I}_\const{C}$) gives $\Gradient X = \sum_p S_p^\top \Gradient U_p = \sum_p S_p^\top (E_p \odot \Gradient Y)$.
+Finally, $\bmask(\hat X) \odot \brep(\Gradient Y) = [E_{(0,0)} \odot \Gradient Y \ \cdots]$, so $\Gradient X = \ci\big(\bmask(\hat X) \odot \brep(\Gradient Y)\big)$.
+
+If the maximum is attained in several blocks (a tie), the maximum is not differentiable.
+The choice of the first block is then a convention. It yields an element of the (Clarke) subdifferential of the maximum. The major frameworks also choose one of the maximal elements, although not all of them specify which one.
+In practice ties occur mostly after a ReLU activation, in windows that contain only zeros. For those values the gradient is multiplied by $\func{relu}'(z) = 0$ in the preceding layer anyway, so the convention does not influence training.
+
+\paragraph{average pooling layer}
+We have $Y = \frac{1}{\Fs} \bsum(\hat X) = \frac{1}{\Fs} \sum_p S_p X$.
+By Lemma~\ref{lemma:product-gradient} with $B = \mathbb{I}_\const{C}$, $\Gradient X = \frac{1}{\Fs} \sum_p S_p^\top \Gradient Y = \frac{1}{\Fs} \ci(\brep(\Gradient Y))$.
+
+\paragraph{flatten layer}
+Block $p$ of $Y = \im(X)$ is $S_p X$. By Lemma~\ref{lemma:product-gradient} with $B = \mathbb{I}_\const{C}$, the contribution of block $p$ to $\Gradient X$ is $S_p^\top \Gradient Y_p$, where $\Gradient Y_p$ is block $p$ of $\Gradient Y$. Hence $\Gradient X = \sum_p S_p^\top \Gradient Y_p = \ci(\Gradient Y)$. This derivation holds for every geometry, not only for $g_\text{full}$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Efficient implementation} \label{section:efficiency}
+
+\subsection{The selection matrices are never stored}
+The selection matrices are a device for the \emph{specification}. An implementation never builds them.
+For the first layer of the CIFAR-10 network of Section~\ref{section:example} with a batch of 100 images, each $S_p$ is a $102400 \times 102400$ matrix, and the nine matrices together would need about 352\,GiB of memory in single precision.
+
+Lemma~\ref{lemma:selection} shows that $S_p X$ only copies rows of $X$, and equation~\eqref{eq:source-pixel} shows that these rows lie on a regular grid.
+For window position $p$, the pixels that are read form the grid $\dil \odot p - \Pb + \cstr \odot i$, $i \in \outpix$, with step size $\cstr$, in every image.
+If $X$ is stored in memory as an array of shape $\const{N} \times \Hin_1 \times \Hin_2 \times \const{C}$, which is the same sequence of numbers as the pixel matrix, then:
+\begin{itemize}
+\item $S_p X$ is a strided slice of the zero-padded array;
+\item $S_p^\top U_p$ is a strided slice of an array of zeros, to which $U_p$ is added.
+\end{itemize}
+So \im{} consists of $\Fs$ copy operations and \ci{} of $\Fs$ addition operations, each on large blocks of memory.
+The block operations are column slices combined with element-wise maximum, comparison and addition.
+
+\subsection{Cost}
+For a convolutional layer, \im{} and \ci{} each move $\const{M}\Fs\const{C}$ numbers, while the matrix products $\hat X W^\top$, $\Gradient Z^\top \hat X$ and $\Gradient Z\, W$ each take $2\const{M}\Fs\const{C}\const{K}$ floating point operations.
+The copying is therefore cheap compared to the arithmetic, although it is limited by memory bandwidth instead of processor speed.
+Table~\ref{table:timings} shows measurements of a NumPy prototype.
+A complete training step of the CIFAR-10 network of Section~\ref{section:example} takes about 0.1\,s for a batch of 100 images in NumPy, i.e.\ about one minute per epoch.
+The \ci{} in the first layer can be skipped, since no gradient with respect to the input images is needed.
+
+\begin{table}[htbp]
+\centering
+\caption{Time in milliseconds of the operations of the convolutional layers of the CIFAR-10 network of Section~\ref{section:example}, for a batch of 100 images in single precision. Measured with a NumPy prototype on 4 CPU cores; the timings vary by up to a factor 2 between runs.}
+\label{table:timings}
+\begin{tabular}{lrrrr}
+\toprule
+layer & \im & $\hat X W^\top$ & $\Gradient Z^\top \hat X$ and $\Gradient Z\, W$ & \ci \\
+\midrule
+first convolution ($32 \times 32 \times 3 \rightarrow 32$ channels)   & 6 & 1.1 & 5.3 & 16 \\
+second convolution ($16 \times 16 \times 32 \rightarrow 64$ channels) & 6 & 2.9 & 6.3 & 10 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Frameworks}
+Each Python framework provides suitable building blocks:
+\begin{itemize}
+\item \textbf{NumPy:} strided slices for both operations.
+\item \textbf{PyTorch:} the functions \texttt{unfold} and \texttt{fold} compute exactly \im{} and \ci, up to the order of the columns.
+\item \textbf{JAX:} \texttt{conv\_general\_dilated\_patches} computes \im; \ci{} can use strided slices with \texttt{.at[\ldots].add(\ldots)}.
+\item \textbf{TensorFlow:} \texttt{extract\_patches} computes \im; for \ci, TensorFlow has no strided addition, so it can use \texttt{unsorted\_segment\_sum} with a table of the source pixels $\rho(n, \eta(i,p))$.
+\end{itemize}
+
+\subsection{Limitations and combined operations}
+The matrix $\hat X = \im(X)$ contains every pixel about $\Fs$ times (9 times for a $3 \times 3$ window with stride 1), and it is stored until the backpropagation.
+For networks of the size of the CIFAR-10 example this is no problem (28\,MiB for the second layer), but for large images it is the main limitation.
+Moreover, the convolution routines of the frameworks on a GPU never build $\hat X$, and are faster.
+If this matters, the three expressions of the convolutional layer can be replaced by \emph{combined operations}.
+Each of these is defined by an expression in the operations above, so the mathematics does not change, but each can be implemented by a native routine of the framework:
+\begin{align*}
+\func{correlate}(X, W) &= \im(X) \cdot W^\top, \\
+\func{correlate\_weight\_gradient}(\Gradient Z, X) &= \Gradient Z^\top \cdot \im(X), \\
+\func{correlate\_input\_gradient}(\Gradient Z, W) &= \ci(\Gradient Z \cdot W).
+\end{align*}
+The equations of the convolutional layer then become $Z = \func{correlate}(X, W) + 1_\const{M} \cdot b$, $\Gradient W = \func{correlate\_weight\_gradient}(\Gradient Z, X)$, $\Gradient b = 1_\const{M}^\top \cdot \Gradient Z$ and $\Gradient X = \func{correlate\_input\_gradient}(\Gradient Z, W)$.
+We propose to implement the uncombined equations first, and to introduce the combined operations only if measurements show a significant difference.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Example: a convolutional network for CIFAR-10} \label{section:example}
+
+CIFAR-10 consists of colour images of $32 \times 32$ pixels in 10 classes.
+Table~\ref{table:cifar10} shows the sizes of all matrices of a small convolutional network for a batch of $\const{N} = 100$ images.
+Both convolutional layers use a $3 \times 3$ window, stride $(1,1)$, and one row or column of padding on every side, so that the image size does not change.
+Both max pooling layers use a $2 \times 2$ window with stride $(2,2)$, which halves the height and the width.
+The network is completed by a flatten layer, a linear layer with 10 outputs, and the softmax cross-entropy loss.
+
+\begin{table}[htbp]
+\centering
+\caption{Matrix sizes of a convolutional network for CIFAR-10, for a batch of $\const{N} = 100$ images. The parameters are $W$ and $b$; the total number of parameters is $896 + 18496 + 40970 = 60362$.}
+\label{table:cifar10}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llll}
+\toprule
+layer & images & matrices & parameters \\
+\midrule
+input & $32 \times 32$, 3 channels & $X$: $102400 \times 3$ & \\
+convolution, ReLU, 32 filters & $32 \times 32$, 32 channels & $\hat X$: $102400 \times 27$, $Z, Y$: $102400 \times 32$ & $W$: $32 \times 27$, $b$: $1 \times 32$ \\
+max pooling $2 \times 2$ & $16 \times 16$, 32 channels & $\hat X$: $25600 \times 128$, $Y$: $25600 \times 32$ & \\
+convolution, ReLU, 64 filters & $16 \times 16$, 64 channels & $\hat X$: $25600 \times 288$, $Z, Y$: $25600 \times 64$ & $W$: $64 \times 288$, $b$: $1 \times 64$ \\
+max pooling $2 \times 2$ & $8 \times 8$, 64 channels & $\hat X$: $6400 \times 256$, $Y$: $6400 \times 64$ & \\
+flatten & & $Y$: $100 \times 4096$ & \\
+linear, 10 outputs & & $Y$: $100 \times 10$ & $W$: $10 \times 4096$, $b$: $1 \times 10$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Validation}
+The equations of this document have been checked numerically with the prototype scripts in the directory \texttt{design/convolutional-layers/prototypes} of the Nerva repository, using small random examples:
+\begin{itemize}
+\item the strided-slice implementations of \im{} and \ci{} are identical to Definitions~\ref{def:im2col} and~\ref{def:col2im}, which the prototype computes with explicit selection matrices;
+\item Theorem~\ref{theorem:convolution} agrees with a direct implementation of equation~\eqref{eq:convolution-index};
+\item all backpropagation equations agree with finite differences, for strides from 1 to 3, dilation 2, asymmetric padding, non-square windows and overlapping pooling windows;
+\item Lemma~\ref{lemma:flatten} holds.
+\end{itemize}
+As for the MLP paper, the equations will be validated symbolically with SymPy in the \texttt{nerva-sympy} package. The selection matrices make this direct: they can be built as SymPy matrices for small examples, so the SymPy reference implementation is a literal transcription of the definitions in this document.
+
+\end{document}
