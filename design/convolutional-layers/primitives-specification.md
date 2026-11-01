@@ -355,10 +355,81 @@ The block operations are column slices plus `maximum`/`argmax`, which every fram
 - **GPU speed:** native cuDNN kernels avoid building `Xc` and can use faster algorithms. JAX, TensorFlow and PyTorch on GPU will therefore be slower than with their built-in convolution, probably a few times [A]. On CPU the difference is smaller.
 - **The representation is free:** the pixel matrix is the same memory buffer as an NHWC array, so no conversions are needed between layers.
 
-## 10. Points for decision
+## 10. Combining operations into larger expressions
+
+### 10.1 Where the elementary formulation costs performance
+
+| Layer | Elementary formulation | Penalty compared with a framework's native kernel |
+|---|---|---|
+| Convolution | `Xc = im2col(X)`, then matrix products, then `col2im` | **Memory:** `Xc` has `kh·kw` times as many numbers as `X` (×9 for 3×3), and it is kept until the backward pass. **GPU speed:** native kernels (cuDNN, oneDNN) never build `Xc`, and use better algorithms. Expected to be a few times faster on GPU [A, not measured]. |
+| Max / average pooling | `im2col`, then block operations | Small. For the usual 2×2 windows with stride 2, `im2col` copies every number exactly once (no duplication). |
+| Flatten | `im2col` with a full-image window | None: it is a single copy. |
+
+**Conclusion:** only the convolution layer is worth combining. Its three matrix expressions each correspond to one well-known native kernel.
+
+### 10.2 Three combined operations, each defined by a primitive expression
+Each combined operation is defined by one equation in the primitives of §3–§5, and additionally by an index formula. The index formulas make each operation readable without the selection matrices.
+
+Notation: `X[(n,h,w), c]` is pixel `(h,w)` of image `n`, channel `c`. A term whose pixel index falls outside the image counts as 0.
+
+**(F1) Correlation:** the forward pass, `ℝ^{(N·H·W)×C} × ℝ^{K×(kh·kw·C)} → ℝ^{M×K}`.
+```
+correlate(X, W, g) := im2col(X, g) · Wᵀ
+
+correlate(X, W, g)[(n,i,j), k] = Σ_{p,q,c}  W[k,(p,q,c)] · X[(n, sh·i+dh·p−pt, sw·j+dw·q−pl), c]
+```
+
+**(F2) Correlation, weight gradient:** `ℝ^{M×K} × ℝ^{(N·H·W)×C} → ℝ^{K×(kh·kw·C)}`.
+```
+correlate_weight_gradient(DZ, X, g) := DZᵀ · im2col(X, g)
+
+correlate_weight_gradient(DZ, X, g)[k,(p,q,c)] = Σ_{n,i,j}  DZ[(n,i,j),k] · X[(n, sh·i+dh·p−pt, sw·j+dw·q−pl), c]
+```
+
+**(F3) Correlation, input gradient:** `ℝ^{M×K} × ℝ^{K×(kh·kw·C)} → ℝ^{(N·H·W)×C}`.
+```
+correlate_input_gradient(DZ, W, g) := col2im(DZ · W, g)
+
+correlate_input_gradient(DZ, W, g)[(n,h,w), c] = Σ_{(i,p): sh·i+dh·p−pt = h}  Σ_{(j,q): sw·j+dw·q−pl = w}  Σ_k  DZ[(n,i,j),k] · W[k,(p,q,c)]
+```
+
+The names are placeholders (§11). With these operations the convolution layer reads:
+```
+# feedforward
+Z  = correlate(X, W, g) + row_repeat(b, M)
+Y  = act(Z)
+
+# backpropagation
+DZ = hadamard(DY, act.gradient(Z))
+DW = correlate_weight_gradient(DZ, X, g)
+Db = columns_sum(DZ)
+DX = correlate_input_gradient(DZ, W, g)
+```
+
+### 10.3 Why this keeps the mathematics clean
+- **Mathematically, the two versions of the layer are identical.** The combined version only replaces each expression by its defining name.
+  - nerva-sympy proves F1–F3 equal their definitions.
+  - The tests check that every backend's implementation of F1–F3 agrees with the elementary version.
+- **The implementation is free per framework:**
+  - NumPy implements F1–F3 literally by their definitions: `im2col` + BLAS, so it loses nothing.
+  - PyTorch can use `F.conv2d`, `torch.nn.grad.conv2d_weight` and `torch.nn.grad.conv2d_input` [E].
+  - TensorFlow can use `tf.nn.conv2d`, `Conv2DBackpropFilter` and `Conv2DBackpropInput` [E].
+  - JAX can use `lax.conv_general_dilated`, and the same operation with the roles of the arguments exchanged for F2 and F3 [E].
+
+  None of these build `Xc`, and F2 can work from `X` directly, so `Xc` no longer has to be stored between the forward and the backward pass.
+- **The documentation shows both levels:** the combined layer equations, and below them the one-line definitions of F1–F3 in terms of `im2col`, `col2im` and the matrix product.
+
+### 10.4 Recommendation
+1. Specify both levels now: the primitives of §3–§5 and the combined operations F1–F3.
+2. Implement the elementary version first (milestones M4–M6), because it is the easiest to verify.
+3. Then measure PyTorch and JAX on CPU and, if available, on GPU, comparing elementary against native F1–F3. This needs those frameworks installed, which was not allowed in this investigation.
+4. Switch the convolution layer to F1–F3 only if the difference is significant. It is a local change: a few lines per backend and in the nerva-sympy equation blocks. The mathematics is unaffected.
+
+## 11. Points for decision
 
 1. **Representation:** pixel matrix `(N·H·W) × C` between convolution and pooling layers (this proposal), instead of one row per image plus `reshape` (revision 2).
 2. **Names:** `im2col`/`col2im` (accepted). Block operations: `blocks_sum`, `blocks_repeat`, `blocks_max`, `blocks_max_mask`.
 3. **Specification in the table:** define `im2col` and `col2im` through `S_pq` (§3–4), or through index formulas, or both. This choice affects only the documentation; §9 shows it does not affect efficiency.
 4. **Data loader and training loop:** conversion to pixel matrices in the loader, and normalisation by `N` instead of `X.shape[0]` (§1).
 5. **Max pooling ties:** keep the "first maximum" rule.
+6. **Combined operations (§10):** whether to adopt F1–F3, and under which names (`correlate…`, `conv…`, `im2col_product…`).
