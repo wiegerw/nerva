@@ -1,3 +1,4 @@
+// Maintained in doc/shared/python of https://github.com/wiegerw/nerva and copied by scripts/sync_docs.py. Do not edit this copy.
 === The tool inspect_npz.py
 The tool `inspect_npz.py` can be used to inspect the contents of a dataset stored in `.npz` format.
 

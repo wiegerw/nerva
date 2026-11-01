@@ -68,11 +68,12 @@ The Nerva libraries share a common design:
 
 ---
 
-## Shared documentation
+## Documentation and maintenance
 
-Documentation that is used by several repositories is maintained in [`doc/shared`](doc/shared): the AsciiDoc manual
-and the README of the Python backends. The script `scripts/sync_docs.py` copies it to the repositories, which stay
-self-contained, and a CI check verifies that the copies are up to date. See [`doc/shared/README.md`](doc/shared/README.md).
+[`doc/README.md`](doc/README.md) describes how the documentation of the Python implementations is organized, built,
+published and checked in CI, and what to keep in mind before changing it. Documentation that is used by several
+repositories (the AsciiDoc manual and the README of the Python backends) is maintained in [`doc/shared`](doc/shared),
+and copied to the repositories by `scripts/sync_docs.py`.
 
 ## References
 
