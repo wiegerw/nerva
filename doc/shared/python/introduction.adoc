@@ -1,0 +1,13 @@
+// :nerva-python:
+
+== Introduction
+The {library} is a library for neural networks.
+It is part of the Nerva library collection https://github.com/wiegerw/nerva, that includes
+native C++ and Python implementations of neural networks. Originally the library was intended
+for experimenting with truly sparse neural networks. Nowadays, the library
+also aims to provide a transparent and accessible implementation of neural networks.
+
+This document describes the implementation of the {library}. For initial versions
+of the library I took inspiration from lecture notes of
+https://www.cs.toronto.edu/~rgrosse/teaching.html[machine learning courses by Roger Grosse], which I highly recommend.
+This influence may still be evident in the naming of symbols.

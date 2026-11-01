@@ -1,0 +1,128 @@
+=== Matrix operations
+The most important part of the implementation of neural networks consists of matrix operations. In the implementation of activation functions, loss functions and neural network layers, many different matrix operations are needed. In Nerva a structured approach is followed to implement these components. All equations are expressed in terms of the matrix operations in the table below.
+
+.matrix operations
+[[table_matrix_operations]]
+|===
+|Operation |Code |Definition
+
+|stem:[0_{m}]
+|`zeros(m)`
+|stem:[m \times 1] column vector with elements equal to 0
+
+|stem:[0_{mn}]
+|`zeros(m, n)`
+|stem:[m \times n] matrix with elements equal to 0
+
+|stem:[1_{m}]
+|`ones(m)`
+|stem:[m \times 1] column vector with elements equal to 1
+
+|stem:[1_{mn}]
+|`ones(m, n)`
+|stem:[m \times n] matrix with elements equal to 1
+
+|stem:[\mathbb{I}_n]
+|`identity(n)`
+|stem:[n \times n] identity matrix
+
+|stem:[X^\top]
+|`X.transpose()`
+|transposition
+
+|stem:[cX]
+|`c * X`
+|scalar multiplication, stem:[c \in \mathbb{R}]
+
+|stem:[X + Y]
+|`X + Y`
+|addition
+
+|stem:[X - Y]
+|`X - Y`
+|subtraction
+
+|stem:[X \cdot Z]
+|`X * Z`
+|matrix multiplication, also denoted as stem:[XZ]
+
+|stem:[x^\top y~] or stem:[~x y^\top]
+|`dot(x,y)`
+|dot product, stem:[x,y \in \mathbb{R}^{m \times 1}] or stem:[x,y \in \mathbb{R}^{1 \times n}]
+
+|stem:[X \odot Y]
+|`hadamard(X,Y)`
+|element-wise product of stem:[X] and stem:[Y]
+
+|stem:[\mathsf{diag}(X)]
+|`diag(X)`
+|column vector that contains the diagonal of stem:[X]
+
+|stem:[\mathsf{Diag}(x)]
+|`Diag(x)`
+|diagonal matrix with stem:[x] as diagonal, stem:[x \in \mathbb{R}^{1 \times n}]  or stem:[x \in \mathbb{R}^{m \times 1}]
+
+|stem:[1_m^\top \cdot X \cdot 1_n]
+|`elements_sum(X)`
+|sum of the elements of stem:[X]
+
+|stem:[x \cdot 1_n^\top]
+|`column_repeat(x, n)`
+|stem:[n] copies of column vector stem:[x \in \mathbb{R}^{m \times 1}]
+
+|stem:[1_m \cdot x]
+|`row_repeat(x, m)`
+|stem:[m] copies of row vector stem:[x \in \mathbb{R}^{1 \times n}]
+
+|stem:[1_m^\top \cdot X]
+|`columns_sum(X)`
+|stem:[1 \times n] row vector with sums of the columns of stem:[X]
+
+|stem:[X \cdot 1_n]
+|`rows_sum(X)`
+|stem:[m \times 1] column vector with sums of the rows of stem:[X]
+
+|stem:[\max(X)_{col}]
+|`columns_max(X)`
+|stem:[1 \times n] row vector with maximum values of the columns of stem:[X]
+
+|stem:[\max(X)_{row}]
+|`rows_max(X)`
+|stem:[m \times 1] column vector with maximum values of the rows of stem:[X]
+
+|stem:[(1_m^\top \cdot X) / n]
+|`columns_mean(X)`
+|stem:[1 \times n] row vector with mean values of the columns of stem:[X]
+
+|stem:[(X \cdot 1_n) / m]
+|`rows_mean(X)`
+|stem:[m \times 1] column vector with mean values of the rows of stem:[X]
+
+|stem:[f(X)]
+|`apply(f, X)`
+|element-wise application of stem:[f: \mathbb{R} \rightarrow \mathbb{R}] to stem:[X]
+
+|stem:[e^X]
+|`exp(X)`
+|element-wise application of stem:[f: x \rightarrow e^x] to stem:[X]
+
+|stem:[\log(X)]
+|`log(X)`
+|element-wise application of the natural logarithm stem:[f: x \rightarrow \ln(x)] to stem:[X]
+
+|stem:[1 / X]
+|`reciprocal(X)`
+|element-wise application of stem:[f: x \rightarrow 1/x] to stem:[X]
+
+|stem:[\sqrt{X}]
+|`sqrt(X)`
+|element-wise application of stem:[f: x \rightarrow \sqrt{x}] to stem:[X]
+
+|stem:[X^{-1/2}]
+|`inv_sqrt(X)`
+|element-wise application of stem:[f: x \rightarrow x^{-1/2}] to stem:[X]
+
+|stem:[\log(\sigma(X))]
+|`log_sigmoid(X)`
+|element-wise application of stem:[f: x \rightarrow \log(\sigma(x))] to stem:[X]
+|===

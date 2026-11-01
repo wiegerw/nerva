@@ -1,0 +1,36 @@
+name: Shared documentation
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: nerva
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Check out the repositories that use the shared documentation
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          for repo in nerva-jax nerva-numpy nerva-tensorflow nerva-torch; do
+            url="https://github.com/wiegerw/${repo}.git"
+            # Use the branch with the same name if it exists, so that changes on a feature branch are checked together
+            if git ls-remote --exit-code --heads "$url" "$BRANCH" > /dev/null; then
+              ref="$BRANCH"
+            else
+              ref=main
+            fi
+            echo "Checking out ${repo} at ${ref}"
+            git clone --depth 1 --branch "$ref" "$url" "$repo"
+          done
+
+      - name: Check that the copies are identical to doc/shared
+        run: python nerva/scripts/sync_docs.py --check

@@ -1,0 +1,41 @@
+include::../settings.adoc[]
+
+== Overview of the code
+
+This section provides an overview of the code in the {library}. All core functionality is contained in the `{module}` module.
+
+=== Module contents
+
+The most important files in the `{module}` module are listed below. Each file implements a distinct part of the neural network library.
+
+|===
+|File |Description
+
+|`link:{repo-url}/src/{module}/multilayer_perceptron.py[multilayer_perceptron.py]`
+|Defines the `MultilayerPerceptron` class, representing a feedforward neural network with multiple layers.
+
+|`link:{repo-url}/src/{module}/layers.py[layers.py]`
+|Implements various neural network layers, such as fully connected or custom layers.
+
+|`link:{repo-url}/src/{module}/activation_functions.py[activation_functions.py]`
+|Provides commonly used activation functions (e.g., ReLU, sigmoid, tanh) to introduce non-linearity.
+
+|`link:{repo-url}/src/{module}/loss_functions.py[loss_functions.py]`
+|Implements loss functions used to quantify the difference between predictions and targets (e.g., cross-entropy, MSE).
+
+|`link:{repo-url}/src/{module}/weight_initializers.py[weight_initializers.py]`
+|Provides functions for initializing neural network weights, supporting different strategies for stability and performance.
+
+|`link:{repo-url}/src/{module}/optimizers.py[optimizers.py]`
+|Defines optimizer functions that update neural network parameters based on computed gradients (e.g., SGD, momentum).
+
+|`link:{repo-url}/src/{module}/learning_rate.py[learning_rate.py]`
+|Implements learning rate schedulers to adjust the learning rate dynamically during training.
+
+|`link:{repo-url}/src/{module}/training.py[training.py]`
+|Contains the stochastic gradient descent (SGD) algorithms for training multilayer perceptrons.
+|===
+
+=== Number type
+
+The {library} uses 32-bit floating point numbers (float32) as its default number type. This choice balances memory usage and computational efficiency on both CPUs and GPUs. All computations, including feedforward, backpropagation, and gradient updates, are performed in this precision.

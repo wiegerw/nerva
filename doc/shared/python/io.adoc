@@ -1,0 +1,187 @@
+// tag::io[]
+[[io]]
+== Data Handling
+
+The {library} provides utilities for reading and writing datasets and the weights and biases of MLP models in NumPy `.npz` format.
+This format ensures portability between Python and C++ implementations.
+Currently, storing the complete model, including its architecture, is not supported.
+
+=== NPZ format
+
+The default storage format used in the Nerva libraries is the NumPy NPZ format (see link:https://numpy.org/doc/stable/reference/generated/numpy.lib.format.html[numpy.lib.format]).
+A `.npz` file can store a dictionary of arrays in compressed form, which allows both datasets and model parameters to be saved efficiently.
+
+=== Preparing data [[preparing-data]]
+
+The `{mlptool}` utility expects training and testing data in `.npz` format.
+A helper script is provided to download and preprocess commonly used datasets, including **MNIST** and **CIFAR-10**.
+
+The script is located at `link:{repo-url}/{prepare-data-script}[{prepare-data-script}]` and can be run from the command line.
+It stores the datasets in the directory given by `--data-dir`; the examples expect them in `{datasets-dir}`.
+
+==== MNIST
+
+To download and prepare MNIST:
+
+[source,bash,subs="attributes+"]
+----
+python {prepare-data-script} --dataset=mnist --download --data-dir={datasets-dir}
+----
+
+This will:
+
+* Download `mnist.npz` if it does not exist.
+* Create a flattened and normalized version of the dataset as `mnist-flattened.npz`.
+
+The output file contains:
+
+* `Xtrain`, `Xtest`: flattened and normalized image data
+* `Ttrain`, `Ttest`: corresponding label vectors
+
+==== CIFAR-10
+
+To download and prepare CIFAR-10:
+
+[source,bash,subs="attributes+"]
+----
+python {prepare-data-script} --dataset=cifar10 --download --data-dir={datasets-dir}
+----
+
+This will:
+
+* Download the CIFAR-10 binary dataset from https://www.cs.toronto.edu/~kriz/cifar.html
+* Extract the archive
+* Flatten and normalize RGB images into shape `[N, 3072]`
+* Save the result as `cifar10-flattened.npz`
+
+The output file contains:
+
+* `Xtrain`, `Xtest`: flattened image arrays with pixel values normalized to `[0, 1]`
+* `Ttrain`, `Ttest`: integer class labels
+
+==== Reusing Existing Files
+
+If the required `.npz` files already exist, the script will detect this and skip reprocessing.
+It is safe to rerun the script without overwriting existing files.
+
+==== Help
+
+To see all script options:
+
+[source,bash]
+----
+python prepare_data.py --help
+----
+
+==== Inspecting `.npz` files
+
+[WARNING]
+====
+When constructing `DataLoader` instances from integer class labels, explicitly pass `num_classes`.
+If omitted, the loader infers it as `max(label) + 1`, which may underestimate the number of classes for small subsets, leading to one-hot vectors with too few columns and mismatched dimensions with the model output.
+
+To inspect `.npz` files interactively, you can use the `inspect_npz.py` tool (see Command Line Tools section).
+====
+
+=== Storing datasets and weights
+
+The `{mlptool}` utility supports saving and loading datasets and model parameters in `.npz` format.
+
+* Use `--save-dataset` and `--load-dataset` to write or read datasets.
+* Use `--save-weights` and `--load-weights` to store or restore the weights and biases of an MLP.
+
+The `.npz` file for datasets contains:
+
+* `Xtrain`, `Ttrain`: training inputs and labels
+* `Xtest`, `Ttest`: test inputs and labels
+
+The `.npz` file for model parameters contains:
+
+* `W1`, `W2`, ... : weight matrices for each linear layer
+* `b1`, `b2`, ... : corresponding bias vectors
+
+All arrays use standard NumPy formats and can be inspected or manipulated in Python using `numpy.load()` and `numpy.savez()`.
+
+[NOTE]
+====
+The architecture of the model (number of layers, activation functions, etc.) is **not** stored in the `.npz` file.
+This must be specified separately when reloading weights.
+====
+// end::io[]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ==== Inspecting `.npz` files
+//
+// [WARNING]
+// ====
+// When constructing `DataLoader` instances from integer class labels, explicitly pass `num_classes`.
+// If omitted, the loader infers it as `max(label) + 1`, which may underestimate the number of classes for small subsets, leading to one-hot vectors with too few columns and mismatched dimensions with the model output.
+// ====
+//
+// To inspect a `.npz` file:
+//
+// [source,bash]
+// ----
+// python tools/inspect_npz.py data/mnist-flattened.npz
+// ----
+//
+// To view only array names, shapes, and norms:
+//
+// [source,bash]
+// ----
+// python tools/inspect_npz.py data/mnist-flattened.npz --shapes-only
+// ----
+//
+// === Storing datasets and weights
+//
+// The `{mlptool}` utility supports saving and loading datasets and model parameters in `.npz` format.
+//
+// * Use `--save-data` and `--load-data` to write or read datasets.
+// * Use `--save-weights` and `--load-weights` to store or restore the weights and biases of an MLP.
+//
+// The `.npz` file for datasets contains:
+//
+// * `Xtrain`, `Ttrain`: training inputs and labels
+// * `Xtest`, `Ttest`: test inputs and labels
+//
+// The `.npz` file for model parameters contains:
+//
+// * `W1`, `W2`, …: weight matrices for each linear layer
+// * `b1`, `b2`, …: corresponding bias vectors
+//
+// All arrays use standard NumPy formats and can be inspected or manipulated in Python using `numpy.load()` and `numpy.savez()`.
+//
+// [NOTE]
+// ====
+// The architecture of the model (number of layers, activation functions, etc.) is **not** stored in the `.npz` file.
+// This must be specified separately when reloading weights.
+// ====
+// end::io[]
+//

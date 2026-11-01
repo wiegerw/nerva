@@ -1,0 +1,374 @@
+// tag::mlptool-options[]
+[[mlp_tool]]
+==== {mlptool} Command Line Options
+This section gives an overview of the command line interface of the `{mlptool}` tool.
+
+===== Parameter Lists
+Some options accept a list of items. Lists must be **semicolon-separated**.
+For example: `--layers="ReLU;AllReLU(0.3);Linear"`.
+
+===== Named Parameters
+Some items accept parameters using function-call syntax with **commas** to separate arguments.
+Use named parameters when needed, e.g. `AllReLU(alpha=0.3)`. If a parameter has a default value, it may be omitted: `SReLU()` is equivalent to `SReLU(al=0,tl=0,ar=0,tr=1)`.
+// end::mlptool-options[]
+
+
+// General Options
+// tag::general-options[]
+===== General Options
+
+* `--help`
+Display help information.
+
+* `--debug`
+Enable debug output. Prints batches, weight matrices, bias vectors, and gradients.
+
+ifdef::use-verbose[]
+* `--verbose`
+Enable verbose output.
+endif::use-verbose[]
+// end::general-options[]
+
+
+// Random Generator Options
+// tag::random-generator-options[]
+===== Random Generator Options
+
+* `--seed <value>`
+Set the seed value for the random number generator.
+// end::random-generator-options[]
+
+
+// Layer Configuration Options
+// tag::layer-configuration-options[]
+===== Layer Configuration Options
+
+* `--layers <value>`
+Specify a semicolon-separated list of layers.
+Example: `--layers=ReLU;AllReLU(0.3);Linear`.
+
+|===
+|Specification |Description
+
+|`Linear`
+|Linear layer without activation
+
+|`ReLU`
+|Linear layer with ReLU activation
+
+|`Sigmoid`
+|Linear layer with sigmoid activation
+
+|`Softmax`
+|Linear layer with softmax activation
+
+|`LogSoftmax`
+|Linear layer with log-softmax activation
+
+|`HyperbolicTangent`
+|Linear layer with hyperbolic tangent activation
+
+|`AllReLU(<alpha>)`
+|Linear layer with AllReLU activation
+
+|`SReLU(<al>,<tl>,<ar>,<tr>)`
+|Linear layer with SReLU activation. Defaults: `al=0,tl=0,ar=0,tr=1`. Equivalent to ReLU when defaults are used.
+
+ifdef::use-trelu[]
+|`TReLU(<epsilon>)`
+|Linear layer with trimmed ReLU activation
+endif::use-trelu[]
+
+|`BatchNormalization`
+|Batch normalization layer
+|===
+
+* `--layer-sizes <value>`
+Specify the sizes of linear layers (semicolon-separated).
+Example: `--layer-sizes=3072;1024;512;10`.
+
+ifdef::use-sparse[]
+* `--densities <value>`
+Set densities of linear layers (comma-separated). Default: 1.0 for all layers.
+
+* `--overall-density <value>`
+Set the overall fraction of non-zero weights (0–1). Smaller layers are assigned higher density.
+endif::use-sparse[]
+
+ifdef::use-dropout[]
+* `--dropouts <value>`
+Set dropout rates for linear layers (comma-separated). Default: 0.0 for all layers.
+endif::use-dropout[]
+
+* `--layer-weights <value>`
+Specify the weight initialization method for linear layers. Supported values:
+
+|===
+|Specification |Description
+
+|`XavierNormal`
+|Xavier Glorot weights (normal distribution)
+
+|`XavierUniform`
+|Xavier Glorot weights (uniform distribution)
+
+|`HeNormal`
+|Kaiming He weights (normal distribution)
+
+|`HeUniform`
+|Kaiming He weights (uniform distribution)
+
+|`Normal`
+|Normal distribution
+
+|`Uniform`
+|Uniform distribution
+
+|`Zero`
+|All weights are zero (N.B. This is not recommended for training)
+|===
+// end::layer-configuration-options[]
+
+
+// Training Configuration Options
+// tag::training-configuration-options[]
+===== Training Configuration Options
+
+* `--epochs <value>`
+Set the number of training epochs. Default: 100.
+
+* `--batch-size <value>`
+Set the training batch size.
+
+* `--optimizers <value>`
+Specify a semicolon-separated list of optimizers for linear and batch normalization layers.
+
+ifdef::use-extended-training[]
+* `--no-shuffle`
+Disable shuffling of the dataset during training.
+
+* `--no-statistics`
+Disable intermediate statistics display.
+endif::use-extended-training[]
+
+|===
+|Specification |Description
+
+|`GradientDescent`
+|Standard gradient descent
+
+|`Momentum(mu)`
+|Momentum optimization with parameter `mu`
+
+|`Nesterov(mu)`
+|Nesterov momentum optimization
+|===
+
+* `--learning-rate <value>`
+Specify a semicolon-separated list of learning rate schedulers. If only one is given, it applies to all layers.
+
+|===
+|Specification |Description
+
+|`Constant(lr)`
+|Constant learning rate `lr`
+
+|`TimeBased(lr, decay)`
+|Adaptive learning rate with decay
+
+|`StepBased(lr, drop_rate, change_rate)`
+|Step-based learning rate with scheduled drops
+
+|`MultistepLR(lr, milestones, gamma)`
+|Drops learning rate at specified epoch milestones
+
+|`Exponential(lr, change_rate)`
+|Exponentially decreasing learning rate
+|===
+
+See also https://en.wikipedia.org/wiki/Learning_rate.
+
+* `--loss <value>`
+Specify the loss function. Supported values:
+
+|===
+|Specification |Description
+
+|`SquaredError`
+|Squared error loss
+
+|`CrossEntropy`
+|Cross entropy loss
+
+|`LogisticCrossEntropy`
+|Logistic cross entropy loss
+
+|`SoftmaxCrossEntropy`
+|Softmax cross entropy (matches PyTorch)
+
+|`NegativeLogLikelihood`
+|Negative log likelihood loss
+|===
+
+* `--load-weights <value>`
+Load weights and biases from a NumPy `.npz` file.
+Weight matrices keys: `W1,W2,...`; bias vectors keys: `b1,b2,...`.
+See link:https://numpy.org/doc/stable/reference/generated/numpy.lib.format.html[numpy.lib.format][numpy.lib.format].
+
+ifdef::use-save-weights[]
+* `--save-weights <value>`
+Save weights and biases to a NumPy `.npz` file.
+Weight matrices keys: `W1,W2,...`; bias vectors keys: `b1,b2,...`.
+See link:https://numpy.org/doc/stable/reference/generated/numpy.lib.format.html[numpy.lib.format][numpy.lib.format].
+endif::use-save-weights[]
+// end::training-configuration-options[]
+
+
+// Dataset Options
+// tag::dataset-options[]
+===== Dataset Options
+
+* ``--load-dataset <file>``
+Load a dataset from a NumPy `.npz` file. The file **must** contain the following arrays:
+
+- ``Xtrain``: training inputs
+- ``Ttrain``: training labels
+- ``Xtest``: test inputs
+- ``Ttest``: test labels
+
+Other arrays will be ignored. The shapes should match the expected input and output dimensions of the network.
+
+ifdef::use-dataset-extended[]
+* ``--save-dataset <file>``
+Save the current dataset to a NumPy `.npz` file. The arrays will be stored using the same names as required by ``--load-dataset`` (``Xtrain``, ``Ttrain``, ``Xtest``, ``Ttest``).
+
+* `--normalize`
+Normalize dataset features.
+
+* `--preprocessed <directory>`
+Specify a directory containing datasets named `epoch0.npz`, `epoch1.npz`, etc. See <<io>>.
+A script is available: link:../python/tools/generate_cifar10_augmented_datasets.py[generate_cifar10_augmented_datasets.py] for creating augmented CIFAR-10 datasets.
+
+* `--generate-dataset <name>`
+Generate a synthetic dataset. Supported datasets:
+
+|===
+|Specification |Description |Features |Classes
+
+|`checkerboard`
+|Checkerboard pattern | 2 | 2
+
+|`mini`
+|Random values | 3 | 2
+|===
+
+* `--dataset-size <value>`
+Set the size of a generated dataset. Default: 1000.
+
+* `--cifar10 <directory>`
+Specify the directory of the binary CIFAR-10 dataset. Subdirectory names: `cifar-10-batches-bin` (C++) or `cifar-10-batches-py` (Python).
+
+* `--mnist <directory>`
+Specify the MNIST dataset directory. The file must be named `mnist.npz`. Download link: https://s3.amazonaws.com/img-datasets/mnist.npz[here].
+endif::use-dataset-extended[]
+// end::dataset-options[]
+
+
+// Pruning and Growing Options
+// tag::pruning-options[]
+===== Pruning and Growing Options
+
+* `--prune <strategy>`
+Specify a strategy for pruning sparse weight matrices:
+
+|===
+|Specification |Description
+
+|`Magnitude(<drop_fraction>)`
+|Prune a fraction of weights with the smallest absolute values.
+
+|`SET(<drop_fraction>)`
+|Prune positive and negative weights separately.
+
+|`Threshold(<threshold>)`
+|Prune all weights below the given threshold.
+|===
+
+* `--grow <strategy>`
+Specify a strategy for growing sparse weight matrices:
+
+|===
+|Specification |Description
+
+|`Random`
+|Add weights at random positions outside the current support.
+|===
+
+* `--grow-weights <value>`
+Specify the weight generation method for new weights (see `--layer-weights`). Default: `Xavier`.
+// end::pruning-options[]
+
+
+// Computation Options
+// tag::computation-options[]
+===== Computation Options
+
+* `--computation <value>`
+Specify the computation mode for backpropagation and performance measurements:
+
+|===
+|Specification |Description
+
+|`eigen`
+|Compute with Eigen library. If `EIGEN_USE_MKL_ALL` is set, MKL will be used where available.
+
+|`mkl`
+|Use MKL functions for some computations.
+
+|`blas`
+|Use BLAS functions for some computations.
+
+|`sycl`
+|Use SYCL functions for some computations.
+|===
+
+* `--clip <value>`
+Set a threshold to zero out small weight matrix elements.
+
+* `--threads <value>`
+Set the number of threads for MKL and OpenMP.
+
+* `--gradient-step <value>`
+Perform gradient checks using the given step size. Intended for debugging; slow.
+// end::computation-options[]
+
+
+// Miscellaneous Options
+// tag::mlp-miscellaneous-options[]
+===== Miscellaneous Options
+
+* `--info`
+Print detailed information about the multilayer perceptron, including layers, sizes, and configuration.
+
+* `--timer <mode>`
+Enable timer messages. Supported modes:
+
+|===
+|Value |Description
+
+|`disabled`
+|Do not display timing information.
+
+|`brief`
+|Show summary of accumulated timing measurements at the end.
+
+|`full`
+|Show individual timing measurements in addition to the summary.
+|===
+
+* `--precision <value>`
+Set numeric precision for printing matrix elements.
+
+* `--edgeitems <value>`
+Set the number of border rows and columns displayed when printing matrices.
+// end::mlp-miscellaneous-options[]

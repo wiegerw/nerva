@@ -1,0 +1,69 @@
+include::../settings.adoc[]
+
+== Command line tools
+The following command line tools are available. They can be found in the `tools` directory.
+
+|===
+|Tool |Description
+
+|`{mlptool}`
+|A tool for training multilayer perceptrons.
+
+|`inspect_npz.py`
+|A tool for inspecting the contents of a file in NumPy NPZ format.
+|===
+
+=== The tool {mlptool}
+The tool `{mlptool}` can be used for training multilayer perceptrons. The following example, which needs no
+downloads, generates the synthetic shapes dataset (see <<shapes-dataset>>) and trains an MLP on it:
+
+[.small-code]
+[source,bash]
+----
+include::../../../examples/train_shapes_cli.sh[tag=doc]
+----
+
+Larger examples use the https://en.wikipedia.org/wiki/MNIST_database[MNIST] and
+https://www.cs.toronto.edu/~kriz/cifar.html[CIFAR-10] datasets. They are found in the optional `examples/mnist_cifar10`
+directory, together with a script `prepare_data.py` that downloads the datasets, flattens them and stores them in
+`.npz` format (see <<preparing-data>>). An example invocation for CIFAR-10 is
+
+[.small-code]
+[source,bash]
+----
+include::../../../examples/mnist_cifar10/train_cifar10_cli.sh[tag=doc]
+----
+This trains an MLP consisting of three linear layers with activation functions ReLU, ReLU and no activation.
+
+The output may look like this:
+[[mlp_output]]
+[.small-code]
+[source]
+----
+Loading dataset from file data/cifar10-flattened.npz
+--------------------------------------------------------------------------------
+epoch |           lr |         loss |    train_acc |     test_acc |     time (s)
+--------------------------------------------------------------------------------
+    0 |     0.010000 |     2.408590 |     0.097760 |     0.096000 |     0.000000
+    1 |     0.010000 |     1.645980 |     0.412700 |     0.410500 |     3.572163
+    2 |     0.010000 |     1.548570 |     0.448900 |     0.440100 |     3.586480
+    3 |     0.010000 |     1.475506 |     0.477560 |     0.465100 |     4.450712
+    4 |     0.010000 |     1.431293 |     0.491620 |     0.474800 |     4.429117
+    5 |     0.010000 |     1.369700 |     0.513900 |     0.494300 |     4.489507
+--------------------------------------------------------------------------------
+Total training time: 20.527979 s
+----
+
+include::command-line-tools.adoc[tags=mlptool-options]
+
+include::command-line-tools.adoc[tags=general-options]
+
+include::command-line-tools.adoc[tags=random-generator-options]
+
+include::command-line-tools.adoc[tags=layer-configuration-options]
+
+include::command-line-tools.adoc[tags=training-configuration-options]
+
+include::command-line-tools.adoc[tags=dataset-options]
+
+include::inspect-npz.adoc[]
