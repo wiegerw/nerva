@@ -27,6 +27,20 @@ The Nerva project is organized into a set of focused libraries, each targeting a
 
 ---
 
+## Which repository should I use?
+
+- **Learning or teaching** how neural networks work: one of the Python implementations. `nerva-numpy` has the
+  fewest dependencies; choose `nerva-jax`, `nerva-tensorflow` or `nerva-torch` to work with the tensors of that framework.
+- **Research on sparse neural networks**: `nerva-rowwise` (C++ with Python bindings), which supports truly sparse
+  layers and fast CPU training with Intel MKL.
+- **Checking the equations**: `nerva-sympy` validates the matrix-form equations symbolically, and checks that the
+  Python implementations use exactly these equations.
+
+The Python implementations require Python 3.11 or newer and can be installed with pip, e.g. `pip install nerva-numpy`.
+The datasets used in the examples can be created with [`data/prepare_data.py`](data/prepare_data.py).
+
+---
+
 ## Features
 
 The Nerva libraries share a common design:
@@ -48,7 +62,8 @@ The Nerva libraries share a common design:
 ## Limitations
 
 - ⚠️ Currently limited to **multilayer perceptrons** (MLPs)  
-- ⚠️ **GPU support** is not yet available  
+- ⚠️ **GPU support** is limited: the C++ libraries, `nerva-numpy` and `nerva-torch` run on the CPU only.
+  `nerva-jax` and `nerva-tensorflow` use a GPU automatically when JAX or TensorFlow is installed with GPU support.  
 - ⚠️ No convolutional or transformer layers (planned)
 
 ---
