@@ -9,7 +9,9 @@ python scripts/sync_docs.py --check    # report differences, exit with status 1 
 ```
 
 The script expects the repositories to be checked out next to this one, e.g. `../nerva-torch` (use `--root` to
-specify another directory). The check is run in CI. Do not edit the copies in the repositories directly: edit the
+specify another directory). The check runs in the "Shared documentation" workflow
+(`.github/workflows/docs-sync.yml`) on every push and pull request; it can also be started by hand from the Actions
+tab ("Run workflow"). Do not edit the copies in the repositories directly: edit the
 files here, and run the script.
 
 | Directory | Copied to | Contents |
